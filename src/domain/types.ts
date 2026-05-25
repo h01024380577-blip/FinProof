@@ -28,6 +28,7 @@ export type ReviewFile = {
     | "rate_table"
     | "checklist"
     | "url_list"
+    | "package_archive"
     | "misc";
   classificationConfidence: number;
   parseStatus: "pending" | "parsed" | "failed";

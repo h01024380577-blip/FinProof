@@ -163,6 +163,69 @@ describe("review API routes", () => {
     });
   });
 
+  it("rejects upload-backed review cases that violate the demo upload policy", async () => {
+    const boundary = "----finproof-upload-policy-test";
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "deposit",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="malware.exe"',
+      "Content-Type: application/octet-stream",
+      "",
+      "binary",
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    const createResponse = await createPOST(
+      new Request("http://localhost/api/v1/review-cases", {
+        method: "POST",
+        headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+        body: multipartBody
+      })
+    );
+    const createBody = await createResponse.json();
+
+    expect(createResponse.status).toBe(400);
+    expect(createBody.error.message).toContain("지원하지 않는 파일 형식입니다: malware.exe");
+  });
+
+  it("rejects upload-backed review cases above the demo file count limit", async () => {
+    const boundary = "----finproof-upload-count-policy-test";
+    const fileParts = Array.from({ length: 11 }, (_, index) =>
+      [
+        `--${boundary}`,
+        `Content-Disposition: form-data; name="files"; filename="poster-${index}.png"`,
+        "Content-Type: image/png",
+        "",
+        "poster"
+      ].join("\r\n")
+    );
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "deposit",
+      ...fileParts,
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    const createResponse = await createPOST(
+      new Request("http://localhost/api/v1/review-cases", {
+        method: "POST",
+        headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+        body: multipartBody
+      })
+    );
+    const createBody = await createResponse.json();
+
+    expect(createResponse.status).toBe(400);
+    expect(createBody.error.message).toContain("최대 10개 파일까지 업로드할 수 있습니다.");
+  });
+
   it("serves sample package choices and deterministic preview metadata", async () => {
     const packagesResponse = await samplePackagesGET();
     const packagesBody = await packagesResponse.json();

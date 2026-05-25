@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ProductType } from "@/domain/types";
+import { validateUploadedFiles } from "@/domain/upload-policy";
 import { getReviewStore } from "@/server/reviews";
 import { jsonError, readJsonBody } from "@/server/reviews/route-utils";
 
@@ -87,6 +88,12 @@ async function createFromMultipart(request: Request) {
 
   if (files.length === 0) {
     return jsonError("At least one file is required", 400);
+  }
+
+  const validation = validateUploadedFiles(files);
+
+  if (!validation.ok) {
+    return jsonError(validation.errors.join(" "), 400);
   }
 
   const channelType = formData

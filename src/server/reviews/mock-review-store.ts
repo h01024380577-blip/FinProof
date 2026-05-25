@@ -1,5 +1,6 @@
 import { getRequiredMaterialRows } from "@/domain/intake";
 import { reviewCases } from "@/domain/reviews";
+import { classifyUploadFile } from "@/domain/upload-policy";
 import type {
   ProductType,
   ReviewCase,
@@ -39,56 +40,13 @@ function inferContentType(fileName: string): string {
   return "application/octet-stream";
 }
 
-function classifyUploadedFile(fileName: string, contentType: string): ReviewFile["fileType"] {
-  const normalizedName = fileName.toLowerCase();
-
-  if (
-    normalizedName.includes("poster") ||
-    normalizedName.includes("banner") ||
-    normalizedName.includes("creative") ||
-    contentType.startsWith("image/")
-  ) {
-    return "promotional_creative";
-  }
-
-  if (normalizedName.includes("copy") || normalizedName.includes("draft")) {
-    return "copy_draft";
-  }
-
-  if (
-    normalizedName.includes("product") ||
-    normalizedName.includes("description") ||
-    normalizedName.includes("상품")
-  ) {
-    return "product_description";
-  }
-
-  if (normalizedName.includes("terms") || normalizedName.includes("약관")) {
-    return "terms";
-  }
-
-  if (
-    normalizedName.includes("rate") ||
-    normalizedName.includes("금리") ||
-    normalizedName.endsWith(".xlsx")
-  ) {
-    return "rate_table";
-  }
-
-  if (normalizedName.includes("checklist") || normalizedName.includes("체크리스트")) {
-    return "checklist";
-  }
-
-  if (normalizedName.includes("url")) {
-    return "url_list";
-  }
-
-  return "misc";
-}
-
 function confidenceFor(fileType: ReviewFile["fileType"]): number {
   if (fileType === "misc") {
     return 0.62;
+  }
+
+  if (fileType === "package_archive") {
+    return 0.66;
   }
 
   if (fileType === "promotional_creative" || fileType === "rate_table") {
@@ -185,7 +143,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases): Re
 
       const files = input.files.map<ReviewFile>((file, index) => {
         const contentType = file.type || inferContentType(file.name);
-        const fileType = classifyUploadedFile(file.name, contentType);
+        const fileType = classifyUploadFile({ ...file, type: contentType });
 
         return {
           id: `file-upload-${String(index + 1).padStart(3, "0")}`,

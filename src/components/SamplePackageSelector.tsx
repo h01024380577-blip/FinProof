@@ -16,6 +16,11 @@ import {
   getSamplePackages,
   type RequiredMaterialRow
 } from "@/domain/intake";
+import {
+  formatUploadPolicySummary,
+  uploadAcceptAttribute,
+  validateUploadedFiles
+} from "@/domain/upload-policy";
 import type { ProductType, ReviewFile } from "@/domain/types";
 
 type IntakeMode = "sample" | "upload";
@@ -47,6 +52,7 @@ const fileTypeLabels: Record<string, string> = {
   checklist: "내부 체크리스트",
   internal_checklist: "내부 체크리스트",
   url_list: "URL 목록",
+  package_archive: "압축 패키지",
   misc: "기타"
 };
 
@@ -117,6 +123,13 @@ export function SamplePackageSelector() {
 
     if (uploadFiles.length === 0) {
       setUploadError("업로드할 파일을 선택해 주세요.");
+      return;
+    }
+
+    const validation = validateUploadedFiles(uploadFiles);
+
+    if (!validation.ok) {
+      setUploadError(validation.errors[0]);
       return;
     }
 
@@ -258,9 +271,11 @@ export function SamplePackageSelector() {
                   aria-label="자료 파일"
                   type="file"
                   multiple
+                  accept={uploadAcceptAttribute}
                   onChange={(event) => setUploadFiles(Array.from(event.target.files ?? []))}
                 />
               </label>
+              <p className="upload-policy-note">{formatUploadPolicySummary()}</p>
               <button className="button button--primary upload-submit" type="submit">
                 <Upload size={16} aria-hidden="true" />
                 {isUploading ? "업로드 중" : "업로드 생성"}

@@ -40,6 +40,11 @@ describe("mock review store", () => {
           name: "real-deposit-rate-table.xlsx",
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           size: 4096
+        },
+        {
+          name: "real-review-package.zip",
+          type: "application/zip",
+          size: 8192
         }
       ]
     });
@@ -64,6 +69,12 @@ describe("mock review store", () => {
         expect.objectContaining({
           name: "real-deposit-rate-table.xlsx",
           fileType: "rate_table"
+        }),
+        expect.objectContaining({
+          name: "real-review-package.zip",
+          fileType: "package_archive",
+          parseStatus: "pending",
+          storageProvider: "local"
         })
       ])
     );

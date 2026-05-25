@@ -737,6 +737,13 @@ a.review-table__row:hover {
   padding: 10px;
 }
 
+.upload-policy-note {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .upload-submit {
   gap: 8px;
   justify-content: center;

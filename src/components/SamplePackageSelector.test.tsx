@@ -94,4 +94,49 @@ describe("SamplePackageSelector", () => {
     );
     expect(screen.getByText(/OCR\/RAG 분석 전/)).toBeInTheDocument();
   });
+
+  it("blocks unsupported real file uploads before calling the API", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SamplePackageSelector />);
+
+    await user.click(screen.getByRole("button", { name: "실제 자료 업로드" }));
+    expect(
+      screen.getByText(
+        "PDF, PNG, JPG/JPEG, TXT, DOCX, XLSX, CSV, HTML, ZIP · 최대 10개 · 일반 파일 25MB, ZIP 100MB 이하"
+      )
+    ).toBeInTheDocument();
+
+    await user.upload(
+      screen.getByLabelText("자료 파일"),
+      new File(["binary"], "malware.pdf", { type: "application/octet-stream" })
+    );
+    await user.click(screen.getByRole("button", { name: "업로드 생성" }));
+
+    expect(screen.getByText("지원하지 않는 파일 형식입니다: malware.pdf")).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks too many real files before calling the API", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SamplePackageSelector />);
+
+    await user.click(screen.getByRole("button", { name: "실제 자료 업로드" }));
+    await user.upload(
+      screen.getByLabelText("자료 파일"),
+      Array.from(
+        { length: 11 },
+        (_, index) => new File(["poster"], `poster-${index}.png`, { type: "image/png" })
+      )
+    );
+    await user.click(screen.getByRole("button", { name: "업로드 생성" }));
+
+    expect(screen.getByText("최대 10개 파일까지 업로드할 수 있습니다.")).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
