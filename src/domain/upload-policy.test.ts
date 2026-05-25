@@ -48,6 +48,25 @@ describe("upload policy", () => {
     ).toContain("large-package.zip은 100MB 이하로 업로드해 주세요.");
   });
 
+  it("rejects MIME types that do not match the allowed extension", () => {
+    expect(
+      validateUploadedFiles([{ name: "payload.zip", type: "image/png", size: 1024 }]).errors
+    ).toContain("지원하지 않는 파일 형식입니다: payload.zip");
+    expect(
+      validateUploadedFiles([{ name: "page.pdf", type: "text/html", size: 1024 }]).errors
+    ).toContain("지원하지 않는 파일 형식입니다: page.pdf");
+  });
+
+  it("accepts common MIME variants for allowed extensions", () => {
+    expect(
+      validateUploadedFiles([
+        { name: "photo.jpg", type: "image/jpg", size: 1024 },
+        { name: "url-list.csv", type: "application/vnd.ms-excel", size: 1024 },
+        { name: "copy.txt", type: "text/plain; charset=utf-8", size: 1024 }
+      ])
+    ).toEqual({ ok: true, errors: [] });
+  });
+
   it("summarizes the demo upload guardrails for the intake UI", () => {
     expect(formatUploadPolicySummary()).toBe(
       "PDF, PNG, JPG/JPEG, TXT, DOCX, XLSX, CSV, HTML, ZIP · 최대 10개 · 일반 파일 25MB, ZIP 100MB 이하"

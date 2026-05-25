@@ -12,43 +12,72 @@ export type UploadPolicyValidationResult = {
 };
 
 const bytesPerMb = 1024 * 1024;
+const allowedUploadExtensions = [
+  "pdf",
+  "png",
+  "jpg",
+  "jpeg",
+  "txt",
+  "docx",
+  "xlsx",
+  "csv",
+  "html",
+  "zip"
+] as const;
+type AllowedExtension = (typeof allowedUploadExtensions)[number];
 
 export const uploadPolicy = {
   maxFiles: 10,
   maxFileSizeBytes: 25 * bytesPerMb,
   maxArchiveSizeBytes: 100 * bytesPerMb,
-  allowedExtensions: ["pdf", "png", "jpg", "jpeg", "txt", "docx", "xlsx", "csv", "html", "zip"]
+  allowedExtensions: allowedUploadExtensions
 } as const;
 
 export const uploadAcceptAttribute = uploadPolicy.allowedExtensions
   .map((extension) => `.${extension}`)
   .join(",");
 
-const acceptedMimeTypes = new Set([
-  "application/pdf",
-  "image/png",
-  "image/jpeg",
-  "text/plain",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "text/csv",
-  "text/html",
-  "application/zip",
-  "application/x-zip-compressed"
-]);
+const acceptedMimeTypesByExtension: Record<AllowedExtension, string[]> = {
+  pdf: ["application/pdf"],
+  png: ["image/png"],
+  jpg: ["image/jpeg", "image/jpg"],
+  jpeg: ["image/jpeg", "image/jpg"],
+  txt: ["text/plain"],
+  docx: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  xlsx: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+  csv: ["text/csv", "application/csv", "application/vnd.ms-excel", "text/plain"],
+  html: ["text/html"],
+  zip: ["application/zip", "application/x-zip-compressed"]
+};
 
-function getExtension(fileName: string): string {
-  return fileName.toLowerCase().split(".").pop() ?? "";
+function getExtension(fileName: string): AllowedExtension | undefined {
+  const extension = fileName.toLowerCase().split(".").pop() ?? "";
+
+  return uploadPolicy.allowedExtensions.includes(extension as AllowedExtension)
+    ? (extension as AllowedExtension)
+    : undefined;
 }
 
 function isKnownExtension(fileName: string): boolean {
-  return uploadPolicy.allowedExtensions.includes(
-    getExtension(fileName) as (typeof uploadPolicy.allowedExtensions)[number]
-  );
+  return getExtension(fileName) !== undefined;
 }
 
-function isAcceptedMimeType(type: string): boolean {
-  return type.trim().length === 0 || acceptedMimeTypes.has(type);
+function normalizeMimeType(type: string): string {
+  return type.toLowerCase().split(";")[0].trim();
+}
+
+function isAcceptedMimeType(fileName: string, type: string): boolean {
+  const extension = getExtension(fileName);
+
+  if (!extension) {
+    return false;
+  }
+
+  const normalizedType = normalizeMimeType(type);
+
+  return (
+    normalizedType.length === 0 || acceptedMimeTypesByExtension[extension].includes(normalizedType)
+  );
 }
 
 function isArchive(fileName: string): boolean {
@@ -71,7 +100,7 @@ export function validateUploadedFiles(files: UploadFileDescriptor[]): UploadPoli
   }
 
   for (const file of files) {
-    if (!isKnownExtension(file.name) || !isAcceptedMimeType(file.type)) {
+    if (!isKnownExtension(file.name) || !isAcceptedMimeType(file.name, file.type)) {
       errors.push(`지원하지 않는 파일 형식입니다: ${file.name}`);
       continue;
     }

@@ -192,6 +192,35 @@ describe("review API routes", () => {
     expect(createBody.error.message).toContain("지원하지 않는 파일 형식입니다: malware.exe");
   });
 
+  it("rejects upload-backed review cases with a mismatched extension and MIME type", async () => {
+    const boundary = "----finproof-upload-mime-policy-test";
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "deposit",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="payload.zip"',
+      "Content-Type: image/png",
+      "",
+      "not-a-zip",
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    const createResponse = await createPOST(
+      new Request("http://localhost/api/v1/review-cases", {
+        method: "POST",
+        headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+        body: multipartBody
+      })
+    );
+    const createBody = await createResponse.json();
+
+    expect(createResponse.status).toBe(400);
+    expect(createBody.error.message).toContain("지원하지 않는 파일 형식입니다: payload.zip");
+  });
+
   it("rejects upload-backed review cases above the demo file count limit", async () => {
     const boundary = "----finproof-upload-count-policy-test";
     const fileParts = Array.from({ length: 11 }, (_, index) =>
