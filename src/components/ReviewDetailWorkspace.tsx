@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { FilePenLine, MessageSquareText, RotateCw, Send } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
-import { riskLabels } from "@/domain/reviews";
+import { riskLabels, statusLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import { RiskBadge, StatusBadge } from "./Badges";
 
@@ -11,10 +11,58 @@ const riskOrder: RiskLevel[] = ["reject_recommended", "high", "caution", "info"]
 
 type SavedDecision = {
   riskLevel: RiskLevel;
+  finalAction: NonNullable<ReviewIssue["finalAction"]>;
   comment: string;
 };
 
+const finalActionStatusMap: Record<
+  NonNullable<ReviewIssue["finalAction"]>,
+  ReviewCase["status"]
+> = {
+  approve: "approved",
+  change_request: "change_requested",
+  reject: "rejected",
+  hold: "on_hold"
+};
+
+const finalActionPriority: Array<NonNullable<ReviewIssue["finalAction"]>> = [
+  "reject",
+  "hold",
+  "change_request",
+  "approve"
+];
+
+function getFinalReviewAction(
+  decisionsByIssueId: Record<string, SavedDecision>
+): NonNullable<ReviewIssue["finalAction"]> | null {
+  const finalActions = Object.values(decisionsByIssueId).map((decision) => decision.finalAction);
+
+  return finalActionPriority.find((action) => finalActions.includes(action)) ?? null;
+}
+
+function getFinalReviewStatus(
+  finalAction: NonNullable<ReviewIssue["finalAction"]> | null
+): ReviewCase["status"] | null {
+  return finalAction ? finalActionStatusMap[finalAction] : null;
+}
+
+function getInitialSavedDecisions(review: ReviewCase): Record<string, SavedDecision> {
+  return Object.fromEntries(
+    review.issues
+      .filter((issue) => issue.finalAction && issue.reviewerRiskLevel)
+      .map((issue) => [
+        issue.id,
+        {
+          riskLevel: issue.reviewerRiskLevel ?? issue.riskLevel,
+          finalAction: issue.finalAction ?? issue.suggestedAction,
+          comment: issue.reviewerComment ?? ""
+        }
+      ])
+  );
+}
+
 export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
+  const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const [draft, setDraft] = useState(review.currentDraft ?? review.expectedDraft);
@@ -31,11 +79,13 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   const [reviewerComment, setReviewerComment] = useState("");
   const [savedDecisionsByIssueId, setSavedDecisionsByIssueId] = useState<
     Record<string, SavedDecision>
-  >({});
+  >(() => getInitialSavedDecisions(review));
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [isSavingDecision, setIsSavingDecision] = useState(false);
+  const [isFinalizingReview, setIsFinalizingReview] = useState(false);
+  const [finalizedNotice, setFinalizedNotice] = useState<string | null>(null);
   const selectedIssue: ReviewIssue | undefined =
     review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
   const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
@@ -43,6 +93,8 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     ? (markedResponseIdsByIssueId[selectedIssue.id] ?? [])
     : [];
   const savedDecision = selectedIssue ? (savedDecisionsByIssueId[selectedIssue.id] ?? null) : null;
+  const finalReviewAction = getFinalReviewAction(savedDecisionsByIssueId);
+  const finalReviewStatus = getFinalReviewStatus(finalReviewAction);
 
   const visibleIssues = useMemo(
     () =>
@@ -61,6 +113,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
       nextSavedDecision?.riskLevel ?? nextIssue?.reviewerRiskLevel ?? nextIssue?.riskLevel ?? "info"
     );
     setReviewerComment(nextSavedDecision?.comment ?? nextIssue?.reviewerComment ?? "");
+    setFinalizedNotice(null);
   }
 
   async function handleAskQuestion() {
@@ -192,6 +245,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
         ...current,
         [issueId]: {
           riskLevel: body.issue.reviewerRiskLevel ?? reviewerRiskLevel,
+          finalAction: body.issue.finalAction ?? finalAction,
           comment: body.issue.reviewerComment ?? trimmedComment
         }
       }));
@@ -201,6 +255,40 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
       );
     } finally {
       setIsSavingDecision(false);
+    }
+  }
+
+  async function finalizeReviewCase() {
+    if (!finalReviewAction || !finalReviewStatus) {
+      return;
+    }
+
+    setInteractionError(null);
+    setFinalizedNotice(null);
+    setIsFinalizingReview(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/finalize`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ finalAction: finalReviewAction })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("최종 확정 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as {
+        reviewCase: Pick<ReviewCase, "status">;
+      };
+
+      setReviewStatus(body.reviewCase.status);
+      setFinalizedNotice(`최종 상태가 ${statusLabels[body.reviewCase.status]}으로 저장되었습니다.`);
+    } catch (error) {
+      setInteractionError(
+        error instanceof Error ? error.message : "최종 확정 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsFinalizingReview(false);
     }
   }
 
@@ -216,13 +304,18 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
           </p>
         </div>
         <div className="detail__actions">
-          <StatusBadge status={review.status} />
+          <StatusBadge status={reviewStatus} />
           <RiskBadge level={review.highestRiskLevel} />
           <button className="icon-button" type="button" title="분석 재실행">
             <RotateCw size={18} aria-hidden="true" />
           </button>
-          <button className="button button--primary" type="button">
-            최종 확정
+          <button
+            className="button button--primary"
+            type="button"
+            disabled={!finalReviewStatus || isFinalizingReview}
+            onClick={finalizeReviewCase}
+          >
+            {isFinalizingReview ? "확정 중" : "최종 확정"}
           </button>
         </div>
       </section>
@@ -429,6 +522,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
           {interactionError}
         </p>
       ) : null}
+      {finalizedNotice ? <p className="finalized-notice">{finalizedNotice}</p> : null}
     </div>
   );
 }

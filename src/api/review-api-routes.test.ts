@@ -6,6 +6,7 @@ import { POST as chatPOST } from "@/app/api/v1/review-cases/[caseId]/chat/route"
 import { POST as draftPOST } from "@/app/api/v1/review-cases/[caseId]/draft/route";
 import { GET as detailGET } from "@/app/api/v1/review-cases/[caseId]/route";
 import { POST as analysisPOST } from "@/app/api/v1/review-cases/[caseId]/analysis/start/route";
+import { POST as finalizePOST } from "@/app/api/v1/review-cases/[caseId]/finalize/route";
 import { GET as issuesGET } from "@/app/api/v1/review-cases/[caseId]/issues/route";
 import { PATCH as issuePATCH } from "@/app/api/v1/review-cases/[caseId]/issues/[issueId]/route";
 import { GET as listGET, POST as createPOST } from "@/app/api/v1/review-cases/route";
@@ -366,5 +367,47 @@ describe("review API routes", () => {
       finalAction: "change_request",
       reviewerComment: "우대 조건 병기 필요"
     });
+  });
+
+  it("updates final review status through the finalize route", async () => {
+    await createPOST(
+      jsonRequest("/api/v1/review-cases", { samplePackageId: "rc-demo-deposit-001" })
+    );
+
+    const updateResponse = await finalizePOST(
+      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/finalize", {
+        finalAction: "change_request"
+      }),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const updateBody = await updateResponse.json();
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateBody.reviewCase).toMatchObject({
+      id: "rc-demo-deposit-001",
+      status: "change_requested"
+    });
+
+    const invalidResponse = await finalizePOST(
+      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/finalize", {
+        finalAction: "submitted"
+      }),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const invalidBody = await invalidResponse.json();
+
+    expect(invalidResponse.status).toBe(400);
+    expect(invalidBody.error.message).toContain("finalAction");
+
+    const prototypeKeyResponse = await finalizePOST(
+      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/finalize", {
+        finalAction: "toString"
+      }),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const prototypeKeyBody = await prototypeKeyResponse.json();
+
+    expect(prototypeKeyResponse.status).toBe(400);
+    expect(prototypeKeyBody.error.message).toContain("finalAction");
   });
 });

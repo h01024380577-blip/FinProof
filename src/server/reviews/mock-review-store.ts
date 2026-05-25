@@ -299,6 +299,23 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases): Re
       cases.set(reviewCaseId, updatedReview);
 
       return clone(updatedReview);
+    },
+
+    async updateReviewStatus(reviewCaseId, status) {
+      const review = cases.get(reviewCaseId);
+
+      if (!review) {
+        return undefined;
+      }
+
+      const updatedReview = {
+        ...review,
+        status
+      };
+
+      cases.set(reviewCaseId, updatedReview);
+
+      return clone(updatedReview);
     }
   };
 }

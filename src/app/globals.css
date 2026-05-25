@@ -862,6 +862,17 @@ a.review-table__row:hover {
   font-weight: 800;
 }
 
+.finalized-notice {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #bfddcf;
+  border-radius: 8px;
+  background: var(--verified-bg);
+  color: var(--verified);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

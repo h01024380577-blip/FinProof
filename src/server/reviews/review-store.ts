@@ -49,6 +49,11 @@ export type SaveIssueDecisionInput = {
   reviewerComment: string;
 };
 
+export type FinalReviewStatus = Extract<
+  ReviewCase["status"],
+  "approved" | "change_requested" | "rejected" | "on_hold"
+>;
+
 export type ListIssuesOptions = {
   riskLevel?: RiskLevel;
 };
@@ -68,4 +73,8 @@ export interface ReviewStore {
   getIssueEvidence(issueId: string): Promise<Evidence[] | undefined>;
   saveIssueDecision(input: SaveIssueDecisionInput): Promise<ReviewIssue | undefined>;
   saveOpinionDraft(reviewCaseId: string, draft: string): Promise<ReviewCase | undefined>;
+  updateReviewStatus(
+    reviewCaseId: string,
+    status: FinalReviewStatus
+  ): Promise<ReviewCase | undefined>;
 }

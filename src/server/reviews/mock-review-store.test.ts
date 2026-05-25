@@ -119,4 +119,19 @@ describe("mock review store", () => {
       reviewerComment: "우대 조건 병기 필요"
     });
   });
+
+  it("updates review case status for final reviewer action", async () => {
+    const store = createMockReviewStore();
+    await store.createReviewCaseFromSamplePackage({ samplePackageId: "rc-demo-deposit-001" });
+
+    const updatedReview = await store.updateReviewStatus("rc-demo-deposit-001", "change_requested");
+
+    expect(updatedReview).toMatchObject({
+      id: "rc-demo-deposit-001",
+      status: "change_requested"
+    });
+    await expect(store.updateReviewStatus("missing-case", "change_requested")).resolves.toBe(
+      undefined
+    );
+  });
 });

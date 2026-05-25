@@ -237,6 +237,53 @@ describe("ReviewDetailWorkspace", () => {
     );
   });
 
+  it("finalizes the review case status after reviewer decision is saved", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          issue: {
+            id: "issue-deposit-rate",
+            reviewerRiskLevel: "reject_recommended",
+            finalAction: "change_request",
+            reviewerComment: "우대 조건 병기 필요"
+          }
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCase: {
+            id: "rc-demo-deposit-001",
+            status: "change_requested"
+          }
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    expect(screen.getByRole("button", { name: "최종 확정" })).toBeDisabled();
+
+    await user.selectOptions(screen.getByLabelText("Reviewer risk level"), "reject_recommended");
+    await user.type(screen.getByLabelText("Reviewer comment"), "우대 조건 병기 필요");
+    await user.click(screen.getByRole("button", { name: "판단 저장" }));
+    expect(await screen.findByText("저장된 판단: 반려 권고")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "최종 확정" }));
+
+    expect(await screen.findByText("수정 요청")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/finalize",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ finalAction: "change_request" })
+      })
+    );
+  });
+
   it("does not show a stale saved decision after switching issues during save", async () => {
     const user = userEvent.setup();
     let resolvePatch!: (value: unknown) => void;
