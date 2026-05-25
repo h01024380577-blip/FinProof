@@ -31,6 +31,10 @@ export type ReviewFile = {
     | "misc";
   classificationConfidence: number;
   parseStatus: "pending" | "parsed" | "failed";
+  storageProvider?: "sample" | "s3";
+  storageKey?: string;
+  contentType?: string;
+  sizeBytes?: number;
 };
 
 export type Evidence = {
@@ -53,6 +57,8 @@ export type ReviewIssue = {
   targetBbox: [number, number, number, number];
   sourceAgents: string[];
   suggestedAction: "approve" | "change_request" | "reject" | "hold";
+  finalAction?: "approve" | "change_request" | "reject" | "hold";
+  reviewerComment?: string;
   status: "open" | "reviewed" | "resolved" | "dismissed";
   description: string;
   suggestedCopy: string;
@@ -77,6 +83,7 @@ export type ReviewCase = {
   files: ReviewFile[];
   issues: ReviewIssue[];
   expectedDraft: string;
+  currentDraft?: string;
 };
 
 export type ReviewSummary = Pick<
