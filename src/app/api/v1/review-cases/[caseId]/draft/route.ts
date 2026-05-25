@@ -7,6 +7,10 @@ type DraftRequest = {
   markedResponses?: ReviewChatResponse[];
 };
 
+type SaveDraftRequest = {
+  draft?: unknown;
+};
+
 export async function POST(request: Request, context: RouteContext<{ caseId: string }>) {
   const { caseId } = await context.params;
   const body = await readJsonBody<DraftRequest>(request);
@@ -18,7 +22,33 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
 
   const draft = generateDraftWithChatContext(review, body?.markedResponses ?? []);
 
-  await getReviewStore().saveOpinionDraft(caseId, draft);
+  const updatedReview = await getReviewStore().saveOpinionDraft(caseId, draft);
 
-  return NextResponse.json({ draft });
+  return NextResponse.json({ draft, version: updatedReview?.currentDraftVersion });
+}
+
+export async function PATCH(request: Request, context: RouteContext<{ caseId: string }>) {
+  const { caseId } = await context.params;
+  const body = await readJsonBody<SaveDraftRequest>(request);
+
+  if (typeof body?.draft !== "string") {
+    return jsonError("draft is required", 400);
+  }
+
+  const draft = body.draft.trim();
+
+  if (!draft) {
+    return jsonError("draft is required", 400);
+  }
+
+  const updatedReview = await getReviewStore().saveOpinionDraft(caseId, draft);
+
+  if (!updatedReview) {
+    return jsonError("Review case not found", 404);
+  }
+
+  return NextResponse.json({
+    draft: updatedReview.currentDraft,
+    version: updatedReview.currentDraftVersion
+  });
 }

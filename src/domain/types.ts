@@ -85,6 +85,7 @@ export type ReviewCase = {
   issues: ReviewIssue[];
   expectedDraft: string;
   currentDraft?: string;
+  currentDraftVersion?: number;
   analysisNotice?: string;
 };
 

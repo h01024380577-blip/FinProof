@@ -271,6 +271,13 @@ a {
   gap: 8px;
 }
 
+.draft-version {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -868,6 +875,7 @@ a.review-table__row:hover {
 }
 
 .finalized-notice,
+.draft-notice,
 .report-notice {
   margin: 0;
   padding: 10px 12px;

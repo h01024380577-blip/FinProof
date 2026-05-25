@@ -3,7 +3,10 @@
 import type { ReviewChatResponse } from "@/domain/chat";
 import { resetDefaultReviewStoreForTests } from "@/server/reviews";
 import { POST as chatPOST } from "@/app/api/v1/review-cases/[caseId]/chat/route";
-import { POST as draftPOST } from "@/app/api/v1/review-cases/[caseId]/draft/route";
+import {
+  PATCH as draftPATCH,
+  POST as draftPOST
+} from "@/app/api/v1/review-cases/[caseId]/draft/route";
 import { GET as detailGET } from "@/app/api/v1/review-cases/[caseId]/route";
 import { POST as analysisPOST } from "@/app/api/v1/review-cases/[caseId]/analysis/start/route";
 import { POST as finalizePOST } from "@/app/api/v1/review-cases/[caseId]/finalize/route";
@@ -347,6 +350,81 @@ describe("review API routes", () => {
 
     expect(draftResponse.status).toBe(200);
     expect(draftBody.draft).toContain("채팅 반영");
+    expect(draftBody.version).toBe(1);
+
+    const saveDraftResponse = await draftPATCH(
+      jsonRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/draft",
+        {
+          draft: "Reviewer가 직접 편집한 수정 요청 의견 초안"
+        },
+        "PATCH"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const saveDraftBody = await saveDraftResponse.json();
+
+    expect(saveDraftResponse.status).toBe(200);
+    expect(saveDraftBody).toMatchObject({
+      draft: "Reviewer가 직접 편집한 수정 요청 의견 초안",
+      version: 2
+    });
+
+    const savedDraftDetailResponse = await detailGET(
+      new Request("http://localhost/api/v1/review-cases/rc-demo-deposit-001"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const savedDraftDetailBody = await savedDraftDetailResponse.json();
+
+    expect(savedDraftDetailBody.reviewCase).toMatchObject({
+      currentDraft: "Reviewer가 직접 편집한 수정 요청 의견 초안",
+      currentDraftVersion: 2
+    });
+
+    const invalidSaveDraftResponse = await draftPATCH(
+      jsonRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/draft",
+        {
+          draft: " "
+        },
+        "PATCH"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const invalidSaveDraftBody = await invalidSaveDraftResponse.json();
+
+    expect(invalidSaveDraftResponse.status).toBe(400);
+    expect(invalidSaveDraftBody.error.message).toContain("draft");
+
+    const nonStringDraftResponse = await draftPATCH(
+      jsonRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/draft",
+        {
+          draft: 123
+        },
+        "PATCH"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const nonStringDraftBody = await nonStringDraftResponse.json();
+
+    expect(nonStringDraftResponse.status).toBe(400);
+    expect(nonStringDraftBody.error.message).toContain("draft");
+
+    const missingCaseDraftResponse = await draftPATCH(
+      jsonRequest(
+        "/api/v1/review-cases/missing-case/draft",
+        {
+          draft: "Reviewer가 직접 편집한 수정 요청 의견 초안"
+        },
+        "PATCH"
+      ),
+      params({ caseId: "missing-case" })
+    );
+    const missingCaseDraftBody = await missingCaseDraftResponse.json();
+
+    expect(missingCaseDraftResponse.status).toBe(404);
+    expect(missingCaseDraftBody.error.message).toContain("not found");
 
     const reportResponse = await reportPOST(
       jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/reports/generate", {

@@ -380,6 +380,96 @@ describe("ReviewDetailWorkspace", () => {
     expect(await screen.findByText("Markdown 리포트 다운로드를 준비했습니다.")).toBeInTheDocument();
   });
 
+  it("saves the reviewer-edited opinion draft as a version", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        draft: "Reviewer가 직접 편집한 수정 요청 의견 초안",
+        version: 2
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <ReviewDetailWorkspace
+        review={{
+          ...getReviewCaseById("rc-demo-deposit-001")!,
+          currentDraft: "저장된 수정 요청 의견 초안",
+          currentDraftVersion: 1
+        }}
+      />
+    );
+
+    await user.clear(screen.getByLabelText("Opinion draft"));
+    await user.type(
+      screen.getByLabelText("Opinion draft"),
+      "  Reviewer가 직접 편집한 수정 요청 의견 초안  "
+    );
+    await user.click(screen.getByRole("button", { name: "의견 초안 저장" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-demo-deposit-001/draft",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({
+            draft: "Reviewer가 직접 편집한 수정 요청 의견 초안"
+          })
+        })
+      );
+    });
+    expect(await screen.findByText("의견 초안 v2 저장됨.")).toBeInTheDocument();
+    expect(screen.getByText("v2")).toBeInTheDocument();
+    expect(screen.getByLabelText("Opinion draft")).toHaveValue(
+      "Reviewer가 직접 편집한 수정 요청 의견 초안"
+    );
+
+    await user.type(screen.getByLabelText("Opinion draft"), " 미저장 변경");
+
+    expect(screen.queryByText("의견 초안 v2 저장됨.")).not.toBeInTheDocument();
+  });
+
+  it("does not overwrite newer local draft edits when a save response resolves", async () => {
+    const user = userEvent.setup();
+    let resolvePatch!: (value: unknown) => void;
+    const patchPromise = new Promise((resolve) => {
+      resolvePatch = resolve;
+    });
+    const fetchMock = vi.fn().mockReturnValueOnce(patchPromise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <ReviewDetailWorkspace
+        review={{
+          ...getReviewCaseById("rc-demo-deposit-001")!,
+          currentDraft: "저장된 수정 요청 의견 초안",
+          currentDraftVersion: 1
+        }}
+      />
+    );
+
+    const draftEditor = screen.getByLabelText("Opinion draft");
+    await user.clear(draftEditor);
+    await user.type(draftEditor, "저장 요청 초안");
+    await user.click(screen.getByRole("button", { name: "의견 초안 저장" }));
+    await user.type(draftEditor, " 응답 전 추가 편집");
+
+    resolvePatch({
+      ok: true,
+      json: async () => ({
+        draft: "저장 요청 초안",
+        version: 2
+      })
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("v2")).toBeInTheDocument();
+    });
+    expect(draftEditor).toHaveValue("저장 요청 초안 응답 전 추가 편집");
+    expect(screen.queryByText("의견 초안 v2 저장됨.")).not.toBeInTheDocument();
+  });
+
   it("does not show a stale saved decision after switching issues during save", async () => {
     const user = userEvent.setup();
     let resolvePatch!: (value: unknown) => void;

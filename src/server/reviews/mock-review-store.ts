@@ -293,7 +293,8 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases): Re
 
       const updatedReview = {
         ...review,
-        currentDraft: draft
+        currentDraft: draft,
+        currentDraftVersion: (review.currentDraftVersion ?? 0) + 1
       };
 
       cases.set(reviewCaseId, updatedReview);

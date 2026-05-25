@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Download, FilePenLine, MessageSquareText, RotateCw, Send } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Download, FilePenLine, MessageSquareText, RotateCw, Save, Send } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { riskLabels, statusLabels } from "@/domain/reviews";
@@ -66,7 +66,9 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
-  const [draft, setDraft] = useState(review.currentDraft ?? review.expectedDraft);
+  const [draft, setDraftState] = useState(review.currentDraft ?? review.expectedDraft);
+  const latestDraftRef = useRef(draft);
+  const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("우대금리 조건을 어느 수준까지 표시해야 하나요?");
   const [chatResponsesByIssueId, setChatResponsesByIssueId] = useState<
     Record<string, ReviewChatResponse[]>
@@ -85,10 +87,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingDecision, setIsSavingDecision] = useState(false);
   const [isFinalizingReview, setIsFinalizingReview] = useState(false);
   const [finalizedNotice, setFinalizedNotice] = useState<string | null>(null);
   const [reportNotice, setReportNotice] = useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const selectedIssue: ReviewIssue | undefined =
     review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
   const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
@@ -107,6 +111,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     [review.issues, riskFilter]
   );
 
+  function setDraft(nextDraft: string) {
+    latestDraftRef.current = nextDraft;
+    setDraftState(nextDraft);
+  }
+
   function selectIssue(issueId: string) {
     const nextIssue = review.issues.find((issue) => issue.id === issueId);
     const nextSavedDecision = nextIssue ? savedDecisionsByIssueId[nextIssue.id] : undefined;
@@ -118,6 +127,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     setReviewerComment(nextSavedDecision?.comment ?? nextIssue?.reviewerComment ?? "");
     setFinalizedNotice(null);
     setReportNotice(null);
+    setDraftNotice(null);
   }
 
   async function handleAskQuestion() {
@@ -205,15 +215,59 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
         throw new Error("의견 초안 생성 요청을 처리하지 못했습니다.");
       }
 
-      const body = (await apiResponse.json()) as { draft: string };
+      const body = (await apiResponse.json()) as { draft: string; version?: number };
 
       setDraft(body.draft);
+      setDraftNotice(null);
+      if (typeof body.version === "number") {
+        setDraftVersion(body.version);
+      }
     } catch (error) {
       setInteractionError(
         error instanceof Error ? error.message : "의견 초안 생성 요청을 처리하지 못했습니다."
       );
     } finally {
       setIsGeneratingDraft(false);
+    }
+  }
+
+  async function saveDraftVersion() {
+    const submittedDraft = draft;
+    const trimmedDraft = submittedDraft.trim();
+    setDraftNotice(null);
+
+    if (trimmedDraft.length === 0) {
+      setInteractionError("저장할 의견 초안을 입력해 주세요.");
+      return;
+    }
+
+    setInteractionError(null);
+    setIsSavingDraft(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/draft`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ draft: trimmedDraft })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("의견 초안 저장 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as { draft: string; version: number };
+      const hasLocalEditAfterSaveRequest = latestDraftRef.current !== submittedDraft;
+
+      setDraftVersion(body.version);
+      if (!hasLocalEditAfterSaveRequest) {
+        setDraft(body.draft);
+        setDraftNotice(`의견 초안 v${body.version} 저장됨.`);
+      }
+    } catch (error) {
+      setInteractionError(
+        error instanceof Error ? error.message : "의견 초안 저장 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsSavingDraft(false);
     }
   }
 
@@ -548,9 +602,22 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
           <div className="panel__header">
             <div>
               <p className="eyebrow">Decision Draft</p>
-              <h3>수정 요청 의견 초안</h3>
+              <h3>
+                수정 요청 의견 초안
+                {draftVersion > 0 ? <span className="draft-version">v{draftVersion}</span> : null}
+              </h3>
             </div>
             <div className="draft-actions">
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="의견 초안 저장"
+                title="의견 초안 저장"
+                disabled={isSavingDraft}
+                onClick={saveDraftVersion}
+              >
+                <Save size={18} aria-hidden="true" />
+              </button>
               <button
                 className="icon-button"
                 type="button"
@@ -577,7 +644,10 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
             className="draft-editor"
             value={draft}
             aria-label="Opinion draft"
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setDraftNotice(null);
+            }}
           />
         </div>
       </section>
@@ -588,6 +658,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
         </p>
       ) : null}
       {finalizedNotice ? <p className="finalized-notice">{finalizedNotice}</p> : null}
+      {draftNotice ? <p className="draft-notice">{draftNotice}</p> : null}
       {reportNotice ? <p className="report-notice">{reportNotice}</p> : null}
     </div>
   );

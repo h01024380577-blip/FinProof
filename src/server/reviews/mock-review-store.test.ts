@@ -134,4 +134,28 @@ describe("mock review store", () => {
       undefined
     );
   });
+
+  it("saves opinion draft versions for generated and manually edited drafts", async () => {
+    const store = createMockReviewStore();
+    await store.createReviewCaseFromSamplePackage({ samplePackageId: "rc-demo-deposit-001" });
+
+    const generatedDraft = await store.saveOpinionDraft(
+      "rc-demo-deposit-001",
+      "생성된 수정 요청 의견 초안"
+    );
+    const editedDraft = await store.saveOpinionDraft(
+      "rc-demo-deposit-001",
+      "Reviewer가 편집한 수정 요청 의견 초안"
+    );
+
+    expect(generatedDraft).toMatchObject({
+      currentDraft: "생성된 수정 요청 의견 초안",
+      currentDraftVersion: 1
+    });
+    expect(editedDraft).toMatchObject({
+      currentDraft: "Reviewer가 편집한 수정 요청 의견 초안",
+      currentDraftVersion: 2
+    });
+    await expect(store.saveOpinionDraft("missing-case", "초안")).resolves.toBeUndefined();
+  });
 });
