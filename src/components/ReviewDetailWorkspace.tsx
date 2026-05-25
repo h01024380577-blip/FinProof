@@ -1,35 +1,48 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MessageSquareText, RotateCw, Send, WandSparkles } from "lucide-react";
-import {
-  answerReviewQuestion,
-  generateDraftWithChatContext,
-  type ReviewChatResponse
-} from "@/domain/chat";
+import { FilePenLine, MessageSquareText, RotateCw, Send } from "lucide-react";
+import type { ReviewChatResponse } from "@/domain/chat";
 import { riskLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import { RiskBadge, StatusBadge } from "./Badges";
 
 const riskOrder: RiskLevel[] = ["reject_recommended", "high", "caution", "info"];
 
+type SavedDecision = {
+  riskLevel: RiskLevel;
+  comment: string;
+};
+
 export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
-  const [draft, setDraft] = useState(review.expectedDraft);
+  const [draft, setDraft] = useState(review.currentDraft ?? review.expectedDraft);
   const [question, setQuestion] = useState("우대금리 조건을 어느 수준까지 표시해야 하나요?");
-  const [chatResponses, setChatResponses] = useState<ReviewChatResponse[]>([]);
-  const [markedResponseIds, setMarkedResponseIds] = useState<string[]>([]);
+  const [chatResponsesByIssueId, setChatResponsesByIssueId] = useState<
+    Record<string, ReviewChatResponse[]>
+  >({});
+  const [markedResponseIdsByIssueId, setMarkedResponseIdsByIssueId] = useState<
+    Record<string, string[]>
+  >({});
   const [reviewerRiskLevel, setReviewerRiskLevel] = useState<RiskLevel>(
     review.issues[0]?.reviewerRiskLevel ?? review.issues[0]?.riskLevel ?? "info"
   );
   const [reviewerComment, setReviewerComment] = useState("");
-  const [savedDecision, setSavedDecision] = useState<{
-    riskLevel: RiskLevel;
-    comment: string;
-  } | null>(null);
+  const [savedDecisionsByIssueId, setSavedDecisionsByIssueId] = useState<
+    Record<string, SavedDecision>
+  >({});
+  const [interactionError, setInteractionError] = useState<string | null>(null);
+  const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [isSavingDecision, setIsSavingDecision] = useState(false);
   const selectedIssue: ReviewIssue | undefined =
     review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
+  const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
+  const markedResponseIds = selectedIssue
+    ? (markedResponseIdsByIssueId[selectedIssue.id] ?? [])
+    : [];
+  const savedDecision = selectedIssue ? (savedDecisionsByIssueId[selectedIssue.id] ?? null) : null;
 
   const visibleIssues = useMemo(
     () =>
@@ -41,28 +54,58 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
 
   function selectIssue(issueId: string) {
     const nextIssue = review.issues.find((issue) => issue.id === issueId);
+    const nextSavedDecision = nextIssue ? savedDecisionsByIssueId[nextIssue.id] : undefined;
 
     setSelectedIssueId(issueId);
-    setReviewerRiskLevel(nextIssue?.reviewerRiskLevel ?? nextIssue?.riskLevel ?? "info");
-    setReviewerComment("");
-    setSavedDecision(null);
+    setReviewerRiskLevel(
+      nextSavedDecision?.riskLevel ?? nextIssue?.reviewerRiskLevel ?? nextIssue?.riskLevel ?? "info"
+    );
+    setReviewerComment(nextSavedDecision?.comment ?? nextIssue?.reviewerComment ?? "");
   }
 
-  function handleAskQuestion() {
+  async function handleAskQuestion() {
     if (!selectedIssue || question.trim().length === 0) {
       return;
     }
 
-    const response = answerReviewQuestion({
-      review,
-      issue: selectedIssue,
-      question
-    });
+    const issueId = selectedIssue.id;
 
-    setChatResponses((current) => [response, ...current]);
+    setInteractionError(null);
+    setIsAskingQuestion(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/chat`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          issueId,
+          question
+        })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("질문 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as { response: ReviewChatResponse };
+
+      setChatResponsesByIssueId((current) => ({
+        ...current,
+        [issueId]: [body.response, ...(current[issueId] ?? [])]
+      }));
+    } catch (error) {
+      setInteractionError(
+        error instanceof Error ? error.message : "질문 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsAskingQuestion(false);
+    }
   }
 
   function markLatestResponseForDraft() {
+    if (!selectedIssue) {
+      return;
+    }
+
     const latestEvidenceResponse = chatResponses.find(
       (response) => response.answerType === "evidence_based"
     );
@@ -71,26 +114,94 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
       return;
     }
 
-    setMarkedResponseIds((current) =>
-      current.includes(latestEvidenceResponse.id)
-        ? current
-        : [latestEvidenceResponse.id, ...current]
-    );
+    const issueId = selectedIssue.id;
+
+    setMarkedResponseIdsByIssueId((current) => {
+      const currentIds = current[issueId] ?? [];
+
+      if (currentIds.includes(latestEvidenceResponse.id)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [issueId]: [latestEvidenceResponse.id, ...currentIds]
+      };
+    });
   }
 
-  function generateDraft() {
+  async function generateDraft() {
     const markedResponses = chatResponses.filter((response) =>
       markedResponseIds.includes(response.id)
     );
 
-    setDraft(generateDraftWithChatContext(review, markedResponses));
+    setInteractionError(null);
+    setIsGeneratingDraft(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/draft`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ markedResponses })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("의견 초안 생성 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as { draft: string };
+
+      setDraft(body.draft);
+    } catch (error) {
+      setInteractionError(
+        error instanceof Error ? error.message : "의견 초안 생성 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsGeneratingDraft(false);
+    }
   }
 
-  function saveReviewerDecision() {
-    setSavedDecision({
-      riskLevel: reviewerRiskLevel,
-      comment: reviewerComment.trim()
-    });
+  async function saveReviewerDecision() {
+    if (!selectedIssue) {
+      return;
+    }
+
+    const issueId = selectedIssue.id;
+    const finalAction = selectedIssue.suggestedAction;
+    const trimmedComment = reviewerComment.trim();
+
+    setInteractionError(null);
+    setIsSavingDecision(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/issues/${issueId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          reviewerRiskLevel,
+          finalAction,
+          reviewerComment: trimmedComment
+        })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("판단 저장 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as { issue: ReviewIssue };
+
+      setSavedDecisionsByIssueId((current) => ({
+        ...current,
+        [issueId]: {
+          riskLevel: body.issue.reviewerRiskLevel ?? reviewerRiskLevel,
+          comment: body.issue.reviewerComment ?? trimmedComment
+        }
+      }));
+    } catch (error) {
+      setInteractionError(
+        error instanceof Error ? error.message : "판단 저장 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsSavingDecision(false);
+    }
   }
 
   return (
@@ -107,11 +218,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
         <div className="detail__actions">
           <StatusBadge status={review.status} />
           <RiskBadge level={review.highestRiskLevel} />
-          <button className="icon-button" type="button" title="Re-run Analysis">
+          <button className="icon-button" type="button" title="분석 재실행">
             <RotateCw size={18} aria-hidden="true" />
           </button>
           <button className="button button--primary" type="button">
-            Finalize
+            최종 확정
           </button>
         </div>
       </section>
@@ -119,7 +230,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
       <section className="detail__grid">
         <aside className="issue-panel">
           <div className="section-heading">
-            <p className="eyebrow">Agent Findings</p>
+            <p className="eyebrow">Risk Candidates</p>
             <h3>이슈 목록</h3>
           </div>
 
@@ -188,6 +299,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
           reviewerRiskLevel={reviewerRiskLevel}
           reviewerComment={reviewerComment}
           savedDecision={savedDecision}
+          isSavingDecision={isSavingDecision}
           onChangeRiskLevel={setReviewerRiskLevel}
           onChangeReviewerComment={setReviewerComment}
           onSaveReviewerDecision={saveReviewerDecision}
@@ -198,7 +310,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
         <div className="panel panel--compact">
           <div className="panel__header">
             <div>
-              <p className="eyebrow">RAG Chat</p>
+              <p className="eyebrow">Issue Query</p>
               <h3>선택 이슈 기반 질의</h3>
             </div>
             <MessageSquareText size={20} aria-hidden="true" />
@@ -218,7 +330,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
               className="icon-button"
               type="button"
               aria-label="질문 보내기"
-              disabled={!selectedIssue}
+              disabled={!selectedIssue || isAskingQuestion}
               onClick={handleAskQuestion}
             >
               <Send size={17} aria-hidden="true" />
@@ -289,7 +401,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
         <div className="panel panel--compact">
           <div className="panel__header">
             <div>
-              <p className="eyebrow">Opinion Draft</p>
+              <p className="eyebrow">Decision Draft</p>
               <h3>수정 요청 의견 초안</h3>
             </div>
             <button
@@ -297,9 +409,10 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
               type="button"
               aria-label="수정 요청 의견 초안 생성"
               title="수정 요청 의견 초안 생성"
+              disabled={isGeneratingDraft}
               onClick={generateDraft}
             >
-              <WandSparkles size={18} aria-hidden="true" />
+              <FilePenLine size={18} aria-hidden="true" />
             </button>
           </div>
           <textarea
@@ -310,6 +423,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
           />
         </div>
       </section>
+
+      {interactionError ? (
+        <p className="interaction-error" role="alert">
+          {interactionError}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -330,7 +449,7 @@ function CreativeViewer({
   return (
     <section className="creative-viewer">
       <div className="section-heading">
-        <p className="eyebrow">Creative Viewer</p>
+        <p className="eyebrow">Document Viewer</p>
         <h3>홍보물 시안</h3>
       </div>
       <div className="poster">
@@ -369,6 +488,7 @@ function EvidencePanel({
   reviewerRiskLevel,
   reviewerComment,
   savedDecision,
+  isSavingDecision,
   onChangeRiskLevel,
   onChangeReviewerComment,
   onSaveReviewerDecision
@@ -377,6 +497,7 @@ function EvidencePanel({
   reviewerRiskLevel: RiskLevel;
   reviewerComment: string;
   savedDecision: { riskLevel: RiskLevel; comment: string } | null;
+  isSavingDecision: boolean;
   onChangeRiskLevel: (riskLevel: RiskLevel) => void;
   onChangeReviewerComment: (comment: string) => void;
   onSaveReviewerDecision: () => void;
@@ -388,7 +509,7 @@ function EvidencePanel({
   return (
     <aside className="evidence-panel">
       <div className="section-heading">
-        <p className="eyebrow">Evidence Panel</p>
+        <p className="eyebrow">Evidence</p>
         <h3>근거 패널</h3>
       </div>
       <div className="evidence-panel__summary">
@@ -438,8 +559,13 @@ function EvidencePanel({
           onChange={(event) => onChangeReviewerComment(event.target.value)}
         />
 
-        <button className="button" type="button" onClick={onSaveReviewerDecision}>
-          판단 저장
+        <button
+          className="button"
+          type="button"
+          disabled={isSavingDecision}
+          onClick={onSaveReviewerDecision}
+        >
+          {isSavingDecision ? "저장 중" : "판단 저장"}
         </button>
 
         {savedDecision ? (
