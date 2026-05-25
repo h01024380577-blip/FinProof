@@ -266,6 +266,11 @@ a {
   padding: 16px;
 }
 
+.draft-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -862,7 +867,8 @@ a.review-table__row:hover {
   font-weight: 800;
 }
 
-.finalized-notice {
+.finalized-notice,
+.report-notice {
   margin: 0;
   padding: 10px 12px;
   border: 1px solid #bfddcf;

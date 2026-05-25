@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FilePenLine, MessageSquareText, RotateCw, Send } from "lucide-react";
+import { Download, FilePenLine, MessageSquareText, RotateCw, Send } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
+import type { ReviewReport } from "@/domain/reports";
 import { riskLabels, statusLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import { RiskBadge, StatusBadge } from "./Badges";
@@ -83,9 +84,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSavingDecision, setIsSavingDecision] = useState(false);
   const [isFinalizingReview, setIsFinalizingReview] = useState(false);
   const [finalizedNotice, setFinalizedNotice] = useState<string | null>(null);
+  const [reportNotice, setReportNotice] = useState<string | null>(null);
   const selectedIssue: ReviewIssue | undefined =
     review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
   const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
@@ -114,6 +117,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     );
     setReviewerComment(nextSavedDecision?.comment ?? nextIssue?.reviewerComment ?? "");
     setFinalizedNotice(null);
+    setReportNotice(null);
   }
 
   async function handleAskQuestion() {
@@ -210,6 +214,55 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
       );
     } finally {
       setIsGeneratingDraft(false);
+    }
+  }
+
+  async function generateReportDownload() {
+    const reportType =
+      savedDecision?.finalAction ??
+      selectedIssue?.suggestedAction ??
+      finalReviewAction ??
+      "change_request";
+    const issueIds = selectedIssue ? [selectedIssue.id] : review.issues.map((issue) => issue.id);
+
+    setInteractionError(null);
+    setReportNotice(null);
+    setIsGeneratingReport(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/reports/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          reportType,
+          tone: "formal",
+          includeChatContext: true,
+          issueIds,
+          draft
+        })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("리포트 생성 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as ReviewReport;
+      const blob = new Blob([body.contentMarkdown], { type: "text/markdown;charset=utf-8" });
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = href;
+      link.download = `${body.reportId}.md`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(href);
+      setReportNotice("Markdown 리포트 다운로드를 준비했습니다.");
+    } catch (error) {
+      setInteractionError(
+        error instanceof Error ? error.message : "리포트 생성 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsGeneratingReport(false);
     }
   }
 
@@ -497,16 +550,28 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
               <p className="eyebrow">Decision Draft</p>
               <h3>수정 요청 의견 초안</h3>
             </div>
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="수정 요청 의견 초안 생성"
-              title="수정 요청 의견 초안 생성"
-              disabled={isGeneratingDraft}
-              onClick={generateDraft}
-            >
-              <FilePenLine size={18} aria-hidden="true" />
-            </button>
+            <div className="draft-actions">
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="리포트 다운로드"
+                title="리포트 다운로드"
+                disabled={isGeneratingReport}
+                onClick={generateReportDownload}
+              >
+                <Download size={18} aria-hidden="true" />
+              </button>
+              <button
+                className="icon-button"
+                type="button"
+                aria-label="수정 요청 의견 초안 생성"
+                title="수정 요청 의견 초안 생성"
+                disabled={isGeneratingDraft}
+                onClick={generateDraft}
+              >
+                <FilePenLine size={18} aria-hidden="true" />
+              </button>
+            </div>
           </div>
           <textarea
             className="draft-editor"
@@ -523,6 +588,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
         </p>
       ) : null}
       {finalizedNotice ? <p className="finalized-notice">{finalizedNotice}</p> : null}
+      {reportNotice ? <p className="report-notice">{reportNotice}</p> : null}
     </div>
   );
 }

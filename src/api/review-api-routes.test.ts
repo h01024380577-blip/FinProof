@@ -7,6 +7,7 @@ import { POST as draftPOST } from "@/app/api/v1/review-cases/[caseId]/draft/rout
 import { GET as detailGET } from "@/app/api/v1/review-cases/[caseId]/route";
 import { POST as analysisPOST } from "@/app/api/v1/review-cases/[caseId]/analysis/start/route";
 import { POST as finalizePOST } from "@/app/api/v1/review-cases/[caseId]/finalize/route";
+import { POST as reportPOST } from "@/app/api/v1/review-cases/[caseId]/reports/generate/route";
 import { GET as issuesGET } from "@/app/api/v1/review-cases/[caseId]/issues/route";
 import { PATCH as issuePATCH } from "@/app/api/v1/review-cases/[caseId]/issues/[issueId]/route";
 import { GET as listGET, POST as createPOST } from "@/app/api/v1/review-cases/route";
@@ -346,6 +347,39 @@ describe("review API routes", () => {
 
     expect(draftResponse.status).toBe(200);
     expect(draftBody.draft).toContain("채팅 반영");
+
+    const reportResponse = await reportPOST(
+      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/reports/generate", {
+        reportType: "change_request",
+        tone: "formal",
+        includeChatContext: true,
+        issueIds: ["issue-deposit-rate"],
+        draft: "현재 편집된 수정 요청 의견 초안"
+      }),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const reportBody = await reportResponse.json();
+
+    expect(reportResponse.status).toBe(200);
+    expect(reportBody).toMatchObject({
+      reportId: "report-rc-demo-deposit-001-v1",
+      version: 1
+    });
+    expect(reportBody.contentMarkdown).toContain("최고 연 5.0% 적금 홍보물 심의 리포트");
+    expect(reportBody.contentMarkdown).toContain("현재 편집된 수정 요청 의견 초안");
+    expect(reportBody.contentMarkdown).toContain("최고금리 조건 표시 불충분");
+    expect(reportBody.evidenceIds).toEqual(["ev-deposit-product", "ev-deposit-policy"]);
+
+    const invalidReportResponse = await reportPOST(
+      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/reports/generate", {
+        issueIds: ["unknown-issue"]
+      }),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const invalidReportBody = await invalidReportResponse.json();
+
+    expect(invalidReportResponse.status).toBe(400);
+    expect(invalidReportBody.error.message).toContain("issueIds");
 
     const decisionResponse = await issuePATCH(
       jsonRequest(

@@ -3,9 +3,27 @@ import userEvent from "@testing-library/user-event";
 import { getReviewCaseById } from "@/domain/reviews";
 import { ReviewDetailWorkspace } from "./ReviewDetailWorkspace";
 
+const originalCreateObjectURL = URL.createObjectURL;
+const originalRevokeObjectURL = URL.revokeObjectURL;
+
+function restoreUrlFunction(
+  name: "createObjectURL" | "revokeObjectURL",
+  value: typeof URL.createObjectURL | typeof URL.revokeObjectURL | undefined
+) {
+  if (value) {
+    Object.defineProperty(URL, name, { configurable: true, value });
+    return;
+  }
+
+  Reflect.deleteProperty(URL, name);
+}
+
 describe("ReviewDetailWorkspace", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    restoreUrlFunction("createObjectURL", originalCreateObjectURL);
+    restoreUrlFunction("revokeObjectURL", originalRevokeObjectURL);
   });
 
   it("does not show sample RAG answers when an uploaded case has no selected issue", () => {
@@ -282,6 +300,84 @@ describe("ReviewDetailWorkspace", () => {
         body: JSON.stringify({ finalAction: "change_request" })
       })
     );
+  });
+
+  it("downloads the generated markdown report for the selected issue", async () => {
+    const user = userEvent.setup();
+    const createObjectURL = vi.fn(() => "blob:finproof-report");
+    const revokeObjectURL = vi.fn();
+    const anchorClick = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        reportId: "report-rc-demo-deposit-001-v1",
+        contentMarkdown: "# 최고 연 5.0% 적금 홍보물 심의 리포트\n\n저장된 수정 요청 의견 초안",
+        evidenceIds: ["ev-deposit-product", "ev-deposit-policy"],
+        version: 1
+      })
+    });
+
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectURL });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectURL });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+
+    render(
+      <ReviewDetailWorkspace
+        review={{
+          ...review,
+          currentDraft: "저장된 수정 요청 의견 초안",
+          issues: review.issues.map((issue, index) => {
+            if (index === 0) {
+              return {
+                ...issue,
+                reviewerRiskLevel: "high",
+                finalAction: "change_request",
+                reviewerComment: "선택 이슈 수정 요청"
+              };
+            }
+
+            if (index === 1) {
+              return {
+                ...issue,
+                reviewerRiskLevel: "reject_recommended",
+                finalAction: "reject",
+                reviewerComment: "다른 이슈 반려"
+              };
+            }
+
+            return issue;
+          })
+        }}
+      />
+    );
+
+    await user.clear(screen.getByLabelText("Opinion draft"));
+    await user.type(screen.getByLabelText("Opinion draft"), "현재 편집된 수정 요청 의견 초안");
+    await user.click(screen.getByRole("button", { name: "리포트 다운로드" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-demo-deposit-001/reports/generate",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            reportType: "change_request",
+            tone: "formal",
+            includeChatContext: true,
+            issueIds: ["issue-deposit-rate"],
+            draft: "현재 편집된 수정 요청 의견 초안"
+          })
+        })
+      );
+    });
+    expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+    expect(anchorClick).toHaveBeenCalled();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:finproof-report");
+    expect(await screen.findByText("Markdown 리포트 다운로드를 준비했습니다.")).toBeInTheDocument();
   });
 
   it("does not show a stale saved decision after switching issues during save", async () => {
