@@ -2,12 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import {
-  Download,
-  FilePenLine,
-  Save,
-  Send
-} from "lucide-react";
+import { Download, FilePenLine, Save, Send } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { productLabels, riskLabels, statusLabels } from "@/domain/reviews";
@@ -191,11 +186,7 @@ function getInitialSavedDecisions(review: ReviewCase): Record<string, SavedDecis
   );
 }
 
-export function ReviewDetailWorkspace({
-  review
-}: {
-  review: ReviewCase;
-}): JSX.Element {
+export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.Element {
   const roleContext = useRoleContext();
   const activeRole = roleContext?.activeRole ?? "reviewer";
   const roleHeaders = useMemo(
@@ -217,8 +208,9 @@ export function ReviewDetailWorkspace({
   const latestDraftRef = useRef(draft);
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("");
-  const [chatResponsesByReviewId, setChatResponsesByReviewId] =
-    useState<ChatResponsesByReviewId>({});
+  const [chatResponsesByReviewId, setChatResponsesByReviewId] = useState<ChatResponsesByReviewId>(
+    {}
+  );
   const [reviewerRiskLevel, setReviewerRiskLevel] = useState<RiskLevel>(
     review.issues[0]?.reviewerRiskLevel ?? review.issues[0]?.riskLevel ?? "info"
   );
@@ -595,167 +587,165 @@ export function ReviewDetailWorkspace({
 
   const chatPanel = (
     <div className="panel panel--compact chat-panel">
-        <div className="panel__header">
-          <div>
-            <p className="eyebrow">Issue Query</p>
-            <h3>선택 이슈 기반 질의</h3>
-          </div>
+      <div className="panel__header">
+        <div>
+          <p className="eyebrow">Issue Query</p>
+          <h3>선택 이슈 기반 질의</h3>
         </div>
+      </div>
 
-        <div
-          className="chat-thread"
-          data-scroll-region="chat-history"
-          aria-label="채팅 대화"
-          aria-live="polite"
-        >
-          {!selectedIssue ? (
-            <div className="chat-empty-prompt">
-              <strong>선택 가능한 이슈가 없습니다.</strong>
-              <span>
-                {review.analysisNotice ??
-                  "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
-              </span>
-            </div>
-          ) : chatResponses.length === 0 && !selectedPendingQuestion ? (
-            <div className="chat-empty-prompt">
-              <strong>선택된 이슈의 근거를 기준으로 답변합니다.</strong>
-              <span>입력창의 회색 예시처럼 질문을 작성하면 근거 문서와 이슈 내용을 함께 참조합니다.</span>
-            </div>
-          ) : (
-            chatResponses.map((response) => (
-              <article
-                key={response.id}
-                className="chat-turn"
-                data-answer-type={response.answerType}
-              >
-                <div className="chat-message chat-message--user">
-                  <div className="chat-message__bubble">{response.question}</div>
-                </div>
-                <div className="chat-message chat-message--assistant">
-                  <span className="chat-message__avatar" aria-hidden="true">
-                    AI
-                  </span>
-                  <div className="chat-message__bubble">
-                    <FormattedChatContent content={response.content} />
-                    {response.requiredMaterials.length > 0 ? (
-                      <div className="evidence-inline">
-                        {response.requiredMaterials.map((material) => (
-                          <span key={material}>{material}</span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="evidence-inline">
-                        {response.evidence.slice(0, 3).map((evidence) => (
-                          <span key={evidence.id}>{evidence.title}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))
-          )}
-          {selectedPendingQuestion ? (
-            <article className="chat-turn chat-turn--pending">
+      <div
+        className="chat-thread"
+        data-scroll-region="chat-history"
+        aria-label="채팅 대화"
+        aria-live="polite"
+      >
+        {!selectedIssue ? (
+          <div className="chat-empty-prompt">
+            <strong>선택 가능한 이슈가 없습니다.</strong>
+            <span>
+              {review.analysisNotice ??
+                "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
+            </span>
+          </div>
+        ) : chatResponses.length === 0 && !selectedPendingQuestion ? (
+          <div className="chat-empty-prompt">
+            <strong>선택된 이슈의 근거를 기준으로 답변합니다.</strong>
+            <span>
+              입력창의 회색 예시처럼 질문을 작성하면 근거 문서와 이슈 내용을 함께 참조합니다.
+            </span>
+          </div>
+        ) : (
+          chatResponses.map((response) => (
+            <article key={response.id} className="chat-turn" data-answer-type={response.answerType}>
               <div className="chat-message chat-message--user">
-                <div className="chat-message__bubble">{selectedPendingQuestion.question}</div>
+                <div className="chat-message__bubble">{response.question}</div>
               </div>
               <div className="chat-message chat-message--assistant">
                 <span className="chat-message__avatar" aria-hidden="true">
                   AI
                 </span>
-                <div className="chat-message__bubble chat-message__bubble--loading">
-                  <span>답변 생성 중</span>
-                  <span className="typing-dots" aria-hidden="true">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
+                <div className="chat-message__bubble">
+                  <FormattedChatContent content={response.content} />
+                  {response.requiredMaterials.length > 0 ? (
+                    <div className="evidence-inline">
+                      {response.requiredMaterials.map((material) => (
+                        <span key={material}>{material}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="evidence-inline">
+                      {response.evidence.slice(0, 3).map((evidence) => (
+                        <span key={evidence.id}>{evidence.title}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </article>
-          ) : null}
-        </div>
-
-        <form className="chat-composer" aria-label="채팅 입력" onSubmit={submitQuestion}>
-          <label className="sr-only" htmlFor="rag-question">
-            RAG question
-          </label>
-          <input
-            id="rag-question"
-            value={question}
-            aria-label="RAG question"
-            placeholder="예: 최고금리 조건을 승인 가능하게 표시하려면?"
-            disabled={!selectedIssue}
-            onChange={(event) => setQuestion(event.target.value)}
-          />
-          <button
-            className="icon-button"
-            type="submit"
-            aria-label="질문 보내기"
-            disabled={!selectedIssue || isAskingQuestion || question.trim().length === 0}
-          >
-            <Send size={17} aria-hidden="true" />
-          </button>
-        </form>
+          ))
+        )}
+        {selectedPendingQuestion ? (
+          <article className="chat-turn chat-turn--pending">
+            <div className="chat-message chat-message--user">
+              <div className="chat-message__bubble">{selectedPendingQuestion.question}</div>
+            </div>
+            <div className="chat-message chat-message--assistant">
+              <span className="chat-message__avatar" aria-hidden="true">
+                AI
+              </span>
+              <div className="chat-message__bubble chat-message__bubble--loading">
+                <span>답변 생성 중</span>
+                <span className="typing-dots" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </div>
+            </div>
+          </article>
+        ) : null}
       </div>
+
+      <form className="chat-composer" aria-label="채팅 입력" onSubmit={submitQuestion}>
+        <label className="sr-only" htmlFor="rag-question">
+          RAG question
+        </label>
+        <input
+          id="rag-question"
+          value={question}
+          aria-label="RAG question"
+          placeholder="예: 최고금리 조건을 승인 가능하게 표시하려면?"
+          disabled={!selectedIssue}
+          onChange={(event) => setQuestion(event.target.value)}
+        />
+        <button
+          className="icon-button"
+          type="submit"
+          aria-label="질문 보내기"
+          disabled={!selectedIssue || isAskingQuestion || question.trim().length === 0}
+        >
+          <Send size={17} aria-hidden="true" />
+        </button>
+      </form>
+    </div>
   );
 
   const draftPanel = (
     <div className="panel panel--compact draft-panel">
-        <div className="panel__header">
-          <div>
-            <p className="eyebrow">Decision Draft</p>
-            <h3>
-              수정 요청 의견 초안
-              {draftVersion > 0 ? <span className="draft-version">v{draftVersion}</span> : null}
-            </h3>
-          </div>
-          <div className="draft-actions">
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="의견 초안 저장"
-              title="의견 초안 저장"
-              disabled={!reviewerCanMutate || isSavingDraft}
-              onClick={saveDraftVersion}
-            >
-              <Save size={18} aria-hidden="true" />
-            </button>
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="리포트 다운로드"
-              title="리포트 다운로드"
-              disabled={!reviewerCanMutate || isGeneratingReport}
-              onClick={generateReportDownload}
-            >
-              <Download size={18} aria-hidden="true" />
-            </button>
-            <button
-              className="button button--primary"
-              type="button"
-              aria-label="초안 생성"
-              disabled={!reviewerCanMutate || isGeneratingDraft}
-              onClick={generateDraft}
-            >
-              <FilePenLine size={18} aria-hidden="true" />
-              {isGeneratingDraft ? "생성 중" : "초안 생성"}
-            </button>
-          </div>
+      <div className="panel__header">
+        <div>
+          <p className="eyebrow">Decision Draft</p>
+          <h3>
+            수정 요청 의견 초안
+            {draftVersion > 0 ? <span className="draft-version">v{draftVersion}</span> : null}
+          </h3>
         </div>
-        <textarea
-          className="draft-editor"
-          value={draft}
-          aria-label="Opinion draft"
-          data-scroll-region="draft-editor"
-          disabled={!reviewerCanMutate}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            setDraftNotice(null);
-          }}
-        />
+        <div className="draft-actions">
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="의견 초안 저장"
+            title="의견 초안 저장"
+            disabled={!reviewerCanMutate || isSavingDraft}
+            onClick={saveDraftVersion}
+          >
+            <Save size={18} aria-hidden="true" />
+          </button>
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="리포트 다운로드"
+            title="리포트 다운로드"
+            disabled={!reviewerCanMutate || isGeneratingReport}
+            onClick={generateReportDownload}
+          >
+            <Download size={18} aria-hidden="true" />
+          </button>
+          <button
+            className="button button--primary"
+            type="button"
+            aria-label="초안 생성"
+            disabled={!reviewerCanMutate || isGeneratingDraft}
+            onClick={generateDraft}
+          >
+            <FilePenLine size={18} aria-hidden="true" />
+            {isGeneratingDraft ? "생성 중" : "초안 생성"}
+          </button>
+        </div>
       </div>
+      <textarea
+        className="draft-editor"
+        value={draft}
+        aria-label="Opinion draft"
+        data-scroll-region="draft-editor"
+        disabled={!reviewerCanMutate}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setDraftNotice(null);
+        }}
+      />
+    </div>
   );
 
   const filesPanel = (

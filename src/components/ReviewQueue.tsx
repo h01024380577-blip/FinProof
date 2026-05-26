@@ -123,9 +123,7 @@ export function ReviewQueue(): JSX.Element {
       const matchesStatus = filters.status === "all" || review.status === filters.status;
       const matchesRisk =
         filters.risk === "all" ||
-        (filters.risk === "analysis_pending"
-          ? waiting
-          : review.highestRiskLevel === filters.risk);
+        (filters.risk === "analysis_pending" ? waiting : review.highestRiskLevel === filters.risk);
       const matchesProduct = filters.product === "all" || review.productType === filters.product;
       return matchesQ && matchesStatus && matchesRisk && matchesProduct;
     });

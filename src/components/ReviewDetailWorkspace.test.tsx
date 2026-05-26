@@ -801,10 +801,7 @@ describe("ReviewDetailWorkspace", () => {
       "Reviewer가 직접 편집한 수정 요청 의견 초안"
     );
 
-    changeTextField(
-      "Opinion draft",
-      "Reviewer가 직접 편집한 수정 요청 의견 초안 미저장 변경"
-    );
+    changeTextField("Opinion draft", "Reviewer가 직접 편집한 수정 요청 의견 초안 미저장 변경");
 
     expect(screen.queryByText("의견 초안 v2 저장됨.")).not.toBeInTheDocument();
   });

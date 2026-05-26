@@ -32,7 +32,11 @@ function evidenceCandidateById(
   return artifacts.evidenceCandidates.find((candidate) => candidate.id === evidenceCandidateId);
 }
 
-function candidateToEvidence(candidate: RagEvidenceCandidate, issueId: string, index: number): Evidence {
+function candidateToEvidence(
+  candidate: RagEvidenceCandidate,
+  issueId: string,
+  index: number
+): Evidence {
   return {
     id: `${issueId}-evidence-${String(index + 1).padStart(3, "0")}`,
     sourceType: candidate.sourceType,
@@ -114,10 +118,7 @@ function baseIssue({
   };
 }
 
-function issuesFromAgentFindings(
-  review: ReviewCase,
-  artifacts: AnalysisArtifacts
-): ReviewIssue[] {
+function issuesFromAgentFindings(review: ReviewCase, artifacts: AnalysisArtifacts): ReviewIssue[] {
   return (artifacts.agentFindings ?? []).map((finding) => {
     const issueId = `issue-${review.id}-${finding.id}`;
     const matchedEvidence = finding.evidenceCandidateIds

@@ -84,9 +84,9 @@ describe("storage adapter factory", () => {
 
     expect(adapter).toEqual(
       expect.objectContaining({
-      putReviewFile: expect.any(Function),
-      getReviewFileBody: expect.any(Function),
-      sampleReviewFile: expect.any(Function)
+        putReviewFile: expect.any(Function),
+        getReviewFileBody: expect.any(Function),
+        sampleReviewFile: expect.any(Function)
       })
     );
   });

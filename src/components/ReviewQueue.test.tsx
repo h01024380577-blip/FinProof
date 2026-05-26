@@ -228,9 +228,11 @@ describe("ReviewQueue", () => {
     expect(screen.queryByText("실제 업로드 적금 홍보물")).not.toBeInTheDocument();
 
     const statusFilter = screen.getByLabelText("상태");
-    expect(within(statusFilter).getAllByRole("option").map((option) => option.textContent)).toEqual(
-      ["전체", "승인", "반려"]
-    );
+    expect(
+      within(statusFilter)
+        .getAllByRole("option")
+        .map((option) => option.textContent)
+    ).toEqual(["전체", "승인", "반려"]);
     expect(statusFilter).toHaveValue("all");
   });
 
@@ -256,10 +258,7 @@ describe("ReviewQueue", () => {
       "aria-selected",
       "false"
     );
-    expect(screen.getByRole("tab", { name: "반려 완료" })).toHaveAttribute(
-      "aria-selected",
-      "true"
-    );
+    expect(screen.getByRole("tab", { name: "반려 완료" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("반려 완료된 신용대출 홍보물")).toBeInTheDocument();
     expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
   });

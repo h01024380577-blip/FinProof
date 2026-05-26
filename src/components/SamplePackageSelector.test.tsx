@@ -46,9 +46,9 @@ describe("SamplePackageSelector", () => {
     expect(screen.getByLabelText("웹사이트")).not.toBeChecked();
     expect(screen.getByLabelText("오프라인")).not.toBeChecked();
     expect(screen.getByLabelText("요청 메모")).toHaveValue("");
-    expect(screen.getByPlaceholderText("예: 금리 조건 표시와 유의사항 문구를 중점 검토해 주세요.")).toBe(
-      screen.getByLabelText("요청 메모")
-    );
+    expect(
+      screen.getByPlaceholderText("예: 금리 조건 표시와 유의사항 문구를 중점 검토해 주세요.")
+    ).toBe(screen.getByLabelText("요청 메모"));
   });
 
   it("uploads real files, shows deterministic classification, and keeps analysis gated to queue", async () => {

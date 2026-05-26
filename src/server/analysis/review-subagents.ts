@@ -121,7 +121,12 @@ function rawFindings(parsed: unknown): unknown[] {
     return parsed;
   }
 
-  if (parsed && typeof parsed === "object" && "findings" in parsed && Array.isArray(parsed.findings)) {
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    "findings" in parsed &&
+    Array.isArray(parsed.findings)
+  ) {
     return parsed.findings;
   }
 
@@ -176,7 +181,10 @@ function normalizeFinding(
     targetText: stringField(fields.targetText, title),
     description: stringField(fields.description, "모델 분석 결과 추가 확인이 필요합니다."),
     suggestedAction: normalizeAction(fields.suggestedAction),
-    suggestedCopy: stringField(fields.suggestedCopy, "조건, 제한 사항, 적용 기준을 인접 영역에 명시해 주세요."),
+    suggestedCopy: stringField(
+      fields.suggestedCopy,
+      "조건, 제한 사항, 적용 기준을 인접 영역에 명시해 주세요."
+    ),
     evidenceCandidateIds: normalizeEvidenceIds(fields.evidenceCandidateIds, evidenceCandidates),
     confidence: clampConfidence(fields.confidence),
     rawModelOutput
