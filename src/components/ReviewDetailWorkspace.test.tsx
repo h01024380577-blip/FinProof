@@ -94,7 +94,7 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByRole("tab", { name: "근거 자료" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "의견서" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "근거 채팅" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "초안에 반영" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "초안에 반영" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "초안 생성" })).not.toBeInTheDocument();
 
     await openOpinionTab(user);
@@ -127,7 +127,7 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByText("추가 확인 필요")).toBeInTheDocument();
     expect(screen.getAllByText(/OCR\/RAG 분석 전/).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "질문 보내기" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "초안에 반영" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "초안에 반영" })).not.toBeInTheDocument();
     expect(screen.queryByText(/조건부 혜택임을/)).not.toBeInTheDocument();
   });
 
@@ -144,6 +144,7 @@ describe("ReviewDetailWorkspace", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("선택된 이슈의 근거를 기준으로 답변합니다.")).toBeInTheDocument();
     expect(screen.queryByText(/현재 근거상 조건부 혜택임을/)).not.toBeInTheDocument();
+    expect(container.querySelector(".chat-header-actions")).not.toBeInTheDocument();
     expect(chatThread).toHaveAttribute("data-scroll-region", "chat-history");
     expect(chatThread?.compareDocumentPosition(chatComposer as Node)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
@@ -302,7 +303,6 @@ describe("ReviewDetailWorkspace", () => {
         })
       })
     );
-    await user.click(screen.getByRole("button", { name: "초안에 반영" }));
     await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
 
@@ -311,7 +311,34 @@ describe("ReviewDetailWorkspace", () => {
       "/api/v1/review-cases/rc-demo-deposit-001/draft",
       expect.objectContaining({
         method: "POST",
-        body: expect.stringContaining("chat-evidence")
+        body: JSON.stringify({
+          chatResponses: [
+            {
+              id: "chat-insufficient",
+              question: "약관에만 있는 중도해지 조건도 단정해도 되나요?",
+              answerType: "insufficient_evidence",
+              content: "추가 확인 필요: 약관 자료가 필요합니다.",
+              evidence: [],
+              requiredMaterials: ["약관"]
+            },
+            {
+              id: "chat-evidence",
+              question: "우대금리 조건을 어느 수준까지 표시해야 하나요?",
+              answerType: "evidence_based",
+              content: "현재 근거상 조건부 혜택임을 인접 고지에서 명확히 표시해야 합니다.",
+              evidence: [
+                {
+                  id: "evidence-product-rate",
+                  sourceType: "product_doc",
+                  title: "정기적금 상품설명서",
+                  quoteSummary: "우대금리 조건",
+                  relevanceScore: 0.92
+                }
+              ],
+              requiredMaterials: []
+            }
+          ]
+        })
       })
     );
 
@@ -403,7 +430,7 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByRole("listitem", { name: "세전 기준" })).toBeInTheDocument();
   });
 
-  it("scopes chat responses and marked draft context to the selected issue", async () => {
+  it("automatically carries reviewer chat context into draft generation across issue switches", async () => {
     const user = userEvent.setup();
     const fetchMock = vi
       .fn()
@@ -446,7 +473,6 @@ describe("ReviewDetailWorkspace", () => {
 
     expect(screen.queryByText("첫 번째 이슈 전용 답변입니다.")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "초안에 반영" }));
     await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
 
@@ -454,7 +480,26 @@ describe("ReviewDetailWorkspace", () => {
       "/api/v1/review-cases/rc-demo-deposit-001/draft",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ markedResponses: [] })
+        body: JSON.stringify({
+          chatResponses: [
+            {
+              id: "chat-first-issue",
+              question: "우대금리 조건을 어느 수준까지 표시해야 하나요?",
+              answerType: "evidence_based",
+              content: "첫 번째 이슈 전용 답변입니다.",
+              evidence: [
+                {
+                  id: "evidence-product-rate",
+                  sourceType: "product_doc",
+                  title: "정기적금 상품설명서",
+                  quoteSummary: "우대금리 조건",
+                  relevanceScore: 0.92
+                }
+              ],
+              requiredMaterials: []
+            }
+          ]
+        })
       })
     );
   });

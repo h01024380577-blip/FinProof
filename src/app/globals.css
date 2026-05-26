@@ -1523,13 +1523,6 @@ a.review-table__row:hover {
   overflow: hidden;
 }
 
-.chat-header-actions {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-}
-
 .chat-thread {
   display: flex;
   flex: 1 1 auto;
@@ -1706,17 +1699,6 @@ a.review-table__row:hover {
   color: var(--primary);
   font-size: 0.76rem;
   font-weight: 800;
-}
-
-.chat-mark-button {
-  margin-top: 12px;
-}
-
-.chat-mark-button--header {
-  min-height: 32px;
-  margin-top: 0;
-  padding: 0 12px;
-  font-size: 0.78rem;
 }
 
 .draft-panel {

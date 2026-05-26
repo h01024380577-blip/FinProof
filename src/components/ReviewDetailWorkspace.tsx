@@ -5,7 +5,6 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Download,
   FilePenLine,
-  MessageSquareText,
   Save,
   Send
 } from "lucide-react";
@@ -218,9 +217,6 @@ export function ReviewDetailWorkspace({
   const [chatResponsesByIssueId, setChatResponsesByIssueId] = useState<
     Record<string, ReviewChatResponse[]>
   >({});
-  const [markedResponseIdsByIssueId, setMarkedResponseIdsByIssueId] = useState<
-    Record<string, string[]>
-  >({});
   const [reviewerRiskLevel, setReviewerRiskLevel] = useState<RiskLevel>(
     review.issues[0]?.reviewerRiskLevel ?? review.issues[0]?.riskLevel ?? "info"
   );
@@ -247,9 +243,6 @@ export function ReviewDetailWorkspace({
   const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
   const selectedPendingQuestion =
     selectedIssue && pendingQuestion?.issueId === selectedIssue.id ? pendingQuestion : null;
-  const markedResponseIds = selectedIssue
-    ? (markedResponseIdsByIssueId[selectedIssue.id] ?? [])
-    : [];
   const savedDecision = selectedIssue ? (savedDecisionsByIssueId[selectedIssue.id] ?? null) : null;
   const finalReviewAction = getFinalReviewAction(savedDecisionsByIssueId);
 
@@ -366,43 +359,12 @@ export function ReviewDetailWorkspace({
     void handleAskQuestion();
   }
 
-  function markLatestResponseForDraft() {
-    if (!selectedIssue || !reviewerCanMutate) {
-      return;
-    }
-
-    const latestEvidenceResponse = [...chatResponses].reverse().find(
-      (response) => response.answerType === "evidence_based"
-    );
-
-    if (!latestEvidenceResponse) {
-      return;
-    }
-
-    const issueId = selectedIssue.id;
-
-    setMarkedResponseIdsByIssueId((current) => {
-      const currentIds = current[issueId] ?? [];
-
-      if (currentIds.includes(latestEvidenceResponse.id)) {
-        return current;
-      }
-
-      return {
-        ...current,
-        [issueId]: [latestEvidenceResponse.id, ...currentIds]
-      };
-    });
-  }
-
   async function generateDraft() {
     if (!reviewerCanMutate) {
       return;
     }
 
-    const markedResponses = chatResponses.filter((response) =>
-      markedResponseIds.includes(response.id)
-    );
+    const draftChatResponses = Object.values(chatResponsesByIssueId).flat();
 
     setInteractionError(null);
     setIsGeneratingDraft(true);
@@ -410,7 +372,7 @@ export function ReviewDetailWorkspace({
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/draft`, {
         method: "POST",
         headers: jsonHeaders,
-        body: JSON.stringify({ markedResponses })
+        body: JSON.stringify({ chatResponses: draftChatResponses })
       });
 
       if (!apiResponse.ok) {
@@ -624,17 +586,6 @@ export function ReviewDetailWorkspace({
           <div>
             <p className="eyebrow">Issue Query</p>
             <h3>선택 이슈 기반 질의</h3>
-          </div>
-          <div className="chat-header-actions">
-            <button
-              className="button chat-mark-button chat-mark-button--header"
-              type="button"
-              disabled={!selectedIssue || !reviewerCanMutate}
-              onClick={markLatestResponseForDraft}
-            >
-              초안에 반영
-            </button>
-            <MessageSquareText size={20} aria-hidden="true" />
           </div>
         </div>
 

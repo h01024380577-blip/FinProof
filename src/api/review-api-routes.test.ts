@@ -639,7 +639,7 @@ describe("review API routes", () => {
 
     const draftResponse = await draftPOST(
       jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/draft", {
-        markedResponses: [evidenceChatBody.response]
+        chatResponses: [evidenceChatBody.response]
       }),
       params({ caseId: "rc-demo-deposit-001" })
     );
