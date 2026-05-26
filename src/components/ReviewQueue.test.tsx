@@ -72,6 +72,19 @@ const rejectedReviewSummary = {
   availableActions: ["view_audit"]
 };
 
+const changeRequestedReviewSummary = {
+  id: "rc-change-requested-001",
+  title: "수정 요청 진행 중인 카드 홍보물",
+  affiliate: "광주은행",
+  productType: "card",
+  plannedPublishDate: "2026-06-08",
+  status: "change_requested",
+  highestRiskLevel: "caution",
+  requester: "마케팅 담당자 정하린",
+  reviewer: "준법심의자 박민준",
+  availableActions: ["view_audit"]
+};
+
 const requesterReviewSummaries = reviewSummaries.map((review) =>
   review.id === "rc-upload-001" ? { ...review, availableActions: [] } : review
 );
@@ -149,6 +162,7 @@ describe("ReviewQueue", () => {
     expect(screen.getByLabelText("검색")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "위험도" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "마감일" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "새 심의 요청" })).not.toBeInTheDocument();
 
     const completedRow = await screen.findByRole("row", { name: /최고 연 5.0%/ });
     await user.click(completedRow);
@@ -158,22 +172,30 @@ describe("ReviewQueue", () => {
   it("keeps finalized reviews out of the active queue", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ reviewCases: [...reviewSummaries, completedReviewSummary] })
+      json: async () => ({
+        reviewCases: [...reviewSummaries, completedReviewSummary, changeRequestedReviewSummary]
+      })
     });
     vi.stubGlobal("fetch", fetchMock);
 
     renderQueue("reviewer");
 
     expect(await screen.findByText("실제 업로드 적금 홍보물")).toBeInTheDocument();
+    expect(screen.getByText("수정 요청 진행 중인 카드 홍보물")).toBeInTheDocument();
     expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
   });
 
-  it("shows only finalized reviews in the review history scope", async () => {
+  it("shows approved history by default with decision-specific history tabs", async () => {
     currentSearchParams = new URLSearchParams("scope=history");
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        reviewCases: [...reviewSummaries, completedReviewSummary, rejectedReviewSummary]
+        reviewCases: [
+          ...reviewSummaries,
+          completedReviewSummary,
+          rejectedReviewSummary,
+          changeRequestedReviewSummary
+        ]
       })
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -181,12 +203,35 @@ describe("ReviewQueue", () => {
     renderQueue("reviewer");
 
     expect(await screen.findByText("심의 이력")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "승인" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "반려" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.queryByLabelText("Review queue metrics")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "마감 임박 필터 적용" })).not.toBeInTheDocument();
+
+    const historyTabs = screen.getByRole("tablist", { name: "심의 이력 구분" });
+    expect(within(historyTabs).getByRole("tab", { name: "승인 완료" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(within(historyTabs).getByRole("tab", { name: "반려 완료" })).toHaveAttribute(
+      "aria-selected",
+      "false"
+    );
+    expect(
+      within(within(historyTabs).getByRole("tab", { name: "승인 완료" })).getByText("1")
+    ).toBeInTheDocument();
+    expect(
+      within(within(historyTabs).getByRole("tab", { name: "반려 완료" })).getByText("1")
+    ).toBeInTheDocument();
     expect(screen.getByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
     expect(screen.queryByText("반려 완료된 신용대출 홍보물")).not.toBeInTheDocument();
+    expect(screen.queryByText("수정 요청 진행 중인 카드 홍보물")).not.toBeInTheDocument();
     expect(screen.queryByText("최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
     expect(screen.queryByText("실제 업로드 적금 홍보물")).not.toBeInTheDocument();
+
+    const statusFilter = screen.getByLabelText("상태");
+    expect(within(statusFilter).getAllByRole("option").map((option) => option.textContent)).toEqual(
+      ["승인", "반려"]
+    );
+    expect(statusFilter).toHaveValue("approved");
   });
 
   it("switches review history between approved and rejected decisions", async () => {
@@ -204,10 +249,16 @@ describe("ReviewQueue", () => {
 
     expect(await screen.findByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("tab", { name: "반려" }));
+    await user.selectOptions(screen.getByLabelText("상태"), "rejected");
 
-    expect(screen.getByRole("tab", { name: "승인" })).toHaveAttribute("aria-selected", "false");
-    expect(screen.getByRole("tab", { name: "반려" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "승인 완료" })).toHaveAttribute(
+      "aria-selected",
+      "false"
+    );
+    expect(screen.getByRole("tab", { name: "반려 완료" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
     expect(screen.getByText("반려 완료된 신용대출 홍보물")).toBeInTheDocument();
     expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
   });

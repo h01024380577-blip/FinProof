@@ -25,7 +25,9 @@ describe("AppShell", () => {
 
     expect(screen.queryByRole("link", { name: /Dashboard/ })).not.toBeInTheDocument();
     expect(screen.getByText("FinProof")).toBeInTheDocument();
-    expect(screen.getByText("JB금융그룹 / 광주은행 / 소비자보호부")).toBeInTheDocument();
+    expect(screen.queryByText("JB금융그룹 / 광주은행 / 소비자보호부")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "FinProof home" }).querySelector(".brand__mark")).not
+      .toBeNull();
     expect(screen.getByRole("link", { name: /심의 큐/ })).toHaveAttribute("href", "/reviews");
     expect(screen.getByRole("link", { name: /신규 요청/ })).toHaveAttribute("href", "/reviews/new");
     expect(screen.getByRole("link", { name: /심의 이력/ })).toHaveAttribute(

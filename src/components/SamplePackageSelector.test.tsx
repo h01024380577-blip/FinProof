@@ -26,6 +26,31 @@ describe("SamplePackageSelector", () => {
     expect(screen.getByRole("button", { name: "심의 요청 제출" })).toBeInTheDocument();
   });
 
+  it("starts the new review request form empty and uses examples only as placeholders", () => {
+    render(<SamplePackageSelector />);
+
+    expect(screen.getByLabelText("심의 요청 제목")).toHaveValue("");
+    expect(screen.getByPlaceholderText("예: 광주은행 모바일 앱 신규 예금 상품 홍보물 심의")).toBe(
+      screen.getByLabelText("심의 요청 제목")
+    );
+    expect(screen.getByLabelText("계열사")).toHaveValue("");
+    expect(screen.getByRole("option", { name: "계열사를 선택하세요" })).toBeInTheDocument();
+    expect(screen.getByLabelText("요청 부서")).toHaveValue("");
+    expect(screen.getByPlaceholderText("예: 디지털마케팅팀")).toBe(
+      screen.getByLabelText("요청 부서")
+    );
+    expect(screen.getByLabelText("상품군")).toHaveValue("");
+    expect(screen.getByRole("option", { name: "상품군을 선택하세요" })).toBeInTheDocument();
+    expect(screen.getByLabelText("게시 예정일")).toHaveValue("");
+    expect(screen.getByLabelText("모바일 앱")).not.toBeChecked();
+    expect(screen.getByLabelText("웹사이트")).not.toBeChecked();
+    expect(screen.getByLabelText("오프라인")).not.toBeChecked();
+    expect(screen.getByLabelText("요청 메모")).toHaveValue("");
+    expect(screen.getByPlaceholderText("예: 금리 조건 표시와 유의사항 문구를 중점 검토해 주세요.")).toBe(
+      screen.getByLabelText("요청 메모")
+    );
+  });
+
   it("uploads real files, shows deterministic classification, and keeps analysis gated to queue", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValueOnce({
@@ -54,6 +79,12 @@ describe("SamplePackageSelector", () => {
     render(<SamplePackageSelector />);
 
     await user.type(screen.getByLabelText("심의 요청 제목"), "실제 업로드 적금 홍보물");
+    await user.selectOptions(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
+    await user.selectOptions(screen.getByLabelText("상품군"), "deposit");
+    await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
+    await user.click(screen.getByLabelText("모바일 앱"));
+    await user.type(screen.getByLabelText("요청 메모"), "금리 조건 표시를 검토해 주세요.");
     await user.upload(
       screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
         selector: "input"

@@ -9,6 +9,7 @@ import {
   History,
   PlusSquare,
   Settings,
+  ShieldCheck,
   UserCircle
 } from "lucide-react";
 import { RoleSwitcher } from "./RoleSwitcher";
@@ -56,9 +57,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="app-shell">
       <aside className="sidebar">
         <Link className="brand brand--wordmark" href="/reviews" aria-label="FinProof home">
+          <span className="brand__mark" aria-hidden="true">
+            <ShieldCheck size={20} />
+          </span>
           <span>
             <strong>FinProof</strong>
-            <small>JB금융그룹 / 광주은행 / 소비자보호부</small>
           </span>
         </Link>
 

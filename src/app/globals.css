@@ -155,6 +155,7 @@ a {
 .brand {
   display: flex;
   align-items: center;
+  gap: 12px;
   min-height: 56px;
   padding: 0;
 }
@@ -2236,6 +2237,20 @@ a.review-table__row:hover {
   grid-template-columns: repeat(4, minmax(180px, 1fr));
   gap: var(--space-4);
   margin-bottom: var(--space-6);
+}
+
+.history-decision-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.history-decision-card {
+  min-height: 96px;
+}
+.history-decision-card[aria-selected="true"] {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-elevated);
 }
 
 .review-table__row[data-clickable="true"] { cursor: pointer; }

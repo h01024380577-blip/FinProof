@@ -13,6 +13,7 @@ export type QueueFilterState = {
 
 export type QueueFiltersProps = {
   state: QueueFilterState;
+  mode?: "active" | "history";
   onChange: (next: QueueFilterState) => void;
   onReset: () => void;
 };
@@ -23,6 +24,11 @@ const statusOptions = [
   { value: "analysis_complete", label: "분석 완료" },
   { value: "under_review", label: "검토 중" },
   { value: "change_requested", label: "수정 요청" },
+  { value: "approved", label: "승인" },
+  { value: "rejected", label: "반려" }
+];
+
+const historyStatusOptions = [
   { value: "approved", label: "승인" },
   { value: "rejected", label: "반려" }
 ];
@@ -46,9 +52,20 @@ const productOptions = [
   { value: "investment", label: "투자상품" }
 ];
 
-export function QueueFilters({ state, onChange, onReset }: QueueFiltersProps): JSX.Element {
+export function QueueFilters({
+  state,
+  mode = "active",
+  onChange,
+  onReset
+}: QueueFiltersProps): JSX.Element {
   const groups: FilterGroup[] = [
-    { key: "status", label: "상태", value: state.status, defaultValue: "all", options: statusOptions },
+    {
+      key: "status",
+      label: "상태",
+      value: state.status,
+      defaultValue: mode === "history" ? "approved" : "all",
+      options: mode === "history" ? historyStatusOptions : statusOptions
+    },
     { key: "risk", label: "위험도", value: state.risk, defaultValue: "all", options: riskOptions },
     { key: "product", label: "상품군", value: state.product, defaultValue: "all", options: productOptions }
   ];
