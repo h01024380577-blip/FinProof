@@ -504,6 +504,62 @@ describe("ReviewDetailWorkspace", () => {
     );
   });
 
+  it("keeps draft chat context scoped to the current review case", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          response: {
+            id: "chat-deposit-case",
+            question: "예금 심의건 질문",
+            answerType: "evidence_based",
+            content: "예금 심의건에만 속한 답변입니다.",
+            evidence: [
+              {
+                id: "evidence-deposit-only",
+                sourceType: "product_doc",
+                title: "예금 전용 상품설명서",
+                quoteSummary: "예금 우대금리 조건",
+                relevanceScore: 0.91
+              }
+            ],
+            requiredMaterials: []
+          }
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          draft: "대출 심의건 초안",
+          version: 1
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { rerender } = render(
+      <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
+    );
+
+    changeTextField("RAG question", "예금 심의건 질문");
+    await user.click(screen.getByRole("button", { name: "질문 보내기" }));
+    expect(await screen.findByText("예금 심의건에만 속한 답변입니다.")).toBeInTheDocument();
+
+    rerender(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-loan-001")!} />);
+
+    await openDraftTab(user);
+    await user.click(screen.getByRole("button", { name: "초안 생성" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-loan-001/draft",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ chatResponses: [] })
+      })
+    );
+  });
+
   it("uses the selected issue suggested action when saving reviewer decision", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue({

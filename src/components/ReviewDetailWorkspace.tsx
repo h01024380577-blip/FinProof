@@ -31,6 +31,9 @@ type PendingQuestion = {
   question: string;
 };
 
+type ChatResponsesByIssueId = Record<string, ReviewChatResponse[]>;
+type ChatResponsesByReviewId = Record<string, ChatResponsesByIssueId>;
+
 type ChatContentBlock =
   | {
       type: "paragraph";
@@ -214,9 +217,8 @@ export function ReviewDetailWorkspace({
   const latestDraftRef = useRef(draft);
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("");
-  const [chatResponsesByIssueId, setChatResponsesByIssueId] = useState<
-    Record<string, ReviewChatResponse[]>
-  >({});
+  const [chatResponsesByReviewId, setChatResponsesByReviewId] =
+    useState<ChatResponsesByReviewId>({});
   const [reviewerRiskLevel, setReviewerRiskLevel] = useState<RiskLevel>(
     review.issues[0]?.reviewerRiskLevel ?? review.issues[0]?.riskLevel ?? "info"
   );
@@ -238,6 +240,7 @@ export function ReviewDetailWorkspace({
   const [finalizedNotice, setFinalizedNotice] = useState<string | null>(null);
   const [reportNotice, setReportNotice] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
+  const chatResponsesByIssueId = chatResponsesByReviewId[review.id] ?? {};
   const selectedIssue: ReviewIssue | undefined =
     review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
   const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
@@ -312,21 +315,23 @@ export function ReviewDetailWorkspace({
       return;
     }
 
+    const reviewCaseId = review.id;
     const issueId = selectedIssue.id;
     const submittedQuestion = question.trim();
+    const currentReviewChatResponses = chatResponsesByReviewId[reviewCaseId] ?? {};
 
     setInteractionError(null);
     setIsAskingQuestion(true);
     setPendingQuestion({ issueId, question: submittedQuestion });
     setQuestion("");
     try {
-      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/chat`, {
+      const apiResponse = await fetch(`/api/v1/review-cases/${reviewCaseId}/chat`, {
         method: "POST",
         headers: jsonHeaders,
         body: JSON.stringify({
           issueId,
           question: submittedQuestion,
-          history: (chatResponsesByIssueId[issueId] ?? []).map((response) => ({
+          history: (currentReviewChatResponses[issueId] ?? []).map((response) => ({
             question: response.question,
             answer: response.content
           }))
@@ -339,10 +344,17 @@ export function ReviewDetailWorkspace({
 
       const body = (await apiResponse.json()) as { response: ReviewChatResponse };
 
-      setChatResponsesByIssueId((current) => ({
-        ...current,
-        [issueId]: [...(current[issueId] ?? []), body.response]
-      }));
+      setChatResponsesByReviewId((current) => {
+        const currentReviewResponses = current[reviewCaseId] ?? {};
+
+        return {
+          ...current,
+          [reviewCaseId]: {
+            ...currentReviewResponses,
+            [issueId]: [...(currentReviewResponses[issueId] ?? []), body.response]
+          }
+        };
+      });
     } catch (error) {
       setQuestion(submittedQuestion);
       setInteractionError(
@@ -364,7 +376,8 @@ export function ReviewDetailWorkspace({
       return;
     }
 
-    const draftChatResponses = Object.values(chatResponsesByIssueId).flat();
+    const currentReviewChatResponses = chatResponsesByReviewId[review.id] ?? {};
+    const draftChatResponses = Object.values(currentReviewChatResponses).flat();
 
     setInteractionError(null);
     setIsGeneratingDraft(true);
