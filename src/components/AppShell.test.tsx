@@ -35,7 +35,6 @@ describe("AppShell", () => {
       "href",
       "/reviews?scope=history"
     );
-    expect(screen.getByRole("link", { name: /운영 콘솔/ })).toHaveAttribute("href", "/dashboard");
     expect(screen.queryByRole("link", { name: /Compliance workbench/ })).not.toBeInTheDocument();
     expect(screen.getByText("FinProof Agent")).toBeInTheDocument();
     expect(screen.getAllByText("심의 큐").length).toBeGreaterThan(0);
@@ -71,6 +70,6 @@ describe("AppShell", () => {
       within(primaryNav)
         .getAllByRole("link")
         .map((link) => link.textContent)
-    ).toEqual(["신규 요청", "심의 큐", "심의 이력", "운영 콘솔"]);
+    ).toEqual(["신규 요청", "심의 큐", "심의 이력"]);
   });
 });

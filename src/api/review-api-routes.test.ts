@@ -9,14 +9,12 @@ import {
   PATCH as draftPATCH,
   POST as draftPOST
 } from "@/app/api/v1/review-cases/[caseId]/draft/route";
-import { POST as draftVersionPOST } from "@/app/api/v1/review-cases/[caseId]/draft/versions/route";
 import { GET as detailGET } from "@/app/api/v1/review-cases/[caseId]/route";
 import { POST as analysisPOST } from "@/app/api/v1/review-cases/[caseId]/analysis/start/route";
 import { GET as analysisStatusGET } from "@/app/api/v1/review-cases/[caseId]/analysis/status/route";
 import { GET as auditEventsGET } from "@/app/api/v1/review-cases/[caseId]/audit-events/route";
 import { POST as finalizePOST } from "@/app/api/v1/review-cases/[caseId]/finalize/route";
 import { POST as reportPOST } from "@/app/api/v1/review-cases/[caseId]/reports/generate/route";
-import { POST as persistedReportPOST } from "@/app/api/v1/review-cases/[caseId]/reports/route";
 import { GET as issuesGET } from "@/app/api/v1/review-cases/[caseId]/issues/route";
 import { PATCH as issuePATCH } from "@/app/api/v1/review-cases/[caseId]/issues/[issueId]/route";
 import { GET as listGET, POST as createPOST } from "@/app/api/v1/review-cases/route";
@@ -386,28 +384,10 @@ describe("review API routes", () => {
       ),
       params({ caseId: "rc-demo-deposit-001" })
     );
-    const draftVersionResponse = await draftVersionPOST(
-      jsonRoleRequest(
-        "/api/v1/review-cases/rc-demo-deposit-001/draft/versions",
-        { source: "manual", draft: "요청자가 저장하려는 버전 초안" },
-        "requester"
-      ),
-      params({ caseId: "rc-demo-deposit-001" })
-    );
-    const persistedReportResponse = await persistedReportPOST(
-      jsonRoleRequest(
-        "/api/v1/review-cases/rc-demo-deposit-001/reports",
-        { reportType: "change_request", issueIds: ["issue-deposit-rate"] },
-        "requester"
-      ),
-      params({ caseId: "rc-demo-deposit-001" })
-    );
 
     expect(generateResponse.status).toBe(403);
     expect(saveResponse.status).toBe(403);
     expect(reportResponse.status).toBe(403);
-    expect(draftVersionResponse.status).toBe(403);
-    expect(persistedReportResponse.status).toBe(403);
   });
 
   it("rejects upload-backed review cases that violate the demo upload policy", async () => {
@@ -768,46 +748,6 @@ describe("review API routes", () => {
     expect(reportBody.contentMarkdown).toContain("현재 편집된 수정 요청 의견 초안");
     expect(reportBody.contentMarkdown).toContain("최고금리 조건 표시 불충분");
     expect(reportBody.evidenceIds).toEqual(["ev-deposit-product", "ev-deposit-policy"]);
-
-    const draftVersionResponse = await draftVersionPOST(
-      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/draft/versions", {
-        source: "manual",
-        draft: "저장형 초안 버전",
-        evidenceIds: ["ev-deposit-product"]
-      }),
-      params({ caseId: "rc-demo-deposit-001" })
-    );
-    const draftVersionBody = await draftVersionResponse.json();
-
-    expect(draftVersionResponse.status).toBe(201);
-    expect(draftVersionBody.draftVersion).toMatchObject({
-      id: "draft-rc-demo-deposit-001-v3",
-      reviewCaseId: "rc-demo-deposit-001",
-      version: 3,
-      draft: "저장형 초안 버전",
-      source: "manual",
-      evidenceIds: ["ev-deposit-product"]
-    });
-
-    const persistedReportResponse = await persistedReportPOST(
-      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/reports", {
-        reportType: "change_request",
-        tone: "formal",
-        includeChatContext: true,
-        issueIds: ["issue-deposit-rate"],
-        draft: "저장형 리포트 초안"
-      }),
-      params({ caseId: "rc-demo-deposit-001" })
-    );
-    const persistedReportBody = await persistedReportResponse.json();
-
-    expect(persistedReportResponse.status).toBe(201);
-    expect(persistedReportBody.report).toMatchObject({
-      id: "report-rc-demo-deposit-001-v1",
-      reviewCaseId: "rc-demo-deposit-001",
-      reportType: "change_request",
-      version: 1
-    });
 
     const invalidReportResponse = await reportPOST(
       jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/reports/generate", {

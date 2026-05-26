@@ -6,7 +6,6 @@ import {
   Bell,
   ChevronRight,
   ClipboardList,
-  Database,
   History,
   PlusSquare,
   Settings,
@@ -31,19 +30,10 @@ const navigation = [
     href: "/reviews?scope=history",
     label: "심의 이력",
     icon: History
-  },
-  {
-    href: "/dashboard",
-    label: "운영 콘솔",
-    icon: Database
   }
 ];
 
 function getBreadcrumb(pathname: string): string[] {
-  if (pathname.startsWith("/dashboard")) {
-    return ["FinProof Agent", "운영 콘솔"];
-  }
-
   if (pathname.startsWith("/reviews/new")) {
     return ["심의 큐", "신규 심의 요청"];
   }
@@ -83,9 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 ? pathname === "/reviews" && scope !== "history"
                 : item.href === "/reviews?scope=history"
                   ? pathname === "/reviews" && scope === "history"
-                  : item.href === "/dashboard"
-                    ? pathname.startsWith("/dashboard")
-                    : item.href === "/reviews/new" && pathname.startsWith("/reviews/new");
+                  : item.href === "/reviews/new" && pathname.startsWith("/reviews/new");
 
             return (
               <Link key={item.href} className="nav-link" data-active={isActive} href={item.href}>
