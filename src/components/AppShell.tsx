@@ -9,7 +9,6 @@ import {
   History,
   PlusSquare,
   Settings,
-  Shield,
   UserCircle
 } from "lucide-react";
 import { RoleSwitcher } from "./RoleSwitcher";
@@ -30,11 +29,6 @@ const navigation = [
     href: "/reviews?scope=history",
     label: "심의 이력",
     icon: History
-  },
-  {
-    href: "/reviews?scope=audit",
-    label: "감사 로그",
-    icon: Shield
   }
 ];
 

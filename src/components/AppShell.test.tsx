@@ -3,7 +3,8 @@ import { vi } from "vitest";
 import { AppShell } from "./AppShell";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/reviews"
+  usePathname: () => "/reviews",
+  useSearchParams: () => new URLSearchParams()
 }));
 
 describe("AppShell", () => {
@@ -19,6 +20,11 @@ describe("AppShell", () => {
     expect(screen.getByText("JB금융그룹 / 광주은행 / 소비자보호부")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /심의 큐/ })).toHaveAttribute("href", "/reviews");
     expect(screen.getByRole("link", { name: /신규 요청/ })).toHaveAttribute("href", "/reviews/new");
+    expect(screen.getByRole("link", { name: /심의 이력/ })).toHaveAttribute(
+      "href",
+      "/reviews?scope=history"
+    );
+    expect(screen.queryByRole("link", { name: /감사 로그/ })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Compliance workbench/ })).toHaveAttribute(
       "href",
       "/reviews"

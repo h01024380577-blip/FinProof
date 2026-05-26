@@ -5,8 +5,10 @@ import { RoleProvider } from "./RoleContext";
 import { ReviewQueue } from "./ReviewQueue";
 
 const pushMock = vi.fn();
+let currentSearchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
+  useSearchParams: () => currentSearchParams,
   useRouter: () => ({
     push: pushMock,
     replace: vi.fn(),
@@ -43,6 +45,19 @@ const reviewSummaries = [
     availableActions: ["start_analysis"]
   }
 ];
+
+const completedReviewSummary = {
+  id: "rc-history-approved-001",
+  title: "승인 완료된 정기예금 홍보물",
+  affiliate: "광주은행",
+  productType: "deposit",
+  plannedPublishDate: "2026-06-01",
+  status: "approved",
+  highestRiskLevel: "info",
+  requester: "마케팅 담당자 이서연",
+  reviewer: "준법심의자 박민준",
+  availableActions: ["view_audit"]
+};
 
 const requesterReviewSummaries = reviewSummaries.map((review) =>
   review.id === "rc-upload-001" ? { ...review, availableActions: [] } : review
@@ -100,6 +115,7 @@ describe("ReviewQueue", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     pushMock.mockReset();
+    currentSearchParams = new URLSearchParams();
   });
 
   it("shows compliance queue controls and navigates completed cases to the workbench route", async () => {
@@ -124,6 +140,35 @@ describe("ReviewQueue", () => {
     const completedRow = await screen.findByRole("row", { name: /최고 연 5.0%/ });
     await user.click(completedRow);
     expect(pushMock).toHaveBeenCalledWith("/reviews/rc-demo-deposit-001");
+  });
+
+  it("keeps finalized reviews out of the active queue", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ reviewCases: [...reviewSummaries, completedReviewSummary] })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer");
+
+    expect(await screen.findByText("실제 업로드 적금 홍보물")).toBeInTheDocument();
+    expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
+  });
+
+  it("shows only finalized reviews in the review history scope", async () => {
+    currentSearchParams = new URLSearchParams("scope=history");
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ reviewCases: [...reviewSummaries, completedReviewSummary] })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer");
+
+    expect(await screen.findByText("심의 이력")).toBeInTheDocument();
+    expect(screen.getByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
+    expect(screen.queryByText("최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
+    expect(screen.queryByText("실제 업로드 적금 홍보물")).not.toBeInTheDocument();
   });
 
   it("gates analysis start to reviewer roles", async () => {

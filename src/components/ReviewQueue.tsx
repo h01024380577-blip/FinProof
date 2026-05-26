@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { JSX } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FilePlus2 } from "lucide-react";
 import type { ReviewCase, ReviewSummary } from "@/domain/types";
 import { QueueMetrics, type QueueMetricValues } from "./queue/QueueMetrics";
@@ -55,30 +55,53 @@ const defaultFilterState: QueueFilterState = {
   product: "all"
 };
 
+const finalizedStatuses = new Set<ReviewCase["status"]>([
+  "approved",
+  "change_requested",
+  "rejected",
+  "on_hold",
+  "archived"
+]);
+
+function isFinalizedReview(status: ReviewCase["status"]): boolean {
+  return finalizedStatuses.has(status);
+}
+
 export function ReviewQueue(): JSX.Element {
   const { activeRole, apiHeaders } = useRole();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const scope = searchParams.get("scope") === "history" ? "history" : "active";
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
 
+  const scopedReviews = useMemo(
+    () =>
+      reviews.filter((review) =>
+        scope === "history" ? isFinalizedReview(review.status) : !isFinalizedReview(review.status)
+      ),
+    [reviews, scope]
+  );
+
   const metrics: QueueMetricValues = useMemo(
     () => ({
-      analysisWaiting: reviews.filter((r) => isAnalysisWaiting(r.status)).length,
-      inReview: reviews.filter(
+      analysisWaiting: scopedReviews.filter((r) => isAnalysisWaiting(r.status)).length,
+      inReview: scopedReviews.filter(
         (r) => r.status === "analysis_complete" || r.status === "under_review"
       ).length,
-      rejectRecommended: reviews.filter((r) => r.highestRiskLevel === "reject_recommended").length,
-      dueSoon: reviews.filter((r) => r.plannedPublishDate <= "2026-06-12").length
+      rejectRecommended: scopedReviews.filter((r) => r.highestRiskLevel === "reject_recommended")
+        .length,
+      dueSoon: scopedReviews.filter((r) => r.plannedPublishDate <= "2026-06-12").length
     }),
-    [reviews]
+    [scopedReviews]
   );
 
   const filtered = useMemo(() => {
     const q = normalizeSearch(filters.search);
-    return reviews.filter((review) => {
+    return scopedReviews.filter((review) => {
       const waiting = isAnalysisWaiting(review.status);
       const matchesQ =
         q.length === 0 ||
@@ -93,7 +116,7 @@ export function ReviewQueue(): JSX.Element {
       const matchesProduct = filters.product === "all" || review.productType === filters.product;
       return matchesQ && matchesStatus && matchesRisk && matchesProduct;
     });
-  }, [filters, reviews]);
+  }, [filters, scopedReviews]);
 
   useEffect(() => {
     let mounted = true;
@@ -175,12 +198,18 @@ export function ReviewQueue(): JSX.Element {
     <div className="review-queue">
       <section className="queue-head">
         <div>
-          <h2>심의 큐</h2>
-          <p>업로드된 심의 요청을 확인하고 분석 대기 건을 배정합니다.</p>
+          <h2>{scope === "history" ? "심의 이력" : "심의 큐"}</h2>
+          <p>
+            {scope === "history"
+              ? "승인, 반려, 수정 요청, 보류 등 최종 처리된 심의 건을 확인합니다."
+              : "업로드된 심의 요청을 확인하고 분석 대기 건을 배정합니다."}
+          </p>
         </div>
-        <Link className="button button--primary" href="/reviews/new">
-          <FilePlus2 size={16} aria-hidden="true" />새 심의 요청
-        </Link>
+        {scope === "active" ? (
+          <Link className="button button--primary" href="/reviews/new">
+            <FilePlus2 size={16} aria-hidden="true" />새 심의 요청
+          </Link>
+        ) : null}
       </section>
 
       <QueueMetrics
@@ -208,9 +237,11 @@ export function ReviewQueue(): JSX.Element {
           activeAnalysisId={activeAnalysisId}
           isLoading={isLoading}
           emptyMessage={
-            reviews.length > 0
+            scopedReviews.length > 0
               ? "검색 또는 필터 조건에 맞는 심의 건이 없습니다."
-              : "아직 심의 요청이 없습니다. 새 심의 요청을 생성해 자료 패키지를 업로드하세요."
+              : scope === "history"
+                ? "아직 완료된 심의 이력이 없습니다."
+                : "아직 심의 요청이 없습니다. 새 심의 요청을 생성해 자료 패키지를 업로드하세요."
           }
           onStartAnalysis={(review) => void startAnalysis(review)}
           onOpenReview={(id) => router.push(`/reviews/${id}`)}
