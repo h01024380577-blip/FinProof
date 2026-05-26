@@ -738,7 +738,7 @@ export function ReviewDetailWorkspace({
   );
 
   const draftPanel = (
-    <div className="panel panel--compact">
+    <div className="panel panel--compact draft-panel">
         <div className="panel__header">
           <div>
             <p className="eyebrow">Decision Draft</p>
@@ -784,6 +784,7 @@ export function ReviewDetailWorkspace({
           className="draft-editor"
           value={draft}
           aria-label="Opinion draft"
+          data-scroll-region="draft-editor"
           disabled={!reviewerCanMutate}
           onChange={(event) => {
             setDraft(event.target.value);

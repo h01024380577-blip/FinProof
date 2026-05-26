@@ -160,6 +160,17 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.queryByRole("tab", { name: "감사 로그" })).not.toBeInTheDocument();
   });
 
+  it("uses a full-height draft editor panel like the chat drawer panel", async () => {
+    const user = userEvent.setup();
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    await openDraftTab(user);
+
+    const draftEditor = screen.getByLabelText("Opinion draft");
+    expect(draftEditor.closest(".panel")).toHaveClass("draft-panel");
+    expect(draftEditor).toHaveAttribute("data-scroll-region", "draft-editor");
+  });
+
   it("disables reviewer-only workbench controls for requesters", async () => {
     const user = userEvent.setup();
     const review = getReviewCaseById("rc-demo-deposit-001")!;
