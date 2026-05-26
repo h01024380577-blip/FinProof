@@ -1632,6 +1632,27 @@ a.review-table__row:hover {
   border-top: 1px solid var(--line);
 }
 
+.intake-footer-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.intake-footer-bar .submission-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
 .intake-hero {
   display: flex;
   align-items: center;
