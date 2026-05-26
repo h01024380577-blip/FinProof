@@ -4,7 +4,13 @@ import type { JSX } from "react";
 import { Loader2, PlayCircle } from "lucide-react";
 import { RiskBadge, StatusBadge } from "@/components/Badges";
 import { statusLabels } from "@/domain/reviews";
-import type { ProductType, ReviewAction, ReviewCase, ReviewSummary, RoleId } from "@/domain/types";
+import type {
+  ProductType,
+  ReviewAction,
+  ReviewCase,
+  ReviewSummary,
+  RoleId
+} from "@/domain/types";
 
 const productLabels: Record<ProductType, string> = {
   deposit: "예금/적금",
@@ -118,15 +124,11 @@ export function QueueTable({
               }
             }}
           >
-            <span className="queue-id" role="cell">
-              {review.id}
-            </span>
+            <span className="queue-id" role="cell">{review.id}</span>
             <strong role="cell">{review.title}</strong>
             <span role="cell">{productLabels[review.productType]}</span>
             <span role="cell">{requestDepartment(review)}</span>
-            <span role="cell">
-              <StatusBadge status={review.status} />
-            </span>
+            <span role="cell"><StatusBadge status={review.status} /></span>
             <span role="cell">
               {waiting || review.status === "analysis_queued" ? (
                 <span className="risk-badge risk-badge--muted">분석 전</span>
@@ -136,11 +138,7 @@ export function QueueTable({
             </span>
             <span role="cell">{review.plannedPublishDate}</span>
             <span role="cell">{review.reviewer}</span>
-            <span
-              className="queue-row-actions"
-              role="cell"
-              onClick={(event) => event.stopPropagation()}
-            >
+            <span className="queue-row-actions" role="cell" onClick={(event) => event.stopPropagation()}>
               {waiting ? (
                 <button
                   className="button button--small"

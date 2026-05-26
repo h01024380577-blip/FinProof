@@ -17,7 +17,6 @@
 ### Task 1: Extract `QueueMetrics` using `KpiCard`
 
 **Files:**
-
 - Create: `src/components/queue/QueueMetrics.tsx`
 - Create: `src/components/queue/QueueMetrics.test.tsx`
 
@@ -107,7 +106,12 @@ export function QueueMetrics({
         tone="danger"
         onClick={onSelectRejectRecommended}
       />
-      <KpiCard label="마감 임박" value={metrics.dueSoon} tone="warning" onClick={onSelectDueSoon} />
+      <KpiCard
+        label="마감 임박"
+        value={metrics.dueSoon}
+        tone="warning"
+        onClick={onSelectDueSoon}
+      />
     </section>
   );
 }
@@ -143,7 +147,6 @@ git commit -m "feat(queue): add QueueMetrics with KPI cards"
 ### Task 2: Extract `QueueFilters` using `FilterBar`
 
 **Files:**
-
 - Create: `src/components/queue/QueueFilters.tsx`
 - Create: `src/components/queue/QueueFilters.test.tsx`
 
@@ -241,21 +244,9 @@ const productOptions = [
 
 export function QueueFilters({ state, onChange, onReset }: QueueFiltersProps): JSX.Element {
   const groups: FilterGroup[] = [
-    {
-      key: "status",
-      label: "상태",
-      value: state.status,
-      defaultValue: "all",
-      options: statusOptions
-    },
+    { key: "status", label: "상태", value: state.status, defaultValue: "all", options: statusOptions },
     { key: "risk", label: "위험도", value: state.risk, defaultValue: "all", options: riskOptions },
-    {
-      key: "product",
-      label: "상품군",
-      value: state.product,
-      defaultValue: "all",
-      options: productOptions
-    }
+    { key: "product", label: "상품군", value: state.product, defaultValue: "all", options: productOptions }
   ];
 
   return (
@@ -288,7 +279,6 @@ git commit -m "feat(queue): add QueueFilters using FilterBar"
 ### Task 3: Extract `QueueTable`
 
 **Files:**
-
 - Create: `src/components/queue/QueueTable.tsx`
 - Create: `src/components/queue/QueueTable.test.tsx`
 
@@ -377,7 +367,13 @@ Create `src/components/queue/QueueTable.tsx`:
 import { Loader2, PlayCircle } from "lucide-react";
 import { RiskBadge, StatusBadge } from "@/components/Badges";
 import { statusLabels } from "@/domain/reviews";
-import type { ProductType, ReviewAction, ReviewCase, ReviewSummary, RoleId } from "@/domain/types";
+import type {
+  ProductType,
+  ReviewAction,
+  ReviewCase,
+  ReviewSummary,
+  RoleId
+} from "@/domain/types";
 
 const productLabels: Record<ProductType, string> = {
   deposit: "예금/적금",
@@ -491,15 +487,11 @@ export function QueueTable({
               }
             }}
           >
-            <span className="queue-id" role="cell">
-              {review.id}
-            </span>
+            <span className="queue-id" role="cell">{review.id}</span>
             <strong role="cell">{review.title}</strong>
             <span role="cell">{productLabels[review.productType]}</span>
             <span role="cell">{requestDepartment(review)}</span>
-            <span role="cell">
-              <StatusBadge status={review.status} />
-            </span>
+            <span role="cell"><StatusBadge status={review.status} /></span>
             <span role="cell">
               {waiting || review.status === "analysis_queued" ? (
                 <span className="risk-badge risk-badge--muted">분석 전</span>
@@ -509,11 +501,7 @@ export function QueueTable({
             </span>
             <span role="cell">{review.plannedPublishDate}</span>
             <span role="cell">{review.reviewer}</span>
-            <span
-              className="queue-row-actions"
-              role="cell"
-              onClick={(event) => event.stopPropagation()}
-            >
+            <span className="queue-row-actions" role="cell" onClick={(event) => event.stopPropagation()}>
               {waiting ? (
                 <button
                   className="button button--small"
@@ -542,17 +530,9 @@ export function QueueTable({
 Append to `src/app/globals.css`:
 
 ```css
-.review-table__row[data-clickable="true"] {
-  cursor: pointer;
-}
-.review-table__row[data-clickable="true"]:hover {
-  background: var(--surface-muted);
-}
-.queue-id {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--muted);
-  font-size: var(--font-size-xs);
-}
+.review-table__row[data-clickable="true"] { cursor: pointer; }
+.review-table__row[data-clickable="true"]:hover { background: var(--surface-muted); }
+.queue-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-size: var(--font-size-xs); }
 ```
 
 - [ ] **Step 5: Run tests**
@@ -572,7 +552,6 @@ git commit -m "feat(queue): add QueueTable with full-row navigation"
 ### Task 4: Refactor `ReviewQueue` to compose submodules
 
 **Files:**
-
 - Modify: `src/components/ReviewQueue.tsx`
 - Modify: `src/components/ReviewQueue.test.tsx` (selectors only if needed)
 
@@ -587,7 +566,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FilePlus2 } from "lucide-react";
-import type { ProductType, ReviewCase, ReviewSummary, RiskLevel } from "@/domain/types";
+import type {
+  ProductType,
+  ReviewCase,
+  ReviewSummary,
+  RiskLevel
+} from "@/domain/types";
 import { QueueMetrics, type QueueMetricValues } from "./queue/QueueMetrics";
 import { QueueFilters, type QueueFilterState } from "./queue/QueueFilters";
 import { QueueTable } from "./queue/QueueTable";
@@ -671,8 +655,11 @@ export function ReviewQueue(): JSX.Element {
       const matchesStatus = filters.status === "all" || review.status === filters.status;
       const matchesRisk =
         filters.risk === "all" ||
-        (filters.risk === "analysis_pending" ? waiting : review.highestRiskLevel === filters.risk);
-      const matchesProduct = filters.product === "all" || review.productType === filters.product;
+        (filters.risk === "analysis_pending"
+          ? waiting
+          : review.highestRiskLevel === filters.risk);
+      const matchesProduct =
+        filters.product === "all" || review.productType === filters.product;
       return matchesQ && matchesStatus && matchesRisk && matchesProduct;
     });
   }, [filters, reviews]);
@@ -717,10 +704,7 @@ export function ReviewQueue(): JSX.Element {
             ? {
                 ...candidate,
                 status: body.status,
-                availableActions: fallbackActionsFor(
-                  activeRole,
-                  body.status
-                ) as unknown as ReviewSummary["availableActions"]
+                availableActions: fallbackActionsFor(activeRole, body.status) as unknown as ReviewSummary["availableActions"]
               }
             : candidate
         )
@@ -787,7 +771,7 @@ export function ReviewQueue(): JSX.Element {
 - [ ] **Step 2: Run existing ReviewQueue tests**
 
 Run: `npm run test -- ReviewQueue`
-Expected: PASS — selectors should still resolve. If any selector fails because old markup is gone, update it minimally in `ReviewQueue.test.tsx` to use the new queue/\* structure.
+Expected: PASS — selectors should still resolve. If any selector fails because old markup is gone, update it minimally in `ReviewQueue.test.tsx` to use the new queue/* structure.
 
 - [ ] **Step 3: Full quality gate**
 
@@ -806,7 +790,6 @@ git commit -m "refactor(queue): compose ReviewQueue from queue/* submodules"
 ### Task 5: Keyboard shortcut — `/` focuses search
 
 **Files:**
-
 - Modify: `src/components/ReviewQueue.tsx`
 
 - [ ] **Step 1: Add global `/` key handler**
@@ -818,10 +801,7 @@ Insert after the `useEffect` for loading reviews:
 ```tsx
 useEffect(() => {
   function onKey(event: KeyboardEvent): void {
-    if (
-      event.key === "/" &&
-      !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
-    ) {
+    if (event.key === "/" && !(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) {
       const input = document.querySelector<HTMLInputElement>('input[aria-label="검색"]');
       if (input) {
         event.preventDefault();

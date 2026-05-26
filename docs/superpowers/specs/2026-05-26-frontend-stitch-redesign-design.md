@@ -56,13 +56,11 @@ Each primitive ships with a vitest test (`*.test.tsx`). 80%+ branch coverage tar
 ### Screen-Specific Modules
 
 **`src/components/queue/`** — extracted from `ReviewQueue.tsx`:
-
 - `QueueMetrics.tsx` — uses `KpiCard`, accepts review list + filter setter for click-to-filter.
 - `QueueFilters.tsx` — uses `FilterBar`, owns search/status/risk/product state callbacks.
 - `QueueTable.tsx` — table with reordered columns, full-row click navigation, status-aware action column.
 
 **`src/components/workbench/`** — extracted from `ReviewDetailWorkspace.tsx`:
-
 - `WorkbenchHeader.tsx` — sticky case header + action group.
 - `IssueList.tsx` — left column with risk chip filter and issue cards.
 - `CreativeViewer.tsx` — middle pane with zoom controls and bbox highlights (extends existing inline component).
@@ -70,7 +68,6 @@ Each primitive ships with a vitest test (`*.test.tsx`). 80%+ branch coverage tar
 - `WorkbenchDrawer.tsx` — bottom collapsible drawer with chat / draft / audit / files tabs (existing four).
 
 **`src/components/intake/`** — extracted from `SamplePackageSelector.tsx`:
-
 - `IntakeStepper.tsx` — uses `Stepper`, derives step states from form/upload/result props.
 - `IntakeMetaForm.tsx` — left form panel.
 - `IntakeUploadZone.tsx` — uses `DropZone`, owns file list + validation feedback.
@@ -125,12 +122,12 @@ The original entry components (`ReviewQueue.tsx`, `ReviewDetailWorkspace.tsx`, `
 
 ## Error / Loading / Empty States
 
-| Surface                         | Loading                            | Empty                                         | Permission denied                    | API failure                                                    |
-| ------------------------------- | ---------------------------------- | --------------------------------------------- | ------------------------------------ | -------------------------------------------------------------- |
-| Queue list                      | 5 skeleton rows                    | "아직 심의 요청 없음" + CTA to `/reviews/new` | Action buttons disabled with tooltip | Inline alert above table with retry button                     |
-| Workbench panels                | Per-panel skeleton                 | "선택 가능한 이슈 없음" + analysis notice     | Mutate buttons disabled with tooltip | Inline alert in affected panel only — siblings keep working    |
-| Workbench drawer (support data) | Spinner in analysis-status section | "감사 이벤트 없음"                            | n/a                                  | `supportDataError` text — drawer remains usable for other tabs |
-| Intake form                     | Submit button shows "제출 중"      | n/a                                           | n/a                                  | `form-error` line above submit; form remains editable          |
+| Surface | Loading | Empty | Permission denied | API failure |
+|---|---|---|---|---|
+| Queue list | 5 skeleton rows | "아직 심의 요청 없음" + CTA to `/reviews/new` | Action buttons disabled with tooltip | Inline alert above table with retry button |
+| Workbench panels | Per-panel skeleton | "선택 가능한 이슈 없음" + analysis notice | Mutate buttons disabled with tooltip | Inline alert in affected panel only — siblings keep working |
+| Workbench drawer (support data) | Spinner in analysis-status section | "감사 이벤트 없음" | n/a | `supportDataError` text — drawer remains usable for other tabs |
+| Intake form | Submit button shows "제출 중" | n/a | n/a | `form-error` line above submit; form remains editable |
 
 Add a top-level `ErrorBoundary` in `AppShell` to contain unhandled render errors and present a recoverable fallback.
 
@@ -144,18 +141,15 @@ Add a top-level `ErrorBoundary` in `AppShell` to contain unhandled render errors
 ## Testing Strategy
 
 **Preserved**
-
 - `AppShell.test.tsx`, `ReviewQueue.test.tsx`, `ReviewDetailWorkspace.test.tsx`, `SamplePackageSelector.test.tsx`, `RoleSwitcher.test.tsx` — kept passing. Selector updates allowed where markup legitimately changed.
 
 **Added**
-
 - `ui/KpiCard.test.tsx`, `ui/Tabs.test.tsx`, `ui/Stepper.test.tsx`, `ui/DropZone.test.tsx`, `ui/FilterBar.test.tsx` — unit tests for each primitive.
 - Workbench: `?tab=` URL sync test; bbox ↔ issue selection sync test.
 - Queue: KPI card click applies filter test; full-row navigation test.
 - Intake: stepper state progression test.
 
 **Quality gates per spec PR**
-
 - `npm run lint`, `npm run test`, `npm run build` all green.
 - New components ≥ 80% branch coverage in vitest.
 
@@ -200,7 +194,6 @@ src/
 Four specs. Spec 0 must complete before Spec 1/2/3, which run in parallel.
 
 ### Spec 0 — Design Tokens + Shared UI Primitives
-
 - Add token block to `globals.css` (additive, no breaking changes).
 - Create `src/components/ui/` with `KpiCard`, `Tabs`, `Stepper`, `DropZone`, `FilterBar` + tests + barrel export.
 - Update `AppShell.tsx` to wrap children with `ErrorBoundary` (new file `src/components/ErrorBoundary.tsx`).
@@ -208,7 +201,6 @@ Four specs. Spec 0 must complete before Spec 1/2/3, which run in parallel.
 - Quality gate: lint + test + build green; existing snapshots/selectors still pass.
 
 ### Spec 1 — Review Queue Refinement
-
 - Depends on: Spec 0.
 - Add `src/components/queue/{QueueMetrics, QueueFilters, QueueTable}`.
 - Refactor `ReviewQueue.tsx` into composition of those.
@@ -217,7 +209,6 @@ Four specs. Spec 0 must complete before Spec 1/2/3, which run in parallel.
 - Quality gate: lint + test + build green.
 
 ### Spec 2 — Workbench Refinement
-
 - Depends on: Spec 0.
 - Add `src/components/workbench/{WorkbenchHeader, IssueList, CreativeViewer, IssueDetailTabs, WorkbenchDrawer}`.
 - Refactor `ReviewDetailWorkspace.tsx` into composition of those.
@@ -227,7 +218,6 @@ Four specs. Spec 0 must complete before Spec 1/2/3, which run in parallel.
 - Quality gate: lint + test + build green.
 
 ### Spec 3 — New Review Request Refinement
-
 - Depends on: Spec 0.
 - Add `src/components/intake/{IntakeStepper, IntakeMetaForm, IntakeUploadZone, IntakeClassificationPanel, IntakeRequiredMaterialsPanel}`.
 - Refactor `SamplePackageSelector.tsx` into composition of those.
@@ -244,7 +234,6 @@ Four specs. Spec 0 must complete before Spec 1/2/3, which run in parallel.
 ## Sign-Off
 
 When all four specs land and the dev server visually matches the agreed UX, the work is complete. Final deliverables:
-
 - Dev server at `http://localhost:3000` passing visual verification on `/reviews`, `/reviews/[id]`, `/reviews/new`.
 - All quality gates green.
 - A short summary report to the user with screenshots/observations of each refined screen.

@@ -31,7 +31,12 @@ export function QueueMetrics({
         tone="danger"
         onClick={onSelectRejectRecommended}
       />
-      <KpiCard label="마감 임박" value={metrics.dueSoon} tone="warning" onClick={onSelectDueSoon} />
+      <KpiCard
+        label="마감 임박"
+        value={metrics.dueSoon}
+        tone="warning"
+        onClick={onSelectDueSoon}
+      />
     </section>
   );
 }

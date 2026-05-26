@@ -17,7 +17,6 @@
 ### Task 1: Extract `WorkbenchHeader`
 
 **Files:**
-
 - Create: `src/components/workbench/WorkbenchHeader.tsx`
 - Create: `src/components/workbench/WorkbenchHeader.test.tsx`
 
@@ -192,12 +191,7 @@ export function WorkbenchHeader({
 Append to `src/app/globals.css`:
 
 ```css
-.workbench-header {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: var(--app-bg);
-}
+.workbench-header { position: sticky; top: 0; z-index: 5; background: var(--app-bg); }
 .workbench-header__group-label {
   font-size: var(--font-size-xs);
   color: var(--muted);
@@ -219,7 +213,6 @@ git commit -m "feat(workbench): add WorkbenchHeader with action group"
 ### Task 2: Extract `IssueList`
 
 **Files:**
-
 - Create: `src/components/workbench/IssueList.tsx`
 - Create: `src/components/workbench/IssueList.test.tsx`
 
@@ -376,27 +369,12 @@ export function IssueList({
 Append to `src/app/globals.css`:
 
 ```css
-.issue-card {
-  position: relative;
-  border-left: 4px solid var(--line);
-  transition: 120ms ease;
-}
-.issue-card[data-risk="reject_recommended"] {
-  border-left-color: var(--tone-reject);
-}
-.issue-card[data-risk="high"] {
-  border-left-color: var(--tone-high);
-}
-.issue-card[data-risk="caution"] {
-  border-left-color: var(--tone-caution);
-}
-.issue-card[data-risk="info"] {
-  border-left-color: var(--tone-info);
-}
-.issue-card[data-active="true"] {
-  background: var(--primary-soft);
-  box-shadow: var(--shadow-card);
-}
+.issue-card { position: relative; border-left: 4px solid var(--line); transition: 120ms ease; }
+.issue-card[data-risk="reject_recommended"] { border-left-color: var(--tone-reject); }
+.issue-card[data-risk="high"] { border-left-color: var(--tone-high); }
+.issue-card[data-risk="caution"] { border-left-color: var(--tone-caution); }
+.issue-card[data-risk="info"] { border-left-color: var(--tone-info); }
+.issue-card[data-active="true"] { background: var(--primary-soft); box-shadow: var(--shadow-card); }
 ```
 
 - [ ] **Step 5: Run tests + commit**
@@ -412,7 +390,6 @@ git commit -m "feat(workbench): add IssueList with risk filter chips and color b
 ### Task 3: Extract `CreativeViewer`
 
 **Files:**
-
 - Create: `src/components/workbench/CreativeViewer.tsx`
 - Create: `src/components/workbench/CreativeViewer.test.tsx`
 
@@ -548,7 +525,6 @@ git commit -m "feat(workbench): extract CreativeViewer module"
 ### Task 4: Extract `IssueDetailTabs` with URL-synced active tab
 
 **Files:**
-
 - Create: `src/components/workbench/IssueDetailTabs.tsx`
 - Create: `src/components/workbench/IssueDetailTabs.test.tsx`
 
@@ -574,14 +550,7 @@ const issue: ReviewIssue = {
   description: "desc",
   suggestedCopy: "수정 제안",
   evidence: [
-    {
-      id: "e1",
-      sourceType: "law",
-      title: "Law 1",
-      section: "§1",
-      quoteSummary: "summary",
-      relevanceScore: 0.9
-    }
+    { id: "e1", sourceType: "law", title: "Law 1", section: "§1", quoteSummary: "summary", relevanceScore: 0.9 }
   ]
 };
 
@@ -803,7 +772,6 @@ git commit -m "feat(workbench): add tabbed IssueDetail pane (checklist/evidence/
 ### Task 5: Extract `WorkbenchDrawer` (collapsible)
 
 **Files:**
-
 - Create: `src/components/workbench/WorkbenchDrawer.tsx`
 - Create: `src/components/workbench/WorkbenchDrawer.test.tsx`
 
@@ -903,11 +871,7 @@ export function WorkbenchDrawer({
 Append to `src/app/globals.css`:
 
 ```css
-.workbench-drawer__head {
-  display: flex;
-  justify-content: flex-end;
-  padding: var(--space-2) var(--space-3);
-}
+.workbench-drawer__head { display: flex; justify-content: flex-end; padding: var(--space-2) var(--space-3); }
 ```
 
 - [ ] **Step 5: Run tests + commit**
@@ -923,7 +887,6 @@ git commit -m "feat(workbench): add collapsible WorkbenchDrawer with tabs"
 ### Task 6: Refactor `ReviewDetailWorkspace` to compose modules with URL-synced tab
 
 **Files:**
-
 - Modify: `src/components/ReviewDetailWorkspace.tsx`
 - Modify: `src/components/ReviewDetailWorkspace.test.tsx` (selectors only)
 
@@ -932,7 +895,6 @@ git commit -m "feat(workbench): add collapsible WorkbenchDrawer with tabs"
 This is the largest refactor. Replace the file's render section (everything from `return ( ... )` down) with composition of the new modules while preserving all existing state, refs, and API handlers above the return.
 
 Key changes in the render:
-
 1. Replace the existing `<section className="detail__header">...</section>` block with `<WorkbenchHeader ... />`.
 2. Replace inline `<aside className="issue-panel">` with `<IssueList ... />`.
 3. Replace inline `CreativeViewer` component call to import from `./workbench/CreativeViewer` (delete the local function).
@@ -1096,7 +1058,6 @@ git commit -m "refactor(workbench): compose workspace from workbench/* modules +
 ### Task 7: Add URL-sync test for IssueDetailTabs in workspace integration
 
 **Files:**
-
 - Modify: `src/components/ReviewDetailWorkspace.test.tsx`
 
 - [ ] **Step 1: Add test that clicking a tab updates the URL**

@@ -15,6 +15,37 @@ describe("backend runtime config", () => {
     expect(config.rag.provider).toBe("deterministic");
     expect(config.uploadScan.provider).toBe("deterministic");
     expect(config.storage.provider).toBe("local-metadata");
+    expect(config.productionGaps).toEqual(
+      expect.arrayContaining([
+        "FINPROOF_AUTH_MODE=jwt",
+        "FINPROOF_REVIEW_STORE=prisma",
+        "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
+        "FINPROOF_OCR_PROVIDER=http",
+        "FINPROOF_RAG_PROVIDER=postgres",
+        "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
+        "FINPROOF_STORAGE_ADAPTER=s3"
+      ])
+    );
+    expect(config.productionReady).toBe(false);
+  });
+
+  it("does not treat JWT-only configuration as production ready", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_AUTH_MODE: "jwt",
+      FINPROOF_AUTH_JWT_SECRET: "super-secret"
+    });
+
+    expect(config.missing).toEqual([]);
+    expect(config.productionGaps).toEqual(
+      expect.arrayContaining([
+        "FINPROOF_REVIEW_STORE=prisma",
+        "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
+        "FINPROOF_OCR_PROVIDER=http",
+        "FINPROOF_RAG_PROVIDER=postgres",
+        "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
+        "FINPROOF_STORAGE_ADAPTER=s3"
+      ])
+    );
     expect(config.productionReady).toBe(false);
   });
 
@@ -161,6 +192,7 @@ describe("backend runtime config", () => {
       configured: true
     });
     expect(config.missing).not.toContain("FINPROOF_AUTH_JWT_SECRET");
+    expect(config.productionGaps).toEqual([]);
     expect(config.productionReady).toBe(true);
   });
 });
