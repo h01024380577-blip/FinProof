@@ -53,10 +53,6 @@ const defaultFilterState: QueueFilterState = {
   product: "all"
 };
 
-function defaultFiltersForScope(scope: "active" | "history"): QueueFilterState {
-  return scope === "history" ? { ...defaultFilterState, status: "approved" } : defaultFilterState;
-}
-
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 
 type HistoryDecision = "approved" | "rejected";
@@ -84,24 +80,13 @@ export function ReviewQueue(): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
-  const [historyDecision, setHistoryDecision] = useState<HistoryDecision>("approved");
-
-  const displayedFilters = useMemo(
-    () =>
-      scope === "history" && filters.status !== "approved" && filters.status !== "rejected"
-        ? { ...filters, status: historyDecision }
-        : filters,
-    [filters, historyDecision, scope]
-  );
 
   const scopedReviews = useMemo(
     () =>
       reviews.filter((review) =>
-        scope === "history"
-          ? review.status === historyDecision
-          : !isFinalizedReview(review.status)
+        scope === "history" ? isFinalizedReview(review.status) : !isFinalizedReview(review.status)
       ),
-    [historyDecision, reviews, scope]
+    [reviews, scope]
   );
 
   const metrics: QueueMetricValues = useMemo(
@@ -126,7 +111,7 @@ export function ReviewQueue(): JSX.Element {
   );
 
   const filtered = useMemo(() => {
-    const q = normalizeSearch(displayedFilters.search);
+    const q = normalizeSearch(filters.search);
     return scopedReviews.filter((review) => {
       const waiting = isAnalysisWaiting(review.status);
       const matchesQ =
@@ -135,18 +120,16 @@ export function ReviewQueue(): JSX.Element {
           .join(" ")
           .toLocaleLowerCase("ko-KR")
           .includes(q);
-      const matchesStatus =
-        displayedFilters.status === "all" || review.status === displayedFilters.status;
+      const matchesStatus = filters.status === "all" || review.status === filters.status;
       const matchesRisk =
-        displayedFilters.risk === "all" ||
-        (displayedFilters.risk === "analysis_pending"
+        filters.risk === "all" ||
+        (filters.risk === "analysis_pending"
           ? waiting
-          : review.highestRiskLevel === displayedFilters.risk);
-      const matchesProduct =
-        displayedFilters.product === "all" || review.productType === displayedFilters.product;
+          : review.highestRiskLevel === filters.risk);
+      const matchesProduct = filters.product === "all" || review.productType === filters.product;
       return matchesQ && matchesStatus && matchesRisk && matchesProduct;
     });
-  }, [displayedFilters, scopedReviews]);
+  }, [filters, scopedReviews]);
 
   useEffect(() => {
     let mounted = true;
@@ -225,23 +208,15 @@ export function ReviewQueue(): JSX.Element {
   }
 
   function selectHistoryDecision(decision: HistoryDecision): void {
-    setHistoryDecision(decision);
     setFilters((current) => ({ ...current, status: decision }));
   }
 
   function handleFilterChange(next: QueueFilterState): void {
-    if (scope === "history" && (next.status === "approved" || next.status === "rejected")) {
-      setHistoryDecision(next.status);
-    }
     setFilters(next);
   }
 
   function resetFilters(): void {
-    const nextFilters = defaultFiltersForScope(scope);
-    setFilters(nextFilters);
-    if (scope === "history") {
-      setHistoryDecision("approved");
-    }
+    setFilters(defaultFilterState);
   }
 
   return (
@@ -270,7 +245,7 @@ export function ReviewQueue(): JSX.Element {
       {scope === "history" ? (
         <div className="history-decision-tabs" role="tablist" aria-label="심의 이력 구분">
           {historyDecisions.map((decision) => {
-            const selected = historyDecision === decision.key;
+            const selected = filters.status === decision.key;
 
             return (
               <button
@@ -294,7 +269,7 @@ export function ReviewQueue(): JSX.Element {
 
       <section className="queue-panel">
         <QueueFilters
-          state={displayedFilters}
+          state={filters}
           mode={scope}
           onChange={handleFilterChange}
           onReset={resetFilters}
@@ -315,7 +290,11 @@ export function ReviewQueue(): JSX.Element {
             scopedReviews.length > 0
               ? "검색 또는 필터 조건에 맞는 심의 건이 없습니다."
               : scope === "history"
-                ? `아직 ${historyDecision === "approved" ? "승인 완료" : "반려 완료"}된 심의 이력이 없습니다.`
+                ? filters.status === "approved"
+                  ? "아직 승인 완료된 심의 이력이 없습니다."
+                  : filters.status === "rejected"
+                    ? "아직 반려 완료된 심의 이력이 없습니다."
+                    : "아직 심의 이력이 없습니다."
                 : "아직 심의 요청이 없습니다. 새 심의 요청을 생성해 자료 패키지를 업로드하세요."
           }
           onStartAnalysis={(review) => void startAnalysis(review)}

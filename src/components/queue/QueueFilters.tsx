@@ -29,6 +29,7 @@ const statusOptions = [
 ];
 
 const historyStatusOptions = [
+  { value: "all", label: "전체" },
   { value: "approved", label: "승인" },
   { value: "rejected", label: "반려" }
 ];
@@ -63,7 +64,7 @@ export function QueueFilters({
       key: "status",
       label: "상태",
       value: state.status,
-      defaultValue: mode === "history" ? "approved" : "all",
+      defaultValue: "all",
       options: mode === "history" ? historyStatusOptions : statusOptions
     },
     { key: "risk", label: "위험도", value: state.risk, defaultValue: "all", options: riskOptions },

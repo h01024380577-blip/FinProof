@@ -185,7 +185,7 @@ describe("ReviewQueue", () => {
     expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
   });
 
-  it("shows approved history by default with decision-specific history tabs", async () => {
+  it("shows all finalized review history by default with decision-specific history filters", async () => {
     currentSearchParams = new URLSearchParams("scope=history");
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -209,7 +209,7 @@ describe("ReviewQueue", () => {
     const historyTabs = screen.getByRole("tablist", { name: "심의 이력 구분" });
     expect(within(historyTabs).getByRole("tab", { name: "승인 완료" })).toHaveAttribute(
       "aria-selected",
-      "true"
+      "false"
     );
     expect(within(historyTabs).getByRole("tab", { name: "반려 완료" })).toHaveAttribute(
       "aria-selected",
@@ -222,16 +222,16 @@ describe("ReviewQueue", () => {
       within(within(historyTabs).getByRole("tab", { name: "반려 완료" })).getByText("1")
     ).toBeInTheDocument();
     expect(screen.getByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
-    expect(screen.queryByText("반려 완료된 신용대출 홍보물")).not.toBeInTheDocument();
+    expect(screen.getByText("반려 완료된 신용대출 홍보물")).toBeInTheDocument();
     expect(screen.queryByText("수정 요청 진행 중인 카드 홍보물")).not.toBeInTheDocument();
     expect(screen.queryByText("최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
     expect(screen.queryByText("실제 업로드 적금 홍보물")).not.toBeInTheDocument();
 
     const statusFilter = screen.getByLabelText("상태");
     expect(within(statusFilter).getAllByRole("option").map((option) => option.textContent)).toEqual(
-      ["승인", "반려"]
+      ["전체", "승인", "반려"]
     );
-    expect(statusFilter).toHaveValue("approved");
+    expect(statusFilter).toHaveValue("all");
   });
 
   it("switches review history between approved and rejected decisions", async () => {
@@ -248,6 +248,7 @@ describe("ReviewQueue", () => {
     renderQueue("reviewer");
 
     expect(await screen.findByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
+    expect(screen.getByText("반려 완료된 신용대출 홍보물")).toBeInTheDocument();
 
     await user.selectOptions(screen.getByLabelText("상태"), "rejected");
 
