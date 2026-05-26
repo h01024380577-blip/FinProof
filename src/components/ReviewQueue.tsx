@@ -9,7 +9,13 @@ import { QueueFilters, type QueueFilterState } from "./queue/QueueFilters";
 import { QueueTable } from "./queue/QueueTable";
 import { useRole } from "./RoleContext";
 
-type ReviewCasesResponse = { reviewCases: ReviewSummary[] };
+type ReviewCasesResponse = {
+  items?: ReviewSummary[];
+  reviewCases?: ReviewSummary[];
+  page?: number;
+  pageSize?: number;
+  total?: number;
+};
 type AnalysisStartResponse = {
   reviewCaseId: string;
   status: ReviewCase["status"];
@@ -52,6 +58,7 @@ const defaultFilterState: QueueFilterState = {
   risk: "all",
   product: "all"
 };
+const queuePageSize = 10;
 
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 
@@ -80,6 +87,12 @@ export function ReviewQueue(): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: queuePageSize,
+    total: 0
+  });
 
   const scopedReviews = useMemo(
     () =>
@@ -129,6 +142,8 @@ export function ReviewQueue(): JSX.Element {
     });
   }, [filters, scopedReviews]);
 
+  const totalPages = Math.max(1, Math.ceil(pagination.total / pagination.pageSize));
+
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -137,12 +152,20 @@ export function ReviewQueue(): JSX.Element {
         setLoadError(null);
       }
       try {
-        const response = await fetch("/api/v1/review-cases", {
+        const response = await fetch(reviewCasesUrl(page, filters), {
           headers: apiHeaders()
         });
         if (!response.ok) throw new Error("심의 큐를 불러오지 못했습니다.");
         const body = (await response.json()) as ReviewCasesResponse;
-        if (mounted) setReviews(body.reviewCases);
+        if (mounted) {
+          const rows = body.reviewCases ?? body.items ?? [];
+          setReviews(rows);
+          setPagination({
+            page: body.page ?? page,
+            pageSize: body.pageSize ?? queuePageSize,
+            total: body.total ?? rows.length
+          });
+        }
       } catch (error) {
         if (mounted)
           setLoadError(error instanceof Error ? error.message : "심의 큐를 불러오지 못했습니다.");
@@ -153,7 +176,7 @@ export function ReviewQueue(): JSX.Element {
     return () => {
       mounted = false;
     };
-  }, [activeRole, apiHeaders]);
+  }, [activeRole, apiHeaders, filters, page]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent): void {
@@ -206,14 +229,17 @@ export function ReviewQueue(): JSX.Element {
   }
 
   function selectHistoryDecision(decision: HistoryDecision): void {
+    setPage(1);
     setFilters((current) => ({ ...current, status: decision }));
   }
 
   function handleFilterChange(next: QueueFilterState): void {
+    setPage(1);
     setFilters(next);
   }
 
   function resetFilters(): void {
+    setPage(1);
     setFilters(defaultFilterState);
   }
 
@@ -298,7 +324,59 @@ export function ReviewQueue(): JSX.Element {
           onStartAnalysis={(review) => void startAnalysis(review)}
           onOpenReview={(id) => router.push(`/reviews/${id}`)}
         />
+        {pagination.total > pagination.pageSize ? (
+          <div className="queue-pagination" aria-label="심의 큐 페이지네이션">
+            <button
+              className="button button--small"
+              type="button"
+              disabled={pagination.page <= 1 || isLoading}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+            >
+              이전 페이지
+            </button>
+            <span>
+              {pagination.page} / {totalPages}
+            </span>
+            <button
+              className="button button--small"
+              type="button"
+              disabled={pagination.page >= totalPages || isLoading}
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            >
+              다음 페이지
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );
+}
+
+function reviewCasesUrl(page: number, filters: QueueFilterState): string {
+  const params = new URLSearchParams();
+  const hasServerFilter =
+    filters.status !== "all" ||
+    filters.product !== "all" ||
+    (filters.risk !== "all" && filters.risk !== "analysis_pending");
+
+  if (page > 1 || hasServerFilter) {
+    params.set("page", String(page));
+    params.set("pageSize", String(queuePageSize));
+  }
+
+  if (filters.status !== "all") {
+    params.set("status", filters.status);
+  }
+
+  if (filters.product !== "all") {
+    params.set("productType", filters.product);
+  }
+
+  if (filters.risk !== "all" && filters.risk !== "analysis_pending") {
+    params.set("riskLevel", filters.risk);
+  }
+
+  const query = params.toString();
+
+  return query ? `/api/v1/review-cases?${query}` : "/api/v1/review-cases";
 }

@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { OperationsConsole } from "@/components/OperationsConsole";
 
-export default function DashboardRedirectPage() {
-  redirect("/reviews");
+export default function DashboardPage() {
+  return <OperationsConsole />;
 }

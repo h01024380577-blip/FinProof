@@ -338,4 +338,37 @@ describe("ReviewQueue", () => {
     await user.click(updatedRow);
     expect(pushMock).toHaveBeenCalledWith("/reviews/rc-upload-001");
   });
+
+  it("uses backend pagination when the reviewer moves through queue pages", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ reviewCases: reviewSummaries, page: 1, pageSize: 10, total: 22 })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCases: [completedReviewSummary],
+          page: 2,
+          pageSize: 10,
+          total: 22
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer");
+
+    expect(await screen.findByText("1 / 3")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "다음 페이지" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        "/api/v1/review-cases?page=2&pageSize=10",
+        expect.any(Object)
+      );
+    });
+    expect(await screen.findByText("2 / 3")).toBeInTheDocument();
+  });
 });
