@@ -2052,3 +2052,14 @@ a.review-table__row:hover {
     font-size: 1.55rem;
   }
 }
+
+.error-boundary {
+  margin: var(--space-7) auto;
+  max-width: 520px;
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+.error-boundary strong { display: block; font-size: var(--font-size-lg); margin-bottom: var(--space-2); }
