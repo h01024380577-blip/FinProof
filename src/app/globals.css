@@ -2088,3 +2088,18 @@ a.review-table__row:hover {
 .kpi-card[data-tone="success"] { border-left: 4px solid var(--tone-verified); }
 .kpi-card[data-tone="neutral"] { border-left: 4px solid var(--gray-300); }
 .kpi-card[data-tone="danger"] .kpi-card__value { color: var(--tone-high); }
+
+.tabs__list { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
+.tabs__tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--muted);
+  cursor: pointer;
+}
+.tabs__tab[data-active="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+.tabs__tab:hover:not([disabled]) { color: var(--text); }
+.tabs__panel { padding-top: var(--space-4); }
