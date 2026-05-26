@@ -2181,3 +2181,12 @@ a.review-table__row:hover {
 .review-table__row[data-clickable="true"] { cursor: pointer; }
 .review-table__row[data-clickable="true"]:hover { background: var(--surface-muted); }
 .queue-id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); font-size: var(--font-size-xs); }
+
+/* Spec 2: WorkbenchHeader */
+.workbench-header { position: sticky; top: 0; z-index: 5; background: var(--app-bg); }
+.workbench-header__group-label {
+  font-size: var(--font-size-xs);
+  color: var(--muted);
+  margin-right: var(--space-2);
+  align-self: center;
+}
