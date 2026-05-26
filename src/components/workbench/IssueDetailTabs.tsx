@@ -4,7 +4,7 @@ import type { JSX } from "react";
 import { Tabs } from "@/components/ui";
 import { RiskBadge } from "@/components/Badges";
 import { riskLabels } from "@/domain/reviews";
-import type { ReviewIssue, RiskLevel } from "@/domain/types";
+import type { Evidence, ReviewIssue, RiskLevel } from "@/domain/types";
 
 export type IssueDetailTabKey = "checklist" | "evidence" | "opinion";
 
@@ -16,13 +16,10 @@ export type IssueDetailTabsProps = {
   reviewerComment: string;
   savedDecision: { riskLevel: RiskLevel; comment: string } | null;
   canMutate: boolean;
-  canFinalize: boolean;
   isSavingDecision: boolean;
-  isFinalizingReview: boolean;
   onChangeRiskLevel: (riskLevel: RiskLevel) => void;
   onChangeReviewerComment: (comment: string) => void;
   onSaveReviewerDecision: () => void;
-  onFinalizeReviewCase: () => void;
 };
 
 export function IssueDetailTabs(props: IssueDetailTabsProps): JSX.Element {
@@ -58,18 +55,32 @@ function ChecklistPanel({ issue }: { issue: ReviewIssue }): JSX.Element {
   );
 }
 
+function formatEvidenceMetadata(evidence: Evidence): string {
+  const parts: string[] = [];
+
+  if (typeof evidence.page === "number") {
+    parts.push(`${evidence.page}쪽`);
+  }
+
+  const section = evidence.section?.trim();
+  if (section) {
+    parts.push(section);
+  }
+
+  parts.push(`관련도 ${Math.round(evidence.relevanceScore * 100)}%`);
+
+  return parts.join(" · ");
+}
+
 function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
   return (
     <div className="evidence-stack">
       {issue.evidence.map((evidence) => (
         <article key={evidence.id} className="evidence-card">
           <span>{evidence.sourceType}</span>
-          <strong>{evidence.title}</strong>
-          <p>{evidence.quoteSummary}</p>
-          <small>
-            p.{evidence.page ?? "-"} · {evidence.section} · relevance{" "}
-            {Math.round(evidence.relevanceScore * 100)}%
-          </small>
+          <strong className="evidence-card__title">{evidence.title}</strong>
+          <p className="evidence-card__quote">{evidence.quoteSummary}</p>
+          <small>{formatEvidenceMetadata(evidence)}</small>
         </article>
       ))}
     </div>
@@ -81,13 +92,10 @@ function OpinionPanel({
   reviewerComment,
   savedDecision,
   canMutate,
-  canFinalize,
   isSavingDecision,
-  isFinalizingReview,
   onChangeRiskLevel,
   onChangeReviewerComment,
-  onSaveReviewerDecision,
-  onFinalizeReviewCase
+  onSaveReviewerDecision
 }: IssueDetailTabsProps): JSX.Element {
   return (
     <div className="reviewer-decision">
@@ -121,15 +129,6 @@ function OpinionPanel({
         onClick={onSaveReviewerDecision}
       >
         {isSavingDecision ? "저장 중" : "위험도 변경"}
-      </button>
-
-      <button
-        className="button button--primary"
-        type="button"
-        disabled={!canMutate || !canFinalize || isFinalizingReview}
-        onClick={onFinalizeReviewCase}
-      >
-        {isFinalizingReview ? "완료 중" : "검토 완료"}
       </button>
 
       {savedDecision ? (

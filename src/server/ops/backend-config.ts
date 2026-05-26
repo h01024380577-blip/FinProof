@@ -35,6 +35,7 @@ export type BackendRuntimeConfig = {
   };
   secrets: Record<string, "set" | "missing">;
   missing: string[];
+  productionGaps: string[];
   productionReady: boolean;
 };
 
@@ -61,8 +62,15 @@ function requireWhen(missing: string[], condition: boolean, env: Env, key: strin
   }
 }
 
+function requireProductionProvider(gaps: string[], condition: boolean, expected: string) {
+  if (condition && !gaps.includes(expected)) {
+    gaps.push(expected);
+  }
+}
+
 export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeConfig {
   const missing: string[] = [];
+  const productionGaps: string[] = [];
   const authMode = value(env, "FINPROOF_AUTH_MODE") === "jwt" ? "jwt" : "demo";
   const authProvider =
     authMode === "demo"
@@ -118,6 +126,39 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   requireWhen(missing, uploadScanProvider === "http", env, "FINPROOF_UPLOAD_SCAN_ENDPOINT");
   requireWhen(missing, storageProvider === "s3", env, "FINPROOF_S3_BUCKET");
   requireWhen(missing, storageProvider === "s3", env, "AWS_REGION");
+
+  requireProductionProvider(productionGaps, authMode !== "jwt", "FINPROOF_AUTH_MODE=jwt");
+  requireProductionProvider(
+    productionGaps,
+    reviewStore !== "prisma",
+    "FINPROOF_REVIEW_STORE=prisma"
+  );
+  requireProductionProvider(
+    productionGaps,
+    modelProvider === "deterministic",
+    "FINPROOF_MODEL_PROVIDER=router|openai|gemini"
+  );
+  requireProductionProvider(productionGaps, ocrProvider !== "http", "FINPROOF_OCR_PROVIDER=http");
+  requireProductionProvider(
+    productionGaps,
+    ragProvider !== "postgres",
+    "FINPROOF_RAG_PROVIDER=postgres"
+  );
+  requireProductionProvider(
+    productionGaps,
+    uploadScanProvider !== "http",
+    "FINPROOF_UPLOAD_SCAN_PROVIDER=http"
+  );
+  requireProductionProvider(
+    productionGaps,
+    storageProvider !== "s3",
+    "FINPROOF_STORAGE_ADAPTER=s3"
+  );
+  requireProductionProvider(
+    productionGaps,
+    value(env, "FINPROOF_ENABLE_SAMPLE_DATA") === "true",
+    "FINPROOF_ENABLE_SAMPLE_DATA=false"
+  );
 
   return {
     auth: {
@@ -194,7 +235,8 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       AWS_SECRET_ACCESS_KEY: secretState(env, "AWS_SECRET_ACCESS_KEY")
     },
     missing,
-    productionReady: missing.length === 0 && authMode === "jwt"
+    productionGaps,
+    productionReady: missing.length === 0 && productionGaps.length === 0
   };
 }
 
@@ -211,7 +253,9 @@ export function redactedBackendRuntimeConfig(config: BackendRuntimeConfig): Back
 
 export function assertBackendProductionReady(config = getBackendRuntimeConfig()) {
   if (!config.productionReady) {
-    throw new Error(`Backend production readiness failed: ${config.missing.join(", ")}`);
+    const blockers = [...config.missing, ...config.productionGaps].join(", ");
+
+    throw new Error(`Backend production readiness failed: ${blockers}`);
   }
 
   return config;

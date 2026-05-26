@@ -11,6 +11,10 @@ import {
 type ChatRequest = {
   issueId?: string;
   question?: string;
+  history?: Array<{
+    question: string;
+    answer: string;
+  }>;
 };
 
 export async function POST(request: Request, context: RouteContext<{ caseId: string }>) {
@@ -33,7 +37,8 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
   const response = await answerReviewQuestionWithModel({
     review,
     issue,
-    question: body.question
+    question: body.question,
+    history: body.history
   });
 
   return NextResponse.json({ response });

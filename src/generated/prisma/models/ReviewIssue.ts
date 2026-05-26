@@ -20,8 +20,20 @@ export type ReviewIssueModel = runtime.Types.Result.DefaultSelection<Prisma.$Rev
 
 export type AggregateReviewIssue = {
   _count: ReviewIssueCountAggregateOutputType | null
+  _avg: ReviewIssueAvgAggregateOutputType | null
+  _sum: ReviewIssueSumAggregateOutputType | null
   _min: ReviewIssueMinAggregateOutputType | null
   _max: ReviewIssueMaxAggregateOutputType | null
+}
+
+export type ReviewIssueAvgAggregateOutputType = {
+  targetPage: number | null
+  confidence: number | null
+}
+
+export type ReviewIssueSumAggregateOutputType = {
+  targetPage: number | null
+  confidence: number | null
 }
 
 export type ReviewIssueMinAggregateOutputType = {
@@ -32,6 +44,10 @@ export type ReviewIssueMinAggregateOutputType = {
   reviewerRiskLevel: $Enums.RiskLevel | null
   title: string | null
   targetText: string | null
+  targetFileId: string | null
+  targetPage: number | null
+  confidence: number | null
+  agentFindingId: string | null
   suggestedAction: $Enums.SuggestedAction | null
   finalAction: $Enums.SuggestedAction | null
   reviewerComment: string | null
@@ -50,6 +66,10 @@ export type ReviewIssueMaxAggregateOutputType = {
   reviewerRiskLevel: $Enums.RiskLevel | null
   title: string | null
   targetText: string | null
+  targetFileId: string | null
+  targetPage: number | null
+  confidence: number | null
+  agentFindingId: string | null
   suggestedAction: $Enums.SuggestedAction | null
   finalAction: $Enums.SuggestedAction | null
   reviewerComment: string | null
@@ -69,6 +89,10 @@ export type ReviewIssueCountAggregateOutputType = {
   title: number
   targetText: number
   targetBbox: number
+  targetFileId: number
+  targetPage: number
+  confidence: number
+  agentFindingId: number
   sourceAgents: number
   suggestedAction: number
   finalAction: number
@@ -82,6 +106,16 @@ export type ReviewIssueCountAggregateOutputType = {
 }
 
 
+export type ReviewIssueAvgAggregateInputType = {
+  targetPage?: true
+  confidence?: true
+}
+
+export type ReviewIssueSumAggregateInputType = {
+  targetPage?: true
+  confidence?: true
+}
+
 export type ReviewIssueMinAggregateInputType = {
   id?: true
   reviewCaseId?: true
@@ -90,6 +124,10 @@ export type ReviewIssueMinAggregateInputType = {
   reviewerRiskLevel?: true
   title?: true
   targetText?: true
+  targetFileId?: true
+  targetPage?: true
+  confidence?: true
+  agentFindingId?: true
   suggestedAction?: true
   finalAction?: true
   reviewerComment?: true
@@ -108,6 +146,10 @@ export type ReviewIssueMaxAggregateInputType = {
   reviewerRiskLevel?: true
   title?: true
   targetText?: true
+  targetFileId?: true
+  targetPage?: true
+  confidence?: true
+  agentFindingId?: true
   suggestedAction?: true
   finalAction?: true
   reviewerComment?: true
@@ -127,6 +169,10 @@ export type ReviewIssueCountAggregateInputType = {
   title?: true
   targetText?: true
   targetBbox?: true
+  targetFileId?: true
+  targetPage?: true
+  confidence?: true
+  agentFindingId?: true
   sourceAgents?: true
   suggestedAction?: true
   finalAction?: true
@@ -177,6 +223,18 @@ export type ReviewIssueAggregateArgs<ExtArgs extends runtime.Types.Extensions.In
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: ReviewIssueAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: ReviewIssueSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: ReviewIssueMinAggregateInputType
@@ -207,6 +265,8 @@ export type ReviewIssueGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   _count?: ReviewIssueCountAggregateInputType | true
+  _avg?: ReviewIssueAvgAggregateInputType
+  _sum?: ReviewIssueSumAggregateInputType
   _min?: ReviewIssueMinAggregateInputType
   _max?: ReviewIssueMaxAggregateInputType
 }
@@ -220,6 +280,10 @@ export type ReviewIssueGroupByOutputType = {
   title: string
   targetText: string
   targetBbox: runtime.JsonValue
+  targetFileId: string | null
+  targetPage: number | null
+  confidence: number | null
+  agentFindingId: string | null
   sourceAgents: runtime.JsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction: $Enums.SuggestedAction | null
@@ -230,6 +294,8 @@ export type ReviewIssueGroupByOutputType = {
   createdAt: Date
   updatedAt: Date
   _count: ReviewIssueCountAggregateOutputType | null
+  _avg: ReviewIssueAvgAggregateOutputType | null
+  _sum: ReviewIssueSumAggregateOutputType | null
   _min: ReviewIssueMinAggregateOutputType | null
   _max: ReviewIssueMaxAggregateOutputType | null
 }
@@ -261,6 +327,10 @@ export type ReviewIssueWhereInput = {
   title?: Prisma.StringFilter<"ReviewIssue"> | string
   targetText?: Prisma.StringFilter<"ReviewIssue"> | string
   targetBbox?: Prisma.JsonFilter<"ReviewIssue">
+  targetFileId?: Prisma.StringNullableFilter<"ReviewIssue"> | string | null
+  targetPage?: Prisma.IntNullableFilter<"ReviewIssue"> | number | null
+  confidence?: Prisma.FloatNullableFilter<"ReviewIssue"> | number | null
+  agentFindingId?: Prisma.StringNullableFilter<"ReviewIssue"> | string | null
   sourceAgents?: Prisma.JsonFilter<"ReviewIssue">
   suggestedAction?: Prisma.EnumSuggestedActionFilter<"ReviewIssue"> | $Enums.SuggestedAction
   finalAction?: Prisma.EnumSuggestedActionNullableFilter<"ReviewIssue"> | $Enums.SuggestedAction | null
@@ -271,7 +341,9 @@ export type ReviewIssueWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"ReviewIssue"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ReviewIssue"> | Date | string
   reviewCase?: Prisma.XOR<Prisma.ReviewCaseScalarRelationFilter, Prisma.ReviewCaseWhereInput>
+  agentFinding?: Prisma.XOR<Prisma.AgentFindingNullableScalarRelationFilter, Prisma.AgentFindingWhereInput> | null
   evidence?: Prisma.EvidenceListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
 }
 
 export type ReviewIssueOrderByWithRelationInput = {
@@ -283,6 +355,10 @@ export type ReviewIssueOrderByWithRelationInput = {
   title?: Prisma.SortOrder
   targetText?: Prisma.SortOrder
   targetBbox?: Prisma.SortOrder
+  targetFileId?: Prisma.SortOrderInput | Prisma.SortOrder
+  targetPage?: Prisma.SortOrderInput | Prisma.SortOrder
+  confidence?: Prisma.SortOrderInput | Prisma.SortOrder
+  agentFindingId?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceAgents?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   finalAction?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -293,7 +369,9 @@ export type ReviewIssueOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   reviewCase?: Prisma.ReviewCaseOrderByWithRelationInput
+  agentFinding?: Prisma.AgentFindingOrderByWithRelationInput
   evidence?: Prisma.EvidenceOrderByRelationAggregateInput
+  chatSessions?: Prisma.ChatSessionOrderByRelationAggregateInput
 }
 
 export type ReviewIssueWhereUniqueInput = Prisma.AtLeast<{
@@ -308,6 +386,10 @@ export type ReviewIssueWhereUniqueInput = Prisma.AtLeast<{
   title?: Prisma.StringFilter<"ReviewIssue"> | string
   targetText?: Prisma.StringFilter<"ReviewIssue"> | string
   targetBbox?: Prisma.JsonFilter<"ReviewIssue">
+  targetFileId?: Prisma.StringNullableFilter<"ReviewIssue"> | string | null
+  targetPage?: Prisma.IntNullableFilter<"ReviewIssue"> | number | null
+  confidence?: Prisma.FloatNullableFilter<"ReviewIssue"> | number | null
+  agentFindingId?: Prisma.StringNullableFilter<"ReviewIssue"> | string | null
   sourceAgents?: Prisma.JsonFilter<"ReviewIssue">
   suggestedAction?: Prisma.EnumSuggestedActionFilter<"ReviewIssue"> | $Enums.SuggestedAction
   finalAction?: Prisma.EnumSuggestedActionNullableFilter<"ReviewIssue"> | $Enums.SuggestedAction | null
@@ -318,7 +400,9 @@ export type ReviewIssueWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"ReviewIssue"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ReviewIssue"> | Date | string
   reviewCase?: Prisma.XOR<Prisma.ReviewCaseScalarRelationFilter, Prisma.ReviewCaseWhereInput>
+  agentFinding?: Prisma.XOR<Prisma.AgentFindingNullableScalarRelationFilter, Prisma.AgentFindingWhereInput> | null
   evidence?: Prisma.EvidenceListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
 }, "id">
 
 export type ReviewIssueOrderByWithAggregationInput = {
@@ -330,6 +414,10 @@ export type ReviewIssueOrderByWithAggregationInput = {
   title?: Prisma.SortOrder
   targetText?: Prisma.SortOrder
   targetBbox?: Prisma.SortOrder
+  targetFileId?: Prisma.SortOrderInput | Prisma.SortOrder
+  targetPage?: Prisma.SortOrderInput | Prisma.SortOrder
+  confidence?: Prisma.SortOrderInput | Prisma.SortOrder
+  agentFindingId?: Prisma.SortOrderInput | Prisma.SortOrder
   sourceAgents?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   finalAction?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -340,8 +428,10 @@ export type ReviewIssueOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ReviewIssueCountOrderByAggregateInput
+  _avg?: Prisma.ReviewIssueAvgOrderByAggregateInput
   _max?: Prisma.ReviewIssueMaxOrderByAggregateInput
   _min?: Prisma.ReviewIssueMinOrderByAggregateInput
+  _sum?: Prisma.ReviewIssueSumOrderByAggregateInput
 }
 
 export type ReviewIssueScalarWhereWithAggregatesInput = {
@@ -356,6 +446,10 @@ export type ReviewIssueScalarWhereWithAggregatesInput = {
   title?: Prisma.StringWithAggregatesFilter<"ReviewIssue"> | string
   targetText?: Prisma.StringWithAggregatesFilter<"ReviewIssue"> | string
   targetBbox?: Prisma.JsonWithAggregatesFilter<"ReviewIssue">
+  targetFileId?: Prisma.StringNullableWithAggregatesFilter<"ReviewIssue"> | string | null
+  targetPage?: Prisma.IntNullableWithAggregatesFilter<"ReviewIssue"> | number | null
+  confidence?: Prisma.FloatNullableWithAggregatesFilter<"ReviewIssue"> | number | null
+  agentFindingId?: Prisma.StringNullableWithAggregatesFilter<"ReviewIssue"> | string | null
   sourceAgents?: Prisma.JsonWithAggregatesFilter<"ReviewIssue">
   suggestedAction?: Prisma.EnumSuggestedActionWithAggregatesFilter<"ReviewIssue"> | $Enums.SuggestedAction
   finalAction?: Prisma.EnumSuggestedActionNullableWithAggregatesFilter<"ReviewIssue"> | $Enums.SuggestedAction | null
@@ -375,6 +469,9 @@ export type ReviewIssueCreateInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -385,7 +482,9 @@ export type ReviewIssueCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutIssuesInput
+  agentFinding?: Prisma.AgentFindingCreateNestedOneWithoutIssuesInput
   evidence?: Prisma.EvidenceCreateNestedManyWithoutIssueInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutIssueInput
 }
 
 export type ReviewIssueUncheckedCreateInput = {
@@ -397,6 +496,10 @@ export type ReviewIssueUncheckedCreateInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  agentFindingId?: string | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -407,6 +510,7 @@ export type ReviewIssueUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutIssueInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutIssueInput
 }
 
 export type ReviewIssueUpdateInput = {
@@ -417,6 +521,9 @@ export type ReviewIssueUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -427,7 +534,9 @@ export type ReviewIssueUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutIssuesNestedInput
+  agentFinding?: Prisma.AgentFindingUpdateOneWithoutIssuesNestedInput
   evidence?: Prisma.EvidenceUpdateManyWithoutIssueNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutIssueNestedInput
 }
 
 export type ReviewIssueUncheckedUpdateInput = {
@@ -439,6 +548,10 @@ export type ReviewIssueUncheckedUpdateInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  agentFindingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -449,6 +562,7 @@ export type ReviewIssueUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutIssueNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutIssueNestedInput
 }
 
 export type ReviewIssueCreateManyInput = {
@@ -460,6 +574,10 @@ export type ReviewIssueCreateManyInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  agentFindingId?: string | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -479,6 +597,9 @@ export type ReviewIssueUpdateManyMutationInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -499,6 +620,10 @@ export type ReviewIssueUncheckedUpdateManyInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  agentFindingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -529,6 +654,10 @@ export type ReviewIssueCountOrderByAggregateInput = {
   title?: Prisma.SortOrder
   targetText?: Prisma.SortOrder
   targetBbox?: Prisma.SortOrder
+  targetFileId?: Prisma.SortOrder
+  targetPage?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
+  agentFindingId?: Prisma.SortOrder
   sourceAgents?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   finalAction?: Prisma.SortOrder
@@ -540,6 +669,11 @@ export type ReviewIssueCountOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type ReviewIssueAvgOrderByAggregateInput = {
+  targetPage?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
+}
+
 export type ReviewIssueMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   reviewCaseId?: Prisma.SortOrder
@@ -548,6 +682,10 @@ export type ReviewIssueMaxOrderByAggregateInput = {
   reviewerRiskLevel?: Prisma.SortOrder
   title?: Prisma.SortOrder
   targetText?: Prisma.SortOrder
+  targetFileId?: Prisma.SortOrder
+  targetPage?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
+  agentFindingId?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   finalAction?: Prisma.SortOrder
   reviewerComment?: Prisma.SortOrder
@@ -566,6 +704,10 @@ export type ReviewIssueMinOrderByAggregateInput = {
   reviewerRiskLevel?: Prisma.SortOrder
   title?: Prisma.SortOrder
   targetText?: Prisma.SortOrder
+  targetFileId?: Prisma.SortOrder
+  targetPage?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
+  agentFindingId?: Prisma.SortOrder
   suggestedAction?: Prisma.SortOrder
   finalAction?: Prisma.SortOrder
   reviewerComment?: Prisma.SortOrder
@@ -576,9 +718,19 @@ export type ReviewIssueMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
+export type ReviewIssueSumOrderByAggregateInput = {
+  targetPage?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
+}
+
 export type ReviewIssueScalarRelationFilter = {
   is?: Prisma.ReviewIssueWhereInput
   isNot?: Prisma.ReviewIssueWhereInput
+}
+
+export type ReviewIssueNullableScalarRelationFilter = {
+  is?: Prisma.ReviewIssueWhereInput | null
+  isNot?: Prisma.ReviewIssueWhereInput | null
 }
 
 export type ReviewIssueCreateNestedManyWithoutReviewCaseInput = {
@@ -627,6 +779,22 @@ export type NullableEnumRiskLevelFieldUpdateOperationsInput = {
   set?: $Enums.RiskLevel | null
 }
 
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type EnumSuggestedActionFieldUpdateOperationsInput = {
   set?: $Enums.SuggestedAction
 }
@@ -653,6 +821,64 @@ export type ReviewIssueUpdateOneRequiredWithoutEvidenceNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewIssueUpdateToOneWithWhereWithoutEvidenceInput, Prisma.ReviewIssueUpdateWithoutEvidenceInput>, Prisma.ReviewIssueUncheckedUpdateWithoutEvidenceInput>
 }
 
+export type ReviewIssueCreateNestedManyWithoutAgentFindingInput = {
+  create?: Prisma.XOR<Prisma.ReviewIssueCreateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput> | Prisma.ReviewIssueCreateWithoutAgentFindingInput[] | Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput[]
+  connectOrCreate?: Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput | Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput[]
+  createMany?: Prisma.ReviewIssueCreateManyAgentFindingInputEnvelope
+  connect?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+}
+
+export type ReviewIssueUncheckedCreateNestedManyWithoutAgentFindingInput = {
+  create?: Prisma.XOR<Prisma.ReviewIssueCreateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput> | Prisma.ReviewIssueCreateWithoutAgentFindingInput[] | Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput[]
+  connectOrCreate?: Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput | Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput[]
+  createMany?: Prisma.ReviewIssueCreateManyAgentFindingInputEnvelope
+  connect?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+}
+
+export type ReviewIssueUpdateManyWithoutAgentFindingNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewIssueCreateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput> | Prisma.ReviewIssueCreateWithoutAgentFindingInput[] | Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput[]
+  connectOrCreate?: Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput | Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput[]
+  upsert?: Prisma.ReviewIssueUpsertWithWhereUniqueWithoutAgentFindingInput | Prisma.ReviewIssueUpsertWithWhereUniqueWithoutAgentFindingInput[]
+  createMany?: Prisma.ReviewIssueCreateManyAgentFindingInputEnvelope
+  set?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  disconnect?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  delete?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  connect?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  update?: Prisma.ReviewIssueUpdateWithWhereUniqueWithoutAgentFindingInput | Prisma.ReviewIssueUpdateWithWhereUniqueWithoutAgentFindingInput[]
+  updateMany?: Prisma.ReviewIssueUpdateManyWithWhereWithoutAgentFindingInput | Prisma.ReviewIssueUpdateManyWithWhereWithoutAgentFindingInput[]
+  deleteMany?: Prisma.ReviewIssueScalarWhereInput | Prisma.ReviewIssueScalarWhereInput[]
+}
+
+export type ReviewIssueUncheckedUpdateManyWithoutAgentFindingNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewIssueCreateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput> | Prisma.ReviewIssueCreateWithoutAgentFindingInput[] | Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput[]
+  connectOrCreate?: Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput | Prisma.ReviewIssueCreateOrConnectWithoutAgentFindingInput[]
+  upsert?: Prisma.ReviewIssueUpsertWithWhereUniqueWithoutAgentFindingInput | Prisma.ReviewIssueUpsertWithWhereUniqueWithoutAgentFindingInput[]
+  createMany?: Prisma.ReviewIssueCreateManyAgentFindingInputEnvelope
+  set?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  disconnect?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  delete?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  connect?: Prisma.ReviewIssueWhereUniqueInput | Prisma.ReviewIssueWhereUniqueInput[]
+  update?: Prisma.ReviewIssueUpdateWithWhereUniqueWithoutAgentFindingInput | Prisma.ReviewIssueUpdateWithWhereUniqueWithoutAgentFindingInput[]
+  updateMany?: Prisma.ReviewIssueUpdateManyWithWhereWithoutAgentFindingInput | Prisma.ReviewIssueUpdateManyWithWhereWithoutAgentFindingInput[]
+  deleteMany?: Prisma.ReviewIssueScalarWhereInput | Prisma.ReviewIssueScalarWhereInput[]
+}
+
+export type ReviewIssueCreateNestedOneWithoutChatSessionsInput = {
+  create?: Prisma.XOR<Prisma.ReviewIssueCreateWithoutChatSessionsInput, Prisma.ReviewIssueUncheckedCreateWithoutChatSessionsInput>
+  connectOrCreate?: Prisma.ReviewIssueCreateOrConnectWithoutChatSessionsInput
+  connect?: Prisma.ReviewIssueWhereUniqueInput
+}
+
+export type ReviewIssueUpdateOneWithoutChatSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewIssueCreateWithoutChatSessionsInput, Prisma.ReviewIssueUncheckedCreateWithoutChatSessionsInput>
+  connectOrCreate?: Prisma.ReviewIssueCreateOrConnectWithoutChatSessionsInput
+  upsert?: Prisma.ReviewIssueUpsertWithoutChatSessionsInput
+  disconnect?: Prisma.ReviewIssueWhereInput | boolean
+  delete?: Prisma.ReviewIssueWhereInput | boolean
+  connect?: Prisma.ReviewIssueWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewIssueUpdateToOneWithWhereWithoutChatSessionsInput, Prisma.ReviewIssueUpdateWithoutChatSessionsInput>, Prisma.ReviewIssueUncheckedUpdateWithoutChatSessionsInput>
+}
+
 export type ReviewIssueCreateWithoutReviewCaseInput = {
   id: string
   issueType: string
@@ -661,6 +887,9 @@ export type ReviewIssueCreateWithoutReviewCaseInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -670,7 +899,9 @@ export type ReviewIssueCreateWithoutReviewCaseInput = {
   suggestedCopy: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  agentFinding?: Prisma.AgentFindingCreateNestedOneWithoutIssuesInput
   evidence?: Prisma.EvidenceCreateNestedManyWithoutIssueInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutIssueInput
 }
 
 export type ReviewIssueUncheckedCreateWithoutReviewCaseInput = {
@@ -681,6 +912,10 @@ export type ReviewIssueUncheckedCreateWithoutReviewCaseInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  agentFindingId?: string | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -691,6 +926,7 @@ export type ReviewIssueUncheckedCreateWithoutReviewCaseInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutIssueInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutIssueInput
 }
 
 export type ReviewIssueCreateOrConnectWithoutReviewCaseInput = {
@@ -731,6 +967,10 @@ export type ReviewIssueScalarWhereInput = {
   title?: Prisma.StringFilter<"ReviewIssue"> | string
   targetText?: Prisma.StringFilter<"ReviewIssue"> | string
   targetBbox?: Prisma.JsonFilter<"ReviewIssue">
+  targetFileId?: Prisma.StringNullableFilter<"ReviewIssue"> | string | null
+  targetPage?: Prisma.IntNullableFilter<"ReviewIssue"> | number | null
+  confidence?: Prisma.FloatNullableFilter<"ReviewIssue"> | number | null
+  agentFindingId?: Prisma.StringNullableFilter<"ReviewIssue"> | string | null
   sourceAgents?: Prisma.JsonFilter<"ReviewIssue">
   suggestedAction?: Prisma.EnumSuggestedActionFilter<"ReviewIssue"> | $Enums.SuggestedAction
   finalAction?: Prisma.EnumSuggestedActionNullableFilter<"ReviewIssue"> | $Enums.SuggestedAction | null
@@ -750,6 +990,9 @@ export type ReviewIssueCreateWithoutEvidenceInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -760,6 +1003,8 @@ export type ReviewIssueCreateWithoutEvidenceInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutIssuesInput
+  agentFinding?: Prisma.AgentFindingCreateNestedOneWithoutIssuesInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutIssueInput
 }
 
 export type ReviewIssueUncheckedCreateWithoutEvidenceInput = {
@@ -771,6 +1016,10 @@ export type ReviewIssueUncheckedCreateWithoutEvidenceInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  agentFindingId?: string | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -780,6 +1029,7 @@ export type ReviewIssueUncheckedCreateWithoutEvidenceInput = {
   suggestedCopy: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutIssueInput
 }
 
 export type ReviewIssueCreateOrConnectWithoutEvidenceInput = {
@@ -806,6 +1056,9 @@ export type ReviewIssueUpdateWithoutEvidenceInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -816,6 +1069,8 @@ export type ReviewIssueUpdateWithoutEvidenceInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutIssuesNestedInput
+  agentFinding?: Prisma.AgentFindingUpdateOneWithoutIssuesNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutIssueNestedInput
 }
 
 export type ReviewIssueUncheckedUpdateWithoutEvidenceInput = {
@@ -827,6 +1082,10 @@ export type ReviewIssueUncheckedUpdateWithoutEvidenceInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  agentFindingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -836,6 +1095,199 @@ export type ReviewIssueUncheckedUpdateWithoutEvidenceInput = {
   suggestedCopy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutIssueNestedInput
+}
+
+export type ReviewIssueCreateWithoutAgentFindingInput = {
+  id: string
+  issueType: string
+  riskLevel: $Enums.RiskLevel
+  reviewerRiskLevel?: $Enums.RiskLevel | null
+  title: string
+  targetText: string
+  targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction: $Enums.SuggestedAction
+  finalAction?: $Enums.SuggestedAction | null
+  reviewerComment?: string | null
+  status: $Enums.IssueStatus
+  description: string
+  suggestedCopy: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutIssuesInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutIssueInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutIssueInput
+}
+
+export type ReviewIssueUncheckedCreateWithoutAgentFindingInput = {
+  id: string
+  reviewCaseId: string
+  issueType: string
+  riskLevel: $Enums.RiskLevel
+  reviewerRiskLevel?: $Enums.RiskLevel | null
+  title: string
+  targetText: string
+  targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction: $Enums.SuggestedAction
+  finalAction?: $Enums.SuggestedAction | null
+  reviewerComment?: string | null
+  status: $Enums.IssueStatus
+  description: string
+  suggestedCopy: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutIssueInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutIssueInput
+}
+
+export type ReviewIssueCreateOrConnectWithoutAgentFindingInput = {
+  where: Prisma.ReviewIssueWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewIssueCreateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput>
+}
+
+export type ReviewIssueCreateManyAgentFindingInputEnvelope = {
+  data: Prisma.ReviewIssueCreateManyAgentFindingInput | Prisma.ReviewIssueCreateManyAgentFindingInput[]
+  skipDuplicates?: boolean
+}
+
+export type ReviewIssueUpsertWithWhereUniqueWithoutAgentFindingInput = {
+  where: Prisma.ReviewIssueWhereUniqueInput
+  update: Prisma.XOR<Prisma.ReviewIssueUpdateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedUpdateWithoutAgentFindingInput>
+  create: Prisma.XOR<Prisma.ReviewIssueCreateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedCreateWithoutAgentFindingInput>
+}
+
+export type ReviewIssueUpdateWithWhereUniqueWithoutAgentFindingInput = {
+  where: Prisma.ReviewIssueWhereUniqueInput
+  data: Prisma.XOR<Prisma.ReviewIssueUpdateWithoutAgentFindingInput, Prisma.ReviewIssueUncheckedUpdateWithoutAgentFindingInput>
+}
+
+export type ReviewIssueUpdateManyWithWhereWithoutAgentFindingInput = {
+  where: Prisma.ReviewIssueScalarWhereInput
+  data: Prisma.XOR<Prisma.ReviewIssueUpdateManyMutationInput, Prisma.ReviewIssueUncheckedUpdateManyWithoutAgentFindingInput>
+}
+
+export type ReviewIssueCreateWithoutChatSessionsInput = {
+  id: string
+  issueType: string
+  riskLevel: $Enums.RiskLevel
+  reviewerRiskLevel?: $Enums.RiskLevel | null
+  title: string
+  targetText: string
+  targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction: $Enums.SuggestedAction
+  finalAction?: $Enums.SuggestedAction | null
+  reviewerComment?: string | null
+  status: $Enums.IssueStatus
+  description: string
+  suggestedCopy: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutIssuesInput
+  agentFinding?: Prisma.AgentFindingCreateNestedOneWithoutIssuesInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutIssueInput
+}
+
+export type ReviewIssueUncheckedCreateWithoutChatSessionsInput = {
+  id: string
+  reviewCaseId: string
+  issueType: string
+  riskLevel: $Enums.RiskLevel
+  reviewerRiskLevel?: $Enums.RiskLevel | null
+  title: string
+  targetText: string
+  targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  agentFindingId?: string | null
+  sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction: $Enums.SuggestedAction
+  finalAction?: $Enums.SuggestedAction | null
+  reviewerComment?: string | null
+  status: $Enums.IssueStatus
+  description: string
+  suggestedCopy: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutIssueInput
+}
+
+export type ReviewIssueCreateOrConnectWithoutChatSessionsInput = {
+  where: Prisma.ReviewIssueWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewIssueCreateWithoutChatSessionsInput, Prisma.ReviewIssueUncheckedCreateWithoutChatSessionsInput>
+}
+
+export type ReviewIssueUpsertWithoutChatSessionsInput = {
+  update: Prisma.XOR<Prisma.ReviewIssueUpdateWithoutChatSessionsInput, Prisma.ReviewIssueUncheckedUpdateWithoutChatSessionsInput>
+  create: Prisma.XOR<Prisma.ReviewIssueCreateWithoutChatSessionsInput, Prisma.ReviewIssueUncheckedCreateWithoutChatSessionsInput>
+  where?: Prisma.ReviewIssueWhereInput
+}
+
+export type ReviewIssueUpdateToOneWithWhereWithoutChatSessionsInput = {
+  where?: Prisma.ReviewIssueWhereInput
+  data: Prisma.XOR<Prisma.ReviewIssueUpdateWithoutChatSessionsInput, Prisma.ReviewIssueUncheckedUpdateWithoutChatSessionsInput>
+}
+
+export type ReviewIssueUpdateWithoutChatSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  issueType?: Prisma.StringFieldUpdateOperationsInput | string
+  riskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  reviewerRiskLevel?: Prisma.NullableEnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  targetText?: Prisma.StringFieldUpdateOperationsInput | string
+  targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
+  finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
+  reviewerComment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumIssueStatusFieldUpdateOperationsInput | $Enums.IssueStatus
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  suggestedCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutIssuesNestedInput
+  agentFinding?: Prisma.AgentFindingUpdateOneWithoutIssuesNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutIssueNestedInput
+}
+
+export type ReviewIssueUncheckedUpdateWithoutChatSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewCaseId?: Prisma.StringFieldUpdateOperationsInput | string
+  issueType?: Prisma.StringFieldUpdateOperationsInput | string
+  riskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  reviewerRiskLevel?: Prisma.NullableEnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  targetText?: Prisma.StringFieldUpdateOperationsInput | string
+  targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  agentFindingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
+  finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
+  reviewerComment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumIssueStatusFieldUpdateOperationsInput | $Enums.IssueStatus
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  suggestedCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutIssueNestedInput
 }
 
 export type ReviewIssueCreateManyReviewCaseInput = {
@@ -846,6 +1298,10 @@ export type ReviewIssueCreateManyReviewCaseInput = {
   title: string
   targetText: string
   targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  agentFindingId?: string | null
   sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction: $Enums.SuggestedAction
   finalAction?: $Enums.SuggestedAction | null
@@ -865,6 +1321,9 @@ export type ReviewIssueUpdateWithoutReviewCaseInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -874,7 +1333,9 @@ export type ReviewIssueUpdateWithoutReviewCaseInput = {
   suggestedCopy?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  agentFinding?: Prisma.AgentFindingUpdateOneWithoutIssuesNestedInput
   evidence?: Prisma.EvidenceUpdateManyWithoutIssueNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutIssueNestedInput
 }
 
 export type ReviewIssueUncheckedUpdateWithoutReviewCaseInput = {
@@ -885,6 +1346,10 @@ export type ReviewIssueUncheckedUpdateWithoutReviewCaseInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  agentFindingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -895,6 +1360,7 @@ export type ReviewIssueUncheckedUpdateWithoutReviewCaseInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutIssueNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutIssueNestedInput
 }
 
 export type ReviewIssueUncheckedUpdateManyWithoutReviewCaseInput = {
@@ -905,6 +1371,106 @@ export type ReviewIssueUncheckedUpdateManyWithoutReviewCaseInput = {
   title?: Prisma.StringFieldUpdateOperationsInput | string
   targetText?: Prisma.StringFieldUpdateOperationsInput | string
   targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  agentFindingId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
+  finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
+  reviewerComment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumIssueStatusFieldUpdateOperationsInput | $Enums.IssueStatus
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  suggestedCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type ReviewIssueCreateManyAgentFindingInput = {
+  id: string
+  reviewCaseId: string
+  issueType: string
+  riskLevel: $Enums.RiskLevel
+  reviewerRiskLevel?: $Enums.RiskLevel | null
+  title: string
+  targetText: string
+  targetBbox: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: string | null
+  targetPage?: number | null
+  confidence?: number | null
+  sourceAgents: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction: $Enums.SuggestedAction
+  finalAction?: $Enums.SuggestedAction | null
+  reviewerComment?: string | null
+  status: $Enums.IssueStatus
+  description: string
+  suggestedCopy: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type ReviewIssueUpdateWithoutAgentFindingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  issueType?: Prisma.StringFieldUpdateOperationsInput | string
+  riskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  reviewerRiskLevel?: Prisma.NullableEnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  targetText?: Prisma.StringFieldUpdateOperationsInput | string
+  targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
+  finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
+  reviewerComment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumIssueStatusFieldUpdateOperationsInput | $Enums.IssueStatus
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  suggestedCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutIssuesNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutIssueNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutIssueNestedInput
+}
+
+export type ReviewIssueUncheckedUpdateWithoutAgentFindingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewCaseId?: Prisma.StringFieldUpdateOperationsInput | string
+  issueType?: Prisma.StringFieldUpdateOperationsInput | string
+  riskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  reviewerRiskLevel?: Prisma.NullableEnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  targetText?: Prisma.StringFieldUpdateOperationsInput | string
+  targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
+  finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
+  reviewerComment?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumIssueStatusFieldUpdateOperationsInput | $Enums.IssueStatus
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  suggestedCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutIssueNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutIssueNestedInput
+}
+
+export type ReviewIssueUncheckedUpdateManyWithoutAgentFindingInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewCaseId?: Prisma.StringFieldUpdateOperationsInput | string
+  issueType?: Prisma.StringFieldUpdateOperationsInput | string
+  riskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  reviewerRiskLevel?: Prisma.NullableEnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  targetText?: Prisma.StringFieldUpdateOperationsInput | string
+  targetBbox?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  targetFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetPage?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  confidence?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   sourceAgents?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   suggestedAction?: Prisma.EnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction
   finalAction?: Prisma.NullableEnumSuggestedActionFieldUpdateOperationsInput | $Enums.SuggestedAction | null
@@ -923,10 +1489,12 @@ export type ReviewIssueUncheckedUpdateManyWithoutReviewCaseInput = {
 
 export type ReviewIssueCountOutputType = {
   evidence: number
+  chatSessions: number
 }
 
 export type ReviewIssueCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   evidence?: boolean | ReviewIssueCountOutputTypeCountEvidenceArgs
+  chatSessions?: boolean | ReviewIssueCountOutputTypeCountChatSessionsArgs
 }
 
 /**
@@ -946,6 +1514,13 @@ export type ReviewIssueCountOutputTypeCountEvidenceArgs<ExtArgs extends runtime.
   where?: Prisma.EvidenceWhereInput
 }
 
+/**
+ * ReviewIssueCountOutputType without action
+ */
+export type ReviewIssueCountOutputTypeCountChatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChatSessionWhereInput
+}
+
 
 export type ReviewIssueSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -956,6 +1531,10 @@ export type ReviewIssueSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   title?: boolean
   targetText?: boolean
   targetBbox?: boolean
+  targetFileId?: boolean
+  targetPage?: boolean
+  confidence?: boolean
+  agentFindingId?: boolean
   sourceAgents?: boolean
   suggestedAction?: boolean
   finalAction?: boolean
@@ -966,7 +1545,9 @@ export type ReviewIssueSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   createdAt?: boolean
   updatedAt?: boolean
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  agentFinding?: boolean | Prisma.ReviewIssue$agentFindingArgs<ExtArgs>
   evidence?: boolean | Prisma.ReviewIssue$evidenceArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.ReviewIssue$chatSessionsArgs<ExtArgs>
   _count?: boolean | Prisma.ReviewIssueCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reviewIssue"]>
 
@@ -979,6 +1560,10 @@ export type ReviewIssueSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   title?: boolean
   targetText?: boolean
   targetBbox?: boolean
+  targetFileId?: boolean
+  targetPage?: boolean
+  confidence?: boolean
+  agentFindingId?: boolean
   sourceAgents?: boolean
   suggestedAction?: boolean
   finalAction?: boolean
@@ -989,6 +1574,7 @@ export type ReviewIssueSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   createdAt?: boolean
   updatedAt?: boolean
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  agentFinding?: boolean | Prisma.ReviewIssue$agentFindingArgs<ExtArgs>
 }, ExtArgs["result"]["reviewIssue"]>
 
 export type ReviewIssueSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1000,6 +1586,10 @@ export type ReviewIssueSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   title?: boolean
   targetText?: boolean
   targetBbox?: boolean
+  targetFileId?: boolean
+  targetPage?: boolean
+  confidence?: boolean
+  agentFindingId?: boolean
   sourceAgents?: boolean
   suggestedAction?: boolean
   finalAction?: boolean
@@ -1010,6 +1600,7 @@ export type ReviewIssueSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   createdAt?: boolean
   updatedAt?: boolean
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  agentFinding?: boolean | Prisma.ReviewIssue$agentFindingArgs<ExtArgs>
 }, ExtArgs["result"]["reviewIssue"]>
 
 export type ReviewIssueSelectScalar = {
@@ -1021,6 +1612,10 @@ export type ReviewIssueSelectScalar = {
   title?: boolean
   targetText?: boolean
   targetBbox?: boolean
+  targetFileId?: boolean
+  targetPage?: boolean
+  confidence?: boolean
+  agentFindingId?: boolean
   sourceAgents?: boolean
   suggestedAction?: boolean
   finalAction?: boolean
@@ -1032,24 +1627,30 @@ export type ReviewIssueSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ReviewIssueOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "reviewCaseId" | "issueType" | "riskLevel" | "reviewerRiskLevel" | "title" | "targetText" | "targetBbox" | "sourceAgents" | "suggestedAction" | "finalAction" | "reviewerComment" | "status" | "description" | "suggestedCopy" | "createdAt" | "updatedAt", ExtArgs["result"]["reviewIssue"]>
+export type ReviewIssueOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "reviewCaseId" | "issueType" | "riskLevel" | "reviewerRiskLevel" | "title" | "targetText" | "targetBbox" | "targetFileId" | "targetPage" | "confidence" | "agentFindingId" | "sourceAgents" | "suggestedAction" | "finalAction" | "reviewerComment" | "status" | "description" | "suggestedCopy" | "createdAt" | "updatedAt", ExtArgs["result"]["reviewIssue"]>
 export type ReviewIssueInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  agentFinding?: boolean | Prisma.ReviewIssue$agentFindingArgs<ExtArgs>
   evidence?: boolean | Prisma.ReviewIssue$evidenceArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.ReviewIssue$chatSessionsArgs<ExtArgs>
   _count?: boolean | Prisma.ReviewIssueCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ReviewIssueIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  agentFinding?: boolean | Prisma.ReviewIssue$agentFindingArgs<ExtArgs>
 }
 export type ReviewIssueIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  agentFinding?: boolean | Prisma.ReviewIssue$agentFindingArgs<ExtArgs>
 }
 
 export type $ReviewIssuePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "ReviewIssue"
   objects: {
     reviewCase: Prisma.$ReviewCasePayload<ExtArgs>
+    agentFinding: Prisma.$AgentFindingPayload<ExtArgs> | null
     evidence: Prisma.$EvidencePayload<ExtArgs>[]
+    chatSessions: Prisma.$ChatSessionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1060,6 +1661,10 @@ export type $ReviewIssuePayload<ExtArgs extends runtime.Types.Extensions.Interna
     title: string
     targetText: string
     targetBbox: runtime.JsonValue
+    targetFileId: string | null
+    targetPage: number | null
+    confidence: number | null
+    agentFindingId: string | null
     sourceAgents: runtime.JsonValue
     suggestedAction: $Enums.SuggestedAction
     finalAction: $Enums.SuggestedAction | null
@@ -1464,7 +2069,9 @@ readonly fields: ReviewIssueFieldRefs;
 export interface Prisma__ReviewIssueClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   reviewCase<T extends Prisma.ReviewCaseDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCaseDefaultArgs<ExtArgs>>): Prisma.Prisma__ReviewCaseClient<runtime.Types.Result.GetResult<Prisma.$ReviewCasePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  agentFinding<T extends Prisma.ReviewIssue$agentFindingArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewIssue$agentFindingArgs<ExtArgs>>): Prisma.Prisma__AgentFindingClient<runtime.Types.Result.GetResult<Prisma.$AgentFindingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   evidence<T extends Prisma.ReviewIssue$evidenceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewIssue$evidenceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvidencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  chatSessions<T extends Prisma.ReviewIssue$chatSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewIssue$chatSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1502,6 +2109,10 @@ export interface ReviewIssueFieldRefs {
   readonly title: Prisma.FieldRef<"ReviewIssue", 'String'>
   readonly targetText: Prisma.FieldRef<"ReviewIssue", 'String'>
   readonly targetBbox: Prisma.FieldRef<"ReviewIssue", 'Json'>
+  readonly targetFileId: Prisma.FieldRef<"ReviewIssue", 'String'>
+  readonly targetPage: Prisma.FieldRef<"ReviewIssue", 'Int'>
+  readonly confidence: Prisma.FieldRef<"ReviewIssue", 'Float'>
+  readonly agentFindingId: Prisma.FieldRef<"ReviewIssue", 'String'>
   readonly sourceAgents: Prisma.FieldRef<"ReviewIssue", 'Json'>
   readonly suggestedAction: Prisma.FieldRef<"ReviewIssue", 'SuggestedAction'>
   readonly finalAction: Prisma.FieldRef<"ReviewIssue", 'SuggestedAction'>
@@ -1912,6 +2523,25 @@ export type ReviewIssueDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
+ * ReviewIssue.agentFinding
+ */
+export type ReviewIssue$agentFindingArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentFinding
+   */
+  select?: Prisma.AgentFindingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentFinding
+   */
+  omit?: Prisma.AgentFindingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentFindingInclude<ExtArgs> | null
+  where?: Prisma.AgentFindingWhereInput
+}
+
+/**
  * ReviewIssue.evidence
  */
 export type ReviewIssue$evidenceArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1933,6 +2563,30 @@ export type ReviewIssue$evidenceArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.EvidenceScalarFieldEnum | Prisma.EvidenceScalarFieldEnum[]
+}
+
+/**
+ * ReviewIssue.chatSessions
+ */
+export type ReviewIssue$chatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChatSession
+   */
+  select?: Prisma.ChatSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChatSession
+   */
+  omit?: Prisma.ChatSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChatSessionInclude<ExtArgs> | null
+  where?: Prisma.ChatSessionWhereInput
+  orderBy?: Prisma.ChatSessionOrderByWithRelationInput | Prisma.ChatSessionOrderByWithRelationInput[]
+  cursor?: Prisma.ChatSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChatSessionScalarFieldEnum | Prisma.ChatSessionScalarFieldEnum[]
 }
 
 /**

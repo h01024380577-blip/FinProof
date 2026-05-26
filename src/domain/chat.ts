@@ -47,15 +47,15 @@ export function answerReviewQuestion({
 
 export function generateDraftWithChatContext(
   review: ReviewCase,
-  markedResponses: ReviewChatResponse[]
+  chatResponses: ReviewChatResponse[]
 ): string {
   const evidenceTitles = Array.from(
     new Set(
-      markedResponses.flatMap((response) => response.evidence.map((evidence) => evidence.title))
+      chatResponses.flatMap((response) => response.evidence.map((evidence) => evidence.title))
     )
   );
 
-  if (markedResponses.length === 0 || evidenceTitles.length === 0) {
+  if (chatResponses.length === 0 || evidenceTitles.length === 0) {
     return review.expectedDraft;
   }
 

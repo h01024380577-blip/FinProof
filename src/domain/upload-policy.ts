@@ -149,16 +149,16 @@ export function classifyUploadFile(file: UploadFileDescriptor): ReviewFile["file
     return "terms";
   }
 
+  if (normalizedName.includes("checklist") || normalizedName.includes("체크리스트")) {
+    return "checklist";
+  }
+
   if (
     normalizedName.includes("rate") ||
     normalizedName.includes("금리") ||
     normalizedName.endsWith(".xlsx")
   ) {
     return "rate_table";
-  }
-
-  if (normalizedName.includes("checklist") || normalizedName.includes("체크리스트")) {
-    return "checklist";
   }
 
   if (normalizedName.includes("url")) {

@@ -11,3 +11,4 @@ coverage/
 security/
 *.pem
 *.key
+.finproof-uploads/

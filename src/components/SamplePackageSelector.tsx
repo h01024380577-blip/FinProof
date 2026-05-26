@@ -25,12 +25,12 @@ type UploadResult = {
 
 const initialMeta: IntakeMetaState = {
   title: "",
-  affiliate: "광주은행",
-  requestDepartment: "디지털마케팅팀",
-  productType: "deposit",
-  plannedPublishDate: "2026-06-20",
-  channels: { mobile_app: true, website: false, offline: false },
-  requestMemo: "심의 시 특별히 검토가 필요한 부분을 작성해주세요."
+  affiliate: "",
+  requestDepartment: "",
+  productType: "",
+  plannedPublishDate: "",
+  channels: { mobile_app: false, website: false, offline: false },
+  requestMemo: ""
 };
 
 function getRepresentedMissingKeys(materialRows: RequiredMaterialRow[]): Set<string> {
@@ -111,10 +111,12 @@ export function SamplePackageSelector(): JSX.Element {
   const localFilePreview = useMemo(() => buildLocalFilePreview(uploadFiles), [uploadFiles]);
   const classifiedFiles = uploadResult?.files ?? localFilePreview;
   const activeProductType = uploadResult?.reviewCase.productType ?? meta.productType;
-  const materialRows = getRequiredMaterialRows({
-    productType: activeProductType,
-    files: classifiedFiles
-  });
+  const materialRows = activeProductType
+    ? getRequiredMaterialRows({
+        productType: activeProductType,
+        files: classifiedFiles
+      })
+    : [];
   const extraMissingMaterials = uploadResult
     ? getExtraMissingMaterials(uploadResult.missingMaterials, materialRows)
     : [];
@@ -128,6 +130,17 @@ export function SamplePackageSelector(): JSX.Element {
       if (!uploadError) {
         setUploadError("업로드할 파일을 선택해 주세요.");
       }
+      return;
+    }
+
+    if (
+      meta.title.trim().length === 0 ||
+      meta.affiliate.trim().length === 0 ||
+      meta.requestDepartment.trim().length === 0 ||
+      meta.productType.length === 0 ||
+      meta.plannedPublishDate.trim().length === 0
+    ) {
+      setUploadError("필수 메타 정보를 입력해 주세요.");
       return;
     }
 

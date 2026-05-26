@@ -203,6 +203,11 @@ export type UserWhereInput = {
   assignedCases?: Prisma.ReviewCaseListRelationFilter
   startedAnalysisJobs?: Prisma.AnalysisJobListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
+  draftVersions?: Prisma.DraftVersionListRelationFilter
+  reviewReports?: Prisma.ReviewReportListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -218,6 +223,11 @@ export type UserOrderByWithRelationInput = {
   assignedCases?: Prisma.ReviewCaseOrderByRelationAggregateInput
   startedAnalysisJobs?: Prisma.AnalysisJobOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentOrderByRelationAggregateInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentOrderByRelationAggregateInput
+  chatSessions?: Prisma.ChatSessionOrderByRelationAggregateInput
+  draftVersions?: Prisma.DraftVersionOrderByRelationAggregateInput
+  reviewReports?: Prisma.ReviewReportOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -236,6 +246,11 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   assignedCases?: Prisma.ReviewCaseListRelationFilter
   startedAnalysisJobs?: Prisma.AnalysisJobListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
+  draftVersions?: Prisma.DraftVersionListRelationFilter
+  reviewReports?: Prisma.ReviewReportListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -276,6 +291,11 @@ export type UserCreateInput = {
   assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -290,6 +310,11 @@ export type UserUncheckedCreateInput = {
   assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserUpdateInput = {
@@ -304,6 +329,11 @@ export type UserUpdateInput = {
   assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -318,6 +348,11 @@ export type UserUncheckedUpdateInput = {
   assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -495,6 +530,78 @@ export type UserUpdateOneWithoutStartedAnalysisJobsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutStartedAnalysisJobsInput, Prisma.UserUpdateWithoutStartedAnalysisJobsInput>, Prisma.UserUncheckedUpdateWithoutStartedAnalysisJobsInput>
 }
 
+export type UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutCreatedKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedKnowledgeDocumentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutApprovedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutApprovedKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutApprovedKnowledgeDocumentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCreatedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutCreatedKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCreatedKnowledgeDocumentsInput
+  upsert?: Prisma.UserUpsertWithoutCreatedKnowledgeDocumentsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCreatedKnowledgeDocumentsInput, Prisma.UserUpdateWithoutCreatedKnowledgeDocumentsInput>, Prisma.UserUncheckedUpdateWithoutCreatedKnowledgeDocumentsInput>
+}
+
+export type UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutApprovedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutApprovedKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutApprovedKnowledgeDocumentsInput
+  upsert?: Prisma.UserUpsertWithoutApprovedKnowledgeDocumentsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutApprovedKnowledgeDocumentsInput, Prisma.UserUpdateWithoutApprovedKnowledgeDocumentsInput>, Prisma.UserUncheckedUpdateWithoutApprovedKnowledgeDocumentsInput>
+}
+
+export type UserCreateNestedOneWithoutChatSessionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutChatSessionsInput, Prisma.UserUncheckedCreateWithoutChatSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChatSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutChatSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutChatSessionsInput, Prisma.UserUncheckedCreateWithoutChatSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChatSessionsInput
+  upsert?: Prisma.UserUpsertWithoutChatSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutChatSessionsInput, Prisma.UserUpdateWithoutChatSessionsInput>, Prisma.UserUncheckedUpdateWithoutChatSessionsInput>
+}
+
+export type UserCreateNestedOneWithoutDraftVersionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDraftVersionsInput, Prisma.UserUncheckedCreateWithoutDraftVersionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDraftVersionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDraftVersionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDraftVersionsInput, Prisma.UserUncheckedCreateWithoutDraftVersionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDraftVersionsInput
+  upsert?: Prisma.UserUpsertWithoutDraftVersionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDraftVersionsInput, Prisma.UserUpdateWithoutDraftVersionsInput>, Prisma.UserUncheckedUpdateWithoutDraftVersionsInput>
+}
+
+export type UserCreateNestedOneWithoutReviewReportsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReviewReportsInput, Prisma.UserUncheckedCreateWithoutReviewReportsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReviewReportsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutReviewReportsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReviewReportsInput, Prisma.UserUncheckedCreateWithoutReviewReportsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReviewReportsInput
+  upsert?: Prisma.UserUpsertWithoutReviewReportsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReviewReportsInput, Prisma.UserUpdateWithoutReviewReportsInput>, Prisma.UserUncheckedUpdateWithoutReviewReportsInput>
+}
+
 export type UserCreateNestedOneWithoutAuditLogsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutAuditLogsInput, Prisma.UserUncheckedCreateWithoutAuditLogsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutAuditLogsInput
@@ -522,6 +629,11 @@ export type UserCreateWithoutTenantInput = {
   assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserUncheckedCreateWithoutTenantInput = {
@@ -535,6 +647,11 @@ export type UserUncheckedCreateWithoutTenantInput = {
   assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserCreateOrConnectWithoutTenantInput = {
@@ -587,6 +704,11 @@ export type UserCreateWithoutRequestedCasesInput = {
   assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserUncheckedCreateWithoutRequestedCasesInput = {
@@ -600,6 +722,11 @@ export type UserUncheckedCreateWithoutRequestedCasesInput = {
   assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserCreateOrConnectWithoutRequestedCasesInput = {
@@ -618,6 +745,11 @@ export type UserCreateWithoutAssignedCasesInput = {
   requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
   startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserUncheckedCreateWithoutAssignedCasesInput = {
@@ -631,6 +763,11 @@ export type UserUncheckedCreateWithoutAssignedCasesInput = {
   requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserCreateOrConnectWithoutAssignedCasesInput = {
@@ -660,6 +797,11 @@ export type UserUpdateWithoutRequestedCasesInput = {
   assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRequestedCasesInput = {
@@ -673,6 +815,11 @@ export type UserUncheckedUpdateWithoutRequestedCasesInput = {
   assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUpsertWithoutAssignedCasesInput = {
@@ -697,6 +844,11 @@ export type UserUpdateWithoutAssignedCasesInput = {
   requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignedCasesInput = {
@@ -710,6 +862,11 @@ export type UserUncheckedUpdateWithoutAssignedCasesInput = {
   requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserCreateWithoutStartedAnalysisJobsInput = {
@@ -723,6 +880,11 @@ export type UserCreateWithoutStartedAnalysisJobsInput = {
   requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
   assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserUncheckedCreateWithoutStartedAnalysisJobsInput = {
@@ -736,6 +898,11 @@ export type UserUncheckedCreateWithoutStartedAnalysisJobsInput = {
   requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
   assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserCreateOrConnectWithoutStartedAnalysisJobsInput = {
@@ -765,6 +932,11 @@ export type UserUpdateWithoutStartedAnalysisJobsInput = {
   requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
   assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutStartedAnalysisJobsInput = {
@@ -778,6 +950,451 @@ export type UserUncheckedUpdateWithoutStartedAnalysisJobsInput = {
   requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
   assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserCreateWithoutCreatedKnowledgeDocumentsInput = {
+  id: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutUsersInput
+  requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutCreatedKnowledgeDocumentsInput = {
+  id: string
+  tenantId: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutCreatedKnowledgeDocumentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutCreatedKnowledgeDocumentsInput>
+}
+
+export type UserCreateWithoutApprovedKnowledgeDocumentsInput = {
+  id: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutUsersInput
+  requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutApprovedKnowledgeDocumentsInput = {
+  id: string
+  tenantId: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutApprovedKnowledgeDocumentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutApprovedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutApprovedKnowledgeDocumentsInput>
+}
+
+export type UserUpsertWithoutCreatedKnowledgeDocumentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCreatedKnowledgeDocumentsInput, Prisma.UserUncheckedUpdateWithoutCreatedKnowledgeDocumentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCreatedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutCreatedKnowledgeDocumentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCreatedKnowledgeDocumentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCreatedKnowledgeDocumentsInput, Prisma.UserUncheckedUpdateWithoutCreatedKnowledgeDocumentsInput>
+}
+
+export type UserUpdateWithoutCreatedKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutUsersNestedInput
+  requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCreatedKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUpsertWithoutApprovedKnowledgeDocumentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutApprovedKnowledgeDocumentsInput, Prisma.UserUncheckedUpdateWithoutApprovedKnowledgeDocumentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutApprovedKnowledgeDocumentsInput, Prisma.UserUncheckedCreateWithoutApprovedKnowledgeDocumentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutApprovedKnowledgeDocumentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutApprovedKnowledgeDocumentsInput, Prisma.UserUncheckedUpdateWithoutApprovedKnowledgeDocumentsInput>
+}
+
+export type UserUpdateWithoutApprovedKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutUsersNestedInput
+  requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutApprovedKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserCreateWithoutChatSessionsInput = {
+  id: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutUsersInput
+  requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutChatSessionsInput = {
+  id: string
+  tenantId: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutChatSessionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutChatSessionsInput, Prisma.UserUncheckedCreateWithoutChatSessionsInput>
+}
+
+export type UserUpsertWithoutChatSessionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutChatSessionsInput, Prisma.UserUncheckedUpdateWithoutChatSessionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutChatSessionsInput, Prisma.UserUncheckedCreateWithoutChatSessionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutChatSessionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutChatSessionsInput, Prisma.UserUncheckedUpdateWithoutChatSessionsInput>
+}
+
+export type UserUpdateWithoutChatSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutUsersNestedInput
+  requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutChatSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserCreateWithoutDraftVersionsInput = {
+  id: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutUsersInput
+  requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutDraftVersionsInput = {
+  id: string
+  tenantId: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutDraftVersionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDraftVersionsInput, Prisma.UserUncheckedCreateWithoutDraftVersionsInput>
+}
+
+export type UserUpsertWithoutDraftVersionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDraftVersionsInput, Prisma.UserUncheckedUpdateWithoutDraftVersionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDraftVersionsInput, Prisma.UserUncheckedCreateWithoutDraftVersionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDraftVersionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDraftVersionsInput, Prisma.UserUncheckedUpdateWithoutDraftVersionsInput>
+}
+
+export type UserUpdateWithoutDraftVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutUsersNestedInput
+  requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDraftVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserCreateWithoutReviewReportsInput = {
+  id: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutUsersInput
+  requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserUncheckedCreateWithoutReviewReportsInput = {
+  id: string
+  tenantId: string
+  email: string
+  name: string
+  role: $Enums.RoleId
+  status?: $Enums.UserStatus
+  createdAt?: Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
+  assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutUserInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+}
+
+export type UserCreateOrConnectWithoutReviewReportsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutReviewReportsInput, Prisma.UserUncheckedCreateWithoutReviewReportsInput>
+}
+
+export type UserUpsertWithoutReviewReportsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutReviewReportsInput, Prisma.UserUncheckedUpdateWithoutReviewReportsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutReviewReportsInput, Prisma.UserUncheckedCreateWithoutReviewReportsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutReviewReportsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutReviewReportsInput, Prisma.UserUncheckedUpdateWithoutReviewReportsInput>
+}
+
+export type UserUpdateWithoutReviewReportsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutUsersNestedInput
+  requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutReviewReportsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleIdFieldUpdateOperationsInput | $Enums.RoleId
+  status?: Prisma.EnumUserStatusFieldUpdateOperationsInput | $Enums.UserStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
+  assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
+  startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -791,6 +1408,11 @@ export type UserCreateWithoutAuditLogsInput = {
   requestedCases?: Prisma.ReviewCaseCreateNestedManyWithoutRequesterInput
   assignedCases?: Prisma.ReviewCaseCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutStartedByInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -804,6 +1426,11 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   requestedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutRequesterInput
   assignedCases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutReviewerInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutStartedByInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutCreatedByInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutApprovedByInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutUserInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutCreatedByInput
+  reviewReports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutCreatedByInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -833,6 +1460,11 @@ export type UserUpdateWithoutAuditLogsInput = {
   requestedCases?: Prisma.ReviewCaseUpdateManyWithoutRequesterNestedInput
   assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -846,6 +1478,11 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   requestedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutRequesterNestedInput
   assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserCreateManyTenantInput = {
@@ -868,6 +1505,11 @@ export type UserUpdateWithoutTenantInput = {
   assignedCases?: Prisma.ReviewCaseUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTenantInput = {
@@ -881,6 +1523,11 @@ export type UserUncheckedUpdateWithoutTenantInput = {
   assignedCases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerNestedInput
   startedAnalysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutStartedByNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  createdKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByNestedInput
+  approvedKnowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutUserNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+  reviewReports?: Prisma.ReviewReportUncheckedUpdateManyWithoutCreatedByNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutTenantInput = {
@@ -902,6 +1549,11 @@ export type UserCountOutputType = {
   assignedCases: number
   startedAnalysisJobs: number
   auditLogs: number
+  createdKnowledgeDocuments: number
+  approvedKnowledgeDocuments: number
+  chatSessions: number
+  draftVersions: number
+  reviewReports: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -909,6 +1561,11 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   assignedCases?: boolean | UserCountOutputTypeCountAssignedCasesArgs
   startedAnalysisJobs?: boolean | UserCountOutputTypeCountStartedAnalysisJobsArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
+  createdKnowledgeDocuments?: boolean | UserCountOutputTypeCountCreatedKnowledgeDocumentsArgs
+  approvedKnowledgeDocuments?: boolean | UserCountOutputTypeCountApprovedKnowledgeDocumentsArgs
+  chatSessions?: boolean | UserCountOutputTypeCountChatSessionsArgs
+  draftVersions?: boolean | UserCountOutputTypeCountDraftVersionsArgs
+  reviewReports?: boolean | UserCountOutputTypeCountReviewReportsArgs
 }
 
 /**
@@ -949,6 +1606,41 @@ export type UserCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.
   where?: Prisma.AuditLogWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCreatedKnowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.KnowledgeDocumentWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountApprovedKnowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.KnowledgeDocumentWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountChatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChatSessionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDraftVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DraftVersionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountReviewReportsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ReviewReportWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -963,6 +1655,11 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   assignedCases?: boolean | Prisma.User$assignedCasesArgs<ExtArgs>
   startedAnalysisJobs?: boolean | Prisma.User$startedAnalysisJobsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
+  createdKnowledgeDocuments?: boolean | Prisma.User$createdKnowledgeDocumentsArgs<ExtArgs>
+  approvedKnowledgeDocuments?: boolean | Prisma.User$approvedKnowledgeDocumentsArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.User$chatSessionsArgs<ExtArgs>
+  draftVersions?: boolean | Prisma.User$draftVersionsArgs<ExtArgs>
+  reviewReports?: boolean | Prisma.User$reviewReportsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1005,6 +1702,11 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   assignedCases?: boolean | Prisma.User$assignedCasesArgs<ExtArgs>
   startedAnalysisJobs?: boolean | Prisma.User$startedAnalysisJobsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
+  createdKnowledgeDocuments?: boolean | Prisma.User$createdKnowledgeDocumentsArgs<ExtArgs>
+  approvedKnowledgeDocuments?: boolean | Prisma.User$approvedKnowledgeDocumentsArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.User$chatSessionsArgs<ExtArgs>
+  draftVersions?: boolean | Prisma.User$draftVersionsArgs<ExtArgs>
+  reviewReports?: boolean | Prisma.User$reviewReportsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1022,6 +1724,11 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     assignedCases: Prisma.$ReviewCasePayload<ExtArgs>[]
     startedAnalysisJobs: Prisma.$AnalysisJobPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
+    createdKnowledgeDocuments: Prisma.$KnowledgeDocumentPayload<ExtArgs>[]
+    approvedKnowledgeDocuments: Prisma.$KnowledgeDocumentPayload<ExtArgs>[]
+    chatSessions: Prisma.$ChatSessionPayload<ExtArgs>[]
+    draftVersions: Prisma.$DraftVersionPayload<ExtArgs>[]
+    reviewReports: Prisma.$ReviewReportPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1430,6 +2137,11 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   assignedCases<T extends Prisma.User$assignedCasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignedCasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewCasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   startedAnalysisJobs<T extends Prisma.User$startedAnalysisJobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$startedAnalysisJobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnalysisJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  createdKnowledgeDocuments<T extends Prisma.User$createdKnowledgeDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$createdKnowledgeDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  approvedKnowledgeDocuments<T extends Prisma.User$approvedKnowledgeDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$approvedKnowledgeDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  chatSessions<T extends Prisma.User$chatSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$chatSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  draftVersions<T extends Prisma.User$draftVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$draftVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DraftVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  reviewReports<T extends Prisma.User$reviewReportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$reviewReportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1960,6 +2672,126 @@ export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
+}
+
+/**
+ * User.createdKnowledgeDocuments
+ */
+export type User$createdKnowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the KnowledgeDocument
+   */
+  select?: Prisma.KnowledgeDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the KnowledgeDocument
+   */
+  omit?: Prisma.KnowledgeDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KnowledgeDocumentInclude<ExtArgs> | null
+  where?: Prisma.KnowledgeDocumentWhereInput
+  orderBy?: Prisma.KnowledgeDocumentOrderByWithRelationInput | Prisma.KnowledgeDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.KnowledgeDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.KnowledgeDocumentScalarFieldEnum | Prisma.KnowledgeDocumentScalarFieldEnum[]
+}
+
+/**
+ * User.approvedKnowledgeDocuments
+ */
+export type User$approvedKnowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the KnowledgeDocument
+   */
+  select?: Prisma.KnowledgeDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the KnowledgeDocument
+   */
+  omit?: Prisma.KnowledgeDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KnowledgeDocumentInclude<ExtArgs> | null
+  where?: Prisma.KnowledgeDocumentWhereInput
+  orderBy?: Prisma.KnowledgeDocumentOrderByWithRelationInput | Prisma.KnowledgeDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.KnowledgeDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.KnowledgeDocumentScalarFieldEnum | Prisma.KnowledgeDocumentScalarFieldEnum[]
+}
+
+/**
+ * User.chatSessions
+ */
+export type User$chatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChatSession
+   */
+  select?: Prisma.ChatSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChatSession
+   */
+  omit?: Prisma.ChatSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChatSessionInclude<ExtArgs> | null
+  where?: Prisma.ChatSessionWhereInput
+  orderBy?: Prisma.ChatSessionOrderByWithRelationInput | Prisma.ChatSessionOrderByWithRelationInput[]
+  cursor?: Prisma.ChatSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChatSessionScalarFieldEnum | Prisma.ChatSessionScalarFieldEnum[]
+}
+
+/**
+ * User.draftVersions
+ */
+export type User$draftVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DraftVersion
+   */
+  select?: Prisma.DraftVersionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DraftVersion
+   */
+  omit?: Prisma.DraftVersionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DraftVersionInclude<ExtArgs> | null
+  where?: Prisma.DraftVersionWhereInput
+  orderBy?: Prisma.DraftVersionOrderByWithRelationInput | Prisma.DraftVersionOrderByWithRelationInput[]
+  cursor?: Prisma.DraftVersionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DraftVersionScalarFieldEnum | Prisma.DraftVersionScalarFieldEnum[]
+}
+
+/**
+ * User.reviewReports
+ */
+export type User$reviewReportsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ReviewReport
+   */
+  select?: Prisma.ReviewReportSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ReviewReport
+   */
+  omit?: Prisma.ReviewReportOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReviewReportInclude<ExtArgs> | null
+  where?: Prisma.ReviewReportWhereInput
+  orderBy?: Prisma.ReviewReportOrderByWithRelationInput | Prisma.ReviewReportOrderByWithRelationInput[]
+  cursor?: Prisma.ReviewReportWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ReviewReportScalarFieldEnum | Prisma.ReviewReportScalarFieldEnum[]
 }
 
 /**

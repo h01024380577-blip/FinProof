@@ -399,6 +399,11 @@ export type ReviewCaseWhereInput = {
   files?: Prisma.ReviewFileListRelationFilter
   issues?: Prisma.ReviewIssueListRelationFilter
   analysisJobs?: Prisma.AnalysisJobListRelationFilter
+  agentRuns?: Prisma.AgentRunListRelationFilter
+  agentFindings?: Prisma.AgentFindingListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
+  draftVersions?: Prisma.DraftVersionListRelationFilter
+  reports?: Prisma.ReviewReportListRelationFilter
 }
 
 export type ReviewCaseOrderByWithRelationInput = {
@@ -437,6 +442,11 @@ export type ReviewCaseOrderByWithRelationInput = {
   files?: Prisma.ReviewFileOrderByRelationAggregateInput
   issues?: Prisma.ReviewIssueOrderByRelationAggregateInput
   analysisJobs?: Prisma.AnalysisJobOrderByRelationAggregateInput
+  agentRuns?: Prisma.AgentRunOrderByRelationAggregateInput
+  agentFindings?: Prisma.AgentFindingOrderByRelationAggregateInput
+  chatSessions?: Prisma.ChatSessionOrderByRelationAggregateInput
+  draftVersions?: Prisma.DraftVersionOrderByRelationAggregateInput
+  reports?: Prisma.ReviewReportOrderByRelationAggregateInput
 }
 
 export type ReviewCaseWhereUniqueInput = Prisma.AtLeast<{
@@ -478,6 +488,11 @@ export type ReviewCaseWhereUniqueInput = Prisma.AtLeast<{
   files?: Prisma.ReviewFileListRelationFilter
   issues?: Prisma.ReviewIssueListRelationFilter
   analysisJobs?: Prisma.AnalysisJobListRelationFilter
+  agentRuns?: Prisma.AgentRunListRelationFilter
+  agentFindings?: Prisma.AgentFindingListRelationFilter
+  chatSessions?: Prisma.ChatSessionListRelationFilter
+  draftVersions?: Prisma.DraftVersionListRelationFilter
+  reports?: Prisma.ReviewReportListRelationFilter
 }, "id">
 
 export type ReviewCaseOrderByWithAggregationInput = {
@@ -582,6 +597,11 @@ export type ReviewCaseCreateInput = {
   files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateInput = {
@@ -616,6 +636,11 @@ export type ReviewCaseUncheckedCreateInput = {
   files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUpdateInput = {
@@ -650,6 +675,11 @@ export type ReviewCaseUpdateInput = {
   files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateInput = {
@@ -684,6 +714,11 @@ export type ReviewCaseUncheckedUpdateInput = {
   files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateManyInput = {
@@ -1125,6 +1160,76 @@ export type ReviewCaseUpdateOneRequiredWithoutAnalysisJobsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutAnalysisJobsInput, Prisma.ReviewCaseUpdateWithoutAnalysisJobsInput>, Prisma.ReviewCaseUncheckedUpdateWithoutAnalysisJobsInput>
 }
 
+export type ReviewCaseCreateNestedOneWithoutAgentRunsInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentRunsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentRunsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutAgentRunsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+}
+
+export type ReviewCaseUpdateOneRequiredWithoutAgentRunsNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentRunsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentRunsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutAgentRunsInput
+  upsert?: Prisma.ReviewCaseUpsertWithoutAgentRunsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutAgentRunsInput, Prisma.ReviewCaseUpdateWithoutAgentRunsInput>, Prisma.ReviewCaseUncheckedUpdateWithoutAgentRunsInput>
+}
+
+export type ReviewCaseCreateNestedOneWithoutAgentFindingsInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentFindingsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentFindingsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutAgentFindingsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+}
+
+export type ReviewCaseUpdateOneRequiredWithoutAgentFindingsNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentFindingsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentFindingsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutAgentFindingsInput
+  upsert?: Prisma.ReviewCaseUpsertWithoutAgentFindingsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutAgentFindingsInput, Prisma.ReviewCaseUpdateWithoutAgentFindingsInput>, Prisma.ReviewCaseUncheckedUpdateWithoutAgentFindingsInput>
+}
+
+export type ReviewCaseCreateNestedOneWithoutChatSessionsInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutChatSessionsInput, Prisma.ReviewCaseUncheckedCreateWithoutChatSessionsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutChatSessionsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+}
+
+export type ReviewCaseUpdateOneRequiredWithoutChatSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutChatSessionsInput, Prisma.ReviewCaseUncheckedCreateWithoutChatSessionsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutChatSessionsInput
+  upsert?: Prisma.ReviewCaseUpsertWithoutChatSessionsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutChatSessionsInput, Prisma.ReviewCaseUpdateWithoutChatSessionsInput>, Prisma.ReviewCaseUncheckedUpdateWithoutChatSessionsInput>
+}
+
+export type ReviewCaseCreateNestedOneWithoutDraftVersionsInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutDraftVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutDraftVersionsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutDraftVersionsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+}
+
+export type ReviewCaseUpdateOneRequiredWithoutDraftVersionsNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutDraftVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutDraftVersionsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutDraftVersionsInput
+  upsert?: Prisma.ReviewCaseUpsertWithoutDraftVersionsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutDraftVersionsInput, Prisma.ReviewCaseUpdateWithoutDraftVersionsInput>, Prisma.ReviewCaseUncheckedUpdateWithoutDraftVersionsInput>
+}
+
+export type ReviewCaseCreateNestedOneWithoutReportsInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutReportsInput, Prisma.ReviewCaseUncheckedCreateWithoutReportsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutReportsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+}
+
+export type ReviewCaseUpdateOneRequiredWithoutReportsNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutReportsInput, Prisma.ReviewCaseUncheckedCreateWithoutReportsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutReportsInput
+  upsert?: Prisma.ReviewCaseUpsertWithoutReportsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutReportsInput, Prisma.ReviewCaseUpdateWithoutReportsInput>, Prisma.ReviewCaseUncheckedUpdateWithoutReportsInput>
+}
+
 export type ReviewCaseCreateWithoutTenantInput = {
   id: string
   affiliateName: string
@@ -1156,6 +1261,11 @@ export type ReviewCaseCreateWithoutTenantInput = {
   files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutTenantInput = {
@@ -1189,6 +1299,11 @@ export type ReviewCaseUncheckedCreateWithoutTenantInput = {
   files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutTenantInput = {
@@ -1282,6 +1397,11 @@ export type ReviewCaseCreateWithoutAffiliateInput = {
   files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutAffiliateInput = {
@@ -1315,6 +1435,11 @@ export type ReviewCaseUncheckedCreateWithoutAffiliateInput = {
   files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutAffiliateInput = {
@@ -1374,6 +1499,11 @@ export type ReviewCaseCreateWithoutRequesterInput = {
   files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutRequesterInput = {
@@ -1407,6 +1537,11 @@ export type ReviewCaseUncheckedCreateWithoutRequesterInput = {
   files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutRequesterInput = {
@@ -1450,6 +1585,11 @@ export type ReviewCaseCreateWithoutReviewerInput = {
   files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutReviewerInput = {
@@ -1483,6 +1623,11 @@ export type ReviewCaseUncheckedCreateWithoutReviewerInput = {
   files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutReviewerInput = {
@@ -1558,6 +1703,11 @@ export type ReviewCaseCreateWithoutFilesInput = {
   reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
   issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutFilesInput = {
@@ -1591,6 +1741,11 @@ export type ReviewCaseUncheckedCreateWithoutFilesInput = {
   updatedAt?: Date | string
   issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutFilesInput = {
@@ -1640,6 +1795,11 @@ export type ReviewCaseUpdateWithoutFilesInput = {
   reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
   issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutFilesInput = {
@@ -1673,6 +1833,11 @@ export type ReviewCaseUncheckedUpdateWithoutFilesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutIssuesInput = {
@@ -1706,6 +1871,11 @@ export type ReviewCaseCreateWithoutIssuesInput = {
   reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
   files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutIssuesInput = {
@@ -1739,6 +1909,11 @@ export type ReviewCaseUncheckedCreateWithoutIssuesInput = {
   updatedAt?: Date | string
   files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
   analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutIssuesInput = {
@@ -1788,6 +1963,11 @@ export type ReviewCaseUpdateWithoutIssuesInput = {
   reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
   files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutIssuesInput = {
@@ -1821,6 +2001,11 @@ export type ReviewCaseUncheckedUpdateWithoutIssuesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutAnalysisJobsInput = {
@@ -1854,6 +2039,11 @@ export type ReviewCaseCreateWithoutAnalysisJobsInput = {
   reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
   files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutAnalysisJobsInput = {
@@ -1887,6 +2077,11 @@ export type ReviewCaseUncheckedCreateWithoutAnalysisJobsInput = {
   updatedAt?: Date | string
   files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
   issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutAnalysisJobsInput = {
@@ -1936,6 +2131,11 @@ export type ReviewCaseUpdateWithoutAnalysisJobsInput = {
   reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
   files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutAnalysisJobsInput = {
@@ -1969,6 +2169,851 @@ export type ReviewCaseUncheckedUpdateWithoutAnalysisJobsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseCreateWithoutAgentRunsInput = {
+  id: string
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutCasesInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutCasesInput
+  requester: Prisma.UserCreateNestedOneWithoutRequestedCasesInput
+  reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
+  files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseUncheckedCreateWithoutAgentRunsInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterId: string
+  reviewerId?: string | null
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseCreateOrConnectWithoutAgentRunsInput = {
+  where: Prisma.ReviewCaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentRunsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentRunsInput>
+}
+
+export type ReviewCaseUpsertWithoutAgentRunsInput = {
+  update: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutAgentRunsInput, Prisma.ReviewCaseUncheckedUpdateWithoutAgentRunsInput>
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentRunsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentRunsInput>
+  where?: Prisma.ReviewCaseWhereInput
+}
+
+export type ReviewCaseUpdateToOneWithWhereWithoutAgentRunsInput = {
+  where?: Prisma.ReviewCaseWhereInput
+  data: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutAgentRunsInput, Prisma.ReviewCaseUncheckedUpdateWithoutAgentRunsInput>
+}
+
+export type ReviewCaseUpdateWithoutAgentRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCasesNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutCasesNestedInput
+  requester?: Prisma.UserUpdateOneRequiredWithoutRequestedCasesNestedInput
+  reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
+  files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseUncheckedUpdateWithoutAgentRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterId?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseCreateWithoutAgentFindingsInput = {
+  id: string
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutCasesInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutCasesInput
+  requester: Prisma.UserCreateNestedOneWithoutRequestedCasesInput
+  reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
+  files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseUncheckedCreateWithoutAgentFindingsInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterId: string
+  reviewerId?: string | null
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseCreateOrConnectWithoutAgentFindingsInput = {
+  where: Prisma.ReviewCaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentFindingsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentFindingsInput>
+}
+
+export type ReviewCaseUpsertWithoutAgentFindingsInput = {
+  update: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutAgentFindingsInput, Prisma.ReviewCaseUncheckedUpdateWithoutAgentFindingsInput>
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutAgentFindingsInput, Prisma.ReviewCaseUncheckedCreateWithoutAgentFindingsInput>
+  where?: Prisma.ReviewCaseWhereInput
+}
+
+export type ReviewCaseUpdateToOneWithWhereWithoutAgentFindingsInput = {
+  where?: Prisma.ReviewCaseWhereInput
+  data: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutAgentFindingsInput, Prisma.ReviewCaseUncheckedUpdateWithoutAgentFindingsInput>
+}
+
+export type ReviewCaseUpdateWithoutAgentFindingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCasesNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutCasesNestedInput
+  requester?: Prisma.UserUpdateOneRequiredWithoutRequestedCasesNestedInput
+  reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
+  files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseUncheckedUpdateWithoutAgentFindingsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterId?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseCreateWithoutChatSessionsInput = {
+  id: string
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutCasesInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutCasesInput
+  requester: Prisma.UserCreateNestedOneWithoutRequestedCasesInput
+  reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
+  files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseUncheckedCreateWithoutChatSessionsInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterId: string
+  reviewerId?: string | null
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseCreateOrConnectWithoutChatSessionsInput = {
+  where: Prisma.ReviewCaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutChatSessionsInput, Prisma.ReviewCaseUncheckedCreateWithoutChatSessionsInput>
+}
+
+export type ReviewCaseUpsertWithoutChatSessionsInput = {
+  update: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutChatSessionsInput, Prisma.ReviewCaseUncheckedUpdateWithoutChatSessionsInput>
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutChatSessionsInput, Prisma.ReviewCaseUncheckedCreateWithoutChatSessionsInput>
+  where?: Prisma.ReviewCaseWhereInput
+}
+
+export type ReviewCaseUpdateToOneWithWhereWithoutChatSessionsInput = {
+  where?: Prisma.ReviewCaseWhereInput
+  data: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutChatSessionsInput, Prisma.ReviewCaseUncheckedUpdateWithoutChatSessionsInput>
+}
+
+export type ReviewCaseUpdateWithoutChatSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCasesNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutCasesNestedInput
+  requester?: Prisma.UserUpdateOneRequiredWithoutRequestedCasesNestedInput
+  reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
+  files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseUncheckedUpdateWithoutChatSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterId?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseCreateWithoutDraftVersionsInput = {
+  id: string
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutCasesInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutCasesInput
+  requester: Prisma.UserCreateNestedOneWithoutRequestedCasesInput
+  reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
+  files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseUncheckedCreateWithoutDraftVersionsInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterId: string
+  reviewerId?: string | null
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseCreateOrConnectWithoutDraftVersionsInput = {
+  where: Prisma.ReviewCaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutDraftVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutDraftVersionsInput>
+}
+
+export type ReviewCaseUpsertWithoutDraftVersionsInput = {
+  update: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutDraftVersionsInput, Prisma.ReviewCaseUncheckedUpdateWithoutDraftVersionsInput>
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutDraftVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutDraftVersionsInput>
+  where?: Prisma.ReviewCaseWhereInput
+}
+
+export type ReviewCaseUpdateToOneWithWhereWithoutDraftVersionsInput = {
+  where?: Prisma.ReviewCaseWhereInput
+  data: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutDraftVersionsInput, Prisma.ReviewCaseUncheckedUpdateWithoutDraftVersionsInput>
+}
+
+export type ReviewCaseUpdateWithoutDraftVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCasesNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutCasesNestedInput
+  requester?: Prisma.UserUpdateOneRequiredWithoutRequestedCasesNestedInput
+  reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
+  files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseUncheckedUpdateWithoutDraftVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterId?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseCreateWithoutReportsInput = {
+  id: string
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutCasesInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutCasesInput
+  requester: Prisma.UserCreateNestedOneWithoutRequestedCasesInput
+  reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
+  files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseUncheckedCreateWithoutReportsInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterId: string
+  reviewerId?: string | null
+  requesterName: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseCreateOrConnectWithoutReportsInput = {
+  where: Prisma.ReviewCaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutReportsInput, Prisma.ReviewCaseUncheckedCreateWithoutReportsInput>
+}
+
+export type ReviewCaseUpsertWithoutReportsInput = {
+  update: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutReportsInput, Prisma.ReviewCaseUncheckedUpdateWithoutReportsInput>
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutReportsInput, Prisma.ReviewCaseUncheckedCreateWithoutReportsInput>
+  where?: Prisma.ReviewCaseWhereInput
+}
+
+export type ReviewCaseUpdateToOneWithWhereWithoutReportsInput = {
+  where?: Prisma.ReviewCaseWhereInput
+  data: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutReportsInput, Prisma.ReviewCaseUncheckedUpdateWithoutReportsInput>
+}
+
+export type ReviewCaseUpdateWithoutReportsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCasesNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutCasesNestedInput
+  requester?: Prisma.UserUpdateOneRequiredWithoutRequestedCasesNestedInput
+  reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
+  files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseUncheckedUpdateWithoutReportsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterId?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateManyTenantInput = {
@@ -2032,6 +3077,11 @@ export type ReviewCaseUpdateWithoutTenantInput = {
   files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutTenantInput = {
@@ -2065,6 +3115,11 @@ export type ReviewCaseUncheckedUpdateWithoutTenantInput = {
   files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutTenantInput = {
@@ -2158,6 +3213,11 @@ export type ReviewCaseUpdateWithoutAffiliateInput = {
   files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutAffiliateInput = {
@@ -2191,6 +3251,11 @@ export type ReviewCaseUncheckedUpdateWithoutAffiliateInput = {
   files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutAffiliateInput = {
@@ -2314,6 +3379,11 @@ export type ReviewCaseUpdateWithoutRequesterInput = {
   files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutRequesterInput = {
@@ -2347,6 +3417,11 @@ export type ReviewCaseUncheckedUpdateWithoutRequesterInput = {
   files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutRequesterInput = {
@@ -2410,6 +3485,11 @@ export type ReviewCaseUpdateWithoutReviewerInput = {
   files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutReviewerInput = {
@@ -2443,6 +3523,11 @@ export type ReviewCaseUncheckedUpdateWithoutReviewerInput = {
   files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
   issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
   analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutReviewerInput = {
@@ -2484,12 +3569,22 @@ export type ReviewCaseCountOutputType = {
   files: number
   issues: number
   analysisJobs: number
+  agentRuns: number
+  agentFindings: number
+  chatSessions: number
+  draftVersions: number
+  reports: number
 }
 
 export type ReviewCaseCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   files?: boolean | ReviewCaseCountOutputTypeCountFilesArgs
   issues?: boolean | ReviewCaseCountOutputTypeCountIssuesArgs
   analysisJobs?: boolean | ReviewCaseCountOutputTypeCountAnalysisJobsArgs
+  agentRuns?: boolean | ReviewCaseCountOutputTypeCountAgentRunsArgs
+  agentFindings?: boolean | ReviewCaseCountOutputTypeCountAgentFindingsArgs
+  chatSessions?: boolean | ReviewCaseCountOutputTypeCountChatSessionsArgs
+  draftVersions?: boolean | ReviewCaseCountOutputTypeCountDraftVersionsArgs
+  reports?: boolean | ReviewCaseCountOutputTypeCountReportsArgs
 }
 
 /**
@@ -2521,6 +3616,41 @@ export type ReviewCaseCountOutputTypeCountIssuesArgs<ExtArgs extends runtime.Typ
  */
 export type ReviewCaseCountOutputTypeCountAnalysisJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AnalysisJobWhereInput
+}
+
+/**
+ * ReviewCaseCountOutputType without action
+ */
+export type ReviewCaseCountOutputTypeCountAgentRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AgentRunWhereInput
+}
+
+/**
+ * ReviewCaseCountOutputType without action
+ */
+export type ReviewCaseCountOutputTypeCountAgentFindingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AgentFindingWhereInput
+}
+
+/**
+ * ReviewCaseCountOutputType without action
+ */
+export type ReviewCaseCountOutputTypeCountChatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ChatSessionWhereInput
+}
+
+/**
+ * ReviewCaseCountOutputType without action
+ */
+export type ReviewCaseCountOutputTypeCountDraftVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DraftVersionWhereInput
+}
+
+/**
+ * ReviewCaseCountOutputType without action
+ */
+export type ReviewCaseCountOutputTypeCountReportsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ReviewReportWhereInput
 }
 
 
@@ -2560,6 +3690,11 @@ export type ReviewCaseSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   files?: boolean | Prisma.ReviewCase$filesArgs<ExtArgs>
   issues?: boolean | Prisma.ReviewCase$issuesArgs<ExtArgs>
   analysisJobs?: boolean | Prisma.ReviewCase$analysisJobsArgs<ExtArgs>
+  agentRuns?: boolean | Prisma.ReviewCase$agentRunsArgs<ExtArgs>
+  agentFindings?: boolean | Prisma.ReviewCase$agentFindingsArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.ReviewCase$chatSessionsArgs<ExtArgs>
+  draftVersions?: boolean | Prisma.ReviewCase$draftVersionsArgs<ExtArgs>
+  reports?: boolean | Prisma.ReviewCase$reportsArgs<ExtArgs>
   _count?: boolean | Prisma.ReviewCaseCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reviewCase"]>
 
@@ -2673,6 +3808,11 @@ export type ReviewCaseInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   files?: boolean | Prisma.ReviewCase$filesArgs<ExtArgs>
   issues?: boolean | Prisma.ReviewCase$issuesArgs<ExtArgs>
   analysisJobs?: boolean | Prisma.ReviewCase$analysisJobsArgs<ExtArgs>
+  agentRuns?: boolean | Prisma.ReviewCase$agentRunsArgs<ExtArgs>
+  agentFindings?: boolean | Prisma.ReviewCase$agentFindingsArgs<ExtArgs>
+  chatSessions?: boolean | Prisma.ReviewCase$chatSessionsArgs<ExtArgs>
+  draftVersions?: boolean | Prisma.ReviewCase$draftVersionsArgs<ExtArgs>
+  reports?: boolean | Prisma.ReviewCase$reportsArgs<ExtArgs>
   _count?: boolean | Prisma.ReviewCaseCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ReviewCaseIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2698,6 +3838,11 @@ export type $ReviewCasePayload<ExtArgs extends runtime.Types.Extensions.Internal
     files: Prisma.$ReviewFilePayload<ExtArgs>[]
     issues: Prisma.$ReviewIssuePayload<ExtArgs>[]
     analysisJobs: Prisma.$AnalysisJobPayload<ExtArgs>[]
+    agentRuns: Prisma.$AgentRunPayload<ExtArgs>[]
+    agentFindings: Prisma.$AgentFindingPayload<ExtArgs>[]
+    chatSessions: Prisma.$ChatSessionPayload<ExtArgs>[]
+    draftVersions: Prisma.$DraftVersionPayload<ExtArgs>[]
+    reports: Prisma.$ReviewReportPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3129,6 +4274,11 @@ export interface Prisma__ReviewCaseClient<T, Null = never, ExtArgs extends runti
   files<T extends Prisma.ReviewCase$filesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$filesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewFilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   issues<T extends Prisma.ReviewCase$issuesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$issuesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewIssuePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   analysisJobs<T extends Prisma.ReviewCase$analysisJobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$analysisJobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnalysisJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  agentRuns<T extends Prisma.ReviewCase$agentRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$agentRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentRunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  agentFindings<T extends Prisma.ReviewCase$agentFindingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$agentFindingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentFindingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  chatSessions<T extends Prisma.ReviewCase$chatSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$chatSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  draftVersions<T extends Prisma.ReviewCase$draftVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$draftVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DraftVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  reports<T extends Prisma.ReviewCase$reportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$reportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3694,6 +4844,126 @@ export type ReviewCase$analysisJobsArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.AnalysisJobScalarFieldEnum | Prisma.AnalysisJobScalarFieldEnum[]
+}
+
+/**
+ * ReviewCase.agentRuns
+ */
+export type ReviewCase$agentRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentRun
+   */
+  select?: Prisma.AgentRunSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentRun
+   */
+  omit?: Prisma.AgentRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentRunInclude<ExtArgs> | null
+  where?: Prisma.AgentRunWhereInput
+  orderBy?: Prisma.AgentRunOrderByWithRelationInput | Prisma.AgentRunOrderByWithRelationInput[]
+  cursor?: Prisma.AgentRunWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AgentRunScalarFieldEnum | Prisma.AgentRunScalarFieldEnum[]
+}
+
+/**
+ * ReviewCase.agentFindings
+ */
+export type ReviewCase$agentFindingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentFinding
+   */
+  select?: Prisma.AgentFindingSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentFinding
+   */
+  omit?: Prisma.AgentFindingOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentFindingInclude<ExtArgs> | null
+  where?: Prisma.AgentFindingWhereInput
+  orderBy?: Prisma.AgentFindingOrderByWithRelationInput | Prisma.AgentFindingOrderByWithRelationInput[]
+  cursor?: Prisma.AgentFindingWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AgentFindingScalarFieldEnum | Prisma.AgentFindingScalarFieldEnum[]
+}
+
+/**
+ * ReviewCase.chatSessions
+ */
+export type ReviewCase$chatSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ChatSession
+   */
+  select?: Prisma.ChatSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ChatSession
+   */
+  omit?: Prisma.ChatSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ChatSessionInclude<ExtArgs> | null
+  where?: Prisma.ChatSessionWhereInput
+  orderBy?: Prisma.ChatSessionOrderByWithRelationInput | Prisma.ChatSessionOrderByWithRelationInput[]
+  cursor?: Prisma.ChatSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ChatSessionScalarFieldEnum | Prisma.ChatSessionScalarFieldEnum[]
+}
+
+/**
+ * ReviewCase.draftVersions
+ */
+export type ReviewCase$draftVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DraftVersion
+   */
+  select?: Prisma.DraftVersionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DraftVersion
+   */
+  omit?: Prisma.DraftVersionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DraftVersionInclude<ExtArgs> | null
+  where?: Prisma.DraftVersionWhereInput
+  orderBy?: Prisma.DraftVersionOrderByWithRelationInput | Prisma.DraftVersionOrderByWithRelationInput[]
+  cursor?: Prisma.DraftVersionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DraftVersionScalarFieldEnum | Prisma.DraftVersionScalarFieldEnum[]
+}
+
+/**
+ * ReviewCase.reports
+ */
+export type ReviewCase$reportsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ReviewReport
+   */
+  select?: Prisma.ReviewReportSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ReviewReport
+   */
+  omit?: Prisma.ReviewReportOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReviewReportInclude<ExtArgs> | null
+  where?: Prisma.ReviewReportWhereInput
+  orderBy?: Prisma.ReviewReportOrderByWithRelationInput | Prisma.ReviewReportOrderByWithRelationInput[]
+  cursor?: Prisma.ReviewReportWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ReviewReportScalarFieldEnum | Prisma.ReviewReportScalarFieldEnum[]
 }
 
 /**

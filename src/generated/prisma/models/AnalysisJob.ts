@@ -270,6 +270,7 @@ export type AnalysisJobWhereInput = {
   completedAt?: Prisma.DateTimeNullableFilter<"AnalysisJob"> | Date | string | null
   reviewCase?: Prisma.XOR<Prisma.ReviewCaseScalarRelationFilter, Prisma.ReviewCaseWhereInput>
   startedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  agentRuns?: Prisma.AgentRunListRelationFilter
 }
 
 export type AnalysisJobOrderByWithRelationInput = {
@@ -287,6 +288,7 @@ export type AnalysisJobOrderByWithRelationInput = {
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   reviewCase?: Prisma.ReviewCaseOrderByWithRelationInput
   startedBy?: Prisma.UserOrderByWithRelationInput
+  agentRuns?: Prisma.AgentRunOrderByRelationAggregateInput
 }
 
 export type AnalysisJobWhereUniqueInput = Prisma.AtLeast<{
@@ -307,6 +309,7 @@ export type AnalysisJobWhereUniqueInput = Prisma.AtLeast<{
   completedAt?: Prisma.DateTimeNullableFilter<"AnalysisJob"> | Date | string | null
   reviewCase?: Prisma.XOR<Prisma.ReviewCaseScalarRelationFilter, Prisma.ReviewCaseWhereInput>
   startedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  agentRuns?: Prisma.AgentRunListRelationFilter
 }, "id">
 
 export type AnalysisJobOrderByWithAggregationInput = {
@@ -360,6 +363,7 @@ export type AnalysisJobCreateInput = {
   completedAt?: Date | string | null
   reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutAnalysisJobsInput
   startedBy?: Prisma.UserCreateNestedOneWithoutStartedAnalysisJobsInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobUncheckedCreateInput = {
@@ -375,6 +379,7 @@ export type AnalysisJobUncheckedCreateInput = {
   queuedAt?: Date | string
   startedAt?: Date | string | null
   completedAt?: Date | string | null
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobUpdateInput = {
@@ -390,6 +395,7 @@ export type AnalysisJobUpdateInput = {
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutAnalysisJobsNestedInput
   startedBy?: Prisma.UserUpdateOneWithoutStartedAnalysisJobsNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateInput = {
@@ -405,6 +411,7 @@ export type AnalysisJobUncheckedUpdateInput = {
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobCreateManyInput = {
@@ -511,6 +518,11 @@ export type AnalysisJobSumOrderByAggregateInput = {
   progress?: Prisma.SortOrder
 }
 
+export type AnalysisJobNullableScalarRelationFilter = {
+  is?: Prisma.AnalysisJobWhereInput | null
+  isNot?: Prisma.AnalysisJobWhereInput | null
+}
+
 export type AnalysisJobCreateNestedManyWithoutStartedByInput = {
   create?: Prisma.XOR<Prisma.AnalysisJobCreateWithoutStartedByInput, Prisma.AnalysisJobUncheckedCreateWithoutStartedByInput> | Prisma.AnalysisJobCreateWithoutStartedByInput[] | Prisma.AnalysisJobUncheckedCreateWithoutStartedByInput[]
   connectOrCreate?: Prisma.AnalysisJobCreateOrConnectWithoutStartedByInput | Prisma.AnalysisJobCreateOrConnectWithoutStartedByInput[]
@@ -599,6 +611,22 @@ export type EnumAnalysisJobStatusFieldUpdateOperationsInput = {
   set?: $Enums.AnalysisJobStatus
 }
 
+export type AnalysisJobCreateNestedOneWithoutAgentRunsInput = {
+  create?: Prisma.XOR<Prisma.AnalysisJobCreateWithoutAgentRunsInput, Prisma.AnalysisJobUncheckedCreateWithoutAgentRunsInput>
+  connectOrCreate?: Prisma.AnalysisJobCreateOrConnectWithoutAgentRunsInput
+  connect?: Prisma.AnalysisJobWhereUniqueInput
+}
+
+export type AnalysisJobUpdateOneWithoutAgentRunsNestedInput = {
+  create?: Prisma.XOR<Prisma.AnalysisJobCreateWithoutAgentRunsInput, Prisma.AnalysisJobUncheckedCreateWithoutAgentRunsInput>
+  connectOrCreate?: Prisma.AnalysisJobCreateOrConnectWithoutAgentRunsInput
+  upsert?: Prisma.AnalysisJobUpsertWithoutAgentRunsInput
+  disconnect?: Prisma.AnalysisJobWhereInput | boolean
+  delete?: Prisma.AnalysisJobWhereInput | boolean
+  connect?: Prisma.AnalysisJobWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AnalysisJobUpdateToOneWithWhereWithoutAgentRunsInput, Prisma.AnalysisJobUpdateWithoutAgentRunsInput>, Prisma.AnalysisJobUncheckedUpdateWithoutAgentRunsInput>
+}
+
 export type AnalysisJobCreateWithoutStartedByInput = {
   id: string
   tenantId: string
@@ -611,6 +639,7 @@ export type AnalysisJobCreateWithoutStartedByInput = {
   startedAt?: Date | string | null
   completedAt?: Date | string | null
   reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutAnalysisJobsInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobUncheckedCreateWithoutStartedByInput = {
@@ -625,6 +654,7 @@ export type AnalysisJobUncheckedCreateWithoutStartedByInput = {
   queuedAt?: Date | string
   startedAt?: Date | string | null
   completedAt?: Date | string | null
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobCreateOrConnectWithoutStartedByInput = {
@@ -683,6 +713,7 @@ export type AnalysisJobCreateWithoutReviewCaseInput = {
   startedAt?: Date | string | null
   completedAt?: Date | string | null
   startedBy?: Prisma.UserCreateNestedOneWithoutStartedAnalysisJobsInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobUncheckedCreateWithoutReviewCaseInput = {
@@ -697,6 +728,7 @@ export type AnalysisJobUncheckedCreateWithoutReviewCaseInput = {
   queuedAt?: Date | string
   startedAt?: Date | string | null
   completedAt?: Date | string | null
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutAnalysisJobInput
 }
 
 export type AnalysisJobCreateOrConnectWithoutReviewCaseInput = {
@@ -725,6 +757,82 @@ export type AnalysisJobUpdateManyWithWhereWithoutReviewCaseInput = {
   data: Prisma.XOR<Prisma.AnalysisJobUpdateManyMutationInput, Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseInput>
 }
 
+export type AnalysisJobCreateWithoutAgentRunsInput = {
+  id: string
+  tenantId: string
+  status: $Enums.AnalysisJobStatus
+  progress?: number
+  currentStep: string
+  errorMessage?: string | null
+  artifacts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  queuedAt?: Date | string
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+  reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutAnalysisJobsInput
+  startedBy?: Prisma.UserCreateNestedOneWithoutStartedAnalysisJobsInput
+}
+
+export type AnalysisJobUncheckedCreateWithoutAgentRunsInput = {
+  id: string
+  reviewCaseId: string
+  tenantId: string
+  status: $Enums.AnalysisJobStatus
+  progress?: number
+  currentStep: string
+  startedByUserId?: string | null
+  errorMessage?: string | null
+  artifacts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  queuedAt?: Date | string
+  startedAt?: Date | string | null
+  completedAt?: Date | string | null
+}
+
+export type AnalysisJobCreateOrConnectWithoutAgentRunsInput = {
+  where: Prisma.AnalysisJobWhereUniqueInput
+  create: Prisma.XOR<Prisma.AnalysisJobCreateWithoutAgentRunsInput, Prisma.AnalysisJobUncheckedCreateWithoutAgentRunsInput>
+}
+
+export type AnalysisJobUpsertWithoutAgentRunsInput = {
+  update: Prisma.XOR<Prisma.AnalysisJobUpdateWithoutAgentRunsInput, Prisma.AnalysisJobUncheckedUpdateWithoutAgentRunsInput>
+  create: Prisma.XOR<Prisma.AnalysisJobCreateWithoutAgentRunsInput, Prisma.AnalysisJobUncheckedCreateWithoutAgentRunsInput>
+  where?: Prisma.AnalysisJobWhereInput
+}
+
+export type AnalysisJobUpdateToOneWithWhereWithoutAgentRunsInput = {
+  where?: Prisma.AnalysisJobWhereInput
+  data: Prisma.XOR<Prisma.AnalysisJobUpdateWithoutAgentRunsInput, Prisma.AnalysisJobUncheckedUpdateWithoutAgentRunsInput>
+}
+
+export type AnalysisJobUpdateWithoutAgentRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  currentStep?: Prisma.StringFieldUpdateOperationsInput | string
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artifacts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutAnalysisJobsNestedInput
+  startedBy?: Prisma.UserUpdateOneWithoutStartedAnalysisJobsNestedInput
+}
+
+export type AnalysisJobUncheckedUpdateWithoutAgentRunsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewCaseId?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumAnalysisJobStatusFieldUpdateOperationsInput | $Enums.AnalysisJobStatus
+  progress?: Prisma.IntFieldUpdateOperationsInput | number
+  currentStep?: Prisma.StringFieldUpdateOperationsInput | string
+  startedByUserId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  artifacts?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
 export type AnalysisJobCreateManyStartedByInput = {
   id: string
   reviewCaseId: string
@@ -751,6 +859,7 @@ export type AnalysisJobUpdateWithoutStartedByInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutAnalysisJobsNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateWithoutStartedByInput = {
@@ -765,6 +874,7 @@ export type AnalysisJobUncheckedUpdateWithoutStartedByInput = {
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateManyWithoutStartedByInput = {
@@ -807,6 +917,7 @@ export type AnalysisJobUpdateWithoutReviewCaseInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   startedBy?: Prisma.UserUpdateOneWithoutStartedAnalysisJobsNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateWithoutReviewCaseInput = {
@@ -821,6 +932,7 @@ export type AnalysisJobUncheckedUpdateWithoutReviewCaseInput = {
   queuedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutAnalysisJobNestedInput
 }
 
 export type AnalysisJobUncheckedUpdateManyWithoutReviewCaseInput = {
@@ -838,6 +950,35 @@ export type AnalysisJobUncheckedUpdateManyWithoutReviewCaseInput = {
 }
 
 
+/**
+ * Count Type AnalysisJobCountOutputType
+ */
+
+export type AnalysisJobCountOutputType = {
+  agentRuns: number
+}
+
+export type AnalysisJobCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  agentRuns?: boolean | AnalysisJobCountOutputTypeCountAgentRunsArgs
+}
+
+/**
+ * AnalysisJobCountOutputType without action
+ */
+export type AnalysisJobCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AnalysisJobCountOutputType
+   */
+  select?: Prisma.AnalysisJobCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * AnalysisJobCountOutputType without action
+ */
+export type AnalysisJobCountOutputTypeCountAgentRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AgentRunWhereInput
+}
+
 
 export type AnalysisJobSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -854,6 +995,8 @@ export type AnalysisJobSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   completedAt?: boolean
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
   startedBy?: boolean | Prisma.AnalysisJob$startedByArgs<ExtArgs>
+  agentRuns?: boolean | Prisma.AnalysisJob$agentRunsArgs<ExtArgs>
+  _count?: boolean | Prisma.AnalysisJobCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["analysisJob"]>
 
 export type AnalysisJobSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -909,6 +1052,8 @@ export type AnalysisJobOmit<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type AnalysisJobInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
   startedBy?: boolean | Prisma.AnalysisJob$startedByArgs<ExtArgs>
+  agentRuns?: boolean | Prisma.AnalysisJob$agentRunsArgs<ExtArgs>
+  _count?: boolean | Prisma.AnalysisJobCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AnalysisJobIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
@@ -924,6 +1069,7 @@ export type $AnalysisJobPayload<ExtArgs extends runtime.Types.Extensions.Interna
   objects: {
     reviewCase: Prisma.$ReviewCasePayload<ExtArgs>
     startedBy: Prisma.$UserPayload<ExtArgs> | null
+    agentRuns: Prisma.$AgentRunPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1334,6 +1480,7 @@ export interface Prisma__AnalysisJobClient<T, Null = never, ExtArgs extends runt
   readonly [Symbol.toStringTag]: "PrismaPromise"
   reviewCase<T extends Prisma.ReviewCaseDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCaseDefaultArgs<ExtArgs>>): Prisma.Prisma__ReviewCaseClient<runtime.Types.Result.GetResult<Prisma.$ReviewCasePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   startedBy<T extends Prisma.AnalysisJob$startedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AnalysisJob$startedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  agentRuns<T extends Prisma.AnalysisJob$agentRunsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.AnalysisJob$agentRunsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgentRunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1792,6 +1939,30 @@ export type AnalysisJob$startedByArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   include?: Prisma.UserInclude<ExtArgs> | null
   where?: Prisma.UserWhereInput
+}
+
+/**
+ * AnalysisJob.agentRuns
+ */
+export type AnalysisJob$agentRunsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentRun
+   */
+  select?: Prisma.AgentRunSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentRun
+   */
+  omit?: Prisma.AgentRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentRunInclude<ExtArgs> | null
+  where?: Prisma.AgentRunWhereInput
+  orderBy?: Prisma.AgentRunOrderByWithRelationInput | Prisma.AgentRunOrderByWithRelationInput[]
+  cursor?: Prisma.AgentRunWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AgentRunScalarFieldEnum | Prisma.AgentRunScalarFieldEnum[]
 }
 
 /**

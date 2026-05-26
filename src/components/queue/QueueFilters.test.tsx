@@ -25,4 +25,19 @@ describe("QueueFilters", () => {
     await userEvent.selectOptions(screen.getByLabelText(/상태/), "analysis_waiting");
     expect(onChange).toHaveBeenCalledWith({ ...state, status: "analysis_waiting" });
   });
+
+  it("uses all as the default history status filter", () => {
+    render(
+      <QueueFilters
+        state={state}
+        mode="history"
+        onChange={() => undefined}
+        onReset={() => undefined}
+      />
+    );
+
+    const statusFilter = screen.getByLabelText(/상태/);
+    expect(statusFilter).toHaveValue("all");
+    expect(statusFilter).toHaveDisplayValue("전체");
+  });
 });

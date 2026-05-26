@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Bell,
   ChevronRight,
@@ -9,7 +9,7 @@ import {
   History,
   PlusSquare,
   Settings,
-  Shield,
+  ShieldCheck,
   UserCircle
 } from "lucide-react";
 import { RoleSwitcher } from "./RoleSwitcher";
@@ -17,24 +17,19 @@ import { ErrorBoundary } from "./ErrorBoundary";
 
 const navigation = [
   {
-    href: "/reviews",
-    label: "심의 큐",
-    icon: ClipboardList
-  },
-  {
     href: "/reviews/new",
     label: "신규 요청",
     icon: PlusSquare
   },
   {
+    href: "/reviews",
+    label: "심의 큐",
+    icon: ClipboardList
+  },
+  {
     href: "/reviews?scope=history",
     label: "심의 이력",
     icon: History
-  },
-  {
-    href: "/reviews?scope=audit",
-    label: "감사 로그",
-    icon: Shield
   }
 ];
 
@@ -54,15 +49,19 @@ function getBreadcrumb(pathname: string): string[] {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const scope = searchParams.get("scope");
   const breadcrumb = getBreadcrumb(pathname);
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <Link className="brand brand--wordmark" href="/reviews" aria-label="FinProof home">
+          <span className="brand__mark" aria-hidden="true">
+            <ShieldCheck size={20} />
+          </span>
           <span>
             <strong>FinProof</strong>
-            <small>JB금융그룹 / 광주은행 / 소비자보호부</small>
           </span>
         </Link>
 
@@ -71,8 +70,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             const Icon = item.icon;
             const isActive =
               item.href === "/reviews"
-                ? pathname === "/reviews"
-                : item.href === "/reviews/new" && pathname.startsWith("/reviews/new");
+                ? pathname === "/reviews" && scope !== "history"
+                : item.href === "/reviews?scope=history"
+                  ? pathname === "/reviews" && scope === "history"
+                  : item.href === "/reviews/new" && pathname.startsWith("/reviews/new");
 
             return (
               <Link key={item.href} className="nav-link" data-active={isActive} href={item.href}>
@@ -82,10 +83,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-
-        <Link className="sidebar__workbench" href="/reviews">
-          Compliance workbench
-        </Link>
       </aside>
 
       <div className="workspace">

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { IssueList } from "./IssueList";
 import type { ReviewIssue } from "@/domain/types";
@@ -39,5 +39,52 @@ describe("IssueList", () => {
     await userEvent.click(screen.getByRole("button", { name: "위험" }));
     expect(screen.getByText("High issue")).toBeInTheDocument();
     expect(screen.queryByText("Info issue")).not.toBeInTheDocument();
+  });
+
+  it("separates long card title and excerpt for stable scroll layout", () => {
+    render(
+      <IssueList
+        issues={[
+          {
+            ...issues[0],
+            title: '"누구나 받을 수 있는 최고 연 5.0%" 표현의 금리 오인 가능성',
+            targetText:
+              "신규 가입 고객에게 선착순 특별 우대금리를 제공합니다. 단, 조건과 한도는 별도 확인이 필요합니다."
+          }
+        ]}
+        selectedIssueId="issue-1"
+        onSelectIssue={() => undefined}
+      />
+    );
+
+    expect(
+      screen.getByText('"누구나 받을 수 있는 최고 연 5.0%" 표현의 금리 오인 가능성')
+    ).toHaveClass("issue-card__title");
+    expect(screen.getByText(/신규 가입 고객에게 선착순/)).toHaveClass("issue-card__excerpt");
+  });
+
+  it("uses whole-card color state without risk text or marker lines", () => {
+    render(<IssueList issues={issues} selectedIssueId="issue-1" onSelectIssue={() => undefined} />);
+
+    const card = screen.getByRole("button", { name: /최고 연 5.0% 조건 표시 부족/ });
+    expect(within(card).queryByText("위험")).not.toBeInTheDocument();
+    expect(card.querySelector(".issue-card__risk-marker")).not.toBeInTheDocument();
+    expect(card).toHaveAttribute("data-risk", "high");
+    expect(card.getAttribute("style")).toContain("--issue-card-min-height");
+  });
+
+  it("keeps short issue cards compact", () => {
+    render(<IssueList issues={issues} selectedIssueId="issue-1" onSelectIssue={() => undefined} />);
+
+    expect(screen.getByRole("button", { name: /최고 연 5.0% 조건 표시 부족/ })).toHaveStyle({
+      "--issue-card-min-height": "108px"
+    });
+  });
+
+  it("places the issue number in a leading index slot", () => {
+    render(<IssueList issues={issues} selectedIssueId="issue-1" onSelectIssue={() => undefined} />);
+
+    const card = screen.getByRole("button", { name: /최고 연 5.0% 조건 표시 부족/ });
+    expect(within(card).getByText("#1")).toHaveClass("issue-card__index");
   });
 });

@@ -16,6 +16,10 @@ type AnswerQuestionInput = {
   review: ReviewCase;
   issue: ReviewIssue;
   question: string;
+  history?: Array<{
+    question: string;
+    answer: string;
+  }>;
 };
 
 function reviewSummary(review: ReviewCase) {
@@ -40,9 +44,9 @@ function questionNeedsLegalInterpretation(question: string) {
 
 function draftRouteContext(
   review: ReviewCase,
-  markedResponses: ReviewChatResponse[]
+  chatResponses: ReviewChatResponse[]
 ): ModelRouteContext {
-  const evidence = markedResponses.flatMap((response) => response.evidence);
+  const evidence = chatResponses.flatMap((response) => response.evidence);
 
   return {
     riskLevel: review.highestRiskLevel,
@@ -69,6 +73,7 @@ export async function answerReviewQuestionWithModel(
       review: reviewSummary(input.review),
       issue: input.issue,
       question: input.question,
+      conversationHistory: input.history ?? [],
       fallback: fallback.content
     }),
     fallback: fallback.content
@@ -82,18 +87,18 @@ export async function answerReviewQuestionWithModel(
 
 export async function generateDraftWithModel(
   review: ReviewCase,
-  markedResponses: ReviewChatResponse[],
+  chatResponses: ReviewChatResponse[],
   provider: ModelProvider = defaultModelProvider()
 ): Promise<string> {
-  const fallback = generateDraftWithChatContext(review, markedResponses);
+  const fallback = generateDraftWithChatContext(review, chatResponses);
   const result = await provider.generateText({
     task: "opinion_draft",
-    routeContext: draftRouteContext(review, markedResponses),
+    routeContext: draftRouteContext(review, chatResponses),
     instructions:
-      "Write a concise Korean financial advertising review opinion draft. Use only the supplied review and marked evidence context.",
+      "Write a concise Korean financial advertising review opinion draft. Use only the supplied review and reviewer chat context.",
     input: JSON.stringify({
       review: reviewSummary(review),
-      markedResponses,
+      chatResponses,
       fallback
     }),
     fallback

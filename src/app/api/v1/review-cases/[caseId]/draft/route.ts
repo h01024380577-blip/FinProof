@@ -11,6 +11,7 @@ import {
 } from "@/server/reviews/route-utils";
 
 type DraftRequest = {
+  chatResponses?: ReviewChatResponse[];
   markedResponses?: ReviewChatResponse[];
 };
 
@@ -29,7 +30,8 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
     return jsonError("Review case not found", 404);
   }
 
-  const draft = await generateDraftWithModel(review, body?.markedResponses ?? []);
+  const chatResponses = body?.chatResponses ?? body?.markedResponses ?? [];
+  const draft = await generateDraftWithModel(review, chatResponses);
   let updatedReview;
 
   try {

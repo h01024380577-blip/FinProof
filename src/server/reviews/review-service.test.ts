@@ -1,6 +1,7 @@
 import { createMockReviewStore } from "./mock-review-store";
 import JSZip from "jszip";
 import type { AnalysisArtifacts } from "@/server/analysis/review-analysis-pipeline";
+import { createLocalMetadataStorageAdapter } from "@/server/storage/local-metadata-storage-adapter";
 import {
   availableActionsFor,
   createReviewService,
@@ -8,12 +9,22 @@ import {
 } from "./review-service";
 import type { ReviewStorageAdapter } from "@/server/storage";
 import { UnsafeUploadError, type UploadScanner } from "@/server/storage/upload-security";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const reviewerContext = {
   tenantId: "tenant-demo",
   userId: "user-reviewer-demo",
   role: "reviewer" as const,
   ipAddress: "203.0.113.10"
+};
+
+const reviewerStoreScope = {
+  tenantId: reviewerContext.tenantId,
+  actorUserId: reviewerContext.userId,
+  actorRole: reviewerContext.role,
+  ipAddress: reviewerContext.ipAddress
 };
 
 const requesterContext = {
@@ -117,13 +128,24 @@ describe("review service", () => {
       status: "analysis_complete",
       jobId: "job-rc-demo-deposit-001-001"
     });
-    expect(auditEvents[0]).toMatchObject({
-      action: "analysis.start",
-      targetType: "review_case",
-      targetId: "rc-demo-deposit-001",
-      userId: "user-reviewer-demo",
-      ipAddress: "203.0.113.10"
-    });
+    expect(auditEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "analysis.start",
+          targetType: "review_case",
+          targetId: "rc-demo-deposit-001",
+          userId: "user-reviewer-demo",
+          ipAddress: "203.0.113.10"
+        }),
+        expect.objectContaining({
+          action: "analysis.complete",
+          targetType: "review_case",
+          targetId: "rc-demo-deposit-001",
+          userId: "user-reviewer-demo",
+          ipAddress: "203.0.113.10"
+        })
+      ])
+    );
   });
 
   it("stores OCR/RAG artifacts when analysis starts", async () => {
@@ -281,6 +303,64 @@ describe("review service", () => {
     );
   });
 
+  it("uses stored upload file text in the default analysis pipeline", async () => {
+    const originalEnv = process.env;
+    process.env = {
+      ...originalEnv,
+      FINPROOF_OCR_PROVIDER: "deterministic",
+      FINPROOF_MODEL_PROVIDER: "deterministic"
+    };
+
+    try {
+      const rootDir = await mkdtemp(path.join(tmpdir(), "finproof-review-service-"));
+      const storage = createLocalMetadataStorageAdapter({ rootDir });
+      const store = createMockReviewStore([]);
+      const service = createReviewService({ store, storage });
+
+      const created = await service.createReviewCaseFromUploadedFiles(requesterContext, {
+        title: "실제 텍스트 기반 적금 홍보물",
+        affiliate: "광주은행",
+        productType: "deposit",
+        channelType: ["poster"],
+        plannedPublishDate: "2026-06-20",
+        files: [
+          {
+            name: "poster.txt",
+            type: "text/plain",
+            size: 74,
+            body: new TextEncoder().encode("누구나 최고 연 5.0% 금리를 받을 수 있습니다.")
+          }
+        ]
+      });
+
+      await service.startAnalysis(reviewerContext, created.reviewCase.id);
+
+      const job = await service.getLatestAnalysisJob(reviewerContext, created.reviewCase.id);
+      const analyzed = await service.getReviewCase(reviewerContext, created.reviewCase.id);
+
+      expect(job?.artifacts?.extractedDocuments).toEqual([
+        expect.objectContaining({
+          provider: "local-text-extractor",
+          text: expect.stringContaining("누구나 최고 연 5.0%")
+        })
+      ]);
+      expect(analyzed?.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            issueType: "absolute_claim",
+            evidence: [
+              expect.objectContaining({
+                quoteSummary: expect.stringContaining("누구나 최고 연 5.0%")
+              })
+            ]
+          })
+        ])
+      );
+    } finally {
+      process.env = originalEnv;
+    }
+  });
+
   it("adds storage metadata before creating upload-backed review cases", async () => {
     const store = createMockReviewStore();
     const service = createReviewService({ store });
@@ -323,6 +403,9 @@ describe("review service", () => {
           sizeBytes: input.sizeBytes
         };
       },
+      async getReviewFileBody() {
+        return uploadedBody;
+      },
       sampleReviewFile(input) {
         return {
           storageProvider: "sample",
@@ -355,6 +438,9 @@ describe("review service", () => {
     const store = createMockReviewStore();
     const storage: ReviewStorageAdapter = {
       putReviewFile: vi.fn(),
+      async getReviewFileBody() {
+        return undefined;
+      },
       sampleReviewFile(input) {
         return {
           storageProvider: "sample",
@@ -440,17 +526,22 @@ describe("review service", () => {
 
   it("queues, claims, and completes analysis jobs for workers", async () => {
     const store = createMockReviewStore();
-    const created = await store.createReviewCaseFromSamplePackage(reviewerContext, {
+    const created = await store.createReviewCaseFromSamplePackage(reviewerStoreScope, {
       samplePackageId: "rc-demo-deposit-001"
     });
 
     expect(created).toBeDefined();
 
-    const queued = await store.enqueueAnalysis(reviewerContext, "rc-demo-deposit-001");
+    const queued = await store.enqueueAnalysis(reviewerStoreScope, "rc-demo-deposit-001");
     const claimed = await store.claimNextAnalysisJob("tenant-demo", "worker-001");
-    const completed = await store.completeAnalysisJob(reviewerContext, claimed!.id, artifacts);
-    const latest = await store.getLatestAnalysisJob(reviewerContext, "rc-demo-deposit-001");
-    const review = await store.getReviewCase(reviewerContext, "rc-demo-deposit-001");
+    const persisted = await store.persistAnalysisOutputs(reviewerStoreScope, {
+      reviewCaseId: "rc-demo-deposit-001",
+      jobId: claimed!.id,
+      artifacts
+    });
+    const completed = await store.completeAnalysisJob(reviewerStoreScope, claimed!.id, artifacts);
+    const latest = await store.getLatestAnalysisJob(reviewerStoreScope, "rc-demo-deposit-001");
+    const review = await store.getReviewCase(reviewerStoreScope, "rc-demo-deposit-001");
 
     expect(queued).toMatchObject({
       status: "analysis_queued",
@@ -460,6 +551,10 @@ describe("review service", () => {
       id: "job-rc-demo-deposit-001-001",
       status: "running",
       currentStep: "worker_running"
+    });
+    expect(persisted).toMatchObject({
+      issueCount: expect.any(Number),
+      evidenceCount: expect.any(Number)
     });
     expect(completed).toMatchObject({
       status: "analysis_complete",

@@ -12,10 +12,39 @@ type PrismaFileRow = {
   sizeBytes: bigint;
 };
 
-type PrismaEvidenceRow = Evidence;
+type PrismaEvidenceRow = Omit<
+  Evidence,
+  "page" | "section" | "documentId" | "chunkId" | "version" | "effectiveFrom"
+> & {
+  page: number | null;
+  section: string | null;
+  documentId: string | null;
+  chunkId: string | null;
+  version: string | null;
+  effectiveFrom: Date | null;
+};
 
-type PrismaIssueRow = Omit<ReviewIssue, "targetBbox" | "sourceAgents" | "evidence"> & {
+type PrismaIssueRow = Omit<
+  ReviewIssue,
+  | "targetBbox"
+  | "targetFileId"
+  | "targetPage"
+  | "confidence"
+  | "agentFindingId"
+  | "sourceAgents"
+  | "evidence"
+  | "reviewerRiskLevel"
+  | "finalAction"
+  | "reviewerComment"
+> & {
+  reviewerRiskLevel: ReviewIssue["reviewerRiskLevel"] | null;
+  finalAction: ReviewIssue["finalAction"] | null;
+  reviewerComment: string | null;
   targetBbox: unknown;
+  targetFileId: string | null;
+  targetPage: number | null;
+  confidence: number | null;
+  agentFindingId: string | null;
   sourceAgents: unknown;
   evidence: PrismaEvidenceRow[];
 };
@@ -79,19 +108,25 @@ function toFile(row: PrismaFileRow): ReviewFile {
 }
 
 function toEvidence(row: PrismaEvidenceRow): Evidence {
-  return {
+  const evidence = {
     id: row.id,
     sourceType: row.sourceType,
     title: row.title,
-    page: row.page,
-    section: row.section,
+    page: row.page ?? undefined,
+    section: row.section ?? undefined,
     quoteSummary: row.quoteSummary,
-    relevanceScore: row.relevanceScore
+    relevanceScore: row.relevanceScore,
+    documentId: row.documentId ?? undefined,
+    chunkId: row.chunkId ?? undefined,
+    version: row.version ?? undefined,
+    effectiveFrom: row.effectiveFrom ? row.effectiveFrom.toISOString().slice(0, 10) : undefined
   };
+
+  return evidence;
 }
 
 function toIssue(row: PrismaIssueRow): ReviewIssue {
-  return {
+  const issue = {
     id: row.id,
     issueType: row.issueType,
     riskLevel: row.riskLevel,
@@ -99,6 +134,10 @@ function toIssue(row: PrismaIssueRow): ReviewIssue {
     title: row.title,
     targetText: row.targetText,
     targetBbox: bbox(row.targetBbox),
+    targetFileId: row.targetFileId ?? undefined,
+    targetPage: row.targetPage ?? undefined,
+    confidence: row.confidence ?? undefined,
+    agentFindingId: row.agentFindingId ?? undefined,
     sourceAgents: stringArray(row.sourceAgents),
     suggestedAction: row.suggestedAction,
     finalAction: row.finalAction ?? undefined,
@@ -108,6 +147,8 @@ function toIssue(row: PrismaIssueRow): ReviewIssue {
     suggestedCopy: row.suggestedCopy,
     evidence: row.evidence.map(toEvidence)
   };
+
+  return issue;
 }
 
 export function toReviewCase(row: PrismaReviewCaseRow): ReviewCase {

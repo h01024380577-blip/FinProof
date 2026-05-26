@@ -281,6 +281,7 @@ export type ReviewFileWhereInput = {
   version?: Prisma.IntFilter<"ReviewFile"> | number
   createdAt?: Prisma.DateTimeFilter<"ReviewFile"> | Date | string
   reviewCase?: Prisma.XOR<Prisma.ReviewCaseScalarRelationFilter, Prisma.ReviewCaseWhereInput>
+  evidenceChunks?: Prisma.EvidenceChunkListRelationFilter
 }
 
 export type ReviewFileOrderByWithRelationInput = {
@@ -297,6 +298,7 @@ export type ReviewFileOrderByWithRelationInput = {
   version?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   reviewCase?: Prisma.ReviewCaseOrderByWithRelationInput
+  evidenceChunks?: Prisma.EvidenceChunkOrderByRelationAggregateInput
 }
 
 export type ReviewFileWhereUniqueInput = Prisma.AtLeast<{
@@ -316,6 +318,7 @@ export type ReviewFileWhereUniqueInput = Prisma.AtLeast<{
   version?: Prisma.IntFilter<"ReviewFile"> | number
   createdAt?: Prisma.DateTimeFilter<"ReviewFile"> | Date | string
   reviewCase?: Prisma.XOR<Prisma.ReviewCaseScalarRelationFilter, Prisma.ReviewCaseWhereInput>
+  evidenceChunks?: Prisma.EvidenceChunkListRelationFilter
 }, "id">
 
 export type ReviewFileOrderByWithAggregationInput = {
@@ -369,6 +372,7 @@ export type ReviewFileCreateInput = {
   version?: number
   createdAt?: Date | string
   reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutFilesInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutReviewFileInput
 }
 
 export type ReviewFileUncheckedCreateInput = {
@@ -384,6 +388,7 @@ export type ReviewFileUncheckedCreateInput = {
   sizeBytes: bigint | number
   version?: number
   createdAt?: Date | string
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutReviewFileInput
 }
 
 export type ReviewFileUpdateInput = {
@@ -399,6 +404,7 @@ export type ReviewFileUpdateInput = {
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutFilesNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutReviewFileNestedInput
 }
 
 export type ReviewFileUncheckedUpdateInput = {
@@ -414,6 +420,7 @@ export type ReviewFileUncheckedUpdateInput = {
   sizeBytes?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutReviewFileNestedInput
 }
 
 export type ReviewFileCreateManyInput = {
@@ -527,6 +534,11 @@ export type ReviewFileSumOrderByAggregateInput = {
   version?: Prisma.SortOrder
 }
 
+export type ReviewFileNullableScalarRelationFilter = {
+  is?: Prisma.ReviewFileWhereInput | null
+  isNot?: Prisma.ReviewFileWhereInput | null
+}
+
 export type ReviewFileCreateNestedManyWithoutReviewCaseInput = {
   create?: Prisma.XOR<Prisma.ReviewFileCreateWithoutReviewCaseInput, Prisma.ReviewFileUncheckedCreateWithoutReviewCaseInput> | Prisma.ReviewFileCreateWithoutReviewCaseInput[] | Prisma.ReviewFileUncheckedCreateWithoutReviewCaseInput[]
   connectOrCreate?: Prisma.ReviewFileCreateOrConnectWithoutReviewCaseInput | Prisma.ReviewFileCreateOrConnectWithoutReviewCaseInput[]
@@ -593,6 +605,22 @@ export type BigIntFieldUpdateOperationsInput = {
   divide?: bigint | number
 }
 
+export type ReviewFileCreateNestedOneWithoutEvidenceChunksInput = {
+  create?: Prisma.XOR<Prisma.ReviewFileCreateWithoutEvidenceChunksInput, Prisma.ReviewFileUncheckedCreateWithoutEvidenceChunksInput>
+  connectOrCreate?: Prisma.ReviewFileCreateOrConnectWithoutEvidenceChunksInput
+  connect?: Prisma.ReviewFileWhereUniqueInput
+}
+
+export type ReviewFileUpdateOneWithoutEvidenceChunksNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewFileCreateWithoutEvidenceChunksInput, Prisma.ReviewFileUncheckedCreateWithoutEvidenceChunksInput>
+  connectOrCreate?: Prisma.ReviewFileCreateOrConnectWithoutEvidenceChunksInput
+  upsert?: Prisma.ReviewFileUpsertWithoutEvidenceChunksInput
+  disconnect?: Prisma.ReviewFileWhereInput | boolean
+  delete?: Prisma.ReviewFileWhereInput | boolean
+  connect?: Prisma.ReviewFileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewFileUpdateToOneWithWhereWithoutEvidenceChunksInput, Prisma.ReviewFileUpdateWithoutEvidenceChunksInput>, Prisma.ReviewFileUncheckedUpdateWithoutEvidenceChunksInput>
+}
+
 export type ReviewFileCreateWithoutReviewCaseInput = {
   id: string
   originalFilename: string
@@ -605,6 +633,7 @@ export type ReviewFileCreateWithoutReviewCaseInput = {
   sizeBytes: bigint | number
   version?: number
   createdAt?: Date | string
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutReviewFileInput
 }
 
 export type ReviewFileUncheckedCreateWithoutReviewCaseInput = {
@@ -619,6 +648,7 @@ export type ReviewFileUncheckedCreateWithoutReviewCaseInput = {
   sizeBytes: bigint | number
   version?: number
   createdAt?: Date | string
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutReviewFileInput
 }
 
 export type ReviewFileCreateOrConnectWithoutReviewCaseInput = {
@@ -665,6 +695,82 @@ export type ReviewFileScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"ReviewFile"> | Date | string
 }
 
+export type ReviewFileCreateWithoutEvidenceChunksInput = {
+  id: string
+  originalFilename: string
+  fileType: $Enums.ReviewFileType
+  classificationConfidence: number
+  parseStatus: $Enums.ParseStatus
+  storageProvider: string
+  storageKey: string
+  contentType: string
+  sizeBytes: bigint | number
+  version?: number
+  createdAt?: Date | string
+  reviewCase: Prisma.ReviewCaseCreateNestedOneWithoutFilesInput
+}
+
+export type ReviewFileUncheckedCreateWithoutEvidenceChunksInput = {
+  id: string
+  reviewCaseId: string
+  originalFilename: string
+  fileType: $Enums.ReviewFileType
+  classificationConfidence: number
+  parseStatus: $Enums.ParseStatus
+  storageProvider: string
+  storageKey: string
+  contentType: string
+  sizeBytes: bigint | number
+  version?: number
+  createdAt?: Date | string
+}
+
+export type ReviewFileCreateOrConnectWithoutEvidenceChunksInput = {
+  where: Prisma.ReviewFileWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewFileCreateWithoutEvidenceChunksInput, Prisma.ReviewFileUncheckedCreateWithoutEvidenceChunksInput>
+}
+
+export type ReviewFileUpsertWithoutEvidenceChunksInput = {
+  update: Prisma.XOR<Prisma.ReviewFileUpdateWithoutEvidenceChunksInput, Prisma.ReviewFileUncheckedUpdateWithoutEvidenceChunksInput>
+  create: Prisma.XOR<Prisma.ReviewFileCreateWithoutEvidenceChunksInput, Prisma.ReviewFileUncheckedCreateWithoutEvidenceChunksInput>
+  where?: Prisma.ReviewFileWhereInput
+}
+
+export type ReviewFileUpdateToOneWithWhereWithoutEvidenceChunksInput = {
+  where?: Prisma.ReviewFileWhereInput
+  data: Prisma.XOR<Prisma.ReviewFileUpdateWithoutEvidenceChunksInput, Prisma.ReviewFileUncheckedUpdateWithoutEvidenceChunksInput>
+}
+
+export type ReviewFileUpdateWithoutEvidenceChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFilename?: Prisma.StringFieldUpdateOperationsInput | string
+  fileType?: Prisma.EnumReviewFileTypeFieldUpdateOperationsInput | $Enums.ReviewFileType
+  classificationConfidence?: Prisma.FloatFieldUpdateOperationsInput | number
+  parseStatus?: Prisma.EnumParseStatusFieldUpdateOperationsInput | $Enums.ParseStatus
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeBytes?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  reviewCase?: Prisma.ReviewCaseUpdateOneRequiredWithoutFilesNestedInput
+}
+
+export type ReviewFileUncheckedUpdateWithoutEvidenceChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewCaseId?: Prisma.StringFieldUpdateOperationsInput | string
+  originalFilename?: Prisma.StringFieldUpdateOperationsInput | string
+  fileType?: Prisma.EnumReviewFileTypeFieldUpdateOperationsInput | $Enums.ReviewFileType
+  classificationConfidence?: Prisma.FloatFieldUpdateOperationsInput | number
+  parseStatus?: Prisma.EnumParseStatusFieldUpdateOperationsInput | $Enums.ParseStatus
+  storageProvider?: Prisma.StringFieldUpdateOperationsInput | string
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeBytes?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
+  version?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type ReviewFileCreateManyReviewCaseInput = {
   id: string
   originalFilename: string
@@ -691,6 +797,7 @@ export type ReviewFileUpdateWithoutReviewCaseInput = {
   sizeBytes?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutReviewFileNestedInput
 }
 
 export type ReviewFileUncheckedUpdateWithoutReviewCaseInput = {
@@ -705,6 +812,7 @@ export type ReviewFileUncheckedUpdateWithoutReviewCaseInput = {
   sizeBytes?: Prisma.BigIntFieldUpdateOperationsInput | bigint | number
   version?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutReviewFileNestedInput
 }
 
 export type ReviewFileUncheckedUpdateManyWithoutReviewCaseInput = {
@@ -722,6 +830,35 @@ export type ReviewFileUncheckedUpdateManyWithoutReviewCaseInput = {
 }
 
 
+/**
+ * Count Type ReviewFileCountOutputType
+ */
+
+export type ReviewFileCountOutputType = {
+  evidenceChunks: number
+}
+
+export type ReviewFileCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  evidenceChunks?: boolean | ReviewFileCountOutputTypeCountEvidenceChunksArgs
+}
+
+/**
+ * ReviewFileCountOutputType without action
+ */
+export type ReviewFileCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ReviewFileCountOutputType
+   */
+  select?: Prisma.ReviewFileCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ReviewFileCountOutputType without action
+ */
+export type ReviewFileCountOutputTypeCountEvidenceChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EvidenceChunkWhereInput
+}
+
 
 export type ReviewFileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -737,6 +874,8 @@ export type ReviewFileSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   version?: boolean
   createdAt?: boolean
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  evidenceChunks?: boolean | Prisma.ReviewFile$evidenceChunksArgs<ExtArgs>
+  _count?: boolean | Prisma.ReviewFileCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reviewFile"]>
 
 export type ReviewFileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -789,6 +928,8 @@ export type ReviewFileSelectScalar = {
 export type ReviewFileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "reviewCaseId" | "originalFilename" | "fileType" | "classificationConfidence" | "parseStatus" | "storageProvider" | "storageKey" | "contentType" | "sizeBytes" | "version" | "createdAt", ExtArgs["result"]["reviewFile"]>
 export type ReviewFileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
+  evidenceChunks?: boolean | Prisma.ReviewFile$evidenceChunksArgs<ExtArgs>
+  _count?: boolean | Prisma.ReviewFileCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ReviewFileIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
@@ -801,6 +942,7 @@ export type $ReviewFilePayload<ExtArgs extends runtime.Types.Extensions.Internal
   name: "ReviewFile"
   objects: {
     reviewCase: Prisma.$ReviewCasePayload<ExtArgs>
+    evidenceChunks: Prisma.$EvidenceChunkPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1210,6 +1352,7 @@ readonly fields: ReviewFileFieldRefs;
 export interface Prisma__ReviewFileClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   reviewCase<T extends Prisma.ReviewCaseDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCaseDefaultArgs<ExtArgs>>): Prisma.Prisma__ReviewCaseClient<runtime.Types.Result.GetResult<Prisma.$ReviewCasePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  evidenceChunks<T extends Prisma.ReviewFile$evidenceChunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewFile$evidenceChunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvidenceChunkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1649,6 +1792,30 @@ export type ReviewFileDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many ReviewFiles to delete.
    */
   limit?: number
+}
+
+/**
+ * ReviewFile.evidenceChunks
+ */
+export type ReviewFile$evidenceChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EvidenceChunk
+   */
+  select?: Prisma.EvidenceChunkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EvidenceChunk
+   */
+  omit?: Prisma.EvidenceChunkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EvidenceChunkInclude<ExtArgs> | null
+  where?: Prisma.EvidenceChunkWhereInput
+  orderBy?: Prisma.EvidenceChunkOrderByWithRelationInput | Prisma.EvidenceChunkOrderByWithRelationInput[]
+  cursor?: Prisma.EvidenceChunkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EvidenceChunkScalarFieldEnum | Prisma.EvidenceChunkScalarFieldEnum[]
 }
 
 /**

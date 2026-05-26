@@ -25,6 +25,29 @@ function firstEvidenceCandidate(artifacts: AnalysisArtifacts): RagEvidenceCandid
   return artifacts.evidenceCandidates[0];
 }
 
+function evidenceCandidateById(
+  artifacts: AnalysisArtifacts,
+  evidenceCandidateId: string
+): RagEvidenceCandidate | undefined {
+  return artifacts.evidenceCandidates.find((candidate) => candidate.id === evidenceCandidateId);
+}
+
+function candidateToEvidence(
+  candidate: RagEvidenceCandidate,
+  issueId: string,
+  index: number
+): Evidence {
+  return {
+    id: `${issueId}-evidence-${String(index + 1).padStart(3, "0")}`,
+    sourceType: candidate.sourceType,
+    title: candidate.title,
+    page: candidate.page,
+    section: candidate.section,
+    quoteSummary: candidate.quoteSummary,
+    relevanceScore: candidate.relevanceScore
+  };
+}
+
 function fallbackEvidence(review: ReviewCase, artifacts: AnalysisArtifacts): Evidence {
   const document = artifacts.extractedDocuments[0];
 
@@ -44,15 +67,7 @@ function issueEvidence(
 ): Evidence[] {
   const candidate = firstEvidenceCandidate(artifacts);
   const evidence = candidate
-    ? {
-        id: candidate.id,
-        sourceType: candidate.sourceType,
-        title: candidate.title,
-        page: candidate.page,
-        section: candidate.section,
-        quoteSummary: candidate.quoteSummary,
-        relevanceScore: candidate.relevanceScore
-      }
+    ? candidateToEvidence(candidate, issueId, 0)
     : fallbackEvidence(review, artifacts);
 
   return [
@@ -103,6 +118,39 @@ function baseIssue({
   };
 }
 
+function issuesFromAgentFindings(review: ReviewCase, artifacts: AnalysisArtifacts): ReviewIssue[] {
+  return (artifacts.agentFindings ?? []).map((finding) => {
+    const issueId = `issue-${review.id}-${finding.id}`;
+    const matchedEvidence = finding.evidenceCandidateIds
+      .map((candidateId) => evidenceCandidateById(artifacts, candidateId))
+      .filter((candidate): candidate is RagEvidenceCandidate => Boolean(candidate))
+      .map((candidate, index) => candidateToEvidence(candidate, issueId, index));
+
+    return {
+      id: issueId,
+      issueType: finding.issueType,
+      riskLevel: finding.riskLevel,
+      title: finding.title,
+      targetText: finding.targetText,
+      targetBbox: [0, 0, 0, 0] as [number, number, number, number],
+      sourceAgents: [finding.agent],
+      suggestedAction: finding.suggestedAction,
+      status: "open",
+      description: finding.description,
+      suggestedCopy: finding.suggestedCopy,
+      evidence:
+        matchedEvidence.length > 0
+          ? matchedEvidence
+          : [
+              {
+                ...fallbackEvidence(review, artifacts),
+                id: `${issueId}-evidence-001`
+              }
+            ]
+    };
+  });
+}
+
 export function highestRiskLevelForIssues(
   currentRisk: RiskLevel,
   issues: Pick<ReviewIssue, "riskLevel">[]
@@ -118,7 +166,7 @@ export function buildAnalysisIssues(
   artifacts: AnalysisArtifacts
 ): ReviewIssue[] {
   const text = combinedArtifactText(artifacts);
-  const issues: ReviewIssue[] = [];
+  const issues: ReviewIssue[] = issuesFromAgentFindings(review, artifacts);
   const rateClaimPattern = /(최고|최대).{0,20}([0-9]+(?:\.[0-9]+)?\s*%|연\s*[0-9])/;
   const conditionPattern = /(조건|우대|기본|세전|한도|충족|적용|대상|기간|고시)/;
   const absoluteClaimPattern = /(누구나|무조건|전원|100%|반드시|확정|보장)/;

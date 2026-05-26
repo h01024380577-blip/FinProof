@@ -324,7 +324,7 @@ describe("review API routes", () => {
       reviewCaseId: "rc-demo-deposit-001",
       status: "completed",
       progress: 100,
-      currentStep: "deterministic_mock_analysis",
+      currentStep: "worker_completed",
       jobId: "job-rc-demo-deposit-001-001"
     });
 
@@ -335,11 +335,15 @@ describe("review API routes", () => {
     const auditBody = await auditResponse.json();
 
     expect(auditResponse.status).toBe(200);
-    expect(auditBody.auditEvents[0]).toMatchObject({
-      action: "analysis.start",
-      targetType: "review_case",
-      targetId: "rc-demo-deposit-001"
-    });
+    expect(auditBody.auditEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "analysis.start",
+          targetType: "review_case",
+          targetId: "rc-demo-deposit-001"
+        })
+      ])
+    );
 
     const missingStatusResponse = await analysisStatusGET(
       roleRequest("/api/v1/review-cases/missing-case/analysis/status", "reviewer", "GET"),
@@ -639,7 +643,7 @@ describe("review API routes", () => {
 
     const draftResponse = await draftPOST(
       jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/draft", {
-        markedResponses: [evidenceChatBody.response]
+        chatResponses: [evidenceChatBody.response]
       }),
       params({ caseId: "rc-demo-deposit-001" })
     );

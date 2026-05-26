@@ -1,5 +1,6 @@
 import type { ReviewCase } from "@/domain/types";
 import { createReviewAnalysisPipeline } from "./review-analysis-pipeline";
+import type { ModelProvider } from "@/server/ai/model-provider";
 
 const review: ReviewCase = {
   id: "rc-upload-001",
@@ -67,6 +68,154 @@ describe("review analysis pipeline", () => {
         title: "poster.png",
         quoteSummary: expect.stringContaining("급여이체 조건"),
         relevanceScore: expect.any(Number)
+      })
+    ]);
+  });
+
+  it("extracts text from stored upload bodies before retrieval", async () => {
+    const pipeline = createReviewAnalysisPipeline({
+      fileBodyReader: {
+        async getReviewFileBody(storageKey) {
+          expect(storageKey).toBe("local/rc-upload-001/file-upload-001/poster.html");
+
+          return new TextEncoder().encode(
+            "<main><h1>누구나 최고 연 5.0%</h1><p>급여이체 등 우대 조건 충족 시 적용됩니다.</p></main>"
+          );
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({
+      review: {
+        ...review,
+        files: [
+          {
+            ...review.files[0],
+            name: "poster.html",
+            storageProvider: "local",
+            storageKey: "local/rc-upload-001/file-upload-001/poster.html",
+            contentType: "text/html"
+          }
+        ]
+      }
+    });
+
+    expect(artifacts.extractedDocuments).toEqual([
+      expect.objectContaining({
+        fileName: "poster.html",
+        provider: "local-text-extractor",
+        text: expect.stringContaining("누구나 최고 연 5.0%"),
+        confidence: 0.96
+      })
+    ]);
+    expect(artifacts.evidenceCandidates[0]).toEqual(
+      expect.objectContaining({
+        quoteSummary: expect.stringContaining("우대 조건 충족")
+      })
+    );
+  });
+
+  it("prioritizes extracted document text over metadata-only archive entries", async () => {
+    const pipeline = createReviewAnalysisPipeline({
+      ocrProvider: {
+        async extract() {
+          return [
+            {
+              fileId: "file-upload-001",
+              fileName: "package.zip",
+              text: "파일명: package.zip 본문 추출 대상이 아닙니다.",
+              confidence: 0.62,
+              provider: "metadata-only"
+            },
+            {
+              fileId: "file-upload-002",
+              fileName: "poster.txt",
+              text: "누구나 받을 수 있는 최고 연 5.0% 적금. 우대 조건 충족 시 적용됩니다.",
+              confidence: 0.96,
+              provider: "local-text-extractor"
+            }
+          ];
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.evidenceCandidates[0]).toEqual(
+      expect.objectContaining({
+        title: "poster.txt",
+        quoteSummary: expect.stringContaining("최고 연 5.0%")
+      })
+    );
+  });
+
+  it("runs model-backed review subagents and stores their findings", async () => {
+    const provider: ModelProvider = {
+      generateText: vi
+        .fn()
+        .mockResolvedValueOnce({
+          provider: "openai",
+          model: "gpt-5.2",
+          text: JSON.stringify([
+            {
+              title: "최고 금리 조건 병기 필요",
+              riskLevel: "high",
+              targetText: "누구나 최고 연 5.0%",
+              description: "절대 표현과 최고 금리 표현이 함께 있어 조건 고지가 필요합니다.",
+              suggestedAction: "change_request",
+              suggestedCopy: "최고 연 5.0%는 우대 조건 충족 시 적용됩니다.",
+              evidenceCandidateIds: ["evidence-candidate-file-upload-001-001"],
+              confidence: 0.88
+            }
+          ])
+        })
+        .mockResolvedValue({
+          provider: "openai",
+          model: "gpt-5.2",
+          text: "[]"
+        })
+    };
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "누구나 최고 연 5.0% 우대 조건 충족 시 적용됩니다.",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: "creative_review",
+        routeContext: expect.objectContaining({
+          riskLevel: "info"
+        })
+      })
+    );
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: "product_terms"
+      })
+    );
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: "evidence_verification"
+      })
+    );
+    expect(artifacts.agentFindings).toEqual([
+      expect.objectContaining({
+        agent: "creative_review",
+        title: "최고 금리 조건 병기 필요",
+        evidenceCandidateIds: ["evidence-candidate-file-upload-001-001"]
       })
     ]);
   });

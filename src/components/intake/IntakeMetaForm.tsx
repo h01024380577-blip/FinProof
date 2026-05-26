@@ -13,7 +13,7 @@ export type IntakeMetaState = {
   title: string;
   affiliate: string;
   requestDepartment: string;
-  productType: ProductType;
+  productType: ProductType | "";
   plannedPublishDate: string;
   channels: IntakeChannelsState;
   requestMemo: string;
@@ -48,6 +48,9 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
           value={state.affiliate}
           onChange={(event) => patch({ affiliate: event.target.value })}
         >
+          <option value="" disabled>
+            계열사를 선택하세요
+          </option>
           <option value="광주은행">광주은행</option>
           <option value="JB금융그룹">JB금융그룹</option>
           <option value="전북은행">전북은행</option>
@@ -58,6 +61,7 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
         <span>요청 부서 *</span>
         <input
           aria-label="요청 부서"
+          placeholder="예: 디지털마케팅팀"
           value={state.requestDepartment}
           onChange={(event) => patch({ requestDepartment: event.target.value })}
         />
@@ -68,8 +72,11 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
         <select
           aria-label="상품군"
           value={state.productType}
-          onChange={(event) => patch({ productType: event.target.value as ProductType })}
+          onChange={(event) => patch({ productType: event.target.value as ProductType | "" })}
         >
+          <option value="" disabled>
+            상품군을 선택하세요
+          </option>
           <option value="deposit">예금/적금</option>
           <option value="loan">대출</option>
           <option value="card">카드</option>
@@ -115,6 +122,7 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
         <span>요청 메모</span>
         <textarea
           aria-label="요청 메모"
+          placeholder="예: 금리 조건 표시와 유의사항 문구를 중점 검토해 주세요."
           value={state.requestMemo}
           onChange={(event) => patch({ requestMemo: event.target.value })}
         />

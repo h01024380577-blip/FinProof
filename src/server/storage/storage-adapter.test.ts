@@ -1,6 +1,9 @@
 import { createLocalMetadataStorageAdapter } from "./local-metadata-storage-adapter";
 import { getReviewStorageAdapter } from ".";
 import { createS3MetadataStorageAdapter } from "./s3-metadata-storage-adapter";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 describe("local metadata storage adapter", () => {
   it("creates deterministic review file metadata for local demo uploads", async () => {
@@ -21,6 +24,25 @@ describe("local metadata storage adapter", () => {
       contentType: "image/png",
       sizeBytes: 2048
     });
+  });
+
+  it("persists and reads local upload bytes for real analysis", async () => {
+    const rootDir = await mkdtemp(path.join(tmpdir(), "finproof-storage-"));
+    const adapter = createLocalMetadataStorageAdapter({ rootDir });
+    const body = new TextEncoder().encode("최고 연 5.0% 우대 조건 안내");
+
+    const metadata = await adapter.putReviewFile({
+      reviewCaseId: "rc-upload-001",
+      fileId: "file-upload-001",
+      fileName: "nested/poster.txt",
+      contentType: "text/plain",
+      sizeBytes: body.byteLength,
+      body
+    });
+
+    const storedBody = await adapter.getReviewFileBody(metadata.storageKey);
+
+    expect(Array.from(storedBody ?? [])).toEqual(Array.from(body));
   });
 
   it("creates sample metadata for seeded files", () => {
@@ -60,10 +82,13 @@ describe("storage adapter factory", () => {
 
     const adapter = getReviewStorageAdapter();
 
-    expect(adapter).toEqual({
-      putReviewFile: expect.any(Function),
-      sampleReviewFile: expect.any(Function)
-    });
+    expect(adapter).toEqual(
+      expect.objectContaining({
+        putReviewFile: expect.any(Function),
+        getReviewFileBody: expect.any(Function),
+        sampleReviewFile: expect.any(Function)
+      })
+    );
   });
 
   it("uploads S3 objects before returning metadata", async () => {

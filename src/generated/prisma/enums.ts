@@ -129,3 +129,72 @@ export const AnalysisJobStatus = {
 } as const
 
 export type AnalysisJobStatus = (typeof AnalysisJobStatus)[keyof typeof AnalysisJobStatus]
+
+
+export const KnowledgeDocumentType = {
+  law: 'law',
+  internal_policy: 'internal_policy',
+  checklist: 'checklist',
+  guide: 'guide'
+} as const
+
+export type KnowledgeDocumentType = (typeof KnowledgeDocumentType)[keyof typeof KnowledgeDocumentType]
+
+
+export const KnowledgeApprovalStatus = {
+  draft: 'draft',
+  approved: 'approved',
+  inactive: 'inactive'
+} as const
+
+export type KnowledgeApprovalStatus = (typeof KnowledgeApprovalStatus)[keyof typeof KnowledgeApprovalStatus]
+
+
+export const AgentRunStatus = {
+  queued: 'queued',
+  running: 'running',
+  completed: 'completed',
+  failed: 'failed'
+} as const
+
+export type AgentRunStatus = (typeof AgentRunStatus)[keyof typeof AgentRunStatus]
+
+
+export const AgentType = {
+  main: 'main',
+  creative: 'creative',
+  product_terms: 'product_terms',
+  regulation: 'regulation',
+  internal_policy: 'internal_policy',
+  case_search: 'case_search'
+} as const
+
+export type AgentType = (typeof AgentType)[keyof typeof AgentType]
+
+
+export const ChatMode = {
+  issue: 'issue',
+  case: 'case',
+  similar_case: 'similar_case',
+  draft: 'draft'
+} as const
+
+export type ChatMode = (typeof ChatMode)[keyof typeof ChatMode]
+
+
+export const ChatRole = {
+  user: 'user',
+  assistant: 'assistant',
+  system: 'system'
+} as const
+
+export type ChatRole = (typeof ChatRole)[keyof typeof ChatRole]
+
+
+export const DraftSource = {
+  generated: 'generated',
+  manual: 'manual',
+  fallback: 'fallback'
+} as const
+
+export type DraftSource = (typeof DraftSource)[keyof typeof DraftSource]
