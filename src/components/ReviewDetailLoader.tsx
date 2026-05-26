@@ -80,5 +80,5 @@ export function ReviewDetailLoader({ reviewId }: { reviewId: string }): JSX.Elem
     );
   }
 
-  return <ReviewDetailWorkspace review={review} loadSupportData />;
+  return <ReviewDetailWorkspace review={review} />;
 }

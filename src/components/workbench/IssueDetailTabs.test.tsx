@@ -76,4 +76,40 @@ describe("IssueDetailTabs", () => {
     await userEvent.click(screen.getByRole("tab", { name: "근거 자료" }));
     expect(onChange).toHaveBeenCalledWith("evidence");
   });
+
+  it("renders evidence title and quote with overflow-safe classes", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          evidence: [
+            {
+              ...issue.evidence[0],
+              title: "high-rate-deposit-review.zip/poster_high_rate_deposit.html",
+              quoteSummary:
+                "JB 슈퍼씨드 적금 홍보 시안 광주은행 모바일 전용 누구나 받을 수 있는 최고 연 5.0% 적금"
+            }
+          ]
+        }}
+        activeTab="evidence"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        canFinalize={false}
+        isSavingDecision={false}
+        isFinalizingReview={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+        onFinalizeReviewCase={() => undefined}
+      />
+    );
+
+    expect(
+      screen.getByText("high-rate-deposit-review.zip/poster_high_rate_deposit.html")
+    ).toHaveClass("evidence-card__title");
+    expect(screen.getByText(/JB 슈퍼씨드 적금 홍보 시안/)).toHaveClass("evidence-card__quote");
+  });
 });

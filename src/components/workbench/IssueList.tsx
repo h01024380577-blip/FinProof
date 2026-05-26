@@ -1,11 +1,26 @@
 "use client";
 
-import { useMemo, useState, type JSX } from "react";
-import { RiskBadge } from "@/components/Badges";
+import { useMemo, useState, type CSSProperties, type JSX } from "react";
 import { riskLabels } from "@/domain/reviews";
 import type { ReviewIssue, RiskLevel } from "@/domain/types";
 
 const riskOrder: RiskLevel[] = ["reject_recommended", "high", "caution", "info"];
+
+function displayLength(value: string): number {
+  return Array.from(value).reduce((total, character) => {
+    return total + (/^[\u0020-\u007e]$/.test(character) ? 0.55 : 1);
+  }, 0);
+}
+
+function issueCardStyle(issue: ReviewIssue): CSSProperties {
+  const titleLines = Math.max(1, Math.ceil(displayLength(issue.title) / 17));
+  const excerptLines = Math.max(1, Math.ceil(displayLength(issue.targetText) / 22));
+  const minHeight = Math.min(240, Math.max(132, 72 + titleLines * 23 + excerptLines * 22));
+
+  return {
+    "--issue-card-min-height": `${minHeight}px`
+  } as CSSProperties;
+}
 
 export type IssueListProps = {
   issues: ReviewIssue[];
@@ -62,15 +77,17 @@ export function IssueList({
               className="issue-card"
               data-active={selectedIssueId === issue.id}
               data-risk={issue.riskLevel}
+              style={issueCardStyle(issue)}
               type="button"
               onClick={() => onSelectIssue(issue.id)}
             >
-              <span className="issue-card__top">
-                <RiskBadge level={issue.riskLevel} />
-                <small>#{index + 1}</small>
+              <span className="issue-card__content">
+                <span className="issue-card__top">
+                  <small>#{index + 1}</small>
+                </span>
+                <strong className="issue-card__title">{issue.title}</strong>
+                <span className="issue-card__excerpt">{issue.targetText}</span>
               </span>
-              <strong>{issue.title}</strong>
-              <span>{issue.targetText}</span>
             </button>
           ))
         ) : (

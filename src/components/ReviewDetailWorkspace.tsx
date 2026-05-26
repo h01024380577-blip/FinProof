@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
+import { useMemo, useRef, useState, type FormEvent, type JSX } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Download,
@@ -24,27 +24,6 @@ type SavedDecision = {
   riskLevel: RiskLevel;
   finalAction: NonNullable<ReviewIssue["finalAction"]>;
   comment: string;
-};
-
-type AnalysisStatusResponse = {
-  reviewCaseId: string;
-  status: "queued" | "running" | "completed" | "failed" | "not_started";
-  progress: number;
-  currentStep: string;
-  jobId: string | null;
-};
-
-type AuditEvent = {
-  id: string;
-  action: string;
-  targetType: string;
-  targetId?: string;
-  userId: string;
-  createdAt: string;
-};
-
-type AuditEventsResponse = {
-  auditEvents: AuditEvent[];
 };
 
 type PendingQuestion = {
@@ -83,18 +62,6 @@ const finalActionPriority: Array<NonNullable<ReviewIssue["finalAction"]>> = [
   "change_request",
   "approve"
 ];
-
-const analysisStatusLabels: Record<AnalysisStatusResponse["status"], string> = {
-  not_started: "분석 전",
-  queued: "대기 중",
-  running: "진행 중",
-  completed: "완료",
-  failed: "실패"
-};
-
-function formatAuditTime(value: string) {
-  return value.replace("T", " ").slice(0, 16);
-}
 
 function canMutateReview(role: RoleId) {
   return role === "reviewer" || role === "compliance_admin";
@@ -232,11 +199,9 @@ function getInitialSavedDecisions(review: ReviewCase): Record<string, SavedDecis
 }
 
 export function ReviewDetailWorkspace({
-  review,
-  loadSupportData = false
+  review
 }: {
   review: ReviewCase;
-  loadSupportData?: boolean;
 }): JSX.Element {
   const roleContext = useRoleContext();
   const activeRole = roleContext?.activeRole ?? "reviewer";
@@ -283,9 +248,6 @@ export function ReviewDetailWorkspace({
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingDecision, setIsSavingDecision] = useState(false);
   const [isFinalizingReview, setIsFinalizingReview] = useState(false);
-  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatusResponse | null>(null);
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [supportDataError, setSupportDataError] = useState<string | null>(null);
   const [finalizedNotice, setFinalizedNotice] = useState<string | null>(null);
   const [reportNotice, setReportNotice] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
@@ -320,48 +282,6 @@ export function ReviewDetailWorkspace({
     const query = params.toString();
     router.replace(query.length > 0 ? `${pathname}?${query}` : (pathname ?? ""));
   }
-
-  useEffect(() => {
-    if (!loadSupportData) {
-      return;
-    }
-
-    let isMounted = true;
-
-    async function loadReviewSupportData() {
-      setSupportDataError(null);
-      try {
-        const [statusResponse, auditResponse] = await Promise.all([
-          fetch(`/api/v1/review-cases/${review.id}/analysis/status`, { headers: roleHeaders }),
-          fetch(`/api/v1/review-cases/${review.id}/audit-events`, { headers: roleHeaders })
-        ]);
-
-        if (!statusResponse?.ok || !auditResponse?.ok) {
-          throw new Error("support data fetch failed");
-        }
-
-        const [statusBody, auditBody] = await Promise.all([
-          statusResponse.json() as Promise<AnalysisStatusResponse>,
-          auditResponse.json() as Promise<AuditEventsResponse>
-        ]);
-
-        if (isMounted) {
-          setAnalysisStatus(statusBody);
-          setAuditEvents(auditBody.auditEvents);
-        }
-      } catch {
-        if (isMounted) {
-          setSupportDataError("분석 상태와 감사 로그를 불러오지 못했습니다.");
-        }
-      }
-    }
-
-    void loadReviewSupportData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [loadSupportData, review.id, roleHeaders]);
 
   function setDraft(nextDraft: string) {
     latestDraftRef.current = nextDraft;
@@ -690,29 +610,18 @@ export function ReviewDetailWorkspace({
             <p className="eyebrow">Issue Query</p>
             <h3>선택 이슈 기반 질의</h3>
           </div>
-          <MessageSquareText size={20} aria-hidden="true" />
+          <div className="chat-header-actions">
+            <button
+              className="button chat-mark-button chat-mark-button--header"
+              type="button"
+              disabled={!selectedIssue || !reviewerCanMutate}
+              onClick={markLatestResponseForDraft}
+            >
+              초안에 반영
+            </button>
+            <MessageSquareText size={20} aria-hidden="true" />
+          </div>
         </div>
-        <form className="chat-composer" onSubmit={submitQuestion}>
-          <label className="sr-only" htmlFor="rag-question">
-            RAG question
-          </label>
-          <input
-            id="rag-question"
-            value={question}
-            aria-label="RAG question"
-            placeholder="예: 최고금리 조건을 승인 가능하게 표시하려면?"
-            disabled={!selectedIssue}
-            onChange={(event) => setQuestion(event.target.value)}
-          />
-          <button
-            className="icon-button"
-            type="submit"
-            aria-label="질문 보내기"
-            disabled={!selectedIssue || isAskingQuestion || question.trim().length === 0}
-          >
-            <Send size={17} aria-hidden="true" />
-          </button>
-        </form>
 
         <div className="chat-thread" aria-label="채팅 대화" aria-live="polite">
           {!selectedIssue ? (
@@ -784,14 +693,27 @@ export function ReviewDetailWorkspace({
           ) : null}
         </div>
 
-        <button
-          className="button chat-mark-button"
-          type="button"
-          disabled={!selectedIssue || !reviewerCanMutate}
-          onClick={markLatestResponseForDraft}
-        >
-          초안에 반영
-        </button>
+        <form className="chat-composer" aria-label="채팅 입력" onSubmit={submitQuestion}>
+          <label className="sr-only" htmlFor="rag-question">
+            RAG question
+          </label>
+          <input
+            id="rag-question"
+            value={question}
+            aria-label="RAG question"
+            placeholder="예: 최고금리 조건을 승인 가능하게 표시하려면?"
+            disabled={!selectedIssue}
+            onChange={(event) => setQuestion(event.target.value)}
+          />
+          <button
+            className="icon-button"
+            type="submit"
+            aria-label="질문 보내기"
+            disabled={!selectedIssue || isAskingQuestion || question.trim().length === 0}
+          >
+            <Send size={17} aria-hidden="true" />
+          </button>
+        </form>
       </div>
   );
 
@@ -848,42 +770,6 @@ export function ReviewDetailWorkspace({
             setDraftNotice(null);
           }}
         />
-      </div>
-  );
-
-  const auditPanel = (
-    <div className="panel panel--compact drawer-support-panel">
-        <div className="panel__header">
-          <div>
-            <p className="eyebrow">Audit Trail</p>
-            <h3>감사 로그</h3>
-          </div>
-        </div>
-        <div className="analysis-status-summary">
-          <strong>
-            {analysisStatus
-              ? `${analysisStatusLabels[analysisStatus.status]} · ${analysisStatus.progress}%`
-              : "분석 상태 확인 전"}
-          </strong>
-          {analysisStatus?.currentStep ? <span>{analysisStatus.currentStep}</span> : null}
-        </div>
-        {supportDataError ? (
-          <p className="support-data-error" role="alert">
-            {supportDataError}
-          </p>
-        ) : null}
-        <ol className="audit-list">
-          {auditEvents.length > 0 ? (
-            auditEvents.map((event) => (
-              <li key={event.id}>
-                {event.action} · {event.userId}
-                <span>{formatAuditTime(event.createdAt)}</span>
-              </li>
-            ))
-          ) : (
-            <li>감사 이벤트 없음</li>
-          )}
-        </ol>
       </div>
   );
 
@@ -960,7 +846,6 @@ export function ReviewDetailWorkspace({
         defaultCollapsed={activeRole === "requester"}
         chatNode={chatPanel}
         draftNode={draftPanel}
-        auditNode={auditPanel}
         filesNode={filesPanel}
       />
 

@@ -119,7 +119,11 @@ describe("ReviewDetailWorkspace", () => {
   });
 
   it("starts chat with an empty input placeholder instead of a hardcoded example answer", () => {
-    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+    const { container } = render(
+      <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
+    );
+    const chatThread = container.querySelector(".chat-thread");
+    const chatComposer = container.querySelector(".chat-composer");
 
     expect(screen.getByLabelText("RAG question")).toHaveValue("");
     expect(
@@ -127,71 +131,19 @@ describe("ReviewDetailWorkspace", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("선택된 이슈의 근거를 기준으로 답변합니다.")).toBeInTheDocument();
     expect(screen.queryByText(/현재 근거상 조건부 혜택임을/)).not.toBeInTheDocument();
+    expect(chatThread?.compareDocumentPosition(chatComposer as Node)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
   });
 
-  it("loads analysis status and audit events when support data is enabled", async () => {
-    const user = userEvent.setup();
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
-      const path = typeof input === "string" ? input : input.toString();
-
-      if (path.endsWith("/analysis/status")) {
-        return {
-          ok: true,
-          json: async () => ({
-            reviewCaseId: "rc-demo-deposit-001",
-            status: "completed",
-            progress: 100,
-            currentStep: "deterministic_mock_analysis",
-            jobId: "job-rc-demo-deposit-001-001"
-          })
-        };
-      }
-
-      if (path.endsWith("/audit-events")) {
-        return {
-          ok: true,
-          json: async () => ({
-            auditEvents: [
-              {
-                id: "audit-analysis-start",
-                action: "analysis.start",
-                targetType: "review_case",
-                targetId: "rc-demo-deposit-001",
-                userId: "user-reviewer-demo",
-                createdAt: "2026-05-25T10:00:00.000Z"
-              }
-            ]
-          })
-        };
-      }
-
-      throw new Error(`Unexpected fetch: ${path}`);
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
+  it("does not render the audit log drawer tab", () => {
     render(
       <RoleProvider initialRole="reviewer">
-        <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} loadSupportData />
+        <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
       </RoleProvider>
     );
 
-    await user.click(screen.getByRole("tab", { name: "감사 로그" }));
-
-    expect(await screen.findByText("완료 · 100%")).toBeInTheDocument();
-    expect(screen.getByText("deterministic_mock_analysis")).toBeInTheDocument();
-    expect(screen.getByText(/analysis.start/)).toHaveTextContent("user-reviewer-demo");
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/review-cases/rc-demo-deposit-001/analysis/status",
-      expect.objectContaining({
-        headers: expect.objectContaining({ "x-finproof-role": "reviewer" })
-      })
-    );
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/v1/review-cases/rc-demo-deposit-001/audit-events",
-      expect.objectContaining({
-        headers: expect.objectContaining({ "x-finproof-role": "reviewer" })
-      })
-    );
+    expect(screen.queryByRole("tab", { name: "감사 로그" })).not.toBeInTheDocument();
   });
 
   it("disables reviewer-only workbench controls for requesters", async () => {

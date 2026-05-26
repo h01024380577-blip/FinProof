@@ -64,8 +64,8 @@ function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
       {issue.evidence.map((evidence) => (
         <article key={evidence.id} className="evidence-card">
           <span>{evidence.sourceType}</span>
-          <strong>{evidence.title}</strong>
-          <p>{evidence.quoteSummary}</p>
+          <strong className="evidence-card__title">{evidence.title}</strong>
+          <p className="evidence-card__quote">{evidence.quoteSummary}</p>
           <small>
             p.{evidence.page ?? "-"} · {evidence.section} · relevance{" "}
             {Math.round(evidence.relevanceScore * 100)}%

@@ -954,6 +954,7 @@ a.review-table__row:hover {
 .issue-panel,
 .creative-viewer,
 .evidence-panel {
+  min-width: 0;
   min-height: 0;
   border-width: 0 1px 0 0;
   border-radius: 0;
@@ -966,7 +967,34 @@ a.review-table__row:hover {
 }
 
 .evidence-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-right: 0;
+}
+
+.evidence-panel .tabs {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.evidence-panel .tabs__list {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.evidence-panel .tabs__panel {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+  scrollbar-width: thin;
 }
 
 .issue-panel__heading,
@@ -1011,35 +1039,92 @@ a.review-table__row:hover {
 .issue-list {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  padding-right: 4px;
+  padding-right: 6px;
   scrollbar-width: thin;
 }
 
 .issue-card {
-  display: grid;
-  gap: 8px;
+  appearance: none;
+  display: block;
   width: 100%;
   min-width: 0;
-  min-height: 92px;
-  padding: 12px 13px;
+  height: auto;
+  min-height: var(--issue-card-min-height, 132px);
+  padding: 16px 17px 20px;
   border: 1px solid var(--line);
   border-radius: 2px;
   background: var(--surface);
   color: var(--muted);
   text-align: left;
+  white-space: normal;
   cursor: pointer;
+  overflow: visible;
+}
+
+.issue-card__content {
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
 .issue-card[data-active="true"],
 .issue-card:hover {
   border-color: var(--focus);
-  background: #f6f9ff;
-  box-shadow: inset 4px 0 0 var(--primary);
+  box-shadow: 0 0 0 1px rgba(6, 76, 150, 0.18);
+}
+
+.issue-card[data-risk="reject_recommended"] {
+  border-color: #c98a7e;
+  background: var(--tone-reject-bg);
+}
+
+.issue-card[data-risk="high"] {
+  border-color: #e2a09b;
+  background: var(--tone-high-bg);
+}
+
+.issue-card[data-risk="caution"] {
+  border-color: #d9aa4f;
+  background: var(--tone-caution-bg);
+}
+
+.issue-card[data-risk="info"] {
+  border-color: #9fb9e7;
+  background: var(--tone-info-bg);
+}
+
+.issue-card[data-active="true"] {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 2px rgba(6, 76, 150, 0.18), var(--shadow-card);
+}
+
+.issue-card__title {
+  display: block;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.issue-card__excerpt {
+  display: block;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .issue-card strong {
@@ -1048,15 +1133,9 @@ a.review-table__row:hover {
   overflow-wrap: anywhere;
 }
 
-.issue-card span:last-child {
-  font-size: 0.82rem;
-  line-height: 1.42;
-  overflow-wrap: anywhere;
-}
-
 .issue-card__top {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
   align-items: center;
   min-width: 0;
@@ -1217,37 +1296,50 @@ a.review-table__row:hover {
 .evidence-stack {
   display: grid;
   gap: 9px;
+  min-width: 0;
   margin-top: 13px;
+  overflow-x: hidden;
 }
 
 .evidence-card {
   display: grid;
   gap: 7px;
+  width: 100%;
+  min-width: 0;
   padding: 11px;
   border: 1px solid var(--line);
   border-radius: 2px;
   background: var(--surface-subtle);
+  overflow: hidden;
 }
 
 .evidence-card span,
 .suggested-copy span {
+  min-width: 0;
   color: var(--verified);
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
-.evidence-card strong {
+.evidence-card__title {
+  min-width: 0;
   color: var(--text);
   line-height: 1.38;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-.evidence-card p,
+.evidence-card__quote,
 .evidence-card small,
 .suggested-copy p {
+  min-width: 0;
   margin: 0;
   color: var(--muted);
   line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .suggested-copy {
@@ -1379,8 +1471,11 @@ a.review-table__row:hover {
 .chat-composer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 36px;
+  flex: 0 0 auto;
   gap: 8px;
-  margin-top: 13px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 
 .chat-composer input {
@@ -1403,14 +1498,21 @@ a.review-table__row:hover {
   flex-direction: column;
 }
 
+.chat-header-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .chat-thread {
   display: flex;
   flex: 1;
-  min-height: 260px;
-  max-height: 430px;
+  min-height: 0;
+  max-height: none;
   flex-direction: column;
   gap: 14px;
-  margin-top: 12px;
+  margin-top: 14px;
   overflow-y: auto;
   padding: 3px 5px 3px 0;
   scrollbar-width: thin;
@@ -1583,6 +1685,13 @@ a.review-table__row:hover {
 
 .chat-mark-button {
   margin-top: 12px;
+}
+
+.chat-mark-button--header {
+  min-height: 32px;
+  margin-top: 0;
+  padding: 0 12px;
+  font-size: 0.78rem;
 }
 
 .draft-editor {
@@ -2439,13 +2548,11 @@ a.review-table__row:hover {
   align-self: center;
 }
 
-/* Spec 2: IssueList risk-color border */
-.issue-card { position: relative; border-left: 4px solid var(--line); transition: 120ms ease; }
-.issue-card[data-risk="reject_recommended"] { border-left-color: var(--tone-reject); }
-.issue-card[data-risk="high"] { border-left-color: var(--tone-high); }
-.issue-card[data-risk="caution"] { border-left-color: var(--tone-caution); }
-.issue-card[data-risk="info"] { border-left-color: var(--tone-info); }
-.issue-card[data-active="true"] { background: var(--primary-soft); box-shadow: var(--shadow-card); }
+/* Spec 2: IssueList risk-color surfaces */
+.issue-card { position: relative; transition: 120ms ease; }
+.issue-card[data-active="true"] {
+  box-shadow: 0 0 0 2px rgba(6, 76, 150, 0.18), var(--shadow-card);
+}
 
 /* Spec 2: WorkbenchDrawer */
 .workbench-drawer__head { display: flex; justify-content: flex-end; padding: var(--space-2) var(--space-3); }

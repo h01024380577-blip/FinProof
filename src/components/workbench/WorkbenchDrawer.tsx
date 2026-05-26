@@ -7,7 +7,6 @@ import { Tabs } from "@/components/ui";
 export type WorkbenchDrawerProps = {
   chatNode: ReactNode;
   draftNode: ReactNode;
-  auditNode: ReactNode;
   filesNode: ReactNode;
   defaultCollapsed?: boolean;
 };
@@ -15,7 +14,6 @@ export type WorkbenchDrawerProps = {
 export function WorkbenchDrawer({
   chatNode,
   draftNode,
-  auditNode,
   filesNode,
   defaultCollapsed = false
 }: WorkbenchDrawerProps): JSX.Element {
@@ -43,7 +41,6 @@ export function WorkbenchDrawer({
           items={[
             { key: "chat", label: "근거 채팅", panel: chatNode },
             { key: "draft", label: "의견 초안", panel: draftNode },
-            { key: "audit", label: "감사 로그", panel: auditNode },
             { key: "files", label: "파일", panel: filesNode }
           ]}
         />
