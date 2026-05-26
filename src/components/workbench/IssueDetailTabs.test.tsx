@@ -39,13 +39,10 @@ describe("IssueDetailTabs", () => {
         reviewerComment=""
         savedDecision={null}
         canMutate
-        canFinalize={false}
         isSavingDecision={false}
-        isFinalizingReview={false}
         onChangeRiskLevel={() => undefined}
         onChangeReviewerComment={() => undefined}
         onSaveReviewerDecision={() => undefined}
-        onFinalizeReviewCase={() => undefined}
       />
     );
     expect(screen.getByRole("tab", { name: "체크리스트" })).toBeInTheDocument();
@@ -64,13 +61,10 @@ describe("IssueDetailTabs", () => {
         reviewerComment=""
         savedDecision={null}
         canMutate
-        canFinalize={false}
         isSavingDecision={false}
-        isFinalizingReview={false}
         onChangeRiskLevel={() => undefined}
         onChangeReviewerComment={() => undefined}
         onSaveReviewerDecision={() => undefined}
-        onFinalizeReviewCase={() => undefined}
       />
     );
     await userEvent.click(screen.getByRole("tab", { name: "근거 자료" }));
@@ -97,13 +91,10 @@ describe("IssueDetailTabs", () => {
         reviewerComment=""
         savedDecision={null}
         canMutate
-        canFinalize={false}
         isSavingDecision={false}
-        isFinalizingReview={false}
         onChangeRiskLevel={() => undefined}
         onChangeReviewerComment={() => undefined}
         onSaveReviewerDecision={() => undefined}
-        onFinalizeReviewCase={() => undefined}
       />
     );
 
@@ -133,13 +124,10 @@ describe("IssueDetailTabs", () => {
         reviewerComment=""
         savedDecision={null}
         canMutate
-        canFinalize={false}
         isSavingDecision={false}
-        isFinalizingReview={false}
         onChangeRiskLevel={() => undefined}
         onChangeReviewerComment={() => undefined}
         onSaveReviewerDecision={() => undefined}
-        onFinalizeReviewCase={() => undefined}
       />
     );
 

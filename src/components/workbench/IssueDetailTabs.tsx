@@ -16,13 +16,10 @@ export type IssueDetailTabsProps = {
   reviewerComment: string;
   savedDecision: { riskLevel: RiskLevel; comment: string } | null;
   canMutate: boolean;
-  canFinalize: boolean;
   isSavingDecision: boolean;
-  isFinalizingReview: boolean;
   onChangeRiskLevel: (riskLevel: RiskLevel) => void;
   onChangeReviewerComment: (comment: string) => void;
   onSaveReviewerDecision: () => void;
-  onFinalizeReviewCase: () => void;
 };
 
 export function IssueDetailTabs(props: IssueDetailTabsProps): JSX.Element {
@@ -95,13 +92,10 @@ function OpinionPanel({
   reviewerComment,
   savedDecision,
   canMutate,
-  canFinalize,
   isSavingDecision,
-  isFinalizingReview,
   onChangeRiskLevel,
   onChangeReviewerComment,
-  onSaveReviewerDecision,
-  onFinalizeReviewCase
+  onSaveReviewerDecision
 }: IssueDetailTabsProps): JSX.Element {
   return (
     <div className="reviewer-decision">
@@ -135,15 +129,6 @@ function OpinionPanel({
         onClick={onSaveReviewerDecision}
       >
         {isSavingDecision ? "저장 중" : "위험도 변경"}
-      </button>
-
-      <button
-        className="button button--primary"
-        type="button"
-        disabled={!canMutate || !canFinalize || isFinalizingReview}
-        onClick={onFinalizeReviewCase}
-      >
-        {isFinalizingReview ? "완료 중" : "검토 완료"}
       </button>
 
       {savedDecision ? (

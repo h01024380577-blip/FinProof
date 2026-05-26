@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { getReviewCaseById } from "@/domain/reviews";
@@ -78,21 +78,33 @@ describe("ReviewDetailWorkspace", () => {
       screen.getByRole("heading", { name: "최고 연 5.0% 적금 홍보물 심의" })
     ).toBeInTheDocument();
     expect(screen.getByText("이슈 목록 (3)")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "보류" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "반려" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "수정 요청" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "초안 생성" })).toBeInTheDocument();
+    const finalDecisionActions = screen.getByRole("group", { name: "최종 심의 결정" });
+    expect(within(finalDecisionActions).getByRole("button", { name: "승인" })).toBeInTheDocument();
+    expect(within(finalDecisionActions).getByRole("button", { name: "반려" })).toBeInTheDocument();
+    expect(
+      within(finalDecisionActions).queryByRole("button", { name: "보류" })
+    ).not.toBeInTheDocument();
+    expect(
+      within(finalDecisionActions).queryByRole("button", { name: "수정 요청" })
+    ).not.toBeInTheDocument();
+    expect(
+      within(finalDecisionActions).queryByRole("button", { name: "초안 생성" })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "체크리스트" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "근거 자료" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "의견서" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "근거 채팅" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "초안에 반영" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "초안 생성" })).not.toBeInTheDocument();
 
     await openOpinionTab(user);
 
     expect(screen.getByLabelText("심의자 메모")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "위험도 변경" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
+
+    await openDraftTab(user);
+
+    expect(screen.getByRole("button", { name: "초안 생성" })).toBeInTheDocument();
   });
 
   it("does not show sample RAG answers when an uploaded case has no selected issue", () => {
@@ -183,8 +195,6 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByRole("button", { name: "의견 초안 저장" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "리포트 다운로드" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "초안 생성" })).toBeDisabled();
-    await openOpinionTab(user);
-    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
   });
 
   it("runs selected issue chat, guards missing evidence, and saves reviewer decision", async () => {
@@ -282,9 +292,9 @@ describe("ReviewDetailWorkspace", () => {
       })
     );
     await user.click(screen.getByRole("button", { name: "초안에 반영" }));
+    await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
 
-    await openDraftTab(user);
     expect(await screen.findByDisplayValue(/채팅 반영/)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-deposit-001/draft",
@@ -426,6 +436,7 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.queryByText("첫 번째 이슈 전용 답변입니다.")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "초안에 반영" }));
+    await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -472,7 +483,7 @@ describe("ReviewDetailWorkspace", () => {
     );
   });
 
-  it("uses the reviewer-selected header action when saving reviewer decision", async () => {
+  it("keeps final review decisions separate from the selected issue decision save", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -480,7 +491,7 @@ describe("ReviewDetailWorkspace", () => {
         issue: {
           id: "issue-deposit-rate",
           reviewerRiskLevel: "high",
-          finalAction: "reject",
+          finalAction: "change_request",
           reviewerComment: "핵심 조건 누락으로 반려"
         }
       })
@@ -489,7 +500,6 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
-    await user.click(screen.getByRole("button", { name: "반려" }));
     await openOpinionTab(user);
     changeTextField("심의자 메모", "핵심 조건 누락으로 반려");
     await user.click(screen.getByRole("button", { name: "위험도 변경" }));
@@ -501,59 +511,62 @@ describe("ReviewDetailWorkspace", () => {
         method: "PATCH",
         body: JSON.stringify({
           reviewerRiskLevel: "high",
-          finalAction: "reject",
+          finalAction: "change_request",
           reviewerComment: "핵심 조건 누락으로 반려"
         })
       })
     );
   });
 
-  it("finalizes the review case status after reviewer decision is saved", async () => {
+  it("confirms and finalizes an approved review into review history", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          issue: {
-            id: "issue-deposit-rate",
-            reviewerRiskLevel: "reject_recommended",
-            finalAction: "change_request",
-            reviewerComment: "우대 조건 병기 필요"
-          }
-        })
+    const confirmMock = vi.fn(() => true);
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        reviewCase: {
+          id: "rc-demo-deposit-001",
+          status: "approved"
+        }
       })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          reviewCase: {
-            id: "rc-demo-deposit-001",
-            status: "change_requested"
-          }
-        })
-      });
+    });
+    vi.stubGlobal("confirm", confirmMock);
     vi.stubGlobal("fetch", fetchMock);
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
-    await openOpinionTab(user);
-    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "승인" }));
 
-    await user.selectOptions(screen.getByLabelText("심의자 위험도"), "reject_recommended");
-    changeTextField("심의자 메모", "우대 조건 병기 필요");
-    await user.click(screen.getByRole("button", { name: "위험도 변경" }));
-    expect(await screen.findByText("저장된 판단: 반려 권고")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "검토 완료" }));
-
-    expect(await screen.findByText("수정 요청")).toBeInTheDocument();
+    expect(confirmMock).toHaveBeenCalledWith(
+      "이 심의를 승인으로 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다."
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-deposit-001/finalize",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ finalAction: "change_request" })
+        body: JSON.stringify({ finalAction: "approve" })
       })
     );
+    expect(await screen.findByText("최종 상태가 승인으로 저장되었습니다.")).toBeInTheDocument();
+    expect(pushMock).toHaveBeenCalledWith("/reviews?scope=history");
+  });
+
+  it("does not finalize the review when the final decision confirmation is cancelled", async () => {
+    const user = userEvent.setup();
+    const confirmMock = vi.fn(() => false);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("confirm", confirmMock);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    await user.click(screen.getByRole("button", { name: "반려" }));
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      "이 심의를 반려로 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다."
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(pushMock).not.toHaveBeenCalled();
   });
 
   it("downloads the generated markdown report for the selected issue", async () => {

@@ -935,10 +935,26 @@ a.review-table__row:hover {
   color: #b42318;
 }
 
+.detail-action-button--approve {
+  color: #16794a;
+}
+
 .detail-action-button[data-active="true"] {
   border-color: var(--primary);
   background: #eef4fb;
   color: var(--primary);
+}
+
+.detail-action-button--approve[data-active="true"] {
+  border-color: #16794a;
+  background: #eaf7f0;
+  color: #0f6b3f;
+}
+
+.detail-action-button--danger[data-active="true"] {
+  border-color: #b42318;
+  background: #fff0ef;
+  color: #b42318;
 }
 
 .detail__grid {

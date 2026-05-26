@@ -1,38 +1,44 @@
 "use client";
 
 import type { JSX } from "react";
-import { AlertTriangle, FilePenLine } from "lucide-react";
-import type { ReviewIssue } from "@/domain/types";
+import { AlertTriangle, CircleCheck, CircleX } from "lucide-react";
+import type { ReviewCase, ReviewIssue } from "@/domain/types";
+
+export type FinalDecisionAction = Extract<
+  NonNullable<ReviewIssue["finalAction"]>,
+  "approve" | "reject"
+>;
 
 export type WorkbenchHeaderProps = {
   id: string;
   title: string;
+  reviewStatus: ReviewCase["status"];
   statusLabel: string;
   riskLabel: string;
   productLabel: string;
   reviewer: string;
   deadline: string;
   canMutate: boolean;
-  selectedAction: NonNullable<ReviewIssue["finalAction"]>;
-  isGeneratingDraft: boolean;
-  onSelectAction: (action: NonNullable<ReviewIssue["finalAction"]>) => void;
-  onGenerateDraft: () => void;
+  isFinalizingReview: boolean;
+  onFinalizeReviewCase: (action: FinalDecisionAction) => void;
 };
 
 export function WorkbenchHeader({
   id,
   title,
+  reviewStatus,
   statusLabel,
   riskLabel,
   productLabel,
   reviewer,
   deadline,
   canMutate,
-  selectedAction,
-  isGeneratingDraft,
-  onSelectAction,
-  onGenerateDraft
+  isFinalizingReview,
+  onFinalizeReviewCase
 }: WorkbenchHeaderProps): JSX.Element {
+  const finalDecisionDisabled =
+    !canMutate || isFinalizingReview || reviewStatus === "approved" || reviewStatus === "rejected";
+
   return (
     <section className="detail__header workbench-header">
       <div className="detail__title-block">
@@ -54,45 +60,29 @@ export function WorkbenchHeader({
           마감: {deadline}
         </p>
       </div>
-      <div className="detail__actions" role="group" aria-label="이슈 추천 조치">
+      <div className="detail__actions" role="group" aria-label="최종 심의 결정">
         <span className="workbench-header__group-label" aria-hidden="true">
-          이슈 추천 조치
+          최종 심의 결정
         </span>
         <button
-          className="button detail-action-button"
+          className="button detail-action-button detail-action-button--approve"
           type="button"
-          data-active={selectedAction === "hold"}
-          disabled={!canMutate}
-          onClick={() => onSelectAction("hold")}
+          data-active={reviewStatus === "approved"}
+          disabled={finalDecisionDisabled}
+          onClick={() => onFinalizeReviewCase("approve")}
         >
-          보류
+          <CircleCheck size={16} aria-hidden="true" />
+          {isFinalizingReview ? "처리 중" : "승인"}
         </button>
         <button
           className="button detail-action-button detail-action-button--danger"
           type="button"
-          data-active={selectedAction === "reject"}
-          disabled={!canMutate}
-          onClick={() => onSelectAction("reject")}
+          data-active={reviewStatus === "rejected"}
+          disabled={finalDecisionDisabled}
+          onClick={() => onFinalizeReviewCase("reject")}
         >
-          반려
-        </button>
-        <button
-          className="button detail-action-button"
-          type="button"
-          data-active={selectedAction === "change_request"}
-          disabled={!canMutate}
-          onClick={() => onSelectAction("change_request")}
-        >
-          수정 요청
-        </button>
-        <button
-          className="button button--primary"
-          type="button"
-          disabled={!canMutate || isGeneratingDraft}
-          onClick={onGenerateDraft}
-        >
-          <FilePenLine size={16} aria-hidden="true" />
-          {isGeneratingDraft ? "생성 중" : "초안 생성"}
+          <CircleX size={16} aria-hidden="true" />
+          {isFinalizingReview ? "처리 중" : "반려"}
         </button>
       </div>
     </section>

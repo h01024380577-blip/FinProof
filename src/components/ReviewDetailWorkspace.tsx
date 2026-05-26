@@ -15,6 +15,7 @@ import { productLabels, riskLabels, statusLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, RiskLevel, RoleId } from "@/domain/types";
 import { useRoleContext } from "./RoleContext";
 import { WorkbenchHeader } from "./workbench/WorkbenchHeader";
+import type { FinalDecisionAction } from "./workbench/WorkbenchHeader";
 import { IssueList } from "./workbench/IssueList";
 import { CreativeViewer } from "./workbench/CreativeViewer";
 import { IssueDetailTabs, type IssueDetailTabKey } from "./workbench/IssueDetailTabs";
@@ -46,16 +47,6 @@ type InlineSegment = {
   strong: boolean;
 };
 
-const finalActionStatusMap: Record<
-  NonNullable<ReviewIssue["finalAction"]>,
-  ReviewCase["status"]
-> = {
-  approve: "approved",
-  change_request: "change_requested",
-  reject: "rejected",
-  hold: "on_hold"
-};
-
 const finalActionPriority: Array<NonNullable<ReviewIssue["finalAction"]>> = [
   "reject",
   "hold",
@@ -63,6 +54,11 @@ const finalActionPriority: Array<NonNullable<ReviewIssue["finalAction"]>> = [
   "approve"
 ];
 const NOTICE_AUTO_DISMISS_MS = 4000;
+
+const finalDecisionConfirmPhrases: Record<FinalDecisionAction, string> = {
+  approve: "승인으로",
+  reject: "반려로"
+};
 
 function canMutateReview(role: RoleId) {
   return role === "reviewer" || role === "compliance_admin";
@@ -178,12 +174,6 @@ function getFinalReviewAction(
   return finalActionPriority.find((action) => finalActions.includes(action)) ?? null;
 }
 
-function getFinalReviewStatus(
-  finalAction: NonNullable<ReviewIssue["finalAction"]> | null
-): ReviewCase["status"] | null {
-  return finalAction ? finalActionStatusMap[finalAction] : null;
-}
-
 function getInitialSavedDecisions(review: ReviewCase): Record<string, SavedDecision> {
   return Object.fromEntries(
     review.issues
@@ -262,7 +252,6 @@ export function ReviewDetailWorkspace({
     : [];
   const savedDecision = selectedIssue ? (savedDecisionsByIssueId[selectedIssue.id] ?? null) : null;
   const finalReviewAction = getFinalReviewAction(savedDecisionsByIssueId);
-  const finalReviewStatus = getFinalReviewStatus(finalReviewAction);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -586,8 +575,16 @@ export function ReviewDetailWorkspace({
     }
   }
 
-  async function finalizeReviewCase() {
-    if (!finalReviewAction || !finalReviewStatus || !reviewerCanMutate) {
+  async function finalizeReviewCase(finalAction: FinalDecisionAction) {
+    if (!reviewerCanMutate || isFinalizingReview) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `이 심의를 ${finalDecisionConfirmPhrases[finalAction]} 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다.`
+    );
+
+    if (!confirmed) {
       return;
     }
 
@@ -598,7 +595,7 @@ export function ReviewDetailWorkspace({
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/finalize`, {
         method: "POST",
         headers: jsonHeaders,
-        body: JSON.stringify({ finalAction: finalReviewAction })
+        body: JSON.stringify({ finalAction })
       });
 
       if (!apiResponse.ok) {
@@ -611,6 +608,7 @@ export function ReviewDetailWorkspace({
 
       setReviewStatus(body.reviewCase.status);
       setFinalizedNotice(`최종 상태가 ${statusLabels[body.reviewCase.status]}으로 저장되었습니다.`);
+      router.push("/reviews?scope=history");
     } catch (error) {
       setInteractionError(
         error instanceof Error ? error.message : "최종 확정 요청을 처리하지 못했습니다."
@@ -771,14 +769,14 @@ export function ReviewDetailWorkspace({
               <Download size={18} aria-hidden="true" />
             </button>
             <button
-              className="icon-button"
+              className="button button--primary"
               type="button"
-              aria-label="초안 재생성"
-              title="초안 재생성"
+              aria-label="초안 생성"
               disabled={!reviewerCanMutate || isGeneratingDraft}
               onClick={generateDraft}
             >
               <FilePenLine size={18} aria-hidden="true" />
+              {isGeneratingDraft ? "생성 중" : "초안 생성"}
             </button>
           </div>
         </div>
@@ -816,16 +814,15 @@ export function ReviewDetailWorkspace({
       <WorkbenchHeader
         id={review.id}
         title={review.title}
+        reviewStatus={reviewStatus}
         statusLabel={statusLabels[reviewStatus]}
         riskLabel={riskLabels[review.highestRiskLevel]}
         productLabel={productLabels[review.productType]}
         reviewer={review.reviewer}
         deadline={review.plannedPublishDate}
         canMutate={reviewerCanMutate}
-        selectedAction={selectedFinalAction}
-        isGeneratingDraft={isGeneratingDraft}
-        onSelectAction={setSelectedFinalAction}
-        onGenerateDraft={generateDraft}
+        isFinalizingReview={isFinalizingReview}
+        onFinalizeReviewCase={finalizeReviewCase}
       />
 
       <section className="detail__grid">
@@ -853,13 +850,10 @@ export function ReviewDetailWorkspace({
             reviewerComment={reviewerComment}
             savedDecision={savedDecision}
             canMutate={reviewerCanMutate}
-            canFinalize={Boolean(finalReviewStatus)}
             isSavingDecision={isSavingDecision}
-            isFinalizingReview={isFinalizingReview}
             onChangeRiskLevel={setReviewerRiskLevel}
             onChangeReviewerComment={setReviewerComment}
             onSaveReviewerDecision={saveReviewerDecision}
-            onFinalizeReviewCase={finalizeReviewCase}
           />
         ) : null}
       </section>
