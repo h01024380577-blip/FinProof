@@ -1055,7 +1055,7 @@ a.review-table__row:hover {
   min-width: 0;
   height: auto;
   min-height: var(--issue-card-min-height, 132px);
-  padding: 16px 17px 20px;
+  padding: 12px 14px 14px;
   border: 1px solid var(--line);
   border-radius: 2px;
   background: var(--surface);
@@ -1070,7 +1070,7 @@ a.review-table__row:hover {
   display: grid;
   grid-auto-rows: max-content;
   align-content: start;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-width: 0;
 }
@@ -1082,23 +1082,27 @@ a.review-table__row:hover {
 }
 
 .issue-card[data-risk="reject_recommended"] {
-  border-color: #c98a7e;
-  background: var(--tone-reject-bg);
+  border-color: #b45a4a;
+  background:
+    linear-gradient(135deg, rgba(122, 39, 26, 0.16) 0%, rgba(249, 225, 220, 0.96) 52%, #fff8f6 100%);
 }
 
 .issue-card[data-risk="high"] {
-  border-color: #e2a09b;
-  background: var(--tone-high-bg);
+  border-color: #d95b52;
+  background:
+    linear-gradient(135deg, rgba(180, 35, 24, 0.14) 0%, rgba(254, 236, 235, 0.98) 54%, #fff9f8 100%);
 }
 
 .issue-card[data-risk="caution"] {
-  border-color: #d9aa4f;
-  background: var(--tone-caution-bg);
+  border-color: #c78300;
+  background:
+    linear-gradient(135deg, rgba(178, 106, 0, 0.18) 0%, rgba(255, 244, 220, 0.98) 55%, #fffaf0 100%);
 }
 
 .issue-card[data-risk="info"] {
-  border-color: #9fb9e7;
-  background: var(--tone-info-bg);
+  border-color: #6f98dc;
+  background:
+    linear-gradient(135deg, rgba(51, 102, 204, 0.14) 0%, rgba(234, 241, 255, 0.98) 55%, #f8fbff 100%);
 }
 
 .issue-card[data-active="true"] {
@@ -1110,9 +1114,9 @@ a.review-table__row:hover {
   display: block;
   margin: 0;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 900;
-  line-height: 1.45;
+  line-height: 1.42;
   overflow-wrap: anywhere;
   word-break: keep-all;
 }
@@ -1121,8 +1125,8 @@ a.review-table__row:hover {
   display: block;
   margin: 0;
   color: var(--muted);
-  font-size: 0.8rem;
-  line-height: 1.55;
+  font-size: 0.72rem;
+  line-height: 1.5;
   overflow-wrap: anywhere;
   word-break: keep-all;
 }
@@ -1135,19 +1139,19 @@ a.review-table__row:hover {
 
 .issue-card__top {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   align-items: center;
   min-width: 0;
 }
 
-.issue-card__top small {
+.issue-card__index {
   min-width: 0;
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 800;
   overflow-wrap: anywhere;
-  text-align: right;
+  text-align: left;
 }
 
 .issue-empty-state {

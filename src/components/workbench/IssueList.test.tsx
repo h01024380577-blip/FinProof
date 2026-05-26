@@ -72,4 +72,19 @@ describe("IssueList", () => {
     expect(card).toHaveAttribute("data-risk", "high");
     expect(card.getAttribute("style")).toContain("--issue-card-min-height");
   });
+
+  it("keeps short issue cards compact", () => {
+    render(<IssueList issues={issues} selectedIssueId="issue-1" onSelectIssue={() => undefined} />);
+
+    expect(screen.getByRole("button", { name: /최고 연 5.0% 조건 표시 부족/ })).toHaveStyle({
+      "--issue-card-min-height": "108px"
+    });
+  });
+
+  it("places the issue number in a leading index slot", () => {
+    render(<IssueList issues={issues} selectedIssueId="issue-1" onSelectIssue={() => undefined} />);
+
+    const card = screen.getByRole("button", { name: /최고 연 5.0% 조건 표시 부족/ });
+    expect(within(card).getByText("#1")).toHaveClass("issue-card__index");
+  });
 });

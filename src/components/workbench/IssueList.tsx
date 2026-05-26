@@ -13,9 +13,9 @@ function displayLength(value: string): number {
 }
 
 function issueCardStyle(issue: ReviewIssue): CSSProperties {
-  const titleLines = Math.max(1, Math.ceil(displayLength(issue.title) / 17));
-  const excerptLines = Math.max(1, Math.ceil(displayLength(issue.targetText) / 22));
-  const minHeight = Math.min(240, Math.max(132, 72 + titleLines * 23 + excerptLines * 22));
+  const titleLines = Math.max(1, Math.ceil(displayLength(issue.title) / 23));
+  const excerptLines = Math.max(1, Math.ceil(displayLength(issue.targetText) / 28));
+  const minHeight = Math.min(188, Math.max(108, 50 + titleLines * 20 + excerptLines * 18));
 
   return {
     "--issue-card-min-height": `${minHeight}px`
@@ -83,7 +83,7 @@ export function IssueList({
             >
               <span className="issue-card__content">
                 <span className="issue-card__top">
-                  <small>#{index + 1}</small>
+                  <small className="issue-card__index">#{index + 1}</small>
                 </span>
                 <strong className="issue-card__title">{issue.title}</strong>
                 <span className="issue-card__excerpt">{issue.targetText}</span>
