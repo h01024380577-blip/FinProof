@@ -23,5 +23,6 @@ export type SampleReviewFileInput = {
 
 export interface ReviewStorageAdapter {
   putReviewFile(input: PutReviewFileInput): Promise<StoredFileMetadata>;
+  getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined>;
   sampleReviewFile(input: SampleReviewFileInput): StoredFileMetadata;
 }

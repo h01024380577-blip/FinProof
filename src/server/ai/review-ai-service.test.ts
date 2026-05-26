@@ -39,6 +39,7 @@ describe("review AI service", () => {
       expect.objectContaining({
         task: "rag_chat",
         routeContext: { riskLevel: issue.riskLevel },
+        input: expect.stringContaining(issue.evidence[0].quoteSummary),
         fallback: expect.any(String)
       })
     );

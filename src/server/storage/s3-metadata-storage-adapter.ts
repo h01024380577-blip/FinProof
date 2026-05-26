@@ -1,4 +1,4 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import type {
   PutReviewFileInput,
   ReviewStorageAdapter,
@@ -6,15 +6,15 @@ import type {
   StoredFileMetadata
 } from "./storage-adapter";
 
-type S3PutObjectClient = {
-  send(command: PutObjectCommand): Promise<unknown>;
+type S3ObjectClient = {
+  send(command: PutObjectCommand | GetObjectCommand): Promise<unknown>;
 };
 
 type S3MetadataStorageAdapterOptions = {
   bucket: string;
   region: string;
   prefix?: string;
-  client?: S3PutObjectClient;
+  client?: S3ObjectClient;
 };
 
 function normalizeFileName(fileName: string) {
@@ -23,6 +23,44 @@ function normalizeFileName(fileName: string) {
 
 function normalizePrefix(prefix: string) {
   return prefix.replace(/^\/+|\/+$/g, "");
+}
+
+function parseS3StorageKey(storageKey: string, bucket: string) {
+  const prefix = `s3://${bucket}/`;
+
+  if (!storageKey.startsWith(prefix)) {
+    return undefined;
+  }
+
+  return storageKey.slice(prefix.length);
+}
+
+async function bodyToUint8Array(body: unknown): Promise<Uint8Array | undefined> {
+  if (!body) {
+    return undefined;
+  }
+
+  if (body instanceof Uint8Array) {
+    return body;
+  }
+
+  if (typeof body === "object" && "transformToByteArray" in body) {
+    const transform = body.transformToByteArray;
+
+    if (typeof transform === "function") {
+      return transform.call(body);
+    }
+  }
+
+  if (typeof body === "object" && "arrayBuffer" in body) {
+    const arrayBuffer = body.arrayBuffer;
+
+    if (typeof arrayBuffer === "function") {
+      return new Uint8Array(await arrayBuffer.call(body));
+    }
+  }
+
+  return undefined;
 }
 
 export function createS3MetadataStorageAdapter({
@@ -54,6 +92,23 @@ export function createS3MetadataStorageAdapter({
         contentType: input.contentType,
         sizeBytes: input.sizeBytes
       };
+    },
+
+    async getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined> {
+      const key = parseS3StorageKey(storageKey, bucket);
+
+      if (!key) {
+        return undefined;
+      }
+
+      const response = (await client.send(
+        new GetObjectCommand({
+          Bucket: bucket,
+          Key: key
+        })
+      )) as { Body?: unknown };
+
+      return bodyToUint8Array(response.Body);
     },
 
     sampleReviewFile(input: SampleReviewFileInput): StoredFileMetadata {

@@ -67,6 +67,16 @@ describe("upload policy", () => {
     ).toEqual({ ok: true, errors: [] });
   });
 
+  it("classifies checklist files before rate-table keyword matches", () => {
+    expect(
+      classifyUploadFile({
+        name: "internal_checklist_high_rate_deposit.txt",
+        type: "text/plain",
+        size: 1024
+      })
+    ).toBe("checklist");
+  });
+
   it("summarizes the demo upload guardrails for the intake UI", () => {
     expect(formatUploadPolicySummary()).toBe(
       "PDF, PNG, JPG/JPEG, TXT, DOCX, XLSX, CSV, HTML, ZIP · 최대 10개 · 일반 파일 25MB, ZIP 100MB 이하"

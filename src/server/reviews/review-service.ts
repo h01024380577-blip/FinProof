@@ -91,7 +91,8 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
   const store = deps.store ?? getReviewStore();
   const storage = deps.storage ?? getReviewStorageAdapter();
   const uploadScanner = deps.uploadScanner ?? getUploadScanner();
-  const analysisPipeline = deps.analysisPipeline ?? createReviewAnalysisPipeline();
+  const analysisPipeline =
+    deps.analysisPipeline ?? createReviewAnalysisPipeline({ fileBodyReader: storage });
 
   return {
     async listReviewSummaries(context: RequestContext) {
