@@ -1,5 +1,6 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import type {
+  PutKnowledgeDocumentFileInput,
   PutReviewFileInput,
   ReviewStorageAdapter,
   SampleReviewFileInput,
@@ -94,7 +95,29 @@ export function createS3MetadataStorageAdapter({
       };
     },
 
-    async getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined> {
+    async putKnowledgeDocumentFile(
+      input: PutKnowledgeDocumentFileInput
+    ): Promise<StoredFileMetadata> {
+      const key = `knowledge-documents/${input.documentId}/${normalizeFileName(input.fileName)}`;
+
+      await client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: input.body,
+          ContentType: input.contentType
+        })
+      );
+
+      return {
+        storageProvider: "s3",
+        storageKey: `s3://${bucket}/${key}`,
+        contentType: input.contentType,
+        sizeBytes: input.sizeBytes
+      };
+    },
+
+    async getFileBody(storageKey: string): Promise<Uint8Array | undefined> {
       const key = parseS3StorageKey(storageKey, bucket);
 
       if (!key) {
@@ -109,6 +132,10 @@ export function createS3MetadataStorageAdapter({
       )) as { Body?: unknown };
 
       return bodyToUint8Array(response.Body);
+    },
+
+    async getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined> {
+      return this.getFileBody(storageKey);
     },
 
     sampleReviewFile(input: SampleReviewFileInput): StoredFileMetadata {

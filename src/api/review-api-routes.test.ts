@@ -19,6 +19,7 @@ import { GET as issuesGET } from "@/app/api/v1/review-cases/[caseId]/issues/rout
 import { PATCH as issuePATCH } from "@/app/api/v1/review-cases/[caseId]/issues/[issueId]/route";
 import { GET as listGET, POST as createPOST } from "@/app/api/v1/review-cases/route";
 import { GET as evidenceGET } from "@/app/api/v1/issues/[issueId]/evidence/route";
+import { GET as knowledgeGET, POST as knowledgePOST } from "@/app/api/v1/knowledge-documents/route";
 import { GET as samplePackageGET } from "@/app/api/v1/sample-packages/[samplePackageId]/route";
 import { GET as samplePackagesGET } from "@/app/api/v1/sample-packages/route";
 
@@ -221,6 +222,74 @@ describe("review API routes", () => {
       jobId: "job-rc-upload-001-001",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
+  });
+
+  it("registers an attached knowledge document and returns ingestion metadata", async () => {
+    const boundary = "----finproof-knowledge-test";
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="title"',
+      "",
+      "예금 광고 심의 지침",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="version"',
+      "",
+      "2026.05",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="documentType"',
+      "",
+      "internal_policy",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "deposit",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="effectiveFrom"',
+      "",
+      "2026-05-01",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="file"; filename="deposit-policy.txt"',
+      "Content-Type: text/plain",
+      "",
+      "최고 금리 표현은 우대 조건과 한도를 같은 화면에 표시해야 합니다.",
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    const createResponse = await knowledgePOST(
+      new Request("http://localhost/api/v1/knowledge-documents", {
+        method: "POST",
+        headers: {
+          "content-type": `multipart/form-data; boundary=${boundary}`,
+          "x-finproof-role": "compliance_admin"
+        },
+        body: multipartBody
+      })
+    );
+    const createBody = await createResponse.json();
+    const listResponse = await knowledgeGET(
+      roleRequest("/api/v1/knowledge-documents", "reviewer", "GET")
+    );
+    const listBody = await listResponse.json();
+
+    expect(createResponse.status).toBe(201);
+    expect(createBody.document).toMatchObject({
+      title: "예금 광고 심의 지침",
+      version: "2026.05",
+      approvalStatus: "draft",
+      storageKey: expect.stringContaining("knowledge-documents")
+    });
+    expect(createBody.ingestion).toMatchObject({
+      chunkCount: 1,
+      embeddingModel: expect.any(String)
+    });
+    expect(listResponse.status).toBe(200);
+    expect(listBody.documents).toEqual([
+      expect.objectContaining({
+        id: createBody.document.id,
+        title: "예금 광고 심의 지침"
+      })
+    ]);
   });
 
   it("blocks requester analysis start and allows reviewer analysis start", async () => {

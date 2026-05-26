@@ -19,9 +19,24 @@ type RagConfig =
       maxContextChars: number;
     };
 
+type RerankConfig =
+  | {
+      provider: "deterministic";
+      model: string;
+      topK: number;
+    }
+  | {
+      provider: "http";
+      endpoint: string | undefined;
+      apiKeyConfigured: boolean;
+      model: string;
+      topK: number;
+    };
+
 export type AnalysisProviderConfig = {
   ocr: OcrConfig;
   rag: RagConfig;
+  rerank: RerankConfig;
   missing: string[];
 };
 
@@ -46,7 +61,12 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
   const topK = positiveNumber(env, "FINPROOF_RAG_TOP_K", 4);
   const minScore = positiveNumber(env, "FINPROOF_RAG_MIN_SCORE", 0.72);
   const maxContextChars = positiveNumber(env, "FINPROOF_RAG_MAX_CONTEXT_CHARS", 6000);
+  const rerankProvider =
+    value(env, "FINPROOF_RERANK_PROVIDER") === "http" ? "http" : "deterministic";
+  const rerankModel = value(env, "FINPROOF_RERANK_MODEL") ?? "bge-reranker-v2-m3";
+  const rerankTopK = positiveNumber(env, "FINPROOF_RERANK_TOP_K", topK);
   const endpoint = value(env, "FINPROOF_OCR_ENDPOINT");
+  const rerankEndpoint = value(env, "FINPROOF_RERANK_ENDPOINT");
   const databaseUrl = value(env, "DATABASE_URL");
 
   if (ocrProvider === "http" && !endpoint) {
@@ -55,6 +75,10 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
 
   if (ragProvider === "postgres" && !databaseUrl) {
     missing.push("DATABASE_URL");
+  }
+
+  if (rerankProvider === "http" && !rerankEndpoint) {
+    missing.push("FINPROOF_RERANK_ENDPOINT");
   }
 
   return {
@@ -80,6 +104,20 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
             topK,
             minScore,
             maxContextChars
+          },
+    rerank:
+      rerankProvider === "http"
+        ? {
+            provider: "http",
+            endpoint: rerankEndpoint,
+            apiKeyConfigured: Boolean(value(env, "FINPROOF_RERANK_API_KEY")),
+            model: rerankModel,
+            topK: rerankTopK
+          }
+        : {
+            provider: "deterministic",
+            model: "deterministic-reranker",
+            topK: rerankTopK
           },
     missing
   };

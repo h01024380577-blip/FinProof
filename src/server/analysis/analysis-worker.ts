@@ -38,10 +38,10 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function createAnalysisWorker({
-  store = getReviewStore(),
-  pipeline = createReviewAnalysisPipeline()
-}: AnalysisWorkerDeps = {}) {
+export function createAnalysisWorker(deps: AnalysisWorkerDeps = {}) {
+  const store = deps.store ?? getReviewStore();
+  const pipeline = deps.pipeline ?? createReviewAnalysisPipeline({ reviewStore: store });
+
   return {
     async runOnce(input: RunOnceInput): Promise<RunOnceResult> {
       const claimed = await store.claimNextAnalysisJob(input.tenantId, input.workerId);
@@ -54,7 +54,7 @@ export function createAnalysisWorker({
       let artifacts;
 
       try {
-        artifacts = await pipeline.run({ review: claimed.reviewCase });
+        artifacts = await pipeline.run({ review: claimed.reviewCase, scope });
         const persisted = await store.persistAnalysisOutputs(scope, {
           reviewCaseId: claimed.reviewCaseId,
           jobId: claimed.id,

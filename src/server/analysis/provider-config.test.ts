@@ -11,6 +11,11 @@ describe("analysis provider config", () => {
       minScore: 0.72,
       maxContextChars: 6000
     });
+    expect(config.rerank).toEqual({
+      provider: "deterministic",
+      model: "deterministic-reranker",
+      topK: 4
+    });
   });
 
   it("requires HTTP OCR endpoint configuration", () => {
@@ -40,5 +45,21 @@ describe("analysis provider config", () => {
       minScore: 0.81,
       maxContextChars: 12000
     });
+  });
+
+  it("requires an HTTP rerank endpoint when model rerank is enabled", () => {
+    const config = getAnalysisProviderConfig({
+      FINPROOF_RERANK_PROVIDER: "http",
+      FINPROOF_RERANK_MODEL: "bge-reranker-v2-m3"
+    });
+
+    expect(config.rerank).toEqual({
+      provider: "http",
+      endpoint: undefined,
+      apiKeyConfigured: false,
+      model: "bge-reranker-v2-m3",
+      topK: 4
+    });
+    expect(config.missing).toContain("FINPROOF_RERANK_ENDPOINT");
   });
 });

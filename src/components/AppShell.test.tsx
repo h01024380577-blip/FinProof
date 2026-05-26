@@ -35,6 +35,10 @@ describe("AppShell", () => {
       "href",
       "/reviews?scope=history"
     );
+    expect(screen.getByRole("link", { name: /지식문서 등록/ })).toHaveAttribute(
+      "href",
+      "/knowledge-documents"
+    );
     expect(screen.queryByRole("link", { name: /Compliance workbench/ })).not.toBeInTheDocument();
     expect(screen.getByText("FinProof Agent")).toBeInTheDocument();
     expect(screen.getAllByText("심의 큐").length).toBeGreaterThan(0);
@@ -70,6 +74,6 @@ describe("AppShell", () => {
       within(primaryNav)
         .getAllByRole("link")
         .map((link) => link.textContent)
-    ).toEqual(["신규 요청", "심의 큐", "심의 이력"]);
+    ).toEqual(["신규 요청", "심의 큐", "심의 이력", "지식문서 등록"]);
   });
 });

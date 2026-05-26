@@ -18,6 +18,13 @@ type CreateKnowledgeDocumentBody = {
   storageKey?: unknown;
 };
 
+type UploadedKnowledgeFile = {
+  name: string;
+  type: string;
+  size: number;
+  body: Uint8Array;
+};
+
 export async function GET(request = new Request("http://localhost/api/v1/knowledge-documents")) {
   try {
     const documents = await createReviewService().listKnowledgeDocuments(
@@ -31,6 +38,10 @@ export async function GET(request = new Request("http://localhost/api/v1/knowled
 }
 
 export async function POST(request: Request) {
+  if (request.headers.get("content-type")?.toLowerCase().includes("multipart/form-data")) {
+    return postMultipart(request);
+  }
+
   const body = await readJsonBody<CreateKnowledgeDocumentBody>(request);
   const title = parseRequiredString(body?.title);
   const version = parseRequiredString(body?.version);
@@ -62,7 +73,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const document = await createReviewService().createKnowledgeDocument(
+    const result = await createReviewService().createKnowledgeDocument(
       await requestContext(request),
       {
         documentType,
@@ -75,7 +86,65 @@ export async function POST(request: Request) {
       }
     );
 
-    return NextResponse.json({ document }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
+  } catch (error) {
+    return jsonForbidden(error);
+  }
+}
+
+async function postMultipart(request: Request) {
+  let formData: FormData;
+
+  try {
+    formData = await request.formData();
+  } catch {
+    return jsonError("multipart form data is invalid", 400);
+  }
+
+  const title = parseRequiredString(formData.get("title"));
+  const version = parseRequiredString(formData.get("version"));
+  const documentType = parseKnowledgeDocumentType(formData.get("documentType"));
+  const productType = parseProductType(formData.get("productType"));
+  const affiliateId = parseOptionalString(formData.get("affiliateId"));
+  const effectiveFrom =
+    parseOptionalString(formData.get("effectiveFrom")) ?? new Date().toISOString().slice(0, 10);
+  const uploadedFile = await parseUploadedFile(formData.get("file"));
+
+  if (!title) {
+    return jsonError("title is required", 400);
+  }
+
+  if (!version) {
+    return jsonError("version is required", 400);
+  }
+
+  if (!documentType) {
+    return jsonError("documentType is invalid", 400);
+  }
+
+  if (formData.has("productType") && !productType) {
+    return jsonError("productType is invalid", 400);
+  }
+
+  if (!uploadedFile) {
+    return jsonError("file is required", 400);
+  }
+
+  try {
+    const result = await createReviewService().createKnowledgeDocument(
+      await requestContext(request),
+      {
+        documentType,
+        productType,
+        affiliateId,
+        title,
+        version,
+        effectiveFrom,
+        file: uploadedFile
+      }
+    );
+
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return jsonForbidden(error);
   }
@@ -87,6 +156,30 @@ function parseRequiredString(value: unknown): string | undefined {
 
 function parseOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function isFileLike(value: unknown): value is File {
+  return (
+    typeof File !== "undefined" &&
+    value instanceof File &&
+    typeof value.name === "string" &&
+    value.size > 0
+  );
+}
+
+async function parseUploadedFile(
+  value: FormDataEntryValue | null
+): Promise<UploadedKnowledgeFile | undefined> {
+  if (!isFileLike(value)) {
+    return undefined;
+  }
+
+  return {
+    name: value.name,
+    type: value.type || "application/octet-stream",
+    size: value.size,
+    body: new Uint8Array(await value.arrayBuffer())
+  };
 }
 
 function parseKnowledgeDocumentType(value: unknown): KnowledgeDocumentType | undefined {

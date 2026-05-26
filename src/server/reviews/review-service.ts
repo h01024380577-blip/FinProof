@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { requireRole } from "@/server/auth/rbac";
 import type { RequestContext } from "@/server/auth/request-context";
 import {
@@ -5,6 +6,10 @@ import {
   type ReviewAnalysisPipeline
 } from "@/server/analysis/review-analysis-pipeline";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
+import {
+  createKnowledgeDocumentChunks,
+  extractKnowledgeDocumentText
+} from "@/server/knowledge/knowledge-ingestion";
 import { expandArchiveUploads } from "@/server/storage/archive-extraction";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
 import type { ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
@@ -48,6 +53,27 @@ type ReviewServiceDeps = {
 };
 
 let uploadReviewCaseSequence = 1;
+
+type KnowledgeDocumentUploadFile = {
+  name: string;
+  type: string;
+  size: number;
+  body: Uint8Array;
+};
+
+export type CreateKnowledgeDocumentServiceInput = Omit<CreateKnowledgeDocumentInput, "storageKey"> &
+  Partial<Pick<CreateKnowledgeDocumentInput, "storageKey">> & {
+    file?: KnowledgeDocumentUploadFile;
+    sourceText?: string;
+  };
+
+export type CreateKnowledgeDocumentServiceResult = {
+  document: Awaited<ReturnType<ReviewStore["createKnowledgeDocument"]>>;
+  ingestion: {
+    chunkCount: number;
+    embeddingModel: string;
+  };
+};
 
 function scopeFromContext(context: RequestContext): ReviewStoreScope {
   return {
@@ -103,7 +129,8 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
   const storage = deps.storage ?? getReviewStorageAdapter();
   const uploadScanner = deps.uploadScanner ?? getUploadScanner();
   const analysisPipeline =
-    deps.analysisPipeline ?? createReviewAnalysisPipeline({ fileBodyReader: storage });
+    deps.analysisPipeline ??
+    createReviewAnalysisPipeline({ fileBodyReader: storage, reviewStore: store });
 
   return {
     async listReviewSummaries(context: RequestContext, options: ListReviewSummariesOptions = {}) {
@@ -286,7 +313,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         let result;
 
         try {
-          const artifacts = await analysisPipeline.run({ review: before });
+          const artifacts = await analysisPipeline.run({ review: before, scope });
           const persisted = await store.persistAnalysisOutputs(scope, {
             reviewCaseId,
             jobId: queued.jobId,
@@ -456,11 +483,59 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       return store.listAuditEvents(scopeFromContext(context), { targetType, targetId });
     },
 
-    async createKnowledgeDocument(context: RequestContext, input: CreateKnowledgeDocumentInput) {
+    async createKnowledgeDocument(
+      context: RequestContext,
+      input: CreateKnowledgeDocumentServiceInput
+    ): Promise<CreateKnowledgeDocumentServiceResult> {
       requireRole(context, ["compliance_admin"], "create knowledge document");
 
       const scope = scopeFromContext(context);
-      const document = await store.createKnowledgeDocument(scope, input);
+      const documentId = input.id ?? `knowledge-${randomUUID()}`;
+      let storageKey = input.storageKey;
+      let extractedText = input.sourceText;
+
+      if (input.file) {
+        const contentType = input.file.type || "application/octet-stream";
+        await uploadScanner.scanReviewFile({
+          reviewCaseId: "knowledge-document",
+          fileId: documentId,
+          fileName: input.file.name,
+          contentType,
+          sizeBytes: input.file.size,
+          body: input.file.body
+        });
+        const metadata = await storage.putKnowledgeDocumentFile({
+          documentId,
+          fileName: input.file.name,
+          contentType,
+          sizeBytes: input.file.size,
+          body: input.file.body
+        });
+
+        storageKey = metadata.storageKey;
+        extractedText = await extractKnowledgeDocumentText({
+          fileName: input.file.name,
+          contentType: metadata.contentType,
+          body: input.file.body
+        });
+      }
+
+      const document = await store.createKnowledgeDocument(scope, {
+        id: documentId,
+        documentType: input.documentType,
+        affiliateId: input.affiliateId,
+        productType: input.productType,
+        title: input.title,
+        version: input.version,
+        effectiveFrom: input.effectiveFrom,
+        storageKey: storageKey ?? `generated/knowledge-documents/${documentId}.txt`
+      });
+      const chunks = await createKnowledgeDocumentChunks({
+        tenantId: scope.tenantId,
+        documentId: document.id,
+        text: extractedText ?? `${document.title} ${document.version}`
+      });
+      await store.replaceKnowledgeDocumentChunks(scope, document.id, chunks);
 
       await store.recordAuditEvent(scope, {
         action: "knowledge_document.create",
@@ -468,11 +543,18 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         targetId: document.id,
         afterValue: {
           title: document.title,
-          version: document.version
+          version: document.version,
+          chunkCount: chunks.length
         }
       });
 
-      return document;
+      return {
+        document,
+        ingestion: {
+          chunkCount: chunks.length,
+          embeddingModel: chunks[0]?.embeddingModel ?? "none"
+        }
+      };
     },
 
     async listKnowledgeDocuments(context: RequestContext) {

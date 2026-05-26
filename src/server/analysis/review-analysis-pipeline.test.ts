@@ -1,6 +1,7 @@
 import type { ReviewCase } from "@/domain/types";
 import { createReviewAnalysisPipeline } from "./review-analysis-pipeline";
 import type { ModelProvider } from "@/server/ai/model-provider";
+import type { ReviewStoreScope } from "@/server/reviews";
 
 const review: ReviewCase = {
   id: "rc-upload-001",
@@ -147,6 +148,75 @@ describe("review analysis pipeline", () => {
         quoteSummary: expect.stringContaining("최고 연 5.0%")
       })
     );
+  });
+
+  it("retrieves approved knowledge evidence and reranks every RAG candidate", async () => {
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => [
+      {
+        id: "knowledge-evidence-001",
+        sourceType: "internal_policy" as const,
+        documentId: "knowledge-001",
+        chunkId: "chunk-knowledge-001-001",
+        title: "예금 광고 심의 지침",
+        version: "2026.05",
+        effectiveFrom: "2026-05-01",
+        quoteSummary: "최고 금리 표현은 우대 조건과 한도를 같은 화면에 표시해야 합니다.",
+        relevanceScore: 0.88
+      }
+    ]);
+    const rerank = vi.fn(async ({ candidates }) =>
+      [...candidates].sort((left, right) =>
+        left.sourceType === "internal_policy" ? -1 : right.sourceType === "internal_policy" ? 1 : 0
+      )
+    );
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence },
+      reranker: {
+        provider: "fixture-reranker",
+        rerank
+      },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "누구나 최고 연 5.0% 우대 조건 충족 시 적용됩니다.",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review, scope });
+
+    expect(searchKnowledgeEvidence).toHaveBeenCalledWith(
+      scope,
+      expect.objectContaining({
+        query: expect.stringContaining("최고 연 5.0%"),
+        productType: "deposit",
+        topK: expect.any(Number)
+      })
+    );
+    expect(rerank).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: expect.stringContaining("최고 연 5.0%"),
+        candidates: expect.arrayContaining([
+          expect.objectContaining({ sourceType: "product_doc" }),
+          expect.objectContaining({ sourceType: "internal_policy" })
+        ])
+      })
+    );
+    expect(artifacts.evidenceCandidates[0]).toMatchObject({
+      sourceType: "internal_policy",
+      chunkId: "chunk-knowledge-001-001"
+    });
   });
 
   it("runs model-backed review subagents and stores their findings", async () => {

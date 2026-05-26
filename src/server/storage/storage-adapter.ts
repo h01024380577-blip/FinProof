@@ -14,6 +14,14 @@ export type PutReviewFileInput = {
   body: Uint8Array;
 };
 
+export type PutKnowledgeDocumentFileInput = {
+  documentId: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  body: Uint8Array;
+};
+
 export type SampleReviewFileInput = {
   reviewCaseId: string;
   fileName: string;
@@ -23,6 +31,8 @@ export type SampleReviewFileInput = {
 
 export interface ReviewStorageAdapter {
   putReviewFile(input: PutReviewFileInput): Promise<StoredFileMetadata>;
+  putKnowledgeDocumentFile(input: PutKnowledgeDocumentFileInput): Promise<StoredFileMetadata>;
   getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined>;
+  getFileBody(storageKey: string): Promise<Uint8Array | undefined>;
   sampleReviewFile(input: SampleReviewFileInput): StoredFileMetadata;
 }

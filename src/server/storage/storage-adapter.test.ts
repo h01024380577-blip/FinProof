@@ -45,6 +45,27 @@ describe("local metadata storage adapter", () => {
     expect(Array.from(storedBody ?? [])).toEqual(Array.from(body));
   });
 
+  it("persists and reads local knowledge document bytes", async () => {
+    const rootDir = await mkdtemp(path.join(tmpdir(), "finproof-storage-"));
+    const adapter = createLocalMetadataStorageAdapter({ rootDir });
+    const body = new TextEncoder().encode("예금 광고 심의 지침");
+
+    const metadata = await adapter.putKnowledgeDocumentFile({
+      documentId: "knowledge-001",
+      fileName: "nested/deposit-policy.txt",
+      contentType: "text/plain",
+      sizeBytes: body.byteLength,
+      body
+    });
+
+    expect(metadata.storageKey).toBe(
+      "local/knowledge-documents/knowledge-001/nested_deposit-policy.txt"
+    );
+    const storedBody = await adapter.getFileBody(metadata.storageKey);
+
+    expect(Array.from(storedBody ?? [])).toEqual(Array.from(body));
+  });
+
   it("creates sample metadata for seeded files", () => {
     const adapter = createLocalMetadataStorageAdapter();
 
@@ -86,6 +107,8 @@ describe("storage adapter factory", () => {
       expect.objectContaining({
         putReviewFile: expect.any(Function),
         getReviewFileBody: expect.any(Function),
+        putKnowledgeDocumentFile: expect.any(Function),
+        getFileBody: expect.any(Function),
         sampleReviewFile: expect.any(Function)
       })
     );
@@ -123,5 +146,34 @@ describe("storage adapter factory", () => {
       contentType: "image/png",
       sizeBytes: 3
     });
+  });
+
+  it("uploads S3 knowledge document objects", async () => {
+    const send = vi.fn().mockResolvedValue({});
+    const body = new Uint8Array([1, 2, 3]);
+    const adapter = createS3MetadataStorageAdapter({
+      bucket: "finproof-prod-artifacts",
+      region: "ap-northeast-2",
+      client: { send }
+    });
+
+    const metadata = await adapter.putKnowledgeDocumentFile({
+      documentId: "knowledge-001",
+      fileName: "nested/deposit-policy.txt",
+      contentType: "text/plain",
+      sizeBytes: body.byteLength,
+      body
+    });
+    const command = send.mock.calls[0]?.[0] as { input?: Record<string, unknown> } | undefined;
+
+    expect(command?.input).toMatchObject({
+      Bucket: "finproof-prod-artifacts",
+      Key: "knowledge-documents/knowledge-001/nested_deposit-policy.txt",
+      ContentType: "text/plain",
+      Body: body
+    });
+    expect(metadata.storageKey).toBe(
+      "s3://finproof-prod-artifacts/knowledge-documents/knowledge-001/nested_deposit-policy.txt"
+    );
   });
 });

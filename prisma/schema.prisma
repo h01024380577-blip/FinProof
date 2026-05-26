@@ -367,21 +367,22 @@ model KnowledgeDocument {
 }
 
 model EvidenceChunk {
-  id                  String             @id
-  tenantId            String             @map("tenant_id")
-  knowledgeDocumentId String?            @map("knowledge_document_id")
-  reviewFileId        String?            @map("review_file_id")
-  chunkText           String             @map("chunk_text")
-  chunkSummary        String?            @map("chunk_summary")
-  embeddingModel      String             @map("embedding_model")
-  embeddingId         String             @map("embedding_id")
+  id                  String                 @id
+  tenantId            String                 @map("tenant_id")
+  knowledgeDocumentId String?                @map("knowledge_document_id")
+  reviewFileId        String?                @map("review_file_id")
+  chunkText           String                 @map("chunk_text")
+  chunkSummary        String?                @map("chunk_summary")
+  embeddingModel      String                 @map("embedding_model")
+  embeddingId         String                 @map("embedding_id")
+  embeddingVector     Unsupported("vector")? @map("embedding_vector")
   page                Int?
   section             String?
   metadata            Json
-  createdAt           DateTime           @default(now()) @map("created_at")
-  tenant              Tenant             @relation(fields: [tenantId], references: [id])
-  knowledgeDocument   KnowledgeDocument? @relation(fields: [knowledgeDocumentId], references: [id], onDelete: Cascade)
-  reviewFile          ReviewFile?        @relation(fields: [reviewFileId], references: [id], onDelete: Cascade)
+  createdAt           DateTime               @default(now()) @map("created_at")
+  tenant              Tenant                 @relation(fields: [tenantId], references: [id])
+  knowledgeDocument   KnowledgeDocument?     @relation(fields: [knowledgeDocumentId], references: [id], onDelete: Cascade)
+  reviewFile          ReviewFile?            @relation(fields: [reviewFileId], references: [id], onDelete: Cascade)
   evidence            Evidence[]
 
   @@index([tenantId, knowledgeDocumentId], map: "evidence_chunks_tenant_knowledge_document_idx")

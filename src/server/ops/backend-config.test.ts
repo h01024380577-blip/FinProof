@@ -13,6 +13,7 @@ describe("backend runtime config", () => {
     expect(config.model.provider).toBe("deterministic");
     expect(config.ocr.provider).toBe("deterministic");
     expect(config.rag.provider).toBe("deterministic");
+    expect(config.rerank.provider).toBe("deterministic");
     expect(config.uploadScan.provider).toBe("deterministic");
     expect(config.storage.provider).toBe("local-metadata");
     expect(config.productionGaps).toEqual(
@@ -22,6 +23,7 @@ describe("backend runtime config", () => {
         "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
         "FINPROOF_OCR_PROVIDER=http",
         "FINPROOF_RAG_PROVIDER=postgres",
+        "FINPROOF_RERANK_PROVIDER=http",
         "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
         "FINPROOF_STORAGE_ADAPTER=s3"
       ])
@@ -42,6 +44,7 @@ describe("backend runtime config", () => {
         "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
         "FINPROOF_OCR_PROVIDER=http",
         "FINPROOF_RAG_PROVIDER=postgres",
+        "FINPROOF_RERANK_PROVIDER=http",
         "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
         "FINPROOF_STORAGE_ADAPTER=s3"
       ])
@@ -55,6 +58,7 @@ describe("backend runtime config", () => {
       FINPROOF_MODEL_PROVIDER: "openai",
       FINPROOF_OCR_PROVIDER: "http",
       FINPROOF_RAG_PROVIDER: "postgres",
+      FINPROOF_RERANK_PROVIDER: "http",
       FINPROOF_UPLOAD_SCAN_PROVIDER: "http",
       FINPROOF_STORAGE_ADAPTER: "s3"
     });
@@ -64,6 +68,7 @@ describe("backend runtime config", () => {
         "FINPROOF_AUTH_JWT_SECRET",
         "OPENAI_API_KEY",
         "FINPROOF_OCR_ENDPOINT",
+        "FINPROOF_RERANK_ENDPOINT",
         "FINPROOF_UPLOAD_SCAN_ENDPOINT",
         "DATABASE_URL",
         "FINPROOF_S3_BUCKET",
@@ -120,6 +125,19 @@ describe("backend runtime config", () => {
       configured: false
     });
     expect(config.missing).toContain("FINPROOF_UPLOAD_SCAN_ENDPOINT");
+  });
+
+  it("requires an HTTP rerank endpoint when RAG reranking is enabled", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_RERANK_PROVIDER: "http"
+    });
+
+    expect(config.rerank).toEqual({
+      provider: "http",
+      configured: false,
+      model: "bge-reranker-v2-m3"
+    });
+    expect(config.missing).toContain("FINPROOF_RERANK_ENDPOINT");
   });
 
   it("redacts secrets before exposing readiness", () => {
@@ -179,6 +197,8 @@ describe("backend runtime config", () => {
       FINPROOF_OCR_PROVIDER: "http",
       FINPROOF_OCR_ENDPOINT: "https://ocr.example.com/extract",
       FINPROOF_RAG_PROVIDER: "postgres",
+      FINPROOF_RERANK_PROVIDER: "http",
+      FINPROOF_RERANK_ENDPOINT: "https://rerank.example.com/rerank",
       FINPROOF_UPLOAD_SCAN_PROVIDER: "http",
       FINPROOF_UPLOAD_SCAN_ENDPOINT: "https://scanner.example.com/scan",
       FINPROOF_STORAGE_ADAPTER: "s3",

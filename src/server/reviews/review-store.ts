@@ -4,6 +4,7 @@ import type {
   ChatSession,
   DraftVersion,
   Evidence,
+  EvidenceChunk,
   KnowledgeDocument,
   PaginatedResult,
   PersistedReviewReport,
@@ -147,7 +148,32 @@ export type CreateKnowledgeDocumentInput = Pick<
   | "version"
   | "effectiveFrom"
   | "storageKey"
+> & {
+  id?: string;
+};
+
+export type CreateKnowledgeDocumentChunkInput = Pick<
+  EvidenceChunk,
+  | "id"
+  | "tenantId"
+  | "knowledgeDocumentId"
+  | "chunkText"
+  | "chunkSummary"
+  | "embeddingModel"
+  | "embeddingId"
+  | "page"
+  | "section"
+  | "metadata"
 >;
+
+export type KnowledgeEvidenceSearchInput = {
+  query: string;
+  productType?: ProductType;
+  affiliateId?: string;
+  topK?: number;
+  minScore?: number;
+  queryEmbedding?: number[];
+};
 
 export type CreateChatSessionInput = {
   reviewCaseId: string;
@@ -266,6 +292,15 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     documentId: string
   ): Promise<KnowledgeDocument | undefined>;
+  replaceKnowledgeDocumentChunks(
+    scope: ReviewStoreScope,
+    documentId: string,
+    chunks: CreateKnowledgeDocumentChunkInput[]
+  ): Promise<EvidenceChunk[] | undefined>;
+  searchKnowledgeEvidence(
+    scope: ReviewStoreScope,
+    input: KnowledgeEvidenceSearchInput
+  ): Promise<Evidence[]>;
   createChatSession(
     scope: ReviewStoreScope,
     input: CreateChatSessionInput

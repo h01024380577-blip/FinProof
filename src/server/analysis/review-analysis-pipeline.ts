@@ -7,9 +7,15 @@ import type {
   RiskLevel
 } from "@/domain/types";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
+import {
+  createEmbeddingProvider,
+  type EmbeddingProvider
+} from "@/server/knowledge/embedding-provider";
+import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import { buildAnalysisIssues } from "./issue-generation";
 import { getAnalysisProviderConfig } from "./provider-config";
+import { createReranker, type Reranker } from "./rerank-provider";
 import {
   createReviewSubAgentOrchestrator,
   type AgentFinding,
@@ -63,6 +69,7 @@ export type OcrProvider = {
 type RagRetrieveInput = {
   review: ReviewCase;
   extractedDocuments: ExtractedDocument[];
+  scope?: ReviewStoreScope;
 };
 
 export type RagRetriever = {
@@ -72,12 +79,14 @@ export type RagRetriever = {
 export type ReviewFileBodyReader = Pick<ReviewStorageAdapter, "getReviewFileBody">;
 
 export type ReviewAnalysisPipeline = {
-  run(input: { review: ReviewCase }): Promise<AnalysisArtifacts>;
+  run(input: { review: ReviewCase; scope?: ReviewStoreScope }): Promise<AnalysisArtifacts>;
 };
 
 type ReviewAnalysisPipelineOptions = {
   ocrProvider?: OcrProvider;
   ragRetriever?: RagRetriever;
+  reviewStore?: Pick<ReviewStore, "searchKnowledgeEvidence">;
+  reranker?: Reranker;
   fileBodyReader?: ReviewFileBodyReader;
   modelProvider?: ModelProvider;
   subAgentOrchestrator?: ReviewSubAgentOrchestrator;
@@ -103,6 +112,10 @@ function overlapScore(query: string, text: string) {
   const matches = terms.filter((term) => text.includes(term)).length;
 
   return Math.max(0.72, Math.min(0.98, 0.72 + matches / terms.length / 4));
+}
+
+function reviewRagQuery(review: ReviewCase): string {
+  return [review.promotionalCopy, review.disclosure, review.productDescription].join(" ");
 }
 
 function isTextLikeFile(file: ReviewFile) {
@@ -245,22 +258,22 @@ function createHttpOcrProvider(env: Record<string, string | undefined> = process
 }
 
 function createLexicalRagRetriever(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = process.env,
+  reviewStore?: Pick<ReviewStore, "searchKnowledgeEvidence">,
+  embeddingProvider: EmbeddingProvider = createEmbeddingProvider(env)
 ): RagRetriever {
   const config = getAnalysisProviderConfig(env);
 
   return {
-    async retrieve({ review, extractedDocuments }) {
-      const query = [review.promotionalCopy, review.disclosure, review.productDescription].join(
-        " "
-      );
+    async retrieve({ review, extractedDocuments, scope }) {
+      const query = reviewRagQuery(review);
       const searchableDocuments = extractedDocuments.some(
         (document) => document.provider !== "metadata-only" && document.text.trim().length > 0
       )
         ? extractedDocuments.filter((document) => document.provider !== "metadata-only")
         : extractedDocuments;
 
-      return searchableDocuments
+      const productDocumentCandidates = searchableDocuments
         .map((document, index) => ({
           id: `evidence-candidate-${document.fileId}-${String(index + 1).padStart(3, "0")}`,
           sourceType: "product_doc" as const,
@@ -270,8 +283,21 @@ function createLexicalRagRetriever(
           sourceFileId: document.fileId
         }))
         .filter((candidate) => candidate.relevanceScore >= config.rag.minScore)
-        .sort((left, right) => right.relevanceScore - left.relevanceScore)
-        .slice(0, config.rag.topK);
+        .sort((left, right) => right.relevanceScore - left.relevanceScore);
+      const queryEmbedding =
+        reviewStore && scope ? (await embeddingProvider.embed([query]))[0] : undefined;
+      const knowledgeCandidates =
+        reviewStore && scope
+          ? await reviewStore.searchKnowledgeEvidence(scope, {
+              query,
+              productType: review.productType,
+              topK: config.rag.topK * 2,
+              minScore: config.rag.minScore,
+              queryEmbedding
+            })
+          : [];
+
+      return [...productDocumentCandidates, ...knowledgeCandidates];
     }
   };
 }
@@ -328,15 +354,29 @@ function issueToFinding(issue: ReviewIssue): AgentFindingCandidate {
 export function createReviewAnalysisPipeline({
   fileBodyReader = defaultFileBodyReader(),
   ocrProvider = defaultOcrProvider(fileBodyReader),
-  ragRetriever = createLexicalRagRetriever(),
+  reviewStore,
+  ragRetriever = createLexicalRagRetriever(process.env, reviewStore),
+  reranker = createReranker(),
   modelProvider = createModelProvider(),
   subAgentOrchestrator = createReviewSubAgentOrchestrator(modelProvider),
   now = () => new Date()
 }: ReviewAnalysisPipelineOptions = {}): ReviewAnalysisPipeline {
   return {
-    async run({ review }) {
+    async run({ review, scope }) {
+      const config = getAnalysisProviderConfig();
+      const query = reviewRagQuery(review);
       const extractedDocuments = await ocrProvider.extract({ review, files: review.files });
-      const evidenceCandidates = await ragRetriever.retrieve({ review, extractedDocuments });
+      const retrievedCandidates = await ragRetriever.retrieve({
+        review,
+        extractedDocuments,
+        scope
+      });
+      const evidenceCandidates = (
+        await reranker.rerank({
+          query,
+          candidates: retrievedCandidates
+        })
+      ).slice(0, config.rerank.topK);
       const agentFindings = await subAgentOrchestrator.run({
         review,
         extractedDocuments,

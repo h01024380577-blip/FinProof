@@ -1,4 +1,5 @@
 import type {
+  PutKnowledgeDocumentFileInput,
   PutReviewFileInput,
   ReviewStorageAdapter,
   SampleReviewFileInput,
@@ -30,7 +31,7 @@ function storagePath(rootDir: string, storageKey: string) {
     .map((segment) => normalizeFileName(segment))
     .join(path.sep);
 
-  return path.join(rootDir, relativePath);
+  return path.join(/* turbopackIgnore: true */ rootDir, relativePath);
 }
 
 export function createLocalMetadataStorageAdapter({
@@ -58,7 +59,30 @@ export function createLocalMetadataStorageAdapter({
       };
     },
 
-    async getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined> {
+    async putKnowledgeDocumentFile(
+      input: PutKnowledgeDocumentFileInput
+    ): Promise<StoredFileMetadata> {
+      const storageKey = `local/knowledge-documents/${input.documentId}/${normalizeFileName(
+        input.fileName
+      )}`;
+      const targetPath = storagePath(rootDir, storageKey);
+
+      if (!targetPath) {
+        throw new Error(`Invalid local storage key: ${storageKey}`);
+      }
+
+      await mkdir(path.dirname(targetPath), { recursive: true });
+      await writeFile(targetPath, input.body);
+
+      return {
+        storageProvider: "local",
+        storageKey,
+        contentType: input.contentType,
+        sizeBytes: input.sizeBytes
+      };
+    },
+
+    async getFileBody(storageKey: string): Promise<Uint8Array | undefined> {
       const targetPath = storagePath(rootDir, storageKey);
 
       if (!targetPath) {
@@ -74,6 +98,10 @@ export function createLocalMetadataStorageAdapter({
 
         throw error;
       }
+    },
+
+    async getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined> {
+      return this.getFileBody(storageKey);
     },
 
     sampleReviewFile(input: SampleReviewFileInput): StoredFileMetadata {

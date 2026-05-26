@@ -403,6 +403,17 @@ describe("review service", () => {
           sizeBytes: input.sizeBytes
         };
       },
+      async putKnowledgeDocumentFile(input) {
+        return {
+          storageProvider: "s3",
+          storageKey: `s3://finproof-prod-artifacts/knowledge-documents/${input.documentId}/${input.fileName}`,
+          contentType: input.contentType,
+          sizeBytes: input.sizeBytes
+        };
+      },
+      async getFileBody() {
+        return uploadedBody;
+      },
       async getReviewFileBody() {
         return uploadedBody;
       },
@@ -438,6 +449,10 @@ describe("review service", () => {
     const store = createMockReviewStore();
     const storage: ReviewStorageAdapter = {
       putReviewFile: vi.fn(),
+      putKnowledgeDocumentFile: vi.fn(),
+      async getFileBody() {
+        return undefined;
+      },
       async getReviewFileBody() {
         return undefined;
       },

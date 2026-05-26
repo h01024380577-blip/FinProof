@@ -7,6 +7,8 @@ import type {
   ChatMessage,
   ChatSession,
   DraftVersion,
+  Evidence,
+  EvidenceChunk,
   KnowledgeDocument,
   PersistedReviewReport,
   ReviewCase,
@@ -29,6 +31,7 @@ import type {
   AuditEventInput,
   CreateChatMessageInput,
   CreateDraftVersionInput,
+  CreateKnowledgeDocumentChunkInput,
   CreateKnowledgeDocumentInput,
   CreateReviewReportInput,
   CreateReviewCaseFromUploadedFilesInput,
@@ -38,6 +41,7 @@ import type {
   ListAuditEventsOptions,
   ListIssuesOptions,
   ListReviewSummariesOptions,
+  KnowledgeEvidenceSearchInput,
   ReviewStore,
   ReviewSummaryPage,
   ReviewStoreScope,
@@ -190,6 +194,42 @@ function toKnowledgeDocument(row: {
   };
 }
 
+function jsonObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function toEvidenceChunk(row: {
+  id: string;
+  tenantId: string;
+  knowledgeDocumentId: string | null;
+  reviewFileId: string | null;
+  chunkText: string;
+  chunkSummary: string | null;
+  embeddingModel: string;
+  embeddingId: string;
+  page: number | null;
+  section: string | null;
+  metadata: Prisma.JsonValue;
+  createdAt: Date;
+}): EvidenceChunk {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    knowledgeDocumentId: row.knowledgeDocumentId ?? undefined,
+    reviewFileId: row.reviewFileId ?? undefined,
+    chunkText: row.chunkText,
+    chunkSummary: row.chunkSummary ?? undefined,
+    embeddingModel: row.embeddingModel,
+    embeddingId: row.embeddingId,
+    page: row.page ?? undefined,
+    section: row.section ?? undefined,
+    metadata: jsonObject(row.metadata),
+    createdAt: row.createdAt.toISOString()
+  };
+}
+
 function toChatSession(row: {
   id: string;
   reviewCaseId: string;
@@ -327,6 +367,44 @@ function chunkIdForKnowledgeDocument(documentId: string): string {
   return `chunk-${documentId}-001`;
 }
 
+function lexicalKnowledgeScore(query: string, text: string): number {
+  const terms = query
+    .split(/[\s.,:;!?()[\]{}"'`~|\\/]+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length >= 2);
+
+  if (terms.length === 0) {
+    return 0.72;
+  }
+
+  const target = text.toLowerCase();
+  const matches = terms.filter((term) => target.includes(term.toLowerCase())).length;
+
+  return Math.max(0.55, Math.min(0.99, 0.55 + matches / terms.length / 2));
+}
+
+function documentSourceType(
+  documentType: KnowledgeDocument["documentType"]
+): Evidence["sourceType"] {
+  return documentType === "law" ? "law" : "internal_policy";
+}
+
+function vectorLiteral(vector: number[] | undefined): string | undefined {
+  if (!vector || vector.length === 0 || !vector.every((value) => Number.isFinite(value))) {
+    return undefined;
+  }
+
+  return `[${vector.join(",")}]`;
+}
+
+function embeddingVectorFromMetadata(metadata: Record<string, unknown>): number[] | undefined {
+  const vector = metadata.embeddingVector;
+
+  return Array.isArray(vector) && vector.every((value) => typeof value === "number")
+    ? vector
+    : undefined;
+}
+
 const riskPriority: Record<RiskLevel, number> = {
   info: 0,
   caution: 1,
@@ -393,6 +471,40 @@ type AllowedEvidenceChunk = {
   documentVersion?: string | null;
   documentEffectiveFrom?: Date | null;
 };
+
+type VectorKnowledgeEvidenceRow = {
+  chunkId: string;
+  documentId: string;
+  documentType: KnowledgeDocument["documentType"];
+  title: string;
+  version: string;
+  effectiveFrom: Date | string;
+  chunkSummary: string | null;
+  chunkText: string;
+  page: number | null;
+  section: string | null;
+  relevanceScore: number | string;
+};
+
+function dateOnlyFromRaw(value: Date | string): string {
+  return value instanceof Date ? dateOnlyString(value) : value.slice(0, 10);
+}
+
+function vectorRowToEvidence(row: VectorKnowledgeEvidenceRow): Evidence {
+  return {
+    id: `knowledge-evidence-${row.chunkId}`,
+    sourceType: documentSourceType(row.documentType),
+    documentId: row.documentId,
+    chunkId: row.chunkId,
+    version: row.version,
+    effectiveFrom: dateOnlyFromRaw(row.effectiveFrom),
+    title: row.title,
+    page: row.page ?? undefined,
+    section: row.section ?? undefined,
+    quoteSummary: row.chunkSummary ?? row.chunkText,
+    relevanceScore: Number(row.relevanceScore)
+  };
+}
 
 function evidenceCreateInput(
   reviewCaseId: string,
@@ -569,7 +681,7 @@ export function createPrismaReviewStore(): ReviewStore {
         : undefined;
       const document = await prisma.knowledgeDocument.create({
         data: {
-          id: `knowledge-${randomUUID()}`,
+          id: input.id ?? `knowledge-${randomUUID()}`,
           tenantId: scope.tenantId,
           affiliateId: affiliate?.id,
           documentType: input.documentType,
@@ -615,31 +727,216 @@ export function createPrismaReviewStore(): ReviewStore {
           where: { id: documentId }
         });
 
-        await tx.evidenceChunk.upsert({
-          where: { id: chunkIdForKnowledgeDocument(document.id) },
-          update: {
-            tenantId: document.tenantId,
-            knowledgeDocumentId: document.id,
-            chunkText: `${document.title} ${document.version}`,
-            chunkSummary: document.title,
-            embeddingModel: "text-embedding-3-small",
-            embeddingId: `embedding-${document.id}-001`,
-            metadata: { source: "knowledge_document" }
-          },
-          create: {
-            id: chunkIdForKnowledgeDocument(document.id),
-            tenantId: document.tenantId,
-            knowledgeDocumentId: document.id,
-            chunkText: `${document.title} ${document.version}`,
-            chunkSummary: document.title,
-            embeddingModel: "text-embedding-3-small",
-            embeddingId: `embedding-${document.id}-001`,
-            metadata: { source: "knowledge_document" }
-          }
+        const existingChunkCount = await tx.evidenceChunk.count({
+          where: { tenantId: document.tenantId, knowledgeDocumentId: document.id }
         });
+
+        if (existingChunkCount === 0) {
+          await tx.evidenceChunk.create({
+            data: {
+              id: chunkIdForKnowledgeDocument(document.id),
+              tenantId: document.tenantId,
+              knowledgeDocumentId: document.id,
+              chunkText: `${document.title} ${document.version}`,
+              chunkSummary: document.title,
+              embeddingModel: "text-embedding-3-small",
+              embeddingId: `embedding-${document.id}-001`,
+              metadata: { source: "knowledge_document" }
+            }
+          });
+        }
 
         return toKnowledgeDocument(document);
       });
+    },
+
+    async replaceKnowledgeDocumentChunks(
+      scope,
+      documentId,
+      chunks: CreateKnowledgeDocumentChunkInput[]
+    ) {
+      const document = await prisma.knowledgeDocument.findFirst({
+        where: { id: documentId, tenantId: scope.tenantId },
+        select: { id: true }
+      });
+
+      if (!document) {
+        return undefined;
+      }
+
+      return prisma.$transaction(async (tx) => {
+        await tx.evidenceChunk.deleteMany({
+          where: { tenantId: scope.tenantId, knowledgeDocumentId: documentId }
+        });
+
+        if (chunks.length > 0) {
+          await tx.evidenceChunk.createMany({
+            data: chunks.map((chunk) => ({
+              id: chunk.id,
+              tenantId: scope.tenantId,
+              knowledgeDocumentId: documentId,
+              chunkText: chunk.chunkText,
+              chunkSummary: chunk.chunkSummary,
+              embeddingModel: chunk.embeddingModel,
+              embeddingId: chunk.embeddingId,
+              page: chunk.page,
+              section: chunk.section,
+              metadata: chunk.metadata as Prisma.InputJsonValue
+            }))
+          });
+        }
+
+        for (const chunk of chunks) {
+          const literal = vectorLiteral(embeddingVectorFromMetadata(chunk.metadata));
+
+          if (literal) {
+            await tx.$executeRawUnsafe(
+              'UPDATE "evidence_chunks" SET "embedding_vector" = $1::vector WHERE "id" = $2 AND "tenant_id" = $3',
+              literal,
+              chunk.id,
+              scope.tenantId
+            );
+          }
+        }
+
+        const rows = await tx.evidenceChunk.findMany({
+          where: { tenantId: scope.tenantId, knowledgeDocumentId: documentId },
+          orderBy: { id: "asc" }
+        });
+
+        return rows.map(toEvidenceChunk);
+      });
+    },
+
+    async searchKnowledgeEvidence(scope, input: KnowledgeEvidenceSearchInput) {
+      const topK = input.topK ?? 4;
+      const minScore = input.minScore ?? 0.72;
+      const queryVector = vectorLiteral(input.queryEmbedding);
+
+      if (queryVector) {
+        const params: Array<string | number> = [scope.tenantId, queryVector];
+        const whereParts = [
+          'ec."tenant_id" = $1',
+          'kd."tenant_id" = $1',
+          "kd.\"approval_status\" = 'approved'",
+          'ec."embedding_vector" IS NOT NULL'
+        ];
+
+        if (input.productType) {
+          params.push(input.productType);
+          whereParts.push(
+            `(kd."product_type" = $${params.length}::"ProductType" OR kd."product_type" IS NULL)`
+          );
+        }
+
+        if (input.affiliateId) {
+          params.push(input.affiliateId);
+          whereParts.push(`(kd."affiliate_id" = $${params.length} OR kd."affiliate_id" IS NULL)`);
+        }
+
+        params.push(Math.max(topK * 4, topK));
+
+        try {
+          const rows = await prisma.$queryRawUnsafe<VectorKnowledgeEvidenceRow[]>(
+            `
+              SELECT
+                ec."id" AS "chunkId",
+                kd."id" AS "documentId",
+                kd."document_type" AS "documentType",
+                kd."title" AS "title",
+                kd."version" AS "version",
+                kd."effective_from" AS "effectiveFrom",
+                ec."chunk_summary" AS "chunkSummary",
+                ec."chunk_text" AS "chunkText",
+                ec."page" AS "page",
+                ec."section" AS "section",
+                GREATEST(0, 1 - (ec."embedding_vector" <=> $2::vector)) AS "relevanceScore"
+              FROM "evidence_chunks" ec
+              INNER JOIN "knowledge_documents" kd ON kd."id" = ec."knowledge_document_id"
+              WHERE ${whereParts.join(" AND ")}
+              ORDER BY ec."embedding_vector" <=> $2::vector
+              LIMIT $${params.length}
+            `,
+            ...params
+          );
+          const evidence = rows
+            .map(vectorRowToEvidence)
+            .filter((item) => item.relevanceScore >= minScore)
+            .slice(0, topK);
+
+          if (evidence.length > 0) {
+            return evidence;
+          }
+        } catch {
+          // Fall back to lexical retrieval when pgvector is not available in a local database.
+        }
+      }
+
+      const documentFilters: Prisma.KnowledgeDocumentWhereInput[] = [
+        {
+          tenantId: scope.tenantId,
+          approvalStatus: "approved"
+        }
+      ];
+
+      if (input.productType) {
+        documentFilters.push({
+          OR: [{ productType: input.productType }, { productType: null }]
+        });
+      }
+
+      if (input.affiliateId) {
+        documentFilters.push({
+          OR: [{ affiliateId: input.affiliateId }, { affiliateId: null }]
+        });
+      }
+
+      const rows = await prisma.evidenceChunk.findMany({
+        where: {
+          tenantId: scope.tenantId,
+          knowledgeDocument: {
+            is: { AND: documentFilters }
+          }
+        },
+        include: {
+          knowledgeDocument: true
+        },
+        orderBy: { id: "asc" },
+        take: Math.max(topK * 4, topK)
+      });
+
+      return rows
+        .flatMap((chunk) => {
+          const document = chunk.knowledgeDocument;
+
+          if (!document) {
+            return [];
+          }
+
+          const score = lexicalKnowledgeScore(input.query, chunk.chunkText);
+
+          if (score < minScore) {
+            return [];
+          }
+
+          return [
+            {
+              id: `knowledge-evidence-${chunk.id}`,
+              sourceType: documentSourceType(document.documentType),
+              documentId: document.id,
+              chunkId: chunk.id,
+              version: document.version,
+              effectiveFrom: dateOnlyString(document.effectiveFrom),
+              title: document.title,
+              page: chunk.page ?? undefined,
+              section: chunk.section ?? undefined,
+              quoteSummary: chunk.chunkSummary ?? chunk.chunkText,
+              relevanceScore: score
+            }
+          ];
+        })
+        .sort((left, right) => right.relevanceScore - left.relevanceScore)
+        .slice(0, topK);
     },
 
     async createChatSession(scope, input) {

@@ -29,6 +29,7 @@ import type {
   AuditEvent,
   CreateChatMessageInput,
   CreateDraftVersionInput,
+  CreateKnowledgeDocumentChunkInput,
   CreateKnowledgeDocumentInput,
   CreateReviewReportInput,
   CreateReviewCaseFromUploadedFilesInput,
@@ -37,6 +38,7 @@ import type {
   ListReviewSummariesOptions,
   ListAuditEventsOptions,
   ListIssuesOptions,
+  KnowledgeEvidenceSearchInput,
   ReviewStore,
   ReviewSummaryPage,
   ReviewStoreScope,
@@ -303,6 +305,37 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       metadata: { source: "knowledge_document" },
       createdAt: nowIso()
     });
+  }
+
+  function lexicalKnowledgeScore(query: string, text: string): number {
+    const terms = query
+      .split(/[\s.,:;!?()[\]{}"'`~|\\/]+/)
+      .map((term) => term.trim())
+      .filter((term) => term.length >= 2);
+
+    if (terms.length === 0) {
+      return 0.72;
+    }
+
+    const target = text.toLowerCase();
+    const matches = terms.filter((term) => target.includes(term.toLowerCase())).length;
+
+    return Math.max(0.55, Math.min(0.99, 0.55 + matches / terms.length / 2));
+  }
+
+  function documentSourceType(document: KnowledgeDocument): "law" | "internal_policy" {
+    return document.documentType === "law" ? "law" : "internal_policy";
+  }
+
+  function matchesKnowledgeSearch(
+    document: KnowledgeDocument,
+    input: KnowledgeEvidenceSearchInput
+  ) {
+    return (
+      document.approvalStatus === "approved" &&
+      (!input.productType || !document.productType || document.productType === input.productType) &&
+      (!input.affiliateId || !document.affiliateId || document.affiliateId === input.affiliateId)
+    );
   }
 
   function canAccessCase(scope: ReviewStoreScope, reviewCaseId: string): boolean {
@@ -1103,7 +1136,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
 
     async createKnowledgeDocument(scope: ReviewStoreScope, input: CreateKnowledgeDocumentInput) {
       const document: KnowledgeDocument = {
-        id: `knowledge-${String(knowledgeSequence).padStart(3, "0")}`,
+        id: input.id ?? `knowledge-${String(knowledgeSequence).padStart(3, "0")}`,
         tenantId: scope.tenantId,
         affiliateId: validAffiliateId(scope, input.affiliateId),
         documentType: input.documentType,
@@ -1117,7 +1150,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         createdAt: nowIso()
       };
 
-      knowledgeSequence += 1;
+      knowledgeSequence += input.id ? 0 : 1;
       knowledgeDocuments.set(document.id, document);
 
       return clone(document);
@@ -1149,6 +1182,82 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       ensureApprovedKnowledgeChunk(approved);
 
       return clone(approved);
+    },
+
+    async replaceKnowledgeDocumentChunks(
+      scope: ReviewStoreScope,
+      documentId,
+      chunks: CreateKnowledgeDocumentChunkInput[]
+    ) {
+      const document = knowledgeDocuments.get(documentId);
+
+      if (!document || document.tenantId !== scope.tenantId) {
+        return undefined;
+      }
+
+      for (const [chunkId, chunk] of evidenceChunks) {
+        if (chunk.knowledgeDocumentId === documentId) {
+          evidenceChunks.delete(chunkId);
+        }
+      }
+
+      const now = nowIso();
+      const persisted = chunks.map<EvidenceChunk>((chunk) => ({
+        ...chunk,
+        tenantId: scope.tenantId,
+        knowledgeDocumentId: documentId,
+        metadata: clone(chunk.metadata),
+        createdAt: now
+      }));
+
+      for (const chunk of persisted) {
+        evidenceChunks.set(chunk.id, chunk);
+      }
+
+      return clone(persisted);
+    },
+
+    async searchKnowledgeEvidence(scope: ReviewStoreScope, input: KnowledgeEvidenceSearchInput) {
+      const minScore = input.minScore ?? 0.72;
+      const topK = input.topK ?? 4;
+
+      return Array.from(evidenceChunks.values())
+        .flatMap((chunk) => {
+          const documentId = chunk.knowledgeDocumentId;
+          const document = documentId ? knowledgeDocuments.get(documentId) : undefined;
+
+          if (
+            !document ||
+            document.tenantId !== scope.tenantId ||
+            !matchesKnowledgeSearch(document, input)
+          ) {
+            return [];
+          }
+
+          const score = lexicalKnowledgeScore(input.query, chunk.chunkText);
+
+          if (score < minScore) {
+            return [];
+          }
+
+          return [
+            {
+              id: `knowledge-evidence-${chunk.id}`,
+              sourceType: documentSourceType(document),
+              documentId: document.id,
+              chunkId: chunk.id,
+              version: document.version,
+              effectiveFrom: document.effectiveFrom,
+              title: document.title,
+              page: chunk.page,
+              section: chunk.section,
+              quoteSummary: chunk.chunkSummary || chunk.chunkText,
+              relevanceScore: score
+            }
+          ];
+        })
+        .sort((left, right) => right.relevanceScore - left.relevanceScore)
+        .slice(0, topK);
     },
 
     async createChatSession(scope: ReviewStoreScope, input) {

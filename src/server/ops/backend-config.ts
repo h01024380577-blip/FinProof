@@ -28,6 +28,9 @@ export type BackendRuntimeConfig = {
     minScore: number;
     maxContextChars: number;
   };
+  rerank: ProviderState & {
+    model: string;
+  };
   uploadScan: ProviderState;
   storage: ProviderState & {
     bucket?: string;
@@ -91,6 +94,9 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   const ocrProvider = value(env, "FINPROOF_OCR_PROVIDER") === "http" ? "http" : "deterministic";
   const ragProvider =
     value(env, "FINPROOF_RAG_PROVIDER") === "postgres" ? "postgres" : "deterministic";
+  const rerankProvider =
+    value(env, "FINPROOF_RERANK_PROVIDER") === "http" ? "http" : "deterministic";
+  const rerankModel = value(env, "FINPROOF_RERANK_MODEL") ?? "bge-reranker-v2-m3";
   const analysisExecutionMode =
     value(env, "FINPROOF_ANALYSIS_EXECUTION_MODE") === "queued" ? "queued" : "inline";
   const uploadScanProvider =
@@ -123,6 +129,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   requireWhen(missing, modelProvider === "router", env, "GEMINI_API_KEY");
   requireWhen(missing, ocrProvider === "http", env, "FINPROOF_OCR_ENDPOINT");
   requireWhen(missing, ragProvider === "postgres", env, "DATABASE_URL");
+  requireWhen(missing, rerankProvider === "http", env, "FINPROOF_RERANK_ENDPOINT");
   requireWhen(missing, uploadScanProvider === "http", env, "FINPROOF_UPLOAD_SCAN_ENDPOINT");
   requireWhen(missing, storageProvider === "s3", env, "FINPROOF_S3_BUCKET");
   requireWhen(missing, storageProvider === "s3", env, "AWS_REGION");
@@ -143,6 +150,11 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     productionGaps,
     ragProvider !== "postgres",
     "FINPROOF_RAG_PROVIDER=postgres"
+  );
+  requireProductionProvider(
+    productionGaps,
+    rerankProvider !== "http",
+    "FINPROOF_RERANK_PROVIDER=http"
   );
   requireProductionProvider(
     productionGaps,
@@ -208,6 +220,12 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       minScore: numberValue(env, "FINPROOF_RAG_MIN_SCORE", 0.72),
       maxContextChars: numberValue(env, "FINPROOF_RAG_MAX_CONTEXT_CHARS", 6000)
     },
+    rerank: {
+      provider: rerankProvider,
+      configured:
+        rerankProvider === "deterministic" || Boolean(value(env, "FINPROOF_RERANK_ENDPOINT")),
+      model: rerankProvider === "deterministic" ? "deterministic-reranker" : rerankModel
+    },
     uploadScan: {
       provider: uploadScanProvider,
       configured:
@@ -230,6 +248,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       OPENAI_API_KEY: secretState(env, "OPENAI_API_KEY"),
       GEMINI_API_KEY: secretState(env, "GEMINI_API_KEY"),
       FINPROOF_OCR_API_KEY: secretState(env, "FINPROOF_OCR_API_KEY"),
+      FINPROOF_RERANK_API_KEY: secretState(env, "FINPROOF_RERANK_API_KEY"),
       FINPROOF_UPLOAD_SCAN_API_KEY: secretState(env, "FINPROOF_UPLOAD_SCAN_API_KEY"),
       AWS_ACCESS_KEY_ID: secretState(env, "AWS_ACCESS_KEY_ID"),
       AWS_SECRET_ACCESS_KEY: secretState(env, "AWS_SECRET_ACCESS_KEY")
