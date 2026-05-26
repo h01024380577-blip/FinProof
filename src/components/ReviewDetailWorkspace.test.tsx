@@ -1,7 +1,29 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { vi } from "vitest";
 import { getReviewCaseById } from "@/domain/reviews";
 import { ReviewDetailWorkspace } from "./ReviewDetailWorkspace";
+import { RoleProvider } from "./RoleContext";
+
+let currentSearchParams = new URLSearchParams();
+const replaceMock = vi.fn((href: string) => {
+  const queryIndex = href.indexOf("?");
+  currentSearchParams = new URLSearchParams(queryIndex >= 0 ? href.slice(queryIndex + 1) : "");
+});
+const pushMock = vi.fn();
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: pushMock,
+    replace: replaceMock,
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn()
+  }),
+  useSearchParams: () => currentSearchParams,
+  usePathname: () => "/reviews/test-id"
+}));
 
 const originalCreateObjectURL = URL.createObjectURL;
 const originalRevokeObjectURL = URL.revokeObjectURL;
@@ -18,12 +40,58 @@ function restoreUrlFunction(
   Reflect.deleteProperty(URL, name);
 }
 
+async function openOpinionTab(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("tab", { name: "의견서" }));
+}
+
+async function openDraftTab(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("tab", { name: "의견 초안" }));
+}
+
+function changeTextField(label: string, value: string) {
+  const field = screen.getByLabelText(label);
+  fireEvent.change(field, { target: { value } });
+  expect(field).toHaveValue(value);
+  return field;
+}
+
 describe("ReviewDetailWorkspace", () => {
+  beforeEach(() => {
+    replaceMock.mockClear();
+    pushMock.mockClear();
+    currentSearchParams = new URLSearchParams();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     restoreUrlFunction("createObjectURL", originalCreateObjectURL);
     restoreUrlFunction("revokeObjectURL", originalRevokeObjectURL);
+  });
+
+  it("renders the reference-style three-pane compliance workbench", async () => {
+    const user = userEvent.setup();
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    expect(
+      screen.getByRole("heading", { name: "최고 연 5.0% 적금 홍보물 심의" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("이슈 목록 (3)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "보류" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "반려" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "수정 요청" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "초안 생성" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "체크리스트" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "근거 자료" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "의견서" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "근거 채팅" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "초안에 반영" })).toBeInTheDocument();
+
+    await openOpinionTab(user);
+
+    expect(screen.getByLabelText("심의자 메모")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "위험도 변경" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
   });
 
   it("does not show sample RAG answers when an uploaded case has no selected issue", () => {
@@ -46,8 +114,112 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByText("추가 확인 필요")).toBeInTheDocument();
     expect(screen.getAllByText(/OCR\/RAG 분석 전/).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "질문 보내기" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "의견 초안에 반영" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "초안에 반영" })).toBeDisabled();
     expect(screen.queryByText(/조건부 혜택임을/)).not.toBeInTheDocument();
+  });
+
+  it("loads analysis status and audit events when support data is enabled", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = typeof input === "string" ? input : input.toString();
+
+      if (path.endsWith("/analysis/status")) {
+        return {
+          ok: true,
+          json: async () => ({
+            reviewCaseId: "rc-demo-deposit-001",
+            status: "completed",
+            progress: 100,
+            currentStep: "deterministic_mock_analysis",
+            jobId: "job-rc-demo-deposit-001-001"
+          })
+        };
+      }
+
+      if (path.endsWith("/audit-events")) {
+        return {
+          ok: true,
+          json: async () => ({
+            auditEvents: [
+              {
+                id: "audit-analysis-start",
+                action: "analysis.start",
+                targetType: "review_case",
+                targetId: "rc-demo-deposit-001",
+                userId: "user-reviewer-demo",
+                createdAt: "2026-05-25T10:00:00.000Z"
+              }
+            ]
+          })
+        };
+      }
+
+      throw new Error(`Unexpected fetch: ${path}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <RoleProvider initialRole="reviewer">
+        <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} loadSupportData />
+      </RoleProvider>
+    );
+
+    await user.click(screen.getByRole("tab", { name: "감사 로그" }));
+
+    expect(await screen.findByText("완료 · 100%")).toBeInTheDocument();
+    expect(screen.getByText("deterministic_mock_analysis")).toBeInTheDocument();
+    expect(screen.getByText(/analysis.start/)).toHaveTextContent("user-reviewer-demo");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/analysis/status",
+      expect.objectContaining({
+        headers: expect.objectContaining({ "x-finproof-role": "reviewer" })
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/audit-events",
+      expect.objectContaining({
+        headers: expect.objectContaining({ "x-finproof-role": "reviewer" })
+      })
+    );
+  });
+
+  it("disables reviewer-only workbench controls for requesters", async () => {
+    const user = userEvent.setup();
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+
+    render(
+      <RoleProvider initialRole="requester">
+        <ReviewDetailWorkspace
+          review={{
+            ...review,
+            issues: review.issues.map((issue, index) =>
+              index === 0
+                ? {
+                    ...issue,
+                    reviewerRiskLevel: "high",
+                    finalAction: "change_request",
+                    reviewerComment: "이미 저장된 심의자 판단"
+                  }
+                : issue
+            )
+          }}
+        />
+      </RoleProvider>
+    );
+
+    // Drawer starts collapsed for requesters — expand it.
+    await user.click(screen.getByRole("button", { name: /드로어 펼치기/ }));
+    await openOpinionTab(user);
+
+    expect(screen.getByLabelText("심의자 위험도")).toBeDisabled();
+    expect(screen.getByLabelText("심의자 메모")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "위험도 변경" })).toBeDisabled();
+    await openDraftTab(user);
+    expect(screen.getByRole("button", { name: "의견 초안 저장" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "리포트 다운로드" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "초안 생성" })).toBeDisabled();
+    await openOpinionTab(user);
+    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
   });
 
   it("runs selected issue chat, guards missing evidence, and saves reviewer decision", async () => {
@@ -108,11 +280,7 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
-    await user.clear(screen.getByLabelText("RAG question"));
-    await user.type(
-      screen.getByLabelText("RAG question"),
-      "약관에만 있는 중도해지 조건도 단정해도 되나요?"
-    );
+    changeTextField("RAG question", "약관에만 있는 중도해지 조건도 단정해도 되나요?");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
     expect(await screen.findByText(/추가 확인 필요/)).toBeInTheDocument();
@@ -127,16 +295,13 @@ describe("ReviewDetailWorkspace", () => {
       })
     );
 
-    await user.clear(screen.getByLabelText("RAG question"));
-    await user.type(
-      screen.getByLabelText("RAG question"),
-      "우대금리 조건을 어느 수준까지 표시해야 하나요?"
-    );
+    changeTextField("RAG question", "우대금리 조건을 어느 수준까지 표시해야 하나요?");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
     expect(await screen.findByText(/조건부 혜택임을/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "의견 초안에 반영" }));
-    await user.click(screen.getByRole("button", { name: "수정 요청 의견 초안 생성" }));
+    await user.click(screen.getByRole("button", { name: "초안에 반영" }));
+    await user.click(screen.getByRole("button", { name: "초안 생성" }));
 
+    await openDraftTab(user);
     expect(await screen.findByDisplayValue(/채팅 반영/)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-deposit-001/draft",
@@ -146,9 +311,10 @@ describe("ReviewDetailWorkspace", () => {
       })
     );
 
-    await user.selectOptions(screen.getByLabelText("Reviewer risk level"), "reject_recommended");
-    await user.type(screen.getByLabelText("Reviewer comment"), "우대 조건 병기 필요");
-    await user.click(screen.getByRole("button", { name: "판단 저장" }));
+    await openOpinionTab(user);
+    await user.selectOptions(screen.getByLabelText("심의자 위험도"), "reject_recommended");
+    changeTextField("심의자 메모", "우대 조건 병기 필요");
+    await user.click(screen.getByRole("button", { name: "위험도 변경" }));
 
     expect(await screen.findByText("저장된 판단: 반려 권고")).toBeInTheDocument();
     expect(screen.getByText("저장된 판단: 반려 권고").closest(".saved-decision")).toHaveTextContent(
@@ -209,8 +375,8 @@ describe("ReviewDetailWorkspace", () => {
 
     expect(screen.queryByText("첫 번째 이슈 전용 답변입니다.")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "의견 초안에 반영" }));
-    await user.click(screen.getByRole("button", { name: "수정 요청 의견 초안 생성" }));
+    await user.click(screen.getByRole("button", { name: "초안에 반영" }));
+    await user.click(screen.getByRole("button", { name: "초안 생성" }));
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-deposit-001/draft",
@@ -238,8 +404,9 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-loan-001")!} />);
 
-    await user.type(screen.getByLabelText("Reviewer comment"), "승인 속도 표현 반려 필요");
-    await user.click(screen.getByRole("button", { name: "판단 저장" }));
+    await openOpinionTab(user);
+    changeTextField("심의자 메모", "승인 속도 표현 반려 필요");
+    await user.click(screen.getByRole("button", { name: "위험도 변경" }));
 
     expect(await screen.findByText("저장된 판단: 반려 권고")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -250,6 +417,42 @@ describe("ReviewDetailWorkspace", () => {
           reviewerRiskLevel: "reject_recommended",
           finalAction: "reject",
           reviewerComment: "승인 속도 표현 반려 필요"
+        })
+      })
+    );
+  });
+
+  it("uses the reviewer-selected header action when saving reviewer decision", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        issue: {
+          id: "issue-deposit-rate",
+          reviewerRiskLevel: "high",
+          finalAction: "reject",
+          reviewerComment: "핵심 조건 누락으로 반려"
+        }
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    await user.click(screen.getByRole("button", { name: "반려" }));
+    await openOpinionTab(user);
+    changeTextField("심의자 메모", "핵심 조건 누락으로 반려");
+    await user.click(screen.getByRole("button", { name: "위험도 변경" }));
+
+    expect(await screen.findByText("저장된 판단: 위험")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/issues/issue-deposit-rate",
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({
+          reviewerRiskLevel: "high",
+          finalAction: "reject",
+          reviewerComment: "핵심 조건 누락으로 반려"
         })
       })
     );
@@ -283,14 +486,15 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
-    expect(screen.getByRole("button", { name: "최종 확정" })).toBeDisabled();
+    await openOpinionTab(user);
+    expect(screen.getByRole("button", { name: "검토 완료" })).toBeDisabled();
 
-    await user.selectOptions(screen.getByLabelText("Reviewer risk level"), "reject_recommended");
-    await user.type(screen.getByLabelText("Reviewer comment"), "우대 조건 병기 필요");
-    await user.click(screen.getByRole("button", { name: "판단 저장" }));
+    await user.selectOptions(screen.getByLabelText("심의자 위험도"), "reject_recommended");
+    changeTextField("심의자 메모", "우대 조건 병기 필요");
+    await user.click(screen.getByRole("button", { name: "위험도 변경" }));
     expect(await screen.findByText("저장된 판단: 반려 권고")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "최종 확정" }));
+    await user.click(screen.getByRole("button", { name: "검토 완료" }));
 
     expect(await screen.findByText("수정 요청")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -355,8 +559,8 @@ describe("ReviewDetailWorkspace", () => {
       />
     );
 
-    await user.clear(screen.getByLabelText("Opinion draft"));
-    await user.type(screen.getByLabelText("Opinion draft"), "현재 편집된 수정 요청 의견 초안");
+    await openDraftTab(user);
+    changeTextField("Opinion draft", "현재 편집된 수정 요청 의견 초안");
     await user.click(screen.getByRole("button", { name: "리포트 다운로드" }));
 
     await waitFor(() => {
@@ -401,11 +605,8 @@ describe("ReviewDetailWorkspace", () => {
       />
     );
 
-    await user.clear(screen.getByLabelText("Opinion draft"));
-    await user.type(
-      screen.getByLabelText("Opinion draft"),
-      "  Reviewer가 직접 편집한 수정 요청 의견 초안  "
-    );
+    await openDraftTab(user);
+    changeTextField("Opinion draft", "  Reviewer가 직접 편집한 수정 요청 의견 초안  ");
     await user.click(screen.getByRole("button", { name: "의견 초안 저장" }));
 
     await waitFor(() => {
@@ -425,7 +626,10 @@ describe("ReviewDetailWorkspace", () => {
       "Reviewer가 직접 편집한 수정 요청 의견 초안"
     );
 
-    await user.type(screen.getByLabelText("Opinion draft"), " 미저장 변경");
+    changeTextField(
+      "Opinion draft",
+      "Reviewer가 직접 편집한 수정 요청 의견 초안 미저장 변경"
+    );
 
     expect(screen.queryByText("의견 초안 v2 저장됨.")).not.toBeInTheDocument();
   });
@@ -449,11 +653,10 @@ describe("ReviewDetailWorkspace", () => {
       />
     );
 
-    const draftEditor = screen.getByLabelText("Opinion draft");
-    await user.clear(draftEditor);
-    await user.type(draftEditor, "저장 요청 초안");
+    await openDraftTab(user);
+    changeTextField("Opinion draft", "저장 요청 초안");
     await user.click(screen.getByRole("button", { name: "의견 초안 저장" }));
-    await user.type(draftEditor, " 응답 전 추가 편집");
+    const draftEditor = changeTextField("Opinion draft", "저장 요청 초안 응답 전 추가 편집");
 
     resolvePatch({
       ok: true,
@@ -481,8 +684,9 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
-    await user.type(screen.getByLabelText("Reviewer comment"), "우대 조건 병기 필요");
-    await user.click(screen.getByRole("button", { name: "판단 저장" }));
+    await openOpinionTab(user);
+    changeTextField("심의자 메모", "우대 조건 병기 필요");
+    await user.click(screen.getByRole("button", { name: "위험도 변경" }));
     expect(screen.getByRole("button", { name: "저장 중" })).toBeDisabled();
 
     await user.click(screen.getByText("조건부 혜택의 무조건 표현"));
@@ -498,8 +702,34 @@ describe("ReviewDetailWorkspace", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "판단 저장" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "위험도 변경" })).toBeEnabled();
     });
     expect(screen.queryByText(/저장된 판단/)).not.toBeInTheDocument();
+  });
+});
+
+describe("ReviewDetailWorkspace tab URL sync", () => {
+  beforeEach(() => {
+    replaceMock.mockClear();
+    currentSearchParams = new URLSearchParams();
+  });
+
+  it("calls router.replace with ?tab=evidence when 근거 자료 tab is clicked", async () => {
+    const user = userEvent.setup();
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    await user.click(screen.getByRole("tab", { name: "근거 자료" }));
+
+    expect(replaceMock).toHaveBeenCalledWith("/reviews/test-id?tab=evidence");
+  });
+
+  it("removes the tab query when returning to checklist", async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams("tab=opinion");
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    await user.click(screen.getByRole("tab", { name: "체크리스트" }));
+
+    expect(replaceMock).toHaveBeenCalledWith("/reviews/test-id");
   });
 });

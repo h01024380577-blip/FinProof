@@ -1,19 +1,50 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Download, FilePenLine, MessageSquareText, RotateCw, Save, Send } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import {
+  Download,
+  FilePenLine,
+  MessageSquareText,
+  Save,
+  Send
+} from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
-import { riskLabels, statusLabels } from "@/domain/reviews";
-import type { ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
-import { RiskBadge, StatusBadge } from "./Badges";
-
-const riskOrder: RiskLevel[] = ["reject_recommended", "high", "caution", "info"];
+import { productLabels, riskLabels, statusLabels } from "@/domain/reviews";
+import type { ReviewCase, ReviewIssue, RiskLevel, RoleId } from "@/domain/types";
+import { useRoleContext } from "./RoleContext";
+import { WorkbenchHeader } from "./workbench/WorkbenchHeader";
+import { IssueList } from "./workbench/IssueList";
+import { CreativeViewer } from "./workbench/CreativeViewer";
+import { IssueDetailTabs, type IssueDetailTabKey } from "./workbench/IssueDetailTabs";
+import { WorkbenchDrawer } from "./workbench/WorkbenchDrawer";
 
 type SavedDecision = {
   riskLevel: RiskLevel;
   finalAction: NonNullable<ReviewIssue["finalAction"]>;
   comment: string;
+};
+
+type AnalysisStatusResponse = {
+  reviewCaseId: string;
+  status: "queued" | "running" | "completed" | "failed" | "not_started";
+  progress: number;
+  currentStep: string;
+  jobId: string | null;
+};
+
+type AuditEvent = {
+  id: string;
+  action: string;
+  targetType: string;
+  targetId?: string;
+  userId: string;
+  createdAt: string;
+};
+
+type AuditEventsResponse = {
+  auditEvents: AuditEvent[];
 };
 
 const finalActionStatusMap: Record<
@@ -32,6 +63,22 @@ const finalActionPriority: Array<NonNullable<ReviewIssue["finalAction"]>> = [
   "change_request",
   "approve"
 ];
+
+const analysisStatusLabels: Record<AnalysisStatusResponse["status"], string> = {
+  not_started: "분석 전",
+  queued: "대기 중",
+  running: "진행 중",
+  completed: "완료",
+  failed: "실패"
+};
+
+function formatAuditTime(value: string) {
+  return value.replace("T", " ").slice(0, 16);
+}
+
+function canMutateReview(role: RoleId) {
+  return role === "reviewer" || role === "compliance_admin";
+}
 
 function getFinalReviewAction(
   decisionsByIssueId: Record<string, SavedDecision>
@@ -62,10 +109,23 @@ function getInitialSavedDecisions(review: ReviewCase): Record<string, SavedDecis
   );
 }
 
-export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
+export function ReviewDetailWorkspace({
+  review,
+  loadSupportData = false
+}: {
+  review: ReviewCase;
+  loadSupportData?: boolean;
+}): JSX.Element {
+  const roleContext = useRoleContext();
+  const activeRole = roleContext?.activeRole ?? "reviewer";
+  const roleHeaders = useMemo(() => ({ "x-finproof-role": activeRole }), [activeRole]);
+  const jsonHeaders = useMemo(
+    () => ({ ...roleHeaders, "content-type": "application/json" }),
+    [roleHeaders]
+  );
+  const reviewerCanMutate = canMutateReview(activeRole);
   const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
-  const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const [draft, setDraftState] = useState(review.currentDraft ?? review.expectedDraft);
   const latestDraftRef = useRef(draft);
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
@@ -80,6 +140,9 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     review.issues[0]?.reviewerRiskLevel ?? review.issues[0]?.riskLevel ?? "info"
   );
   const [reviewerComment, setReviewerComment] = useState("");
+  const [selectedFinalAction, setSelectedFinalAction] = useState<
+    NonNullable<ReviewIssue["finalAction"]>
+  >(review.issues[0]?.finalAction ?? review.issues[0]?.suggestedAction ?? "change_request");
   const [savedDecisionsByIssueId, setSavedDecisionsByIssueId] = useState<
     Record<string, SavedDecision>
   >(() => getInitialSavedDecisions(review));
@@ -90,6 +153,9 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingDecision, setIsSavingDecision] = useState(false);
   const [isFinalizingReview, setIsFinalizingReview] = useState(false);
+  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatusResponse | null>(null);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [supportDataError, setSupportDataError] = useState<string | null>(null);
   const [finalizedNotice, setFinalizedNotice] = useState<string | null>(null);
   const [reportNotice, setReportNotice] = useState<string | null>(null);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
@@ -103,13 +169,67 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   const finalReviewAction = getFinalReviewAction(savedDecisionsByIssueId);
   const finalReviewStatus = getFinalReviewStatus(finalReviewAction);
 
-  const visibleIssues = useMemo(
-    () =>
-      riskFilter === "all"
-        ? review.issues
-        : review.issues.filter((issue) => issue.riskLevel === riskFilter),
-    [review.issues, riskFilter]
-  );
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const rawTab = searchParams?.get("tab") ?? null;
+  const initialTab: IssueDetailTabKey =
+    rawTab === "evidence" || rawTab === "opinion" ? rawTab : "checklist";
+  const [activeTab, setActiveTabState] = useState<IssueDetailTabKey>(initialTab);
+
+  function setActiveTab(next: IssueDetailTabKey): void {
+    setActiveTabState(next);
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    if (next === "checklist") {
+      params.delete("tab");
+    } else {
+      params.set("tab", next);
+    }
+    const query = params.toString();
+    router.replace(query.length > 0 ? `${pathname}?${query}` : (pathname ?? ""));
+  }
+
+  useEffect(() => {
+    if (!loadSupportData) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadReviewSupportData() {
+      setSupportDataError(null);
+      try {
+        const [statusResponse, auditResponse] = await Promise.all([
+          fetch(`/api/v1/review-cases/${review.id}/analysis/status`, { headers: roleHeaders }),
+          fetch(`/api/v1/review-cases/${review.id}/audit-events`, { headers: roleHeaders })
+        ]);
+
+        if (!statusResponse?.ok || !auditResponse?.ok) {
+          throw new Error("support data fetch failed");
+        }
+
+        const [statusBody, auditBody] = await Promise.all([
+          statusResponse.json() as Promise<AnalysisStatusResponse>,
+          auditResponse.json() as Promise<AuditEventsResponse>
+        ]);
+
+        if (isMounted) {
+          setAnalysisStatus(statusBody);
+          setAuditEvents(auditBody.auditEvents);
+        }
+      } catch {
+        if (isMounted) {
+          setSupportDataError("분석 상태와 감사 로그를 불러오지 못했습니다.");
+        }
+      }
+    }
+
+    void loadReviewSupportData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [loadSupportData, review.id, roleHeaders]);
 
   function setDraft(nextDraft: string) {
     latestDraftRef.current = nextDraft;
@@ -123,6 +243,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     setSelectedIssueId(issueId);
     setReviewerRiskLevel(
       nextSavedDecision?.riskLevel ?? nextIssue?.reviewerRiskLevel ?? nextIssue?.riskLevel ?? "info"
+    );
+    setSelectedFinalAction(
+      nextSavedDecision?.finalAction ??
+        nextIssue?.finalAction ??
+        nextIssue?.suggestedAction ??
+        "change_request"
     );
     setReviewerComment(nextSavedDecision?.comment ?? nextIssue?.reviewerComment ?? "");
     setFinalizedNotice(null);
@@ -142,7 +268,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/chat`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: jsonHeaders,
         body: JSON.stringify({
           issueId,
           question
@@ -169,7 +295,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   }
 
   function markLatestResponseForDraft() {
-    if (!selectedIssue) {
+    if (!selectedIssue || !reviewerCanMutate) {
       return;
     }
 
@@ -198,6 +324,10 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   }
 
   async function generateDraft() {
+    if (!reviewerCanMutate) {
+      return;
+    }
+
     const markedResponses = chatResponses.filter((response) =>
       markedResponseIds.includes(response.id)
     );
@@ -207,7 +337,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/draft`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: jsonHeaders,
         body: JSON.stringify({ markedResponses })
       });
 
@@ -232,6 +362,10 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   }
 
   async function saveDraftVersion() {
+    if (!reviewerCanMutate) {
+      return;
+    }
+
     const submittedDraft = draft;
     const trimmedDraft = submittedDraft.trim();
     setDraftNotice(null);
@@ -246,7 +380,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/draft`, {
         method: "PATCH",
-        headers: { "content-type": "application/json" },
+        headers: jsonHeaders,
         body: JSON.stringify({ draft: trimmedDraft })
       });
 
@@ -272,6 +406,10 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   }
 
   async function generateReportDownload() {
+    if (!reviewerCanMutate) {
+      return;
+    }
+
     const reportType =
       savedDecision?.finalAction ??
       selectedIssue?.suggestedAction ??
@@ -285,7 +423,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/reports/generate`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: jsonHeaders,
         body: JSON.stringify({
           reportType,
           tone: "formal",
@@ -321,12 +459,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   }
 
   async function saveReviewerDecision() {
-    if (!selectedIssue) {
+    if (!selectedIssue || !reviewerCanMutate) {
       return;
     }
 
     const issueId = selectedIssue.id;
-    const finalAction = selectedIssue.suggestedAction;
+    const finalAction = selectedFinalAction;
     const trimmedComment = reviewerComment.trim();
 
     setInteractionError(null);
@@ -334,7 +472,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/issues/${issueId}`, {
         method: "PATCH",
-        headers: { "content-type": "application/json" },
+        headers: jsonHeaders,
         body: JSON.stringify({
           reviewerRiskLevel,
           finalAction,
@@ -366,7 +504,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
   }
 
   async function finalizeReviewCase() {
-    if (!finalReviewAction || !finalReviewStatus) {
+    if (!finalReviewAction || !finalReviewStatus || !reviewerCanMutate) {
       return;
     }
 
@@ -376,7 +514,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/finalize`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: jsonHeaders,
         body: JSON.stringify({ finalAction: finalReviewAction })
       });
 
@@ -399,258 +537,268 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
     }
   }
 
+  // Inner drawer panel JSX — preserve existing chat/draft/audit/files markup verbatim.
+  const chatPanel = (
+    <div className="panel panel--compact">
+        <div className="panel__header">
+          <div>
+            <p className="eyebrow">Issue Query</p>
+            <h3>선택 이슈 기반 질의</h3>
+          </div>
+          <MessageSquareText size={20} aria-hidden="true" />
+        </div>
+        <div className="chat-composer">
+          <label className="sr-only" htmlFor="rag-question">
+            RAG question
+          </label>
+          <input
+            id="rag-question"
+            value={question}
+            aria-label="RAG question"
+            disabled={!selectedIssue}
+            onChange={(event) => setQuestion(event.target.value)}
+          />
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="질문 보내기"
+            disabled={!selectedIssue || isAskingQuestion}
+            onClick={handleAskQuestion}
+          >
+            <Send size={17} aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="chat-stack">
+          {!selectedIssue ? (
+            <div className="chat-answer chat-answer--empty">
+              <p className="chat-answer__question">선택 가능한 이슈가 없습니다.</p>
+              <p>
+                {review.analysisNotice ??
+                  "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
+              </p>
+            </div>
+          ) : chatResponses.length === 0 ? (
+            <div className="chat-answer">
+              <p className="chat-answer__question">
+                우대금리 조건을 어느 수준까지 표시해야 하나요?
+              </p>
+              <p>
+                현재 근거상 조건부 혜택임을 본문 또는 인접 고지에서 명확히 표시하는 수정이
+                필요합니다.
+              </p>
+              <div className="evidence-inline">
+                {selectedIssue?.evidence.slice(0, 2).map((evidence) => (
+                  <span key={evidence.id}>{evidence.title}</span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            chatResponses.map((response) => (
+              <article
+                key={response.id}
+                className="chat-answer"
+                data-answer-type={response.answerType}
+              >
+                <p className="chat-answer__question">{response.question}</p>
+                <p>{response.content}</p>
+                {response.requiredMaterials.length > 0 ? (
+                  <div className="evidence-inline">
+                    {response.requiredMaterials.map((material) => (
+                      <span key={material}>{material}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="evidence-inline">
+                    {response.evidence.slice(0, 2).map((evidence) => (
+                      <span key={evidence.id}>{evidence.title}</span>
+                    ))}
+                  </div>
+                )}
+              </article>
+            ))
+          )}
+        </div>
+
+        <button
+          className="button chat-mark-button"
+          type="button"
+          disabled={!selectedIssue || !reviewerCanMutate}
+          onClick={markLatestResponseForDraft}
+        >
+          초안에 반영
+        </button>
+      </div>
+  );
+
+  const draftPanel = (
+    <div className="panel panel--compact">
+        <div className="panel__header">
+          <div>
+            <p className="eyebrow">Decision Draft</p>
+            <h3>
+              수정 요청 의견 초안
+              {draftVersion > 0 ? <span className="draft-version">v{draftVersion}</span> : null}
+            </h3>
+          </div>
+          <div className="draft-actions">
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="의견 초안 저장"
+              title="의견 초안 저장"
+              disabled={!reviewerCanMutate || isSavingDraft}
+              onClick={saveDraftVersion}
+            >
+              <Save size={18} aria-hidden="true" />
+            </button>
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="리포트 다운로드"
+              title="리포트 다운로드"
+              disabled={!reviewerCanMutate || isGeneratingReport}
+              onClick={generateReportDownload}
+            >
+              <Download size={18} aria-hidden="true" />
+            </button>
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="초안 재생성"
+              title="초안 재생성"
+              disabled={!reviewerCanMutate || isGeneratingDraft}
+              onClick={generateDraft}
+            >
+              <FilePenLine size={18} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <textarea
+          className="draft-editor"
+          value={draft}
+          aria-label="Opinion draft"
+          disabled={!reviewerCanMutate}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            setDraftNotice(null);
+          }}
+        />
+      </div>
+  );
+
+  const auditPanel = (
+    <div className="panel panel--compact drawer-support-panel">
+        <div className="panel__header">
+          <div>
+            <p className="eyebrow">Audit Trail</p>
+            <h3>감사 로그</h3>
+          </div>
+        </div>
+        <div className="analysis-status-summary">
+          <strong>
+            {analysisStatus
+              ? `${analysisStatusLabels[analysisStatus.status]} · ${analysisStatus.progress}%`
+              : "분석 상태 확인 전"}
+          </strong>
+          {analysisStatus?.currentStep ? <span>{analysisStatus.currentStep}</span> : null}
+        </div>
+        {supportDataError ? (
+          <p className="support-data-error" role="alert">
+            {supportDataError}
+          </p>
+        ) : null}
+        <ol className="audit-list">
+          {auditEvents.length > 0 ? (
+            auditEvents.map((event) => (
+              <li key={event.id}>
+                {event.action} · {event.userId}
+                <span>{formatAuditTime(event.createdAt)}</span>
+              </li>
+            ))
+          ) : (
+            <li>감사 이벤트 없음</li>
+          )}
+        </ol>
+      </div>
+  );
+
+  const filesPanel = (
+    <div className="panel panel--compact drawer-support-panel">
+      <div className="panel__header">
+        <div>
+          <p className="eyebrow">Files</p>
+          <h3>파일</h3>
+        </div>
+      </div>
+      <div className="drawer-file-list">
+        {review.files.map((file) => (
+          <span key={file.id}>{file.name}</span>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="detail">
-      <section className="detail__header">
-        <div>
-          <p className="eyebrow">{review.id}</p>
-          <h2>{review.title}</h2>
-          <p className="detail__meta">
-            {review.affiliate} · {review.channelType.join(", ")} · 게시 예정{" "}
-            {review.plannedPublishDate}
-          </p>
-        </div>
-        <div className="detail__actions">
-          <StatusBadge status={reviewStatus} />
-          <RiskBadge level={review.highestRiskLevel} />
-          <button className="icon-button" type="button" title="분석 재실행">
-            <RotateCw size={18} aria-hidden="true" />
-          </button>
-          <button
-            className="button button--primary"
-            type="button"
-            disabled={!finalReviewStatus || isFinalizingReview}
-            onClick={finalizeReviewCase}
-          >
-            {isFinalizingReview ? "확정 중" : "최종 확정"}
-          </button>
-        </div>
-      </section>
+      <WorkbenchHeader
+        id={review.id}
+        title={review.title}
+        statusLabel={statusLabels[reviewStatus]}
+        riskLabel={riskLabels[review.highestRiskLevel]}
+        productLabel={productLabels[review.productType]}
+        reviewer={review.reviewer}
+        deadline={review.plannedPublishDate}
+        canMutate={reviewerCanMutate}
+        selectedAction={selectedFinalAction}
+        isGeneratingDraft={isGeneratingDraft}
+        onSelectAction={setSelectedFinalAction}
+        onGenerateDraft={generateDraft}
+      />
 
       <section className="detail__grid">
-        <aside className="issue-panel">
-          <div className="section-heading">
-            <p className="eyebrow">Risk Candidates</p>
-            <h3>이슈 목록</h3>
-          </div>
-
-          <div className="filter-row" aria-label="Risk filters">
-            <button
-              className="chip"
-              data-active={riskFilter === "all"}
-              type="button"
-              onClick={() => setRiskFilter("all")}
-            >
-              전체
-            </button>
-            {riskOrder.map((level) => (
-              <button
-                key={level}
-                className="chip"
-                data-active={riskFilter === level}
-                type="button"
-                onClick={() => setRiskFilter(level)}
-              >
-                {riskLabels[level]}
-              </button>
-            ))}
-          </div>
-
-          <div className="issue-list">
-            {visibleIssues.length > 0 ? (
-              visibleIssues.map((issue) => (
-                <button
-                  key={issue.id}
-                  className="issue-card"
-                  data-active={selectedIssue?.id === issue.id}
-                  type="button"
-                  onClick={() => selectIssue(issue.id)}
-                >
-                  <span className="issue-card__top">
-                    <RiskBadge level={issue.riskLevel} />
-                    <small>{issue.issueType}</small>
-                  </span>
-                  <strong>{issue.title}</strong>
-                  <span>{issue.targetText}</span>
-                </button>
-              ))
-            ) : (
-              <div className="issue-empty-state">
-                <strong>추가 확인 필요</strong>
-                <span>
-                  {review.analysisNotice ??
-                    "선택 가능한 AI 위험 후보가 없습니다. 업로드 자료와 근거를 추가 확인해 주세요."}
-                </span>
-              </div>
-            )}
-          </div>
-        </aside>
+        <IssueList
+          issues={review.issues}
+          selectedIssueId={selectedIssue?.id}
+          onSelectIssue={selectIssue}
+          analysisNotice={review.analysisNotice}
+        />
 
         <CreativeViewer
           copy={review.promotionalCopy}
           disclosure={review.disclosure}
           issues={review.issues}
-          selectedIssue={selectedIssue}
+          selectedIssueId={selectedIssue?.id}
           onSelectIssue={selectIssue}
         />
 
-        <EvidencePanel
-          issue={selectedIssue}
-          reviewerRiskLevel={reviewerRiskLevel}
-          reviewerComment={reviewerComment}
-          savedDecision={savedDecision}
-          isSavingDecision={isSavingDecision}
-          onChangeRiskLevel={setReviewerRiskLevel}
-          onChangeReviewerComment={setReviewerComment}
-          onSaveReviewerDecision={saveReviewerDecision}
-        />
-      </section>
-
-      <section className="bottom-grid">
-        <div className="panel panel--compact">
-          <div className="panel__header">
-            <div>
-              <p className="eyebrow">Issue Query</p>
-              <h3>선택 이슈 기반 질의</h3>
-            </div>
-            <MessageSquareText size={20} aria-hidden="true" />
-          </div>
-          <div className="chat-composer">
-            <label className="sr-only" htmlFor="rag-question">
-              RAG question
-            </label>
-            <input
-              id="rag-question"
-              value={question}
-              aria-label="RAG question"
-              disabled={!selectedIssue}
-              onChange={(event) => setQuestion(event.target.value)}
-            />
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="질문 보내기"
-              disabled={!selectedIssue || isAskingQuestion}
-              onClick={handleAskQuestion}
-            >
-              <Send size={17} aria-hidden="true" />
-            </button>
-          </div>
-
-          <div className="chat-stack">
-            {!selectedIssue ? (
-              <div className="chat-answer chat-answer--empty">
-                <p className="chat-answer__question">선택 가능한 이슈가 없습니다.</p>
-                <p>
-                  {review.analysisNotice ??
-                    "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
-                </p>
-              </div>
-            ) : chatResponses.length === 0 ? (
-              <div className="chat-answer">
-                <p className="chat-answer__question">
-                  우대금리 조건을 어느 수준까지 표시해야 하나요?
-                </p>
-                <p>
-                  현재 근거상 조건부 혜택임을 본문 또는 인접 고지에서 명확히 표시하는 수정이
-                  필요합니다.
-                </p>
-                <div className="evidence-inline">
-                  {selectedIssue?.evidence.slice(0, 2).map((evidence) => (
-                    <span key={evidence.id}>{evidence.title}</span>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              chatResponses.map((response) => (
-                <article
-                  key={response.id}
-                  className="chat-answer"
-                  data-answer-type={response.answerType}
-                >
-                  <p className="chat-answer__question">{response.question}</p>
-                  <p>{response.content}</p>
-                  {response.requiredMaterials.length > 0 ? (
-                    <div className="evidence-inline">
-                      {response.requiredMaterials.map((material) => (
-                        <span key={material}>{material}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="evidence-inline">
-                      {response.evidence.slice(0, 2).map((evidence) => (
-                        <span key={evidence.id}>{evidence.title}</span>
-                      ))}
-                    </div>
-                  )}
-                </article>
-              ))
-            )}
-          </div>
-
-          <button
-            className="button chat-mark-button"
-            type="button"
-            disabled={!selectedIssue}
-            onClick={markLatestResponseForDraft}
-          >
-            의견 초안에 반영
-          </button>
-        </div>
-
-        <div className="panel panel--compact">
-          <div className="panel__header">
-            <div>
-              <p className="eyebrow">Decision Draft</p>
-              <h3>
-                수정 요청 의견 초안
-                {draftVersion > 0 ? <span className="draft-version">v{draftVersion}</span> : null}
-              </h3>
-            </div>
-            <div className="draft-actions">
-              <button
-                className="icon-button"
-                type="button"
-                aria-label="의견 초안 저장"
-                title="의견 초안 저장"
-                disabled={isSavingDraft}
-                onClick={saveDraftVersion}
-              >
-                <Save size={18} aria-hidden="true" />
-              </button>
-              <button
-                className="icon-button"
-                type="button"
-                aria-label="리포트 다운로드"
-                title="리포트 다운로드"
-                disabled={isGeneratingReport}
-                onClick={generateReportDownload}
-              >
-                <Download size={18} aria-hidden="true" />
-              </button>
-              <button
-                className="icon-button"
-                type="button"
-                aria-label="수정 요청 의견 초안 생성"
-                title="수정 요청 의견 초안 생성"
-                disabled={isGeneratingDraft}
-                onClick={generateDraft}
-              >
-                <FilePenLine size={18} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-          <textarea
-            className="draft-editor"
-            value={draft}
-            aria-label="Opinion draft"
-            onChange={(event) => {
-              setDraft(event.target.value);
-              setDraftNotice(null);
-            }}
+        {selectedIssue ? (
+          <IssueDetailTabs
+            issue={selectedIssue}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            reviewerRiskLevel={reviewerRiskLevel}
+            reviewerComment={reviewerComment}
+            savedDecision={savedDecision}
+            canMutate={reviewerCanMutate}
+            canFinalize={Boolean(finalReviewStatus)}
+            isSavingDecision={isSavingDecision}
+            isFinalizingReview={isFinalizingReview}
+            onChangeRiskLevel={setReviewerRiskLevel}
+            onChangeReviewerComment={setReviewerComment}
+            onSaveReviewerDecision={saveReviewerDecision}
+            onFinalizeReviewCase={finalizeReviewCase}
           />
-        </div>
+        ) : null}
       </section>
+
+      <WorkbenchDrawer
+        defaultCollapsed={activeRole === "requester"}
+        chatNode={chatPanel}
+        draftNode={draftPanel}
+        auditNode={auditPanel}
+        filesNode={filesPanel}
+      />
 
       {interactionError ? (
         <p className="interaction-error" role="alert">
@@ -661,151 +809,5 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }) {
       {draftNotice ? <p className="draft-notice">{draftNotice}</p> : null}
       {reportNotice ? <p className="report-notice">{reportNotice}</p> : null}
     </div>
-  );
-}
-
-function CreativeViewer({
-  copy,
-  disclosure,
-  issues,
-  selectedIssue,
-  onSelectIssue
-}: {
-  copy: string;
-  disclosure: string;
-  issues: ReviewIssue[];
-  selectedIssue?: ReviewIssue;
-  onSelectIssue: (id: string) => void;
-}) {
-  return (
-    <section className="creative-viewer">
-      <div className="section-heading">
-        <p className="eyebrow">Document Viewer</p>
-        <h3>홍보물 시안</h3>
-      </div>
-      <div className="poster">
-        <div className="poster__copy">{copy}</div>
-        <p>{disclosure}</p>
-        {issues.map((issue) => {
-          const [left, top, width, height] = issue.targetBbox;
-
-          return (
-            <button
-              key={issue.id}
-              className="highlight-box"
-              data-risk={issue.riskLevel}
-              data-active={selectedIssue?.id === issue.id}
-              style={{
-                left: `${left}%`,
-                top: `${top}%`,
-                width: `${width}%`,
-                height: `${height}%`
-              }}
-              type="button"
-              title={issue.title}
-              onClick={() => onSelectIssue(issue.id)}
-            >
-              <span>{riskLabels[issue.riskLevel]}</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function EvidencePanel({
-  issue,
-  reviewerRiskLevel,
-  reviewerComment,
-  savedDecision,
-  isSavingDecision,
-  onChangeRiskLevel,
-  onChangeReviewerComment,
-  onSaveReviewerDecision
-}: {
-  issue?: ReviewIssue;
-  reviewerRiskLevel: RiskLevel;
-  reviewerComment: string;
-  savedDecision: { riskLevel: RiskLevel; comment: string } | null;
-  isSavingDecision: boolean;
-  onChangeRiskLevel: (riskLevel: RiskLevel) => void;
-  onChangeReviewerComment: (comment: string) => void;
-  onSaveReviewerDecision: () => void;
-}) {
-  if (!issue) {
-    return null;
-  }
-
-  return (
-    <aside className="evidence-panel">
-      <div className="section-heading">
-        <p className="eyebrow">Evidence</p>
-        <h3>근거 패널</h3>
-      </div>
-      <div className="evidence-panel__summary">
-        <RiskBadge level={issue.riskLevel} />
-        <h4>{issue.title}</h4>
-        <p>{issue.description}</p>
-      </div>
-
-      <div className="evidence-stack">
-        {issue.evidence.map((evidence) => (
-          <article key={evidence.id} className="evidence-card">
-            <span>{evidence.sourceType}</span>
-            <strong>{evidence.title}</strong>
-            <p>{evidence.quoteSummary}</p>
-            <small>
-              p.{evidence.page ?? "-"} · {evidence.section} · relevance{" "}
-              {Math.round(evidence.relevanceScore * 100)}%
-            </small>
-          </article>
-        ))}
-      </div>
-
-      <div className="suggested-copy">
-        <span>수정 제안</span>
-        <p>{issue.suggestedCopy}</p>
-      </div>
-
-      <div className="reviewer-decision">
-        <label htmlFor="reviewer-risk-level">Reviewer risk level</label>
-        <select
-          id="reviewer-risk-level"
-          aria-label="Reviewer risk level"
-          value={reviewerRiskLevel}
-          onChange={(event) => onChangeRiskLevel(event.target.value as RiskLevel)}
-        >
-          <option value="info">참고</option>
-          <option value="caution">주의</option>
-          <option value="high">위험</option>
-          <option value="reject_recommended">반려 권고</option>
-        </select>
-
-        <label htmlFor="reviewer-comment">Reviewer comment</label>
-        <textarea
-          id="reviewer-comment"
-          aria-label="Reviewer comment"
-          value={reviewerComment}
-          onChange={(event) => onChangeReviewerComment(event.target.value)}
-        />
-
-        <button
-          className="button"
-          type="button"
-          disabled={isSavingDecision}
-          onClick={onSaveReviewerDecision}
-        >
-          {isSavingDecision ? "저장 중" : "판단 저장"}
-        </button>
-
-        {savedDecision ? (
-          <div className="saved-decision">
-            <strong>저장된 판단: {riskLabels[savedDecision.riskLevel]}</strong>
-            {savedDecision.comment ? <p>{savedDecision.comment}</p> : null}
-          </div>
-        ) : null}
-      </div>
-    </aside>
   );
 }
