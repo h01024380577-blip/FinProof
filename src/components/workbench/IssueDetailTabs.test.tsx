@@ -112,4 +112,40 @@ describe("IssueDetailTabs", () => {
     ).toHaveClass("evidence-card__title");
     expect(screen.getByText(/JB 슈퍼씨드 적금 홍보 시안/)).toHaveClass("evidence-card__quote");
   });
+
+  it("formats evidence metadata in Korean and hides missing location fields", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          evidence: [
+            {
+              ...issue.evidence[0],
+              page: undefined,
+              section: "",
+              relevanceScore: 0.76
+            }
+          ]
+        }}
+        activeTab="evidence"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        canFinalize={false}
+        isSavingDecision={false}
+        isFinalizingReview={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+        onFinalizeReviewCase={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("관련도 76%")).toBeInTheDocument();
+    expect(screen.queryByText(/p\.-/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/relevance/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/·\s*·/)).not.toBeInTheDocument();
+  });
 });

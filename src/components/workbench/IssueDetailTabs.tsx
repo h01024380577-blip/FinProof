@@ -4,7 +4,7 @@ import type { JSX } from "react";
 import { Tabs } from "@/components/ui";
 import { RiskBadge } from "@/components/Badges";
 import { riskLabels } from "@/domain/reviews";
-import type { ReviewIssue, RiskLevel } from "@/domain/types";
+import type { Evidence, ReviewIssue, RiskLevel } from "@/domain/types";
 
 export type IssueDetailTabKey = "checklist" | "evidence" | "opinion";
 
@@ -58,6 +58,23 @@ function ChecklistPanel({ issue }: { issue: ReviewIssue }): JSX.Element {
   );
 }
 
+function formatEvidenceMetadata(evidence: Evidence): string {
+  const parts: string[] = [];
+
+  if (typeof evidence.page === "number") {
+    parts.push(`${evidence.page}쪽`);
+  }
+
+  const section = evidence.section?.trim();
+  if (section) {
+    parts.push(section);
+  }
+
+  parts.push(`관련도 ${Math.round(evidence.relevanceScore * 100)}%`);
+
+  return parts.join(" · ");
+}
+
 function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
   return (
     <div className="evidence-stack">
@@ -66,10 +83,7 @@ function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
           <span>{evidence.sourceType}</span>
           <strong className="evidence-card__title">{evidence.title}</strong>
           <p className="evidence-card__quote">{evidence.quoteSummary}</p>
-          <small>
-            p.{evidence.page ?? "-"} · {evidence.section} · relevance{" "}
-            {Math.round(evidence.relevanceScore * 100)}%
-          </small>
+          <small>{formatEvidenceMetadata(evidence)}</small>
         </article>
       ))}
     </div>
