@@ -2103,3 +2103,20 @@ a.review-table__row:hover {
 .tabs__tab[data-active="true"] { color: var(--primary); border-bottom-color: var(--primary); }
 .tabs__tab:hover:not([disabled]) { color: var(--text); }
 .tabs__panel { padding-top: var(--space-4); }
+
+.stepper { display: flex; gap: var(--space-2); list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
+.stepper li {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  background: var(--surface-muted); color: var(--muted); font-size: var(--font-size-sm);
+}
+.stepper__index {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--gray-300); color: var(--surface); font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-xs);
+}
+.stepper li[data-status="active"] { background: var(--primary-soft); color: var(--primary-strong); }
+.stepper li[data-status="active"] .stepper__index { background: var(--primary); color: var(--surface); }
+.stepper li[data-status="done"] { background: var(--tone-verified-bg); color: var(--tone-verified); }
+.stepper li[data-status="done"] .stepper__index { background: var(--tone-verified); color: var(--surface); }
