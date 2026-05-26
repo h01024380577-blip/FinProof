@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type JSX, type ReactNode } from "react";
 
 export type TabItem = { key: string; label: ReactNode; panel: ReactNode; disabled?: boolean };
 

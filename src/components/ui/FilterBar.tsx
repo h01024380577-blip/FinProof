@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import { Search, X } from "lucide-react";
 
 export type FilterOption = { value: string; label: string };

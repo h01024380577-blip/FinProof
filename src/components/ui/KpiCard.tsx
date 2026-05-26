@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 
 export type KpiTone = "primary" | "neutral" | "warning" | "danger" | "success";
 

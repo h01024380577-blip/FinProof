@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import { useState, type DragEvent, type JSX } from "react";
 import { Upload, X } from "lucide-react";
 
 export type DropZoneProps = {
