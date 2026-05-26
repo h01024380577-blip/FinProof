@@ -1,0 +1,27 @@
+export type StoredFileMetadata = {
+  storageProvider: "sample" | "local" | "s3";
+  storageKey: string;
+  contentType: string;
+  sizeBytes: number;
+};
+
+export type PutReviewFileInput = {
+  reviewCaseId: string;
+  fileId: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  body: Uint8Array;
+};
+
+export type SampleReviewFileInput = {
+  reviewCaseId: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+};
+
+export interface ReviewStorageAdapter {
+  putReviewFile(input: PutReviewFileInput): Promise<StoredFileMetadata>;
+  sampleReviewFile(input: SampleReviewFileInput): StoredFileMetadata;
+}

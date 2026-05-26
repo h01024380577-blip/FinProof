@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/AppShell";
+import { RoleProvider } from "@/components/RoleContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko">
       <body>
-        <AppShell>{children}</AppShell>
+        <RoleProvider>
+          <AppShell>{children}</AppShell>
+        </RoleProvider>
       </body>
     </html>
   );

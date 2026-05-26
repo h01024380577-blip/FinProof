@@ -1,5 +1,5 @@
-import { ReviewTable } from "@/components/ReviewTable";
+import { ReviewQueue } from "@/components/ReviewQueue";
 
 export default function ReviewsPage() {
-  return <ReviewTable />;
+  return <ReviewQueue />;
 }

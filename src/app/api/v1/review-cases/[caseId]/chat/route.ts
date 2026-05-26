@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { answerReviewQuestion } from "@/domain/chat";
-import { getReviewStore } from "@/server/reviews";
-import { jsonError, readJsonBody, type RouteContext } from "@/server/reviews/route-utils";
+import { answerReviewQuestionWithModel } from "@/server/ai/review-ai-service";
+import { createReviewService } from "@/server/reviews/review-service";
+import {
+  jsonError,
+  readJsonBody,
+  requestContext,
+  type RouteContext
+} from "@/server/reviews/route-utils";
 
 type ChatRequest = {
   issueId?: string;
@@ -16,14 +21,16 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
     return jsonError("issueId and question are required", 400);
   }
 
-  const review = await getReviewStore().getReviewCase(caseId);
-  const issue = await getReviewStore().getIssue(caseId, body.issueId);
+  const service = createReviewService();
+  const contextValue = await requestContext(request);
+  const review = await service.getReviewCase(contextValue, caseId);
+  const issue = await service.getIssue(contextValue, caseId, body.issueId);
 
   if (!review || !issue) {
     return jsonError("Review case or issue not found", 404);
   }
 
-  const response = answerReviewQuestion({
+  const response = await answerReviewQuestionWithModel({
     review,
     issue,
     question: body.question

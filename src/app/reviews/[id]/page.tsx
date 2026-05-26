@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { ReviewDetailWorkspace } from "@/components/ReviewDetailWorkspace";
 import { reviewCases } from "@/domain/reviews";
-import { getReviewStore } from "@/server/reviews";
+import { createReviewService } from "@/server/reviews/review-service";
+import { requestContext } from "@/server/reviews/route-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +12,14 @@ export function generateStaticParams() {
 
 export default async function ReviewDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const review = await getReviewStore().getReviewCase(id);
+  const review = await createReviewService().getReviewCase(
+    await requestContext(new Request(`http://localhost/reviews/${id}`)),
+    id
+  );
 
   if (!review) {
     notFound();
   }
 
-  return <ReviewDetailWorkspace review={review} />;
+  return <ReviewDetailWorkspace review={review} loadSupportData />;
 }

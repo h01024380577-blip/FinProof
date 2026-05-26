@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import type { ProductType } from "@/domain/types";
 import { validateUploadedFiles } from "@/domain/upload-policy";
-import { getReviewStore } from "@/server/reviews";
-import { jsonError, readJsonBody } from "@/server/reviews/route-utils";
+import { createReviewService } from "@/server/reviews/review-service";
+import { jsonError, readJsonBody, requestContext } from "@/server/reviews/route-utils";
+import { UnsafeArchiveError } from "@/server/storage/archive-extraction";
+import { UnsafeUploadError } from "@/server/storage/upload-security";
 
 type CreateReviewRequest = {
   samplePackageId?: string;
 };
 
-export async function GET() {
-  const reviewCases = await getReviewStore().listReviewSummaries();
+export async function GET(request = new Request("http://localhost/api/v1/review-cases")) {
+  const reviewCases = await createReviewService().listReviewSummaries(
+    await requestContext(request)
+  );
 
   return NextResponse.json({ reviewCases });
 }
@@ -27,9 +31,12 @@ export async function POST(request: Request) {
     return jsonError("samplePackageId is required", 400);
   }
 
-  const result = await getReviewStore().createReviewCaseFromSamplePackage({
-    samplePackageId: body.samplePackageId
-  });
+  const result = await createReviewService().createReviewCaseFromSamplePackage(
+    await requestContext(request),
+    {
+      samplePackageId: body.samplePackageId
+    }
+  );
 
   if (!result) {
     return jsonError("Sample package not found", 404);
@@ -73,24 +80,30 @@ function isUploadedFile(value: FormDataEntryValue): value is File {
 async function createFromMultipart(request: Request) {
   const formData = await request.formData();
   const productType = parseProductType(formData.get("productType"));
-  const files = formData
-    .getAll("files")
-    .filter(isUploadedFile)
-    .map((file) => ({
+  const uploadedFiles = formData.getAll("files").filter(isUploadedFile);
+  const filesForValidation = uploadedFiles.map((file) => ({
+    name: file.name,
+    type: file.type,
+    size: file.size
+  }));
+  const files = await Promise.all(
+    uploadedFiles.map(async (file) => ({
       name: file.name,
       type: file.type,
-      size: file.size
-    }));
+      size: file.size,
+      body: new Uint8Array(await file.arrayBuffer())
+    }))
+  );
 
   if (!productType) {
     return jsonError("productType is required", 400);
   }
 
-  if (files.length === 0) {
+  if (uploadedFiles.length === 0) {
     return jsonError("At least one file is required", 400);
   }
 
-  const validation = validateUploadedFiles(files);
+  const validation = validateUploadedFiles(filesForValidation);
 
   if (!validation.ok) {
     return jsonError(validation.errors.join(" "), 400);
@@ -101,14 +114,31 @@ async function createFromMultipart(request: Request) {
     .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     .map((value) => value.trim());
 
-  const result = await getReviewStore().createReviewCaseFromUploadedFiles({
-    title: readString(formData, "title", "실제 업로드 심의 요청"),
-    affiliate: readString(formData, "affiliate", "광주은행"),
-    productType,
-    channelType: channelType.length > 0 ? channelType : ["poster"],
-    plannedPublishDate: readString(formData, "plannedPublishDate", "2026-06-20"),
-    files
-  });
+  let result;
+
+  try {
+    result = await createReviewService().createReviewCaseFromUploadedFiles(
+      await requestContext(request),
+      {
+        title: readString(formData, "title", "실제 업로드 심의 요청"),
+        affiliate: readString(formData, "affiliate", "광주은행"),
+        productType,
+        channelType: channelType.length > 0 ? channelType : ["poster"],
+        plannedPublishDate: readString(formData, "plannedPublishDate", "2026-06-20"),
+        files
+      }
+    );
+  } catch (error) {
+    if (error instanceof UnsafeUploadError) {
+      return jsonError(error.message, 400, "UNSAFE_UPLOAD");
+    }
+
+    if (error instanceof UnsafeArchiveError) {
+      return jsonError(error.message, 400, "UNSAFE_ARCHIVE");
+    }
+
+    throw error;
+  }
 
   return NextResponse.json(result, { status: 201 });
 }

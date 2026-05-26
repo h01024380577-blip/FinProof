@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { getReviewStore } from "@/server/reviews";
-import { jsonError, type RouteContext } from "@/server/reviews/route-utils";
+import { createReviewService } from "@/server/reviews/review-service";
+import { jsonError, requestContext, type RouteContext } from "@/server/reviews/route-utils";
 
-export async function GET(_request: Request, context: RouteContext<{ issueId: string }>) {
+export async function GET(request: Request, context: RouteContext<{ issueId: string }>) {
   const { issueId } = await context.params;
-  const evidence = await getReviewStore().getIssueEvidence(issueId);
+  const evidence = await createReviewService().getIssueEvidence(
+    await requestContext(request),
+    issueId
+  );
 
   if (!evidence) {
     return jsonError("Issue not found", 404);

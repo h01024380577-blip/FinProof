@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import type { ReviewIssue } from "@/domain/types";
-import { getReviewStore } from "@/server/reviews";
+import { createReviewService } from "@/server/reviews/review-service";
 import type { FinalReviewStatus } from "@/server/reviews/review-store";
-import { jsonError, readJsonBody, type RouteContext } from "@/server/reviews/route-utils";
+import {
+  jsonError,
+  jsonForbidden,
+  readJsonBody,
+  requestContext,
+  type RouteContext
+} from "@/server/reviews/route-utils";
 
 type FinalReviewAction = NonNullable<ReviewIssue["finalAction"]>;
 
@@ -34,7 +40,17 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
   }
 
   const status = finalActionStatusMap[body.finalAction];
-  const reviewCase = await getReviewStore().updateReviewStatus(caseId, status);
+  let reviewCase;
+
+  try {
+    reviewCase = await createReviewService().updateReviewStatus(
+      await requestContext(request),
+      caseId,
+      status
+    );
+  } catch (error) {
+    return jsonForbidden(error);
+  }
 
   if (!reviewCase) {
     return jsonError("Review case not found", 404);

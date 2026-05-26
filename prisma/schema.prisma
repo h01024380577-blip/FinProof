@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoleId {
+  requester
+  reviewer
+  compliance_admin
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum ReviewStatus {
+  draft
+  submitted
+  parsing
+  analysis_waiting
+  analysis_queued
+  analysis_in_progress
+  analysis_complete
+  under_review
+  change_requested
+  rejected
+  approved
+  on_hold
+  archived
+}
+
+enum ProductType {
+  deposit
+  loan
+  card
+  capital
+  insurance
+  investment
+}
+
+enum RiskLevel {
+  info
+  caution
+  high
+  reject_recommended
+}
+
+enum ReviewFileType {
+  promotional_creative
+  copy_draft
+  product_description
+  terms
+  rate_table
+  checklist
+  url_list
+  package_archive
+  misc
+}
+
+enum ParseStatus {
+  pending
+  parsed
+  failed
+}
+
+enum IssueStatus {
+  open
+  reviewed
+  resolved
+  dismissed
+}
+
+enum SuggestedAction {
+  approve
+  change_request
+  reject
+  hold
+}
+
+enum EvidenceSourceType {
+  law
+  internal_policy
+  product_doc
+  case_history
+}
+
+enum AnalysisJobStatus {
+  queued
+  running
+  completed
+  failed
+}
+
+model Tenant {
+  id         String       @id
+  name       String
+  status     String       @default("active")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  affiliates Affiliate[]
+  users      User[]
+  cases      ReviewCase[]
+  auditLogs  AuditLog[]
+
+  @@map("tenants")
+}
+
+model Affiliate {
+  id        String       @id
+  tenantId  String       @map("tenant_id")
+  name      String
+  code      String
+  createdAt DateTime     @default(now()) @map("created_at")
+  tenant    Tenant       @relation(fields: [tenantId], references: [id])
+  cases     ReviewCase[]
+
+  @@unique([tenantId, code])
+  @@map("affiliates")
+}
+
+model User {
+  id                  String        @id
+  tenantId            String        @map("tenant_id")
+  email               String        @unique
+  name                String
+  role                RoleId
+  status              UserStatus    @default(active)
+  createdAt           DateTime      @default(now()) @map("created_at")
+  tenant              Tenant        @relation(fields: [tenantId], references: [id])
+  requestedCases      ReviewCase[]  @relation("ReviewRequester")
+  assignedCases       ReviewCase[]  @relation("ReviewReviewer")
+  startedAnalysisJobs AnalysisJob[]
+  auditLogs           AuditLog[]
+
+  @@index([tenantId, role])
+  @@map("users")
+}
+
+model ReviewCase {
+  id                  String        @id
+  tenantId            String        @map("tenant_id")
+  affiliateId         String?       @map("affiliate_id")
+  affiliateName       String        @map("affiliate_name")
+  title               String
+  productType         ProductType   @map("product_type")
+  channelType         Json          @map("channel_type")
+  plannedPublishDate  DateTime?     @map("planned_publish_date") @db.Date
+  status              ReviewStatus
+  highestRiskLevel    RiskLevel     @default(info) @map("highest_risk_level")
+  requesterId         String        @map("requester_id")
+  reviewerId          String?       @map("reviewer_id")
+  requesterName       String        @map("requester_name")
+  reviewerName        String        @map("reviewer_name")
+  promotionalCopy     String        @map("promotional_copy")
+  disclosure          String
+  productDescription  String        @map("product_description")
+  missingMaterials    Json          @map("missing_materials")
+  expectedDraft       String        @map("expected_draft")
+  currentDraft        String?       @map("current_draft")
+  currentDraftVersion Int           @default(0) @map("current_draft_version")
+  analysisNotice      String?       @map("analysis_notice")
+  submittedAt         DateTime?     @map("submitted_at")
+  analysisStartedAt   DateTime?     @map("analysis_started_at")
+  analysisCompletedAt DateTime?     @map("analysis_completed_at")
+  finalDecisionAt     DateTime?     @map("final_decision_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+  tenant              Tenant        @relation(fields: [tenantId], references: [id])
+  affiliate           Affiliate?    @relation(fields: [affiliateId], references: [id])
+  requester           User          @relation("ReviewRequester", fields: [requesterId], references: [id])
+  reviewer            User?         @relation("ReviewReviewer", fields: [reviewerId], references: [id])
+  files               ReviewFile[]
+  issues              ReviewIssue[]
+  analysisJobs        AnalysisJob[]
+
+  @@index([tenantId, status, updatedAt])
+  @@index([affiliateId, productType, status])
+  @@map("review_cases")
+}
+
+model ReviewFile {
+  id                       String         @id
+  reviewCaseId             String         @map("review_case_id")
+  originalFilename         String         @map("original_filename")
+  fileType                 ReviewFileType @map("file_type")
+  classificationConfidence Float          @map("classification_confidence")
+  parseStatus              ParseStatus    @map("parse_status")
+  storageProvider          String         @map("storage_provider")
+  storageKey               String         @map("storage_key")
+  contentType              String         @map("content_type")
+  sizeBytes                BigInt         @map("size_bytes")
+  version                  Int            @default(1)
+  createdAt                DateTime       @default(now()) @map("created_at")
+  reviewCase               ReviewCase     @relation(fields: [reviewCaseId], references: [id], onDelete: Cascade)
+
+  @@index([reviewCaseId, fileType])
+  @@map("review_files")
+}
+
+model ReviewIssue {
+  id                String           @id
+  reviewCaseId      String           @map("review_case_id")
+  issueType         String           @map("issue_type")
+  riskLevel         RiskLevel        @map("risk_level")
+  reviewerRiskLevel RiskLevel?       @map("reviewer_risk_level")
+  title             String
+  targetText        String           @map("target_text")
+  targetBbox        Json             @map("target_bbox")
+  sourceAgents      Json             @map("source_agents")
+  suggestedAction   SuggestedAction  @map("suggested_action")
+  finalAction       SuggestedAction? @map("final_action")
+  reviewerComment   String?          @map("reviewer_comment")
+  status            IssueStatus
+  description       String
+  suggestedCopy     String           @map("suggested_copy")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  reviewCase        ReviewCase       @relation(fields: [reviewCaseId], references: [id], onDelete: Cascade)
+  evidence          Evidence[]
+
+  @@index([reviewCaseId, riskLevel])
+  @@index([issueType, riskLevel])
+  @@map("review_issues")
+}
+
+model Evidence {
+  id             String             @id
+  issueId        String             @map("issue_id")
+  sourceType     EvidenceSourceType @map("source_type")
+  title          String
+  page           Int?
+  section        String?
+  quoteSummary   String             @map("quote_summary")
+  relevanceScore Float              @map("relevance_score")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  issue          ReviewIssue        @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@index([issueId, sourceType])
+  @@map("evidence")
+}
+
+model AnalysisJob {
+  id              String            @id
+  reviewCaseId    String            @map("review_case_id")
+  tenantId        String            @map("tenant_id")
+  status          AnalysisJobStatus
+  progress        Int               @default(0)
+  currentStep     String            @map("current_step")
+  startedByUserId String?           @map("started_by_user_id")
+  errorMessage    String?           @map("error_message")
+  artifacts       Json?
+  queuedAt        DateTime          @default(now()) @map("queued_at")
+  startedAt       DateTime?         @map("started_at")
+  completedAt     DateTime?         @map("completed_at")
+  reviewCase      ReviewCase        @relation(fields: [reviewCaseId], references: [id], onDelete: Cascade)
+  startedBy       User?             @relation(fields: [startedByUserId], references: [id])
+
+  @@index([tenantId, status, queuedAt])
+  @@index([reviewCaseId, queuedAt])
+  @@map("analysis_jobs")
+}
+
+model AuditLog {
+  id          String   @id
+  tenantId    String   @map("tenant_id")
+  userId      String?  @map("user_id")
+  action      String
+  targetType  String   @map("target_type")
+  targetId    String?  @map("target_id")
+  beforeValue Json?    @map("before_value")
+  afterValue  Json?    @map("after_value")
+  ipAddress   String?  @map("ip_address")
+  createdAt   DateTime @default(now()) @map("created_at")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, targetType, targetId, createdAt])
+  @@index([tenantId, action, createdAt])
+  @@map("audit_logs")
+}

@@ -1,14 +1,23 @@
 import { NextResponse } from "next/server";
-import { getReviewStore } from "@/server/reviews";
-import { jsonError, type RouteContext } from "@/server/reviews/route-utils";
+import { createReviewService } from "@/server/reviews/review-service";
+import {
+  jsonError,
+  jsonForbidden,
+  requestContext,
+  type RouteContext
+} from "@/server/reviews/route-utils";
 
-export async function POST(_request: Request, context: RouteContext<{ caseId: string }>) {
-  const { caseId } = await context.params;
-  const result = await getReviewStore().startAnalysis(caseId);
+export async function POST(request: Request, context: RouteContext<{ caseId: string }>) {
+  try {
+    const { caseId } = await context.params;
+    const result = await createReviewService().startAnalysis(await requestContext(request), caseId);
 
-  if (!result) {
-    return jsonError("Review case not found", 404);
+    if (!result) {
+      return jsonError("Review case not found", 404, "NOT_FOUND");
+    }
+
+    return NextResponse.json(result);
+  } catch (error) {
+    return jsonForbidden(error);
   }
-
-  return NextResponse.json(result);
 }

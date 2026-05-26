@@ -1,30 +1,37 @@
 import { createMockReviewStore } from "./mock-review-store";
 
+const scope = {
+  tenantId: "tenant-demo",
+  actorUserId: "user-reviewer-demo",
+  actorRole: "reviewer" as const,
+  ipAddress: "203.0.113.10"
+};
+
 describe("mock review store", () => {
   it("creates a sample-backed review request with AWS-ready file metadata", async () => {
     const store = createMockReviewStore();
 
-    const result = await store.createReviewCaseFromSamplePackage({
+    const result = await store.createReviewCaseFromSamplePackage(scope, {
       samplePackageId: "rc-demo-deposit-001"
     });
 
-    expect(result.reviewCase.id).toBe("rc-demo-deposit-001");
-    expect(result.reviewCase.status).toBe("submitted");
-    expect(result.analysisStartHref).toBe(
+    expect(result?.reviewCase.id).toBe("rc-demo-deposit-001");
+    expect(result?.reviewCase.status).toBe("analysis_waiting");
+    expect(result?.analysisStartHref).toBe(
       "/api/v1/review-cases/rc-demo-deposit-001/analysis/start"
     );
-    expect(result.files[0]).toMatchObject({
+    expect(result?.files[0]).toMatchObject({
       id: "file-deposit-poster",
       storageProvider: "sample",
       storageKey: "sample/rc-demo-deposit-001/deposit-poster.png"
     });
-    expect(result.missingMaterials).toEqual(["terms", "internal_checklist"]);
+    expect(result?.missingMaterials).toEqual(["terms", "internal_checklist"]);
   });
 
   it("creates an upload-backed review case with deterministic classification metadata", async () => {
     const store = createMockReviewStore();
 
-    const result = await store.createReviewCaseFromUploadedFiles({
+    const result = await store.createReviewCaseFromUploadedFiles(scope, {
       title: "실제 업로드 적금 홍보물",
       affiliate: "광주은행",
       productType: "deposit",
@@ -52,7 +59,7 @@ describe("mock review store", () => {
     expect(result.reviewCase).toMatchObject({
       id: "rc-upload-001",
       title: "실제 업로드 적금 홍보물",
-      status: "submitted",
+      status: "analysis_waiting",
       highestRiskLevel: "info",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
@@ -85,18 +92,30 @@ describe("mock review store", () => {
 
   it("runs deterministic analysis and persists reviewer issue decisions", async () => {
     const store = createMockReviewStore();
-    await store.createReviewCaseFromSamplePackage({ samplePackageId: "rc-demo-deposit-001" });
+    await store.createReviewCaseFromSamplePackage(scope, {
+      samplePackageId: "rc-demo-deposit-001"
+    });
 
-    const analysis = await store.startAnalysis("rc-demo-deposit-001");
+    const analysis = await store.startAnalysis(scope, "rc-demo-deposit-001");
 
     expect(analysis).toMatchObject({
       reviewCaseId: "rc-demo-deposit-001",
       status: "analysis_complete",
       issueCount: 3,
-      analysisHref: "/reviews/rc-demo-deposit-001"
+      analysisHref: "/reviews/rc-demo-deposit-001",
+      jobId: "job-rc-demo-deposit-001-001"
     });
 
-    const updatedIssue = await store.saveIssueDecision({
+    const latestJob = await store.getLatestAnalysisJob(scope, "rc-demo-deposit-001");
+
+    expect(latestJob).toMatchObject({
+      id: "job-rc-demo-deposit-001-001",
+      reviewCaseId: "rc-demo-deposit-001",
+      status: "completed",
+      progress: 100
+    });
+
+    const updatedIssue = await store.saveIssueDecision(scope, {
       reviewCaseId: "rc-demo-deposit-001",
       issueId: "issue-deposit-rate",
       reviewerRiskLevel: "reject_recommended",
@@ -111,7 +130,7 @@ describe("mock review store", () => {
       reviewerComment: "우대 조건 병기 필요"
     });
 
-    const review = await store.getReviewCase("rc-demo-deposit-001");
+    const review = await store.getReviewCase(scope, "rc-demo-deposit-001");
 
     expect(review?.issues[0]).toMatchObject({
       reviewerRiskLevel: "reject_recommended",
@@ -122,28 +141,38 @@ describe("mock review store", () => {
 
   it("updates review case status for final reviewer action", async () => {
     const store = createMockReviewStore();
-    await store.createReviewCaseFromSamplePackage({ samplePackageId: "rc-demo-deposit-001" });
+    await store.createReviewCaseFromSamplePackage(scope, {
+      samplePackageId: "rc-demo-deposit-001"
+    });
 
-    const updatedReview = await store.updateReviewStatus("rc-demo-deposit-001", "change_requested");
+    const updatedReview = await store.updateReviewStatus(
+      scope,
+      "rc-demo-deposit-001",
+      "change_requested"
+    );
 
     expect(updatedReview).toMatchObject({
       id: "rc-demo-deposit-001",
       status: "change_requested"
     });
-    await expect(store.updateReviewStatus("missing-case", "change_requested")).resolves.toBe(
+    await expect(store.updateReviewStatus(scope, "missing-case", "change_requested")).resolves.toBe(
       undefined
     );
   });
 
   it("saves opinion draft versions for generated and manually edited drafts", async () => {
     const store = createMockReviewStore();
-    await store.createReviewCaseFromSamplePackage({ samplePackageId: "rc-demo-deposit-001" });
+    await store.createReviewCaseFromSamplePackage(scope, {
+      samplePackageId: "rc-demo-deposit-001"
+    });
 
     const generatedDraft = await store.saveOpinionDraft(
+      scope,
       "rc-demo-deposit-001",
       "생성된 수정 요청 의견 초안"
     );
     const editedDraft = await store.saveOpinionDraft(
+      scope,
       "rc-demo-deposit-001",
       "Reviewer가 편집한 수정 요청 의견 초안"
     );
@@ -156,6 +185,31 @@ describe("mock review store", () => {
       currentDraft: "Reviewer가 편집한 수정 요청 의견 초안",
       currentDraftVersion: 2
     });
-    await expect(store.saveOpinionDraft("missing-case", "초안")).resolves.toBeUndefined();
+    await expect(store.saveOpinionDraft(scope, "missing-case", "초안")).resolves.toBeUndefined();
+  });
+
+  it("records and filters audit events", async () => {
+    const store = createMockReviewStore();
+
+    await store.recordAuditEvent(scope, {
+      action: "analysis.start",
+      targetType: "review_case",
+      targetId: "rc-demo-deposit-001",
+      beforeValue: { status: "analysis_waiting" },
+      afterValue: { status: "analysis_complete" }
+    });
+
+    const auditEvents = await store.listAuditEvents(scope, {
+      targetType: "review_case",
+      targetId: "rc-demo-deposit-001"
+    });
+
+    expect(auditEvents[0]).toMatchObject({
+      action: "analysis.start",
+      targetType: "review_case",
+      targetId: "rc-demo-deposit-001",
+      userId: "user-reviewer-demo",
+      ipAddress: "203.0.113.10"
+    });
   });
 });

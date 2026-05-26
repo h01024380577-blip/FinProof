@@ -6,6 +6,8 @@ export type ReviewStatus =
   | "draft"
   | "submitted"
   | "parsing"
+  | "analysis_waiting"
+  | "analysis_queued"
   | "analysis_in_progress"
   | "analysis_complete"
   | "under_review"
@@ -14,6 +16,8 @@ export type ReviewStatus =
   | "approved"
   | "on_hold"
   | "archived";
+
+export type ReviewAction = "start_analysis" | "open_workbench" | "view_audit";
 
 export type ProductType = "deposit" | "loan" | "card" | "capital" | "insurance" | "investment";
 
@@ -100,4 +104,6 @@ export type ReviewSummary = Pick<
   | "highestRiskLevel"
   | "requester"
   | "reviewer"
->;
+> & {
+  availableActions?: ReviewAction[];
+};

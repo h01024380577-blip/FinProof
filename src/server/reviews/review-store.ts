@@ -1,11 +1,21 @@
 import type {
   Evidence,
   ProductType,
+  RoleId,
   ReviewCase,
+  ReviewFile,
   ReviewIssue,
   ReviewSummary,
   RiskLevel
 } from "@/domain/types";
+import type { AnalysisArtifacts } from "@/server/analysis/review-analysis-pipeline";
+
+export type ReviewStoreScope = {
+  tenantId: string;
+  actorUserId: string;
+  actorRole: RoleId;
+  ipAddress?: string;
+};
 
 export type CreateReviewCaseFromSamplePackageInput = {
   samplePackageId: string;
@@ -19,12 +29,16 @@ export type CreateReviewCaseResult = {
 };
 
 export type UploadedFileInput = {
+  id?: string;
   name: string;
   type: string;
   size: number;
+  storageProvider?: NonNullable<ReviewFile["storageProvider"]>;
+  storageKey?: string;
 };
 
 export type CreateReviewCaseFromUploadedFilesInput = {
+  reviewCaseId?: string;
   title: string;
   affiliate: string;
   productType: ProductType;
@@ -33,12 +47,58 @@ export type CreateReviewCaseFromUploadedFilesInput = {
   files: UploadedFileInput[];
 };
 
+export type AnalysisJob = {
+  id: string;
+  reviewCaseId: string;
+  status: "queued" | "running" | "completed" | "failed";
+  progress: number;
+  currentStep: string;
+  startedByUserId?: string;
+  queuedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  errorMessage?: string;
+  artifacts?: AnalysisArtifacts;
+};
+
 export type AnalysisResult = {
   reviewCaseId: string;
-  status: "analysis_complete";
+  status: Extract<ReviewCase["status"], "analysis_queued" | "analysis_complete">;
   issueCount: number;
   analysisHref: string;
   analysisNotice?: string;
+  jobId: string;
+  extractedDocumentCount?: number;
+  evidenceCandidateCount?: number;
+};
+
+export type StartAnalysisOptions = {
+  artifacts?: AnalysisArtifacts;
+};
+
+export type ClaimAnalysisJobResult = AnalysisJob & {
+  reviewCase: ReviewCase;
+};
+
+export type AuditEventInput = {
+  action: string;
+  targetType: string;
+  targetId?: string;
+  beforeValue?: Record<string, unknown>;
+  afterValue?: Record<string, unknown>;
+};
+
+export type AuditEvent = AuditEventInput & {
+  id: string;
+  tenantId: string;
+  userId: string;
+  ipAddress?: string;
+  createdAt: string;
+};
+
+export type ListAuditEventsOptions = {
+  targetType?: string;
+  targetId?: string;
 };
 
 export type SaveIssueDecisionInput = {
@@ -59,22 +119,68 @@ export type ListIssuesOptions = {
 };
 
 export interface ReviewStore {
-  listReviewSummaries(): Promise<ReviewSummary[]>;
-  getReviewCase(id: string): Promise<ReviewCase | undefined>;
+  listReviewSummaries(scope: ReviewStoreScope): Promise<ReviewSummary[]>;
+  getReviewCase(scope: ReviewStoreScope, id: string): Promise<ReviewCase | undefined>;
   createReviewCaseFromSamplePackage(
+    scope: ReviewStoreScope,
     input: CreateReviewCaseFromSamplePackageInput
   ): Promise<CreateReviewCaseResult | undefined>;
   createReviewCaseFromUploadedFiles(
+    scope: ReviewStoreScope,
     input: CreateReviewCaseFromUploadedFilesInput
   ): Promise<CreateReviewCaseResult>;
-  startAnalysis(reviewCaseId: string): Promise<AnalysisResult | undefined>;
-  listIssues(reviewCaseId: string, options?: ListIssuesOptions): Promise<ReviewIssue[] | undefined>;
-  getIssue(reviewCaseId: string, issueId: string): Promise<ReviewIssue | undefined>;
-  getIssueEvidence(issueId: string): Promise<Evidence[] | undefined>;
-  saveIssueDecision(input: SaveIssueDecisionInput): Promise<ReviewIssue | undefined>;
-  saveOpinionDraft(reviewCaseId: string, draft: string): Promise<ReviewCase | undefined>;
+  startAnalysis(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    options?: StartAnalysisOptions
+  ): Promise<AnalysisResult | undefined>;
+  enqueueAnalysis(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<AnalysisResult | undefined>;
+  claimNextAnalysisJob(
+    tenantId: string,
+    workerId: string
+  ): Promise<ClaimAnalysisJobResult | undefined>;
+  completeAnalysisJob(
+    scope: ReviewStoreScope,
+    jobId: string,
+    artifacts: AnalysisArtifacts
+  ): Promise<AnalysisResult | undefined>;
+  failAnalysisJob(
+    scope: ReviewStoreScope,
+    jobId: string,
+    errorMessage: string
+  ): Promise<AnalysisJob | undefined>;
+  getLatestAnalysisJob(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<AnalysisJob | undefined>;
+  listIssues(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    options?: ListIssuesOptions
+  ): Promise<ReviewIssue[] | undefined>;
+  getIssue(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    issueId: string
+  ): Promise<ReviewIssue | undefined>;
+  getIssueEvidence(scope: ReviewStoreScope, issueId: string): Promise<Evidence[] | undefined>;
+  saveIssueDecision(
+    scope: ReviewStoreScope,
+    input: SaveIssueDecisionInput
+  ): Promise<ReviewIssue | undefined>;
+  saveOpinionDraft(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    draft: string
+  ): Promise<ReviewCase | undefined>;
   updateReviewStatus(
+    scope: ReviewStoreScope,
     reviewCaseId: string,
     status: FinalReviewStatus
   ): Promise<ReviewCase | undefined>;
+  recordAuditEvent(scope: ReviewStoreScope, input: AuditEventInput): Promise<AuditEvent>;
+  listAuditEvents(scope: ReviewStoreScope, options?: ListAuditEventsOptions): Promise<AuditEvent[]>;
 }

@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
-import { generateReviewReport, type ReportTone, type ReportType } from "@/domain/reports";
-import { getReviewStore } from "@/server/reviews";
-import { jsonError, readJsonBody, type RouteContext } from "@/server/reviews/route-utils";
+import type { ReportTone, ReportType } from "@/domain/reports";
+import { generateReportWithModel } from "@/server/ai/review-ai-service";
+import { requireRole } from "@/server/auth/rbac";
+import { createReviewService } from "@/server/reviews/review-service";
+import {
+  jsonError,
+  jsonForbidden,
+  readJsonBody,
+  requestContext,
+  type RouteContext
+} from "@/server/reviews/route-utils";
 
 type GenerateReportRequest = {
   reportType?: ReportType;
@@ -25,7 +33,15 @@ function isReportTone(value: unknown): value is ReportTone {
 export async function POST(request: Request, context: RouteContext<{ caseId: string }>) {
   const { caseId } = await context.params;
   const body = await readJsonBody<GenerateReportRequest>(request);
-  const review = await getReviewStore().getReviewCase(caseId);
+  const contextValue = await requestContext(request);
+
+  try {
+    requireRole(contextValue, ["reviewer", "compliance_admin"], "generate report");
+  } catch (error) {
+    return jsonForbidden(error);
+  }
+
+  const review = await createReviewService().getReviewCase(contextValue, caseId);
 
   if (!review) {
     return jsonError("Review case not found", 404);
@@ -60,7 +76,7 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
     return jsonError(`issueIds contains unknown issue ids: ${unknownIssueIds.join(", ")}`, 400);
   }
 
-  const report = generateReviewReport({
+  const report = await generateReportWithModel({
     review,
     reportType: body?.reportType ?? "change_request",
     tone: body?.tone ?? "formal",

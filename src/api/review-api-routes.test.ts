@@ -1,7 +1,9 @@
 // @vitest-environment node
 
+import JSZip from "jszip";
 import type { ReviewChatResponse } from "@/domain/chat";
 import { resetDefaultReviewStoreForTests } from "@/server/reviews";
+import { resetReviewServiceStateForTests } from "@/server/reviews/review-service";
 import { POST as chatPOST } from "@/app/api/v1/review-cases/[caseId]/chat/route";
 import {
   PATCH as draftPATCH,
@@ -9,6 +11,8 @@ import {
 } from "@/app/api/v1/review-cases/[caseId]/draft/route";
 import { GET as detailGET } from "@/app/api/v1/review-cases/[caseId]/route";
 import { POST as analysisPOST } from "@/app/api/v1/review-cases/[caseId]/analysis/start/route";
+import { GET as analysisStatusGET } from "@/app/api/v1/review-cases/[caseId]/analysis/status/route";
+import { GET as auditEventsGET } from "@/app/api/v1/review-cases/[caseId]/audit-events/route";
 import { POST as finalizePOST } from "@/app/api/v1/review-cases/[caseId]/finalize/route";
 import { POST as reportPOST } from "@/app/api/v1/review-cases/[caseId]/reports/generate/route";
 import { GET as issuesGET } from "@/app/api/v1/review-cases/[caseId]/issues/route";
@@ -26,13 +30,39 @@ function jsonRequest(path: string, body: unknown, method = "POST") {
   });
 }
 
+function jsonRoleRequest(path: string, body: unknown, role: string, method = "POST") {
+  return new Request(`http://localhost${path}`, {
+    method,
+    headers: { "content-type": "application/json", "x-finproof-role": role },
+    body: JSON.stringify(body)
+  });
+}
+
+function roleRequest(path: string, role: string, method = "POST") {
+  return new Request(`http://localhost${path}`, {
+    method,
+    headers: { "x-finproof-role": role }
+  });
+}
+
 function params<T extends Record<string, string>>(value: T) {
   return { params: Promise.resolve(value) };
+}
+
+async function zipBody(entries: Record<string, string>) {
+  const zip = new JSZip();
+
+  for (const [name, content] of Object.entries(entries)) {
+    zip.file(name, content);
+  }
+
+  return zip.generateAsync({ type: "uint8array" });
 }
 
 describe("review API routes", () => {
   beforeEach(() => {
     resetDefaultReviewStoreForTests();
+    resetReviewServiceStateForTests();
   });
 
   it("lists, creates, analyzes, and reads sample-backed review cases", async () => {
@@ -53,7 +83,7 @@ describe("review API routes", () => {
     expect(createResponse.status).toBe(201);
     expect(createBody.reviewCase).toMatchObject({
       id: "rc-demo-deposit-001",
-      status: "submitted"
+      status: "analysis_waiting"
     });
     expect(createBody.files[0]).toMatchObject({
       storageProvider: "sample",
@@ -70,7 +100,8 @@ describe("review API routes", () => {
     expect(analysisBody).toMatchObject({
       reviewCaseId: "rc-demo-deposit-001",
       status: "analysis_complete",
-      issueCount: 3
+      issueCount: 3,
+      jobId: "job-rc-demo-deposit-001-001"
     });
 
     const detailResponse = await detailGET(
@@ -135,7 +166,7 @@ describe("review API routes", () => {
     expect(createResponse.status).toBe(201);
     expect(createBody.reviewCase).toMatchObject({
       id: "rc-upload-001",
-      status: "submitted",
+      status: "analysis_waiting",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
     expect(createBody.files).toEqual(
@@ -164,8 +195,172 @@ describe("review API routes", () => {
       reviewCaseId: "rc-upload-001",
       status: "analysis_complete",
       issueCount: 0,
+      jobId: "job-rc-upload-001-001",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
+  });
+
+  it("blocks requester analysis start and allows reviewer analysis start", async () => {
+    await createPOST(
+      jsonRequest("/api/v1/review-cases", { samplePackageId: "rc-demo-deposit-001" })
+    );
+
+    const requesterResponse = await analysisPOST(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001/analysis/start", "requester"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const requesterBody = await requesterResponse.json();
+
+    expect(requesterResponse.status).toBe(403);
+    expect(requesterBody.error.message).toContain("Reviewer");
+
+    const reviewerResponse = await analysisPOST(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001/analysis/start", "reviewer"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const reviewerBody = await reviewerResponse.json();
+
+    expect(reviewerResponse.status).toBe(200);
+    expect(reviewerBody).toMatchObject({
+      reviewCaseId: "rc-demo-deposit-001",
+      status: "analysis_complete",
+      jobId: "job-rc-demo-deposit-001-001"
+    });
+  });
+
+  it("returns role-aware review list actions", async () => {
+    await createPOST(
+      jsonRequest("/api/v1/review-cases", { samplePackageId: "rc-demo-deposit-001" })
+    );
+
+    const requesterResponse = await listGET(
+      roleRequest("/api/v1/review-cases", "requester", "GET")
+    );
+    const requesterBody = await requesterResponse.json();
+    const requesterCase = requesterBody.reviewCases.find(
+      (reviewCase: { id: string }) => reviewCase.id === "rc-demo-deposit-001"
+    );
+
+    expect(requesterCase.availableActions).toEqual([]);
+
+    const reviewerResponse = await listGET(roleRequest("/api/v1/review-cases", "reviewer", "GET"));
+    const reviewerBody = await reviewerResponse.json();
+    const reviewerCase = reviewerBody.reviewCases.find(
+      (reviewCase: { id: string }) => reviewCase.id === "rc-demo-deposit-001"
+    );
+
+    expect(reviewerCase.availableActions).toEqual(["start_analysis"]);
+
+    await analysisPOST(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001/analysis/start", "reviewer"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+
+    const analyzedResponse = await listGET(roleRequest("/api/v1/review-cases", "reviewer", "GET"));
+    const analyzedBody = await analyzedResponse.json();
+    const analyzedCase = analyzedBody.reviewCases.find(
+      (reviewCase: { id: string }) => reviewCase.id === "rc-demo-deposit-001"
+    );
+
+    expect(analyzedCase.availableActions).toEqual(["open_workbench", "view_audit"]);
+  });
+
+  it("serves analysis status and review-case audit events", async () => {
+    await createPOST(
+      jsonRequest("/api/v1/review-cases", { samplePackageId: "rc-demo-deposit-001" })
+    );
+
+    const waitingStatusResponse = await analysisStatusGET(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001/analysis/status", "reviewer", "GET"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const waitingStatusBody = await waitingStatusResponse.json();
+
+    expect(waitingStatusResponse.status).toBe(200);
+    expect(waitingStatusBody).toMatchObject({
+      reviewCaseId: "rc-demo-deposit-001",
+      status: "not_started",
+      progress: 0,
+      currentStep: "waiting_for_reviewer",
+      jobId: null
+    });
+
+    await analysisPOST(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001/analysis/start", "reviewer"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+
+    const completedStatusResponse = await analysisStatusGET(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001/analysis/status", "reviewer", "GET"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const completedStatusBody = await completedStatusResponse.json();
+
+    expect(completedStatusResponse.status).toBe(200);
+    expect(completedStatusBody).toMatchObject({
+      reviewCaseId: "rc-demo-deposit-001",
+      status: "completed",
+      progress: 100,
+      currentStep: "deterministic_mock_analysis",
+      jobId: "job-rc-demo-deposit-001-001"
+    });
+
+    const auditResponse = await auditEventsGET(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001/audit-events", "reviewer", "GET"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const auditBody = await auditResponse.json();
+
+    expect(auditResponse.status).toBe(200);
+    expect(auditBody.auditEvents[0]).toMatchObject({
+      action: "analysis.start",
+      targetType: "review_case",
+      targetId: "rc-demo-deposit-001"
+    });
+
+    const missingStatusResponse = await analysisStatusGET(
+      roleRequest("/api/v1/review-cases/missing-case/analysis/status", "reviewer", "GET"),
+      params({ caseId: "missing-case" })
+    );
+    const missingAuditResponse = await auditEventsGET(
+      roleRequest("/api/v1/review-cases/missing-case/audit-events", "reviewer", "GET"),
+      params({ caseId: "missing-case" })
+    );
+
+    expect(missingStatusResponse.status).toBe(404);
+    expect(missingAuditResponse.status).toBe(404);
+  });
+
+  it("blocks requester reviewer-only workbench mutations", async () => {
+    const generateResponse = await draftPOST(
+      jsonRoleRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/draft",
+        { markedResponses: [] },
+        "requester"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const saveResponse = await draftPATCH(
+      jsonRoleRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/draft",
+        { draft: "요청자가 저장하려는 의견 초안" },
+        "requester",
+        "PATCH"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const reportResponse = await reportPOST(
+      jsonRoleRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/reports/generate",
+        { reportType: "change_request" },
+        "requester"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+
+    expect(generateResponse.status).toBe(403);
+    expect(saveResponse.status).toBe(403);
+    expect(reportResponse.status).toBe(403);
   });
 
   it("rejects upload-backed review cases that violate the demo upload policy", async () => {
@@ -224,6 +419,85 @@ describe("review API routes", () => {
 
     expect(createResponse.status).toBe(400);
     expect(createBody.error.message).toContain("지원하지 않는 파일 형식입니다: payload.zip");
+  });
+
+  it("rejects upload-backed ZIP packages with unsafe entry paths", async () => {
+    const archiveBody = await zipBody({
+      "../escape.png": "poster"
+    });
+    const formData = new FormData();
+    formData.set("productType", "deposit");
+    formData.set(
+      "files",
+      new Blob([archiveBody as BlobPart], { type: "application/zip" }),
+      "review-package.zip"
+    );
+
+    const createResponse = await createPOST(
+      new Request("http://localhost/api/v1/review-cases", {
+        method: "POST",
+        body: formData
+      })
+    );
+    const createBody = await createResponse.json();
+
+    expect(createResponse.status).toBe(400);
+    expect(createBody.error).toMatchObject({
+      code: "UNSAFE_ARCHIVE"
+    });
+  });
+
+  it("rejects upload-backed review cases flagged by the upload scanner", async () => {
+    const originalEnv = process.env;
+    const originalFetch = globalThis.fetch;
+    const boundary = "----finproof-upload-scan-test";
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "deposit",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="poster.png"',
+      "Content-Type: image/png",
+      "",
+      "poster",
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    process.env = {
+      ...originalEnv,
+      FINPROOF_UPLOAD_SCAN_PROVIDER: "http",
+      FINPROOF_UPLOAD_SCAN_ENDPOINT: "https://scanner.example.com/scan"
+    };
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: "infected",
+        scanner: "fixture-scanner",
+        signature: "EICAR-Test-File"
+      })
+    });
+
+    try {
+      const createResponse = await createPOST(
+        new Request("http://localhost/api/v1/review-cases", {
+          method: "POST",
+          headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+          body: multipartBody
+        })
+      );
+      const createBody = await createResponse.json();
+
+      expect(createResponse.status).toBe(400);
+      expect(createBody.error).toMatchObject({
+        code: "UNSAFE_UPLOAD"
+      });
+      expect(createBody.error.message).toContain("EICAR-Test-File");
+    } finally {
+      process.env = originalEnv;
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it("rejects upload-backed review cases above the demo file count limit", async () => {

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { generateDraftWithChatContext, type ReviewChatResponse } from "@/domain/chat";
-import { getReviewStore } from "@/server/reviews";
-import { jsonError, readJsonBody, type RouteContext } from "@/server/reviews/route-utils";
+import type { ReviewChatResponse } from "@/domain/chat";
+import { generateDraftWithModel } from "@/server/ai/review-ai-service";
+import { createReviewService } from "@/server/reviews/review-service";
+import {
+  jsonError,
+  jsonForbidden,
+  readJsonBody,
+  requestContext,
+  type RouteContext
+} from "@/server/reviews/route-utils";
 
 type DraftRequest = {
   markedResponses?: ReviewChatResponse[];
@@ -14,15 +21,22 @@ type SaveDraftRequest = {
 export async function POST(request: Request, context: RouteContext<{ caseId: string }>) {
   const { caseId } = await context.params;
   const body = await readJsonBody<DraftRequest>(request);
-  const review = await getReviewStore().getReviewCase(caseId);
+  const service = createReviewService();
+  const contextValue = await requestContext(request);
+  const review = await service.getReviewCase(contextValue, caseId);
 
   if (!review) {
     return jsonError("Review case not found", 404);
   }
 
-  const draft = generateDraftWithChatContext(review, body?.markedResponses ?? []);
+  const draft = await generateDraftWithModel(review, body?.markedResponses ?? []);
+  let updatedReview;
 
-  const updatedReview = await getReviewStore().saveOpinionDraft(caseId, draft);
+  try {
+    updatedReview = await service.saveOpinionDraft(contextValue, caseId, draft);
+  } catch (error) {
+    return jsonForbidden(error);
+  }
 
   return NextResponse.json({ draft, version: updatedReview?.currentDraftVersion });
 }
@@ -41,7 +55,17 @@ export async function PATCH(request: Request, context: RouteContext<{ caseId: st
     return jsonError("draft is required", 400);
   }
 
-  const updatedReview = await getReviewStore().saveOpinionDraft(caseId, draft);
+  let updatedReview;
+
+  try {
+    updatedReview = await createReviewService().saveOpinionDraft(
+      await requestContext(request),
+      caseId,
+      draft
+    );
+  } catch (error) {
+    return jsonForbidden(error);
+  }
 
   if (!updatedReview) {
     return jsonError("Review case not found", 404);
