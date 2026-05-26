@@ -1,24 +1,63 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import type { RoleId } from "@/domain/types";
 
 type RoleContextValue = {
   activeRole: RoleId;
   setActiveRole: (role: RoleId) => void;
+  authToken: string;
+  setAuthToken: (token: string) => void;
+  apiHeaders: (extra?: Record<string, string>) => Record<string, string>;
 };
 
 const RoleContext = createContext<RoleContextValue | null>(null);
 
 export function RoleProvider({
   children,
-  initialRole = "reviewer"
+  initialRole = "reviewer",
+  initialAuthToken = ""
 }: {
   children: React.ReactNode;
   initialRole?: RoleId;
+  initialAuthToken?: string;
 }) {
   const [activeRole, setActiveRole] = useState<RoleId>(initialRole);
-  const value = useMemo(() => ({ activeRole, setActiveRole }), [activeRole]);
+  const [authToken, setAuthTokenState] = useState(() => {
+    if (initialAuthToken || typeof window === "undefined") {
+      return initialAuthToken;
+    }
+
+    return window.localStorage.getItem("finproof.authToken") ?? "";
+  });
+
+  const setAuthToken = useCallback((token: string) => {
+    setAuthTokenState(token);
+
+    if (token.trim().length > 0) {
+      window.localStorage.setItem("finproof.authToken", token);
+    } else {
+      window.localStorage.removeItem("finproof.authToken");
+    }
+  }, []);
+
+  const apiHeaders = useCallback(
+    (extra: Record<string, string> = {}) => {
+      const token = authToken.trim();
+
+      return {
+        "x-finproof-role": activeRole,
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...extra
+      };
+    },
+    [activeRole, authToken]
+  );
+
+  const value = useMemo(
+    () => ({ activeRole, setActiveRole, authToken, setAuthToken, apiHeaders }),
+    [activeRole, apiHeaders, authToken, setAuthToken]
+  );
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;
 }

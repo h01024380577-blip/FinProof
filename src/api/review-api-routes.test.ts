@@ -61,8 +61,31 @@ async function zipBody(entries: Record<string, string>) {
 
 describe("review API routes", () => {
   beforeEach(() => {
+    process.env.FINPROOF_ENABLE_SAMPLE_DATA = "true";
     resetDefaultReviewStoreForTests();
     resetReviewServiceStateForTests();
+  });
+
+  afterEach(() => {
+    delete process.env.FINPROOF_ENABLE_SAMPLE_DATA;
+    resetDefaultReviewStoreForTests();
+  });
+
+  it("starts from an empty queue and rejects sample routes when sample data is disabled", async () => {
+    delete process.env.FINPROOF_ENABLE_SAMPLE_DATA;
+    resetDefaultReviewStoreForTests();
+
+    const listResponse = await listGET();
+    const listBody = await listResponse.json();
+    const sampleListResponse = await samplePackagesGET();
+    const sampleCreateResponse = await createPOST(
+      jsonRequest("/api/v1/review-cases", { samplePackageId: "rc-demo-deposit-001" })
+    );
+
+    expect(listResponse.status).toBe(200);
+    expect(listBody.reviewCases).toEqual([]);
+    expect(sampleListResponse.status).toBe(404);
+    expect(sampleCreateResponse.status).toBe(415);
   });
 
   it("lists, creates, analyzes, and reads sample-backed review cases", async () => {
@@ -194,7 +217,7 @@ describe("review API routes", () => {
     expect(analysisBody).toMatchObject({
       reviewCaseId: "rc-upload-001",
       status: "analysis_complete",
-      issueCount: 0,
+      issueCount: 1,
       jobId: "job-rc-upload-001-001",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });

@@ -13,8 +13,24 @@ async function importReviewStoreModule() {
 describe("default review store", () => {
   afterEach(async () => {
     const { resetDefaultReviewStoreForTests } = await importReviewStoreModule();
+    delete process.env.FINPROOF_ENABLE_SAMPLE_DATA;
     resetDefaultReviewStoreForTests();
     vi.resetModules();
+  });
+
+  it("does not preload sample cases unless sample data is explicitly enabled", async () => {
+    vi.resetModules();
+    delete process.env.FINPROOF_ENABLE_SAMPLE_DATA;
+    const defaultModule = await importReviewStoreModule();
+
+    await expect(defaultModule.getReviewStore().listReviewSummaries(scope)).resolves.toEqual([]);
+
+    vi.resetModules();
+    process.env.FINPROOF_ENABLE_SAMPLE_DATA = "true";
+    const sampleModule = await importReviewStoreModule();
+    sampleModule.resetDefaultReviewStoreForTests();
+
+    await expect(sampleModule.getReviewStore().listReviewSummaries(scope)).resolves.toHaveLength(2);
   });
 
   it("keeps uploaded review cases readable across isolated server module loads", async () => {

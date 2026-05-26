@@ -7,7 +7,14 @@ import { ReviewQueue } from "./ReviewQueue";
 const pushMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: pushMock, replace: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() })
+  useRouter: () => ({
+    push: pushMock,
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn()
+  })
 }));
 
 const reviewSummaries = [
@@ -78,9 +85,12 @@ const depositReview = {
   ]
 };
 
-function renderQueue(initialRole: "requester" | "reviewer" | "compliance_admin" = "reviewer") {
+function renderQueue(
+  initialRole: "requester" | "reviewer" | "compliance_admin" = "reviewer",
+  initialAuthToken = ""
+) {
   return render(
-    <RoleProvider initialRole={initialRole}>
+    <RoleProvider initialRole={initialRole} initialAuthToken={initialAuthToken}>
       <ReviewQueue />
     </RoleProvider>
   );
@@ -123,7 +133,7 @@ describe("ReviewQueue", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    renderQueue("requester");
+    renderQueue("requester", "requester.jwt");
 
     const uploadRow = await screen.findByRole("row", { name: /실제 업로드 적금 홍보물/ });
     const requesterAction = within(uploadRow).getByRole("button", { name: "AI 분석 시작" });
@@ -132,7 +142,10 @@ describe("ReviewQueue", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases",
       expect.objectContaining({
-        headers: expect.objectContaining({ "x-finproof-role": "requester" })
+        headers: expect.objectContaining({
+          "x-finproof-role": "requester",
+          authorization: "Bearer requester.jwt"
+        })
       })
     );
   });
@@ -166,7 +179,7 @@ describe("ReviewQueue", () => {
       });
     vi.stubGlobal("fetch", fetchMock);
 
-    renderQueue("reviewer");
+    renderQueue("reviewer", "reviewer.jwt");
 
     const uploadRow = await screen.findByRole("row", { name: /실제 업로드 적금 홍보물/ });
     await user.click(within(uploadRow).getByRole("button", { name: "AI 분석 시작" }));
@@ -176,7 +189,10 @@ describe("ReviewQueue", () => {
         "/api/v1/review-cases/rc-upload-001/analysis/start",
         expect.objectContaining({
           method: "POST",
-          headers: expect.objectContaining({ "x-finproof-role": "reviewer" })
+          headers: expect.objectContaining({
+            "x-finproof-role": "reviewer",
+            authorization: "Bearer reviewer.jwt"
+          })
         })
       );
     });

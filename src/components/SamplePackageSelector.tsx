@@ -9,6 +9,7 @@ import { IntakeMetaForm, type IntakeMetaState } from "./intake/IntakeMetaForm";
 import { IntakeRequiredMaterialsPanel } from "./intake/IntakeRequiredMaterialsPanel";
 import { IntakeStepper } from "./intake/IntakeStepper";
 import { IntakeUploadZone } from "./intake/IntakeUploadZone";
+import { useRoleContext } from "./RoleContext";
 
 type UploadResult = {
   reviewCase: {
@@ -100,6 +101,7 @@ function buildLocalFilePreview(files: File[]): ReviewFile[] {
 }
 
 export function SamplePackageSelector(): JSX.Element {
+  const roleContext = useRoleContext();
   const [meta, setMeta] = useState<IntakeMetaState>(initialMeta);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
@@ -147,6 +149,7 @@ export function SamplePackageSelector(): JSX.Element {
     try {
       const response = await fetch("/api/v1/review-cases", {
         method: "POST",
+        headers: roleContext?.apiHeaders(),
         body: formData
       });
 

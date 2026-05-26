@@ -3,6 +3,7 @@ import type { ProductType } from "@/domain/types";
 import { validateUploadedFiles } from "@/domain/upload-policy";
 import { createReviewService } from "@/server/reviews/review-service";
 import { jsonError, readJsonBody, requestContext } from "@/server/reviews/route-utils";
+import { sampleDataEnabled } from "@/server/reviews/sample-data";
 import { UnsafeArchiveError } from "@/server/storage/archive-extraction";
 import { UnsafeUploadError } from "@/server/storage/upload-security";
 
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
   }
 
   const body = await readJsonBody<CreateReviewRequest>(request);
+
+  if (!sampleDataEnabled()) {
+    return jsonError("Only multipart package uploads are accepted", 415, "MULTIPART_REQUIRED");
+  }
 
   if (!body?.samplePackageId) {
     return jsonError("samplePackageId is required", 400);

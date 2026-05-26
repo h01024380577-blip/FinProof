@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildSamplePackagePreview, getRequiredMaterialRows } from "@/domain/intake";
+import { sampleDataEnabled } from "@/server/reviews/sample-data";
 import { jsonError, type RouteContext } from "@/server/reviews/route-utils";
 
 function getRepresentedMissingKeys(
@@ -16,6 +17,10 @@ function getRepresentedMissingKeys(
 }
 
 export async function GET(_request: Request, context: RouteContext<{ samplePackageId: string }>) {
+  if (!sampleDataEnabled()) {
+    return jsonError("Sample packages are disabled", 404, "SAMPLE_DATA_DISABLED");
+  }
+
   const { samplePackageId } = await context.params;
   const preview = buildSamplePackagePreview(samplePackageId);
 

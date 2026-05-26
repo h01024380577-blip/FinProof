@@ -2,13 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import {
-  Download,
-  FilePenLine,
-  MessageSquareText,
-  Save,
-  Send
-} from "lucide-react";
+import { Download, FilePenLine, MessageSquareText, Save, Send } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { productLabels, riskLabels, statusLabels } from "@/domain/reviews";
@@ -118,10 +112,17 @@ export function ReviewDetailWorkspace({
 }): JSX.Element {
   const roleContext = useRoleContext();
   const activeRole = roleContext?.activeRole ?? "reviewer";
-  const roleHeaders = useMemo(() => ({ "x-finproof-role": activeRole }), [activeRole]);
+  const roleHeaders = useMemo(
+    () => roleContext?.apiHeaders() ?? { "x-finproof-role": activeRole },
+    [activeRole, roleContext]
+  );
   const jsonHeaders = useMemo(
-    () => ({ ...roleHeaders, "content-type": "application/json" }),
-    [roleHeaders]
+    () =>
+      roleContext?.apiHeaders({ "content-type": "application/json" }) ?? {
+        ...roleHeaders,
+        "content-type": "application/json"
+      },
+    [roleContext, roleHeaders]
   );
   const reviewerCanMutate = canMutateReview(activeRole);
   const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
@@ -540,187 +541,184 @@ export function ReviewDetailWorkspace({
   // Inner drawer panel JSX — preserve existing chat/draft/audit/files markup verbatim.
   const chatPanel = (
     <div className="panel panel--compact">
-        <div className="panel__header">
-          <div>
-            <p className="eyebrow">Issue Query</p>
-            <h3>선택 이슈 기반 질의</h3>
-          </div>
-          <MessageSquareText size={20} aria-hidden="true" />
+      <div className="panel__header">
+        <div>
+          <p className="eyebrow">Issue Query</p>
+          <h3>선택 이슈 기반 질의</h3>
         </div>
-        <div className="chat-composer">
-          <label className="sr-only" htmlFor="rag-question">
-            RAG question
-          </label>
-          <input
-            id="rag-question"
-            value={question}
-            aria-label="RAG question"
-            disabled={!selectedIssue}
-            onChange={(event) => setQuestion(event.target.value)}
-          />
-          <button
-            className="icon-button"
-            type="button"
-            aria-label="질문 보내기"
-            disabled={!selectedIssue || isAskingQuestion}
-            onClick={handleAskQuestion}
-          >
-            <Send size={17} aria-hidden="true" />
-          </button>
-        </div>
-
-        <div className="chat-stack">
-          {!selectedIssue ? (
-            <div className="chat-answer chat-answer--empty">
-              <p className="chat-answer__question">선택 가능한 이슈가 없습니다.</p>
-              <p>
-                {review.analysisNotice ??
-                  "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
-              </p>
-            </div>
-          ) : chatResponses.length === 0 ? (
-            <div className="chat-answer">
-              <p className="chat-answer__question">
-                우대금리 조건을 어느 수준까지 표시해야 하나요?
-              </p>
-              <p>
-                현재 근거상 조건부 혜택임을 본문 또는 인접 고지에서 명확히 표시하는 수정이
-                필요합니다.
-              </p>
-              <div className="evidence-inline">
-                {selectedIssue?.evidence.slice(0, 2).map((evidence) => (
-                  <span key={evidence.id}>{evidence.title}</span>
-                ))}
-              </div>
-            </div>
-          ) : (
-            chatResponses.map((response) => (
-              <article
-                key={response.id}
-                className="chat-answer"
-                data-answer-type={response.answerType}
-              >
-                <p className="chat-answer__question">{response.question}</p>
-                <p>{response.content}</p>
-                {response.requiredMaterials.length > 0 ? (
-                  <div className="evidence-inline">
-                    {response.requiredMaterials.map((material) => (
-                      <span key={material}>{material}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="evidence-inline">
-                    {response.evidence.slice(0, 2).map((evidence) => (
-                      <span key={evidence.id}>{evidence.title}</span>
-                    ))}
-                  </div>
-                )}
-              </article>
-            ))
-          )}
-        </div>
-
+        <MessageSquareText size={20} aria-hidden="true" />
+      </div>
+      <div className="chat-composer">
+        <label className="sr-only" htmlFor="rag-question">
+          RAG question
+        </label>
+        <input
+          id="rag-question"
+          value={question}
+          aria-label="RAG question"
+          disabled={!selectedIssue}
+          onChange={(event) => setQuestion(event.target.value)}
+        />
         <button
-          className="button chat-mark-button"
+          className="icon-button"
           type="button"
-          disabled={!selectedIssue || !reviewerCanMutate}
-          onClick={markLatestResponseForDraft}
+          aria-label="질문 보내기"
+          disabled={!selectedIssue || isAskingQuestion}
+          onClick={handleAskQuestion}
         >
-          초안에 반영
+          <Send size={17} aria-hidden="true" />
         </button>
       </div>
+
+      <div className="chat-stack">
+        {!selectedIssue ? (
+          <div className="chat-answer chat-answer--empty">
+            <p className="chat-answer__question">선택 가능한 이슈가 없습니다.</p>
+            <p>
+              {review.analysisNotice ??
+                "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
+            </p>
+          </div>
+        ) : chatResponses.length === 0 ? (
+          <div className="chat-answer">
+            <p className="chat-answer__question">우대금리 조건을 어느 수준까지 표시해야 하나요?</p>
+            <p>
+              현재 근거상 조건부 혜택임을 본문 또는 인접 고지에서 명확히 표시하는 수정이 필요합니다.
+            </p>
+            <div className="evidence-inline">
+              {selectedIssue?.evidence.slice(0, 2).map((evidence) => (
+                <span key={evidence.id}>{evidence.title}</span>
+              ))}
+            </div>
+          </div>
+        ) : (
+          chatResponses.map((response) => (
+            <article
+              key={response.id}
+              className="chat-answer"
+              data-answer-type={response.answerType}
+            >
+              <p className="chat-answer__question">{response.question}</p>
+              <p>{response.content}</p>
+              {response.requiredMaterials.length > 0 ? (
+                <div className="evidence-inline">
+                  {response.requiredMaterials.map((material) => (
+                    <span key={material}>{material}</span>
+                  ))}
+                </div>
+              ) : (
+                <div className="evidence-inline">
+                  {response.evidence.slice(0, 2).map((evidence) => (
+                    <span key={evidence.id}>{evidence.title}</span>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))
+        )}
+      </div>
+
+      <button
+        className="button chat-mark-button"
+        type="button"
+        disabled={!selectedIssue || !reviewerCanMutate}
+        onClick={markLatestResponseForDraft}
+      >
+        초안에 반영
+      </button>
+    </div>
   );
 
   const draftPanel = (
     <div className="panel panel--compact">
-        <div className="panel__header">
-          <div>
-            <p className="eyebrow">Decision Draft</p>
-            <h3>
-              수정 요청 의견 초안
-              {draftVersion > 0 ? <span className="draft-version">v{draftVersion}</span> : null}
-            </h3>
-          </div>
-          <div className="draft-actions">
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="의견 초안 저장"
-              title="의견 초안 저장"
-              disabled={!reviewerCanMutate || isSavingDraft}
-              onClick={saveDraftVersion}
-            >
-              <Save size={18} aria-hidden="true" />
-            </button>
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="리포트 다운로드"
-              title="리포트 다운로드"
-              disabled={!reviewerCanMutate || isGeneratingReport}
-              onClick={generateReportDownload}
-            >
-              <Download size={18} aria-hidden="true" />
-            </button>
-            <button
-              className="icon-button"
-              type="button"
-              aria-label="초안 재생성"
-              title="초안 재생성"
-              disabled={!reviewerCanMutate || isGeneratingDraft}
-              onClick={generateDraft}
-            >
-              <FilePenLine size={18} aria-hidden="true" />
-            </button>
-          </div>
+      <div className="panel__header">
+        <div>
+          <p className="eyebrow">Decision Draft</p>
+          <h3>
+            수정 요청 의견 초안
+            {draftVersion > 0 ? <span className="draft-version">v{draftVersion}</span> : null}
+          </h3>
         </div>
-        <textarea
-          className="draft-editor"
-          value={draft}
-          aria-label="Opinion draft"
-          disabled={!reviewerCanMutate}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            setDraftNotice(null);
-          }}
-        />
+        <div className="draft-actions">
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="의견 초안 저장"
+            title="의견 초안 저장"
+            disabled={!reviewerCanMutate || isSavingDraft}
+            onClick={saveDraftVersion}
+          >
+            <Save size={18} aria-hidden="true" />
+          </button>
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="리포트 다운로드"
+            title="리포트 다운로드"
+            disabled={!reviewerCanMutate || isGeneratingReport}
+            onClick={generateReportDownload}
+          >
+            <Download size={18} aria-hidden="true" />
+          </button>
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="초안 재생성"
+            title="초안 재생성"
+            disabled={!reviewerCanMutate || isGeneratingDraft}
+            onClick={generateDraft}
+          >
+            <FilePenLine size={18} aria-hidden="true" />
+          </button>
+        </div>
       </div>
+      <textarea
+        className="draft-editor"
+        value={draft}
+        aria-label="Opinion draft"
+        disabled={!reviewerCanMutate}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setDraftNotice(null);
+        }}
+      />
+    </div>
   );
 
   const auditPanel = (
     <div className="panel panel--compact drawer-support-panel">
-        <div className="panel__header">
-          <div>
-            <p className="eyebrow">Audit Trail</p>
-            <h3>감사 로그</h3>
-          </div>
+      <div className="panel__header">
+        <div>
+          <p className="eyebrow">Audit Trail</p>
+          <h3>감사 로그</h3>
         </div>
-        <div className="analysis-status-summary">
-          <strong>
-            {analysisStatus
-              ? `${analysisStatusLabels[analysisStatus.status]} · ${analysisStatus.progress}%`
-              : "분석 상태 확인 전"}
-          </strong>
-          {analysisStatus?.currentStep ? <span>{analysisStatus.currentStep}</span> : null}
-        </div>
-        {supportDataError ? (
-          <p className="support-data-error" role="alert">
-            {supportDataError}
-          </p>
-        ) : null}
-        <ol className="audit-list">
-          {auditEvents.length > 0 ? (
-            auditEvents.map((event) => (
-              <li key={event.id}>
-                {event.action} · {event.userId}
-                <span>{formatAuditTime(event.createdAt)}</span>
-              </li>
-            ))
-          ) : (
-            <li>감사 이벤트 없음</li>
-          )}
-        </ol>
       </div>
+      <div className="analysis-status-summary">
+        <strong>
+          {analysisStatus
+            ? `${analysisStatusLabels[analysisStatus.status]} · ${analysisStatus.progress}%`
+            : "분석 상태 확인 전"}
+        </strong>
+        {analysisStatus?.currentStep ? <span>{analysisStatus.currentStep}</span> : null}
+      </div>
+      {supportDataError ? (
+        <p className="support-data-error" role="alert">
+          {supportDataError}
+        </p>
+      ) : null}
+      <ol className="audit-list">
+        {auditEvents.length > 0 ? (
+          auditEvents.map((event) => (
+            <li key={event.id}>
+              {event.action} · {event.userId}
+              <span>{formatAuditTime(event.createdAt)}</span>
+            </li>
+          ))
+        ) : (
+          <li>감사 이벤트 없음</li>
+        )}
+      </ol>
+    </div>
   );
 
   const filesPanel = (

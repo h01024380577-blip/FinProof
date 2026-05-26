@@ -1,5 +1,7 @@
 import { createMockReviewStore } from "./mock-review-store";
 import { createPrismaReviewStore } from "./prisma-review-store";
+import { reviewCases } from "@/domain/reviews";
+import { sampleDataEnabled } from "./sample-data";
 import type { ReviewStore } from "./review-store";
 
 const defaultReviewStoreKey = Symbol.for("finproof.defaultReviewStore");
@@ -17,7 +19,7 @@ function createConfiguredReviewStore(): ReviewStore {
     return createPrismaReviewStore();
   }
 
-  return createMockReviewStore();
+  return createMockReviewStore(sampleDataEnabled() ? reviewCases : []);
 }
 
 export function getReviewStore() {

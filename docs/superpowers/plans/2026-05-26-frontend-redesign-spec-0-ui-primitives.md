@@ -15,6 +15,7 @@
 ### Task 1: Add design tokens to `globals.css`
 
 **Files:**
+
 - Modify: `src/app/globals.css` (insert after existing `:root` block, around line 27)
 
 - [ ] **Step 1: Append new token block to `:root`**
@@ -22,63 +23,63 @@
 Edit `src/app/globals.css`. Replace the closing `}` of `:root` (line 27) so the block ends with these added tokens before `color-scheme: light;`:
 
 ```css
-  /* Gray scale */
-  --gray-50: #fafafa;
-  --gray-100: #f1f3f6;
-  --gray-200: #e1e5ec;
-  --gray-300: #c9ced8;
-  --gray-400: #aeb6c4;
-  --gray-500: #677083;
-  --gray-700: #343b49;
-  --gray-900: #14181f;
+/* Gray scale */
+--gray-50: #fafafa;
+--gray-100: #f1f3f6;
+--gray-200: #e1e5ec;
+--gray-300: #c9ced8;
+--gray-400: #aeb6c4;
+--gray-500: #677083;
+--gray-700: #343b49;
+--gray-900: #14181f;
 
-  /* Semantic tone aliases (additive) */
-  --tone-info: var(--risk-info);
-  --tone-info-bg: var(--risk-info-bg);
-  --tone-caution: var(--risk-caution);
-  --tone-caution-bg: var(--risk-caution-bg);
-  --tone-high: var(--risk-high);
-  --tone-high-bg: var(--risk-high-bg);
-  --tone-reject: var(--risk-reject);
-  --tone-reject-bg: var(--risk-reject-bg);
-  --tone-verified: var(--verified);
-  --tone-verified-bg: var(--verified-bg);
-  --tone-in-progress: #0a6cdb;
-  --tone-in-progress-bg: #e6f0ff;
+/* Semantic tone aliases (additive) */
+--tone-info: var(--risk-info);
+--tone-info-bg: var(--risk-info-bg);
+--tone-caution: var(--risk-caution);
+--tone-caution-bg: var(--risk-caution-bg);
+--tone-high: var(--risk-high);
+--tone-high-bg: var(--risk-high-bg);
+--tone-reject: var(--risk-reject);
+--tone-reject-bg: var(--risk-reject-bg);
+--tone-verified: var(--verified);
+--tone-verified-bg: var(--verified-bg);
+--tone-in-progress: #0a6cdb;
+--tone-in-progress-bg: #e6f0ff;
 
-  /* Spacing scale (4px grid) */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-7: 32px;
-  --space-8: 48px;
+/* Spacing scale (4px grid) */
+--space-1: 4px;
+--space-2: 8px;
+--space-3: 12px;
+--space-4: 16px;
+--space-5: 20px;
+--space-6: 24px;
+--space-7: 32px;
+--space-8: 48px;
 
-  /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+/* Radius */
+--radius-sm: 4px;
+--radius-md: 8px;
+--radius-lg: 12px;
 
-  /* Shadows */
-  --shadow-card: 0 1px 2px rgba(21, 25, 35, 0.06), 0 1px 3px rgba(21, 25, 35, 0.04);
-  --shadow-elevated: 0 8px 18px rgba(21, 25, 35, 0.10);
+/* Shadows */
+--shadow-card: 0 1px 2px rgba(21, 25, 35, 0.06), 0 1px 3px rgba(21, 25, 35, 0.04);
+--shadow-elevated: 0 8px 18px rgba(21, 25, 35, 0.1);
 
-  /* Typography */
-  --font-size-xs: 11px;
-  --font-size-sm: 13px;
-  --font-size-base: 14px;
-  --font-size-lg: 16px;
-  --font-size-xl: 20px;
-  --font-size-2xl: 28px;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  --line-height-tight: 1.25;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.65;
+/* Typography */
+--font-size-xs: 11px;
+--font-size-sm: 13px;
+--font-size-base: 14px;
+--font-size-lg: 16px;
+--font-size-xl: 20px;
+--font-size-2xl: 28px;
+--font-weight-normal: 400;
+--font-weight-medium: 500;
+--font-weight-semibold: 600;
+--font-weight-bold: 700;
+--line-height-tight: 1.25;
+--line-height-normal: 1.5;
+--line-height-relaxed: 1.65;
 ```
 
 - [ ] **Step 2: Verify build still passes**
@@ -98,6 +99,7 @@ git commit -m "feat(ui): add design tokens for shared primitives"
 ### Task 2: `ErrorBoundary` component + AppShell integration
 
 **Files:**
+
 - Create: `src/components/ErrorBoundary.tsx`
 - Create: `src/components/ErrorBoundary.test.tsx`
 - Modify: `src/components/AppShell.tsx`
@@ -191,7 +193,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 // inside the return, replace the line with:
 <div className="workspace__content">
   <ErrorBoundary>{children}</ErrorBoundary>
-</div>
+</div>;
 ```
 
 - [ ] **Step 5: Add minimal CSS for fallback**
@@ -208,7 +210,11 @@ Append to `src/app/globals.css`:
   background: var(--surface);
   box-shadow: var(--shadow-card);
 }
-.error-boundary strong { display: block; font-size: var(--font-size-lg); margin-bottom: var(--space-2); }
+.error-boundary strong {
+  display: block;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-2);
+}
 ```
 
 - [ ] **Step 6: Run tests + build**
@@ -229,6 +235,7 @@ git commit -m "feat(ui): add ErrorBoundary and wrap workspace content"
 ### Task 3: `KpiCard` primitive
 
 **Files:**
+
 - Create: `src/components/ui/KpiCard.tsx`
 - Create: `src/components/ui/KpiCard.test.tsx`
 - Modify: `src/app/globals.css`
@@ -342,17 +349,47 @@ Append to `src/app/globals.css`:
   text-align: left;
   font-family: inherit;
 }
-.kpi-card--button { cursor: pointer; }
-.kpi-card--button:hover { border-color: var(--line-strong); transform: translateY(-1px); transition: 120ms ease; }
-.kpi-card__label { font-size: var(--font-size-sm); color: var(--muted); font-weight: var(--font-weight-medium); }
-.kpi-card__value { font-size: var(--font-size-2xl); color: var(--text); line-height: var(--line-height-tight); font-weight: var(--font-weight-bold); }
-.kpi-card__hint { font-size: var(--font-size-xs); color: var(--muted); }
-.kpi-card[data-tone="primary"] { border-left: 4px solid var(--primary); }
-.kpi-card[data-tone="warning"] { border-left: 4px solid var(--tone-caution); }
-.kpi-card[data-tone="danger"] { border-left: 4px solid var(--tone-high); }
-.kpi-card[data-tone="success"] { border-left: 4px solid var(--tone-verified); }
-.kpi-card[data-tone="neutral"] { border-left: 4px solid var(--gray-300); }
-.kpi-card[data-tone="danger"] .kpi-card__value { color: var(--tone-high); }
+.kpi-card--button {
+  cursor: pointer;
+}
+.kpi-card--button:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  transition: 120ms ease;
+}
+.kpi-card__label {
+  font-size: var(--font-size-sm);
+  color: var(--muted);
+  font-weight: var(--font-weight-medium);
+}
+.kpi-card__value {
+  font-size: var(--font-size-2xl);
+  color: var(--text);
+  line-height: var(--line-height-tight);
+  font-weight: var(--font-weight-bold);
+}
+.kpi-card__hint {
+  font-size: var(--font-size-xs);
+  color: var(--muted);
+}
+.kpi-card[data-tone="primary"] {
+  border-left: 4px solid var(--primary);
+}
+.kpi-card[data-tone="warning"] {
+  border-left: 4px solid var(--tone-caution);
+}
+.kpi-card[data-tone="danger"] {
+  border-left: 4px solid var(--tone-high);
+}
+.kpi-card[data-tone="success"] {
+  border-left: 4px solid var(--tone-verified);
+}
+.kpi-card[data-tone="neutral"] {
+  border-left: 4px solid var(--gray-300);
+}
+.kpi-card[data-tone="danger"] .kpi-card__value {
+  color: var(--tone-high);
+}
 ```
 
 - [ ] **Step 5: Run tests**
@@ -372,6 +409,7 @@ git commit -m "feat(ui): add KpiCard primitive with tone variants"
 ### Task 4: `Tabs` primitive
 
 **Files:**
+
 - Create: `src/components/ui/Tabs.tsx`
 - Create: `src/components/ui/Tabs.test.tsx`
 - Modify: `src/app/globals.css`
@@ -498,7 +536,11 @@ export function Tabs({
 Append to `src/app/globals.css`:
 
 ```css
-.tabs__list { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
+.tabs__list {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--line);
+}
 .tabs__tab {
   background: transparent;
   border: 0;
@@ -509,9 +551,16 @@ Append to `src/app/globals.css`:
   color: var(--muted);
   cursor: pointer;
 }
-.tabs__tab[data-active="true"] { color: var(--primary); border-bottom-color: var(--primary); }
-.tabs__tab:hover:not([disabled]) { color: var(--text); }
-.tabs__panel { padding-top: var(--space-4); }
+.tabs__tab[data-active="true"] {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.tabs__tab:hover:not([disabled]) {
+  color: var(--text);
+}
+.tabs__panel {
+  padding-top: var(--space-4);
+}
 ```
 
 - [ ] **Step 5: Run tests**
@@ -531,6 +580,7 @@ git commit -m "feat(ui): add Tabs primitive with controlled/uncontrolled modes"
 ### Task 5: `Stepper` primitive
 
 **Files:**
+
 - Create: `src/components/ui/Stepper.tsx`
 - Create: `src/components/ui/Stepper.test.tsx`
 - Modify: `src/app/globals.css`
@@ -607,22 +657,52 @@ export function Stepper({ steps, ariaLabel = "진행 단계" }: StepperProps): J
 Append to `src/app/globals.css`:
 
 ```css
-.stepper { display: flex; gap: var(--space-2); list-style: none; padding: 0; margin: 0; flex-wrap: wrap; }
+.stepper {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-wrap: wrap;
+}
 .stepper li {
-  display: inline-flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
-  background: var(--surface-muted); color: var(--muted); font-size: var(--font-size-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: var(--font-size-sm);
 }
 .stepper__index {
-  width: 22px; height: 22px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--gray-300); color: var(--surface); font-weight: var(--font-weight-semibold);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-300);
+  color: var(--surface);
+  font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-xs);
 }
-.stepper li[data-status="active"] { background: var(--primary-soft); color: var(--primary-strong); }
-.stepper li[data-status="active"] .stepper__index { background: var(--primary); color: var(--surface); }
-.stepper li[data-status="done"] { background: var(--tone-verified-bg); color: var(--tone-verified); }
-.stepper li[data-status="done"] .stepper__index { background: var(--tone-verified); color: var(--surface); }
+.stepper li[data-status="active"] {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+.stepper li[data-status="active"] .stepper__index {
+  background: var(--primary);
+  color: var(--surface);
+}
+.stepper li[data-status="done"] {
+  background: var(--tone-verified-bg);
+  color: var(--tone-verified);
+}
+.stepper li[data-status="done"] .stepper__index {
+  background: var(--tone-verified);
+  color: var(--surface);
+}
 ```
 
 - [ ] **Step 5: Run tests**
@@ -642,6 +722,7 @@ git commit -m "feat(ui): add Stepper primitive with state-driven styles"
 ### Task 6: `DropZone` primitive
 
 **Files:**
+
 - Create: `src/components/ui/DropZone.tsx`
 - Create: `src/components/ui/DropZone.test.tsx`
 - Modify: `src/app/globals.css`
@@ -800,9 +881,16 @@ export function DropZone({
 Append to `src/app/globals.css`:
 
 ```css
-.dropzone-wrap { display: flex; flex-direction: column; gap: var(--space-3); }
+.dropzone-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
 .dropzone {
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-7) var(--space-6);
   border: 2px dashed var(--line);
   border-radius: var(--radius-lg);
@@ -810,15 +898,58 @@ Append to `src/app/globals.css`:
   cursor: pointer;
   color: var(--muted);
 }
-.dropzone[data-dragging="true"] { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-strong); }
-.dropzone[data-has-error="true"] { border-color: var(--tone-high); }
-.dropzone strong { color: var(--text); font-size: var(--font-size-base); }
-.dropzone input[type="file"] { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
-.dropzone__file-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); }
-.dropzone__file-list li { display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) var(--space-3); background: var(--surface-muted); border-radius: var(--radius-sm); font-size: var(--font-size-sm); }
-.dropzone__file-list button { background: transparent; border: 0; cursor: pointer; color: var(--muted); display: inline-flex; padding: 4px; }
-.dropzone__file-list button:hover { color: var(--tone-high); }
-.dropzone__error { color: var(--tone-high); font-size: var(--font-size-sm); margin: 0; }
+.dropzone[data-dragging="true"] {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+.dropzone[data-has-error="true"] {
+  border-color: var(--tone-high);
+}
+.dropzone strong {
+  color: var(--text);
+  font-size: var(--font-size-base);
+}
+.dropzone input[type="file"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.dropzone__file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.dropzone__file-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+.dropzone__file-list button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--muted);
+  display: inline-flex;
+  padding: 4px;
+}
+.dropzone__file-list button:hover {
+  color: var(--tone-high);
+}
+.dropzone__error {
+  color: var(--tone-high);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
 ```
 
 - [ ] **Step 5: Run tests**
@@ -838,6 +969,7 @@ git commit -m "feat(ui): add DropZone primitive with drag/drop and file list"
 ### Task 7: `FilterBar` primitive
 
 **Files:**
+
 - Create: `src/components/ui/FilterBar.tsx`
 - Create: `src/components/ui/FilterBar.test.tsx`
 - Modify: `src/app/globals.css`
@@ -1008,16 +1140,33 @@ export function FilterBar({
 Append to `src/app/globals.css`:
 
 ```css
-.filter-bar { display: flex; flex-direction: column; gap: var(--space-3); }
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
 .filter-bar__search {
-  display: flex; align-items: center; gap: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
 }
-.filter-bar__search input { border: 0; outline: none; width: 100%; background: transparent; font-size: var(--font-size-sm); }
-.filter-bar__groups { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.filter-bar__search input {
+  border: 0;
+  outline: none;
+  width: 100%;
+  background: transparent;
+  font-size: var(--font-size-sm);
+}
+.filter-bar__groups {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
 .filter-bar__group select {
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line);
@@ -1027,7 +1176,9 @@ Append to `src/app/globals.css`:
   color: var(--text);
 }
 .filter-bar__reset {
-  display: inline-flex; align-items: center; gap: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: var(--space-2) var(--space-3);
   background: var(--surface);
   border: 1px dashed var(--line-strong);
@@ -1036,7 +1187,10 @@ Append to `src/app/globals.css`:
   color: var(--muted);
   cursor: pointer;
 }
-.filter-bar__reset:hover { color: var(--text); border-color: var(--muted); }
+.filter-bar__reset:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
 ```
 
 - [ ] **Step 5: Run tests**
@@ -1056,6 +1210,7 @@ git commit -m "feat(ui): add FilterBar primitive with search and grouped selects
 ### Task 8: Barrel export + final verification
 
 **Files:**
+
 - Create: `src/components/ui/index.ts`
 
 - [ ] **Step 1: Create barrel**

@@ -17,6 +17,7 @@
 ### Task 1: Extract `IntakeStepper` with state derivation
 
 **Files:**
+
 - Create: `src/components/intake/IntakeStepper.tsx`
 - Create: `src/components/intake/IntakeStepper.test.tsx`
 
@@ -111,6 +112,7 @@ git commit -m "feat(intake): add IntakeStepper with derived step states"
 ### Task 2: Extract `IntakeMetaForm`
 
 **Files:**
+
 - Create: `src/components/intake/IntakeMetaForm.tsx`
 - Create: `src/components/intake/IntakeMetaForm.test.tsx`
 
@@ -288,6 +290,7 @@ git commit -m "feat(intake): add IntakeMetaForm with state patcher"
 ### Task 3: Extract `IntakeUploadZone` using `DropZone`
 
 **Files:**
+
 - Create: `src/components/intake/IntakeUploadZone.tsx`
 
 - [ ] **Step 1: Implement (no separate unit test — `DropZone` covers primitive behavior; integration tested via SamplePackageSelector)**
@@ -362,6 +365,7 @@ git commit -m "feat(intake): add IntakeUploadZone wrapping DropZone primitive"
 ### Task 4: Extract `IntakeClassificationPanel`
 
 **Files:**
+
 - Create: `src/components/intake/IntakeClassificationPanel.tsx`
 
 - [ ] **Step 1: Implement**
@@ -391,9 +395,7 @@ export type IntakeClassificationPanelProps = {
   files: ReviewFile[];
 };
 
-export function IntakeClassificationPanel({
-  files
-}: IntakeClassificationPanelProps): JSX.Element {
+export function IntakeClassificationPanel({ files }: IntakeClassificationPanelProps): JSX.Element {
   return (
     <section className="panel panel--compact intake-check-panel">
       <div className="panel__header">
@@ -443,6 +445,7 @@ git commit -m "feat(intake): extract IntakeClassificationPanel"
 ### Task 5: Extract `IntakeRequiredMaterialsPanel`
 
 **Files:**
+
 - Create: `src/components/intake/IntakeRequiredMaterialsPanel.tsx`
 
 - [ ] **Step 1: Implement**
@@ -533,6 +536,7 @@ git commit -m "feat(intake): extract IntakeRequiredMaterialsPanel"
 ### Task 6: Refactor `SamplePackageSelector` to compose modules + sticky footer + post-submit state
 
 **Files:**
+
 - Modify: `src/components/SamplePackageSelector.tsx`
 - Modify: `src/components/SamplePackageSelector.test.tsx` (selectors only if needed)
 - Modify: `src/app/globals.css`
@@ -743,7 +747,11 @@ export function SamplePackageSelector(): JSX.Element {
               </button>
             </section>
           ) : (
-            <button className="button button--primary upload-submit" type="submit" disabled={isUploading}>
+            <button
+              className="button button--primary upload-submit"
+              type="submit"
+              disabled={isUploading}
+            >
               {isUploading ? "제출 중" : "심의 요청 제출"}
             </button>
           )}
@@ -803,6 +811,7 @@ git commit -m "refactor(intake): compose SamplePackageSelector from intake/* + s
 ### Task 7: Stepper progression test in `SamplePackageSelector`
 
 **Files:**
+
 - Modify: `src/components/SamplePackageSelector.test.tsx`
 
 - [ ] **Step 1: Add a test that walks through state changes**

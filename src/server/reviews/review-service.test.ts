@@ -196,6 +196,91 @@ describe("review service", () => {
     });
   });
 
+  it("turns real upload OCR/RAG artifacts into review issues and evidence", async () => {
+    const store = createMockReviewStore([]);
+    const service = createReviewService({
+      store,
+      analysisPipeline: {
+        async run({ review }) {
+          return {
+            generatedAt: "2026-05-26T00:00:00.000Z",
+            extractedDocuments: review.files.map((file) => ({
+              fileId: file.id,
+              fileName: file.name,
+              storageKey: file.storageKey,
+              text: "최고 연 5.0% 금리를 누구나 받을 수 있는 적금 상품입니다.",
+              confidence: 0.93,
+              provider: "fixture-ocr"
+            })),
+            evidenceCandidates: [
+              {
+                id: "evidence-real-rate-001",
+                sourceType: "product_doc",
+                title: "actual-package/poster.txt",
+                quoteSummary: "최고 연 5.0% 금리를 누구나 받을 수 있는 적금 상품입니다.",
+                relevanceScore: 0.91,
+                sourceFileId: "file-upload-001"
+              }
+            ]
+          };
+        }
+      }
+    });
+
+    const created = await service.createReviewCaseFromUploadedFiles(requesterContext, {
+      title: "실제 업로드 적금 홍보물",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["mobile_app"],
+      plannedPublishDate: "2026-06-20",
+      files: [
+        {
+          name: "actual-package/poster.txt",
+          type: "text/plain",
+          size: 73,
+          body: new TextEncoder().encode("최고 연 5.0% 금리를 누구나 받을 수 있는 적금 상품입니다.")
+        }
+      ]
+    });
+
+    const analysis = await service.startAnalysis(reviewerContext, created.reviewCase.id);
+    const analyzed = await service.getReviewCase(reviewerContext, created.reviewCase.id);
+
+    expect(analysis).toMatchObject({
+      status: "analysis_complete",
+      issueCount: 3
+    });
+    expect(analyzed).toMatchObject({
+      status: "analysis_complete",
+      highestRiskLevel: "high"
+    });
+    expect(analyzed?.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          issueType: "rate_claim",
+          riskLevel: "high",
+          title: "최고 금리 표현 조건 확인 필요",
+          evidence: [
+            expect.objectContaining({
+              title: "actual-package/poster.txt",
+              quoteSummary: "최고 연 5.0% 금리를 누구나 받을 수 있는 적금 상품입니다."
+            })
+          ]
+        }),
+        expect.objectContaining({
+          issueType: "absolute_claim",
+          riskLevel: "high",
+          title: "누구나/무조건 표현 확인 필요"
+        }),
+        expect.objectContaining({
+          issueType: "missing_material",
+          riskLevel: "caution",
+          title: "필수 심의 자료 누락"
+        })
+      ])
+    );
+  });
+
   it("adds storage metadata before creating upload-backed review cases", async () => {
     const store = createMockReviewStore();
     const service = createReviewService({ store });

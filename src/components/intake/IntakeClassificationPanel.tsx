@@ -21,9 +21,7 @@ export type IntakeClassificationPanelProps = {
   files: ReviewFile[];
 };
 
-export function IntakeClassificationPanel({
-  files
-}: IntakeClassificationPanelProps): JSX.Element {
+export function IntakeClassificationPanel({ files }: IntakeClassificationPanelProps): JSX.Element {
   return (
     <section className="panel panel--compact intake-check-panel">
       <div className="panel__header">

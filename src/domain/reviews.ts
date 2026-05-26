@@ -1,5 +1,12 @@
 import sampleReviewCases from "@/data/sample-review-cases.json";
-import type { ProductType, ReviewCase, ReviewIssue, ReviewSummary, RiskLevel, RoleId } from "./types";
+import type {
+  ProductType,
+  ReviewCase,
+  ReviewIssue,
+  ReviewSummary,
+  RiskLevel,
+  RoleId
+} from "./types";
 
 export const reviewCases = sampleReviewCases as ReviewCase[];
 

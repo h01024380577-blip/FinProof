@@ -56,7 +56,7 @@ const defaultFilterState: QueueFilterState = {
 };
 
 export function ReviewQueue(): JSX.Element {
-  const { activeRole } = useRole();
+  const { activeRole, apiHeaders } = useRole();
   const router = useRouter();
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -89,11 +89,8 @@ export function ReviewQueue(): JSX.Element {
       const matchesStatus = filters.status === "all" || review.status === filters.status;
       const matchesRisk =
         filters.risk === "all" ||
-        (filters.risk === "analysis_pending"
-          ? waiting
-          : review.highestRiskLevel === filters.risk);
-      const matchesProduct =
-        filters.product === "all" || review.productType === filters.product;
+        (filters.risk === "analysis_pending" ? waiting : review.highestRiskLevel === filters.risk);
+      const matchesProduct = filters.product === "all" || review.productType === filters.product;
       return matchesQ && matchesStatus && matchesRisk && matchesProduct;
     });
   }, [filters, reviews]);
@@ -107,7 +104,7 @@ export function ReviewQueue(): JSX.Element {
       }
       try {
         const response = await fetch("/api/v1/review-cases", {
-          headers: { "x-finproof-role": activeRole }
+          headers: apiHeaders()
         });
         if (!response.ok) throw new Error("심의 큐를 불러오지 못했습니다.");
         const body = (await response.json()) as ReviewCasesResponse;
@@ -122,7 +119,7 @@ export function ReviewQueue(): JSX.Element {
     return () => {
       mounted = false;
     };
-  }, [activeRole]);
+  }, [activeRole, apiHeaders]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent): void {
@@ -147,7 +144,7 @@ export function ReviewQueue(): JSX.Element {
     try {
       const response = await fetch(`/api/v1/review-cases/${review.id}/analysis/start`, {
         method: "POST",
-        headers: { "x-finproof-role": activeRole }
+        headers: apiHeaders()
       });
       if (!response.ok) throw new Error("분석 시작 권한 또는 요청을 확인해 주세요.");
       const body = (await response.json()) as AnalysisStartResponse;
@@ -157,7 +154,10 @@ export function ReviewQueue(): JSX.Element {
             ? {
                 ...candidate,
                 status: body.status,
-                availableActions: fallbackActionsFor(activeRole, body.status) as unknown as ReviewSummary["availableActions"]
+                availableActions: fallbackActionsFor(
+                  activeRole,
+                  body.status
+                ) as unknown as ReviewSummary["availableActions"]
               }
             : candidate
         )

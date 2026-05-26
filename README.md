@@ -41,6 +41,11 @@ npm run db:smoke
 FINPROOF_REVIEW_STORE=prisma npm run dev
 ```
 
+Sample package APIs and preloaded demo cases are disabled by default. Set
+`FINPROOF_ENABLE_SAMPLE_DATA=true` only for demo/test sessions that intentionally need fixture
+cases. The normal service path starts from an empty queue and accepts multipart review packages
+through `/reviews/new`.
+
 For Supabase-backed production, keep the app runtime on the transaction pooler and run Prisma
 CLI commands through the session/direct connection:
 

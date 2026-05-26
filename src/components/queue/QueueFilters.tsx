@@ -48,9 +48,21 @@ const productOptions = [
 
 export function QueueFilters({ state, onChange, onReset }: QueueFiltersProps): JSX.Element {
   const groups: FilterGroup[] = [
-    { key: "status", label: "상태", value: state.status, defaultValue: "all", options: statusOptions },
+    {
+      key: "status",
+      label: "상태",
+      value: state.status,
+      defaultValue: "all",
+      options: statusOptions
+    },
     { key: "risk", label: "위험도", value: state.risk, defaultValue: "all", options: riskOptions },
-    { key: "product", label: "상품군", value: state.product, defaultValue: "all", options: productOptions }
+    {
+      key: "product",
+      label: "상품군",
+      value: state.product,
+      defaultValue: "all",
+      options: productOptions
+    }
   ];
 
   return (

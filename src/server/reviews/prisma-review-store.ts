@@ -5,6 +5,7 @@ import type { ReviewCase, ReviewFile } from "@/domain/types";
 import { Prisma } from "@/generated/prisma/client";
 import { getPrismaClient } from "@/server/db/prisma";
 import type { AnalysisArtifacts } from "@/server/analysis/review-analysis-pipeline";
+import { buildAnalysisIssues, highestRiskLevelForIssues } from "@/server/analysis/issue-generation";
 import { toReviewCase, toReviewSummary, type PrismaReviewCaseRow } from "./prisma-mappers";
 import type {
   AnalysisJob,
@@ -120,8 +121,90 @@ function toAuditEvent(row: {
   };
 }
 
+function issueCreateData(issue: ReviewCase["issues"][number]) {
+  return {
+    id: issue.id,
+    issueType: issue.issueType,
+    riskLevel: issue.riskLevel,
+    reviewerRiskLevel: issue.reviewerRiskLevel,
+    title: issue.title,
+    targetText: issue.targetText,
+    targetBbox: issue.targetBbox,
+    sourceAgents: issue.sourceAgents,
+    suggestedAction: issue.suggestedAction,
+    finalAction: issue.finalAction,
+    reviewerComment: issue.reviewerComment,
+    status: issue.status,
+    description: issue.description,
+    suggestedCopy: issue.suggestedCopy,
+    evidence: {
+      create: issue.evidence.map((evidence) => ({
+        id: evidence.id,
+        sourceType: evidence.sourceType,
+        title: evidence.title,
+        page: evidence.page,
+        section: evidence.section,
+        quoteSummary: evidence.quoteSummary,
+        relevanceScore: evidence.relevanceScore
+      }))
+    }
+  };
+}
+
+function buildGeneratedIssues(row: unknown, artifacts: AnalysisArtifacts) {
+  const review = toReviewCase(reviewRow(row));
+
+  return review.issues.length > 0 ? [] : buildAnalysisIssues(review, artifacts);
+}
+
 export function createPrismaReviewStore(): ReviewStore {
   const prisma = getPrismaClient();
+
+  async function ensureActor(scope: ReviewStoreScope) {
+    await prisma.tenant.upsert({
+      where: { id: scope.tenantId },
+      update: {},
+      create: {
+        id: scope.tenantId,
+        name: scope.tenantId
+      }
+    });
+    await prisma.user.upsert({
+      where: { id: scope.actorUserId },
+      update: {
+        role: scope.actorRole,
+        status: "active"
+      },
+      create: {
+        id: scope.actorUserId,
+        tenantId: scope.tenantId,
+        email: `${scope.actorUserId}@finproof.local`,
+        name: scope.actorUserId,
+        role: scope.actorRole
+      }
+    });
+  }
+
+  async function ensureReviewer(tenantId: string, reviewerId: string | null) {
+    if (!reviewerId) {
+      return;
+    }
+
+    await prisma.user.upsert({
+      where: { id: reviewerId },
+      update: {
+        role: "reviewer",
+        status: "active"
+      },
+      create: {
+        id: reviewerId,
+        tenantId,
+        email: `${reviewerId}@finproof.local`,
+        name: reviewerId,
+        role: "reviewer"
+      }
+    });
+  }
 
   async function getReviewCase(scope: ReviewStoreScope, id: string) {
     const row = await prisma.reviewCase.findFirst({
@@ -184,7 +267,11 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async createReviewCaseFromUploadedFiles(scope, input: CreateReviewCaseFromUploadedFilesInput) {
+      await ensureActor(scope);
+
       const id = input.reviewCaseId ?? `rc-${randomUUID()}`;
+      const defaultReviewerId = process.env.FINPROOF_DEFAULT_REVIEWER_USER_ID?.trim() || null;
+      await ensureReviewer(scope.tenantId, defaultReviewerId);
       const files = input.files.map((file) => {
         const contentType = file.type || "application/octet-stream";
         const fileType = classifyUploadFile({ ...file, type: contentType });
@@ -228,9 +315,9 @@ export function createPrismaReviewStore(): ReviewStore {
           status: "analysis_waiting",
           highestRiskLevel: "info",
           requesterId: scope.actorUserId,
-          reviewerId: process.env.FINPROOF_DEFAULT_REVIEWER_USER_ID ?? "user-reviewer-demo",
-          requesterName: "업로드 요청자",
-          reviewerName: "준법심의자 박민준",
+          reviewerId: defaultReviewerId,
+          requesterName: scope.actorUserId,
+          reviewerName: defaultReviewerId ? "준법심의자 박민준" : "미배정",
           promotionalCopy: "실제 업로드 자료 분석 대기",
           disclosure: uploadAnalysisNotice,
           productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다.",
@@ -252,6 +339,8 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async startAnalysis(scope, reviewCaseId, options = {}) {
+      await ensureActor(scope);
+
       const review = await prisma.reviewCase.findFirst({
         where: { id: reviewCaseId, tenantId: scope.tenantId },
         include: reviewInclude
@@ -262,6 +351,9 @@ export function createPrismaReviewStore(): ReviewStore {
       }
 
       const now = new Date();
+      const generatedIssues = options.artifacts
+        ? buildGeneratedIssues(review, options.artifacts)
+        : [];
       const job = await prisma.analysisJob.create({
         data: {
           id: `job-${randomUUID()}`,
@@ -280,8 +372,16 @@ export function createPrismaReviewStore(): ReviewStore {
         where: { id: reviewCaseId },
         data: {
           status: "analysis_complete",
+          highestRiskLevel: highestRiskLevelForIssues(review.highestRiskLevel, generatedIssues),
           analysisStartedAt: now,
-          analysisCompletedAt: now
+          analysisCompletedAt: now,
+          ...(generatedIssues.length > 0
+            ? {
+                issues: {
+                  create: generatedIssues.map(issueCreateData)
+                }
+              }
+            : {})
         },
         include: reviewInclude
       });
@@ -299,6 +399,8 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async enqueueAnalysis(scope, reviewCaseId) {
+      await ensureActor(scope);
+
       const review = await prisma.reviewCase.findFirst({
         where: { id: reviewCaseId, tenantId: scope.tenantId },
         include: reviewInclude
@@ -388,6 +490,8 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async completeAnalysisJob(scope, jobId, artifacts) {
+      await ensureActor(scope);
+
       const job = await prisma.analysisJob.findFirst({
         where: { id: jobId, tenantId: scope.tenantId }
       });
@@ -396,7 +500,17 @@ export function createPrismaReviewStore(): ReviewStore {
         return undefined;
       }
 
+      const review = await prisma.reviewCase.findFirst({
+        where: { id: job.reviewCaseId, tenantId: scope.tenantId },
+        include: reviewInclude
+      });
+
+      if (!review) {
+        return undefined;
+      }
+
       const now = new Date();
+      const generatedIssues = buildGeneratedIssues(review, artifacts);
       const [, updated] = await prisma.$transaction([
         prisma.analysisJob.update({
           where: { id: jobId },
@@ -412,7 +526,15 @@ export function createPrismaReviewStore(): ReviewStore {
           where: { id: job.reviewCaseId },
           data: {
             status: "analysis_complete",
-            analysisCompletedAt: now
+            highestRiskLevel: highestRiskLevelForIssues(review.highestRiskLevel, generatedIssues),
+            analysisCompletedAt: now,
+            ...(generatedIssues.length > 0
+              ? {
+                  issues: {
+                    create: generatedIssues.map(issueCreateData)
+                  }
+                }
+              : {})
           },
           include: reviewInclude
         })
@@ -431,6 +553,8 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async failAnalysisJob(scope, jobId, errorMessage) {
+      await ensureActor(scope);
+
       const job = await prisma.analysisJob.findFirst({
         where: { id: jobId, tenantId: scope.tenantId }
       });
@@ -576,6 +700,8 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async recordAuditEvent(scope, input: AuditEventInput): Promise<AuditEvent> {
+      await ensureActor(scope);
+
       const event = await prisma.auditLog.create({
         data: {
           id: `audit-${randomUUID()}`,

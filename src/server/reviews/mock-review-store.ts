@@ -1,6 +1,7 @@
 import { getRequiredMaterialRows } from "@/domain/intake";
 import { reviewCases } from "@/domain/reviews";
 import { classifyUploadFile } from "@/domain/upload-policy";
+import { buildAnalysisIssues, highestRiskLevelForIssues } from "@/server/analysis/issue-generation";
 import type {
   ProductType,
   ReviewCase,
@@ -96,6 +97,17 @@ function toSummary(review: ReviewCase): ReviewSummary {
     requester: review.requester,
     reviewer: review.reviewer
   };
+}
+
+function issuesFromArtifacts(
+  review: ReviewCase,
+  artifacts: AnalysisJob["artifacts"]
+): ReviewIssue[] {
+  if (!artifacts || review.issues.length > 0) {
+    return review.issues;
+  }
+
+  return buildAnalysisIssues(review, artifacts);
 }
 
 export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases): ReviewStore {
@@ -235,9 +247,12 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases): Re
 
       analysisJobs.set(reviewCaseId, [...(analysisJobs.get(reviewCaseId) ?? []), job]);
 
+      const issues = issuesFromArtifacts(review, options.artifacts);
       const updatedReview: ReviewCase = {
         ...review,
-        status: "analysis_complete"
+        status: "analysis_complete",
+        highestRiskLevel: highestRiskLevelForIssues(review.highestRiskLevel, issues),
+        issues
       };
 
       cases.set(reviewCaseId, updatedReview);
@@ -355,9 +370,12 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases): Re
           completedAt: nowIso(),
           artifacts
         };
+        const issues = issuesFromArtifacts(review, artifacts);
         const updatedReview: ReviewCase = {
           ...review,
-          status: "analysis_complete"
+          status: "analysis_complete",
+          highestRiskLevel: highestRiskLevelForIssues(review.highestRiskLevel, issues),
+          issues
         };
 
         const updatedJobs = [...jobs];
