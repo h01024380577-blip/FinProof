@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Download,
@@ -47,6 +47,26 @@ type AuditEventsResponse = {
   auditEvents: AuditEvent[];
 };
 
+type PendingQuestion = {
+  issueId: string;
+  question: string;
+};
+
+type ChatContentBlock =
+  | {
+      type: "paragraph";
+      text: string;
+    }
+  | {
+      type: "list";
+      items: string[];
+    };
+
+type InlineSegment = {
+  text: string;
+  strong: boolean;
+};
+
 const finalActionStatusMap: Record<
   NonNullable<ReviewIssue["finalAction"]>,
   ReviewCase["status"]
@@ -78,6 +98,108 @@ function formatAuditTime(value: string) {
 
 function canMutateReview(role: RoleId) {
   return role === "reviewer" || role === "compliance_admin";
+}
+
+function chatContentBlocks(content: string): ChatContentBlock[] {
+  const blocks: ChatContentBlock[] = [];
+  const lines = content.split(/\r?\n/);
+  let paragraphLines: string[] = [];
+  let listItems: string[] = [];
+
+  function flushParagraph() {
+    const text = paragraphLines.join(" ").replace(/\s+/g, " ").trim();
+
+    if (text.length > 0) {
+      blocks.push({ type: "paragraph", text });
+    }
+
+    paragraphLines = [];
+  }
+
+  function flushList() {
+    if (listItems.length > 0) {
+      blocks.push({ type: "list", items: listItems });
+    }
+
+    listItems = [];
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const listMatch = trimmed.match(/^[-*]\s+(.+)$/);
+
+    if (trimmed.length === 0) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    if (listMatch) {
+      flushParagraph();
+      listItems.push(listMatch[1]);
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(trimmed);
+  }
+
+  flushParagraph();
+  flushList();
+
+  return blocks.length > 0 ? blocks : [{ type: "paragraph", text: content }];
+}
+
+function inlineSegments(text: string): InlineSegment[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).flatMap((part): InlineSegment[] => {
+    if (part.length === 0) {
+      return [];
+    }
+
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return [{ text: part.slice(2, -2), strong: true }];
+    }
+
+    return [{ text: part, strong: false }];
+  });
+}
+
+function FormattedChatContent({ content }: { content: string }): JSX.Element {
+  return (
+    <div className="chat-response-body">
+      {chatContentBlocks(content).map((block, blockIndex) => {
+        if (block.type === "list") {
+          return (
+            <ul key={`list-${blockIndex}`}>
+              {block.items.map((item, itemIndex) => (
+                <li key={`${blockIndex}-${itemIndex}`} aria-label={item}>
+                  {inlineSegments(item).map((segment, segmentIndex) =>
+                    segment.strong ? (
+                      <strong key={segmentIndex}>{segment.text}</strong>
+                    ) : (
+                      <span key={segmentIndex}>{segment.text}</span>
+                    )
+                  )}
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        return (
+          <p key={`paragraph-${blockIndex}`}>
+            {inlineSegments(block.text).map((segment, segmentIndex) =>
+              segment.strong ? (
+                <strong key={segmentIndex}>{segment.text}</strong>
+              ) : (
+                <span key={segmentIndex}>{segment.text}</span>
+              )
+            )}
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 function getFinalReviewAction(
@@ -136,7 +258,7 @@ export function ReviewDetailWorkspace({
   const [draft, setDraftState] = useState(review.currentDraft ?? review.expectedDraft);
   const latestDraftRef = useRef(draft);
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
-  const [question, setQuestion] = useState("우대금리 조건을 어느 수준까지 표시해야 하나요?");
+  const [question, setQuestion] = useState("");
   const [chatResponsesByIssueId, setChatResponsesByIssueId] = useState<
     Record<string, ReviewChatResponse[]>
   >({});
@@ -155,6 +277,7 @@ export function ReviewDetailWorkspace({
   >(() => getInitialSavedDecisions(review));
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
+  const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -169,6 +292,8 @@ export function ReviewDetailWorkspace({
   const selectedIssue: ReviewIssue | undefined =
     review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
   const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
+  const selectedPendingQuestion =
+    selectedIssue && pendingQuestion?.issueId === selectedIssue.id ? pendingQuestion : null;
   const markedResponseIds = selectedIssue
     ? (markedResponseIdsByIssueId[selectedIssue.id] ?? [])
     : [];
@@ -269,16 +394,23 @@ export function ReviewDetailWorkspace({
     }
 
     const issueId = selectedIssue.id;
+    const submittedQuestion = question.trim();
 
     setInteractionError(null);
     setIsAskingQuestion(true);
+    setPendingQuestion({ issueId, question: submittedQuestion });
+    setQuestion("");
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/chat`, {
         method: "POST",
         headers: jsonHeaders,
         body: JSON.stringify({
           issueId,
-          question
+          question: submittedQuestion,
+          history: (chatResponsesByIssueId[issueId] ?? []).map((response) => ({
+            question: response.question,
+            answer: response.content
+          }))
         })
       });
 
@@ -290,15 +422,22 @@ export function ReviewDetailWorkspace({
 
       setChatResponsesByIssueId((current) => ({
         ...current,
-        [issueId]: [body.response, ...(current[issueId] ?? [])]
+        [issueId]: [...(current[issueId] ?? []), body.response]
       }));
     } catch (error) {
+      setQuestion(submittedQuestion);
       setInteractionError(
         error instanceof Error ? error.message : "질문 요청을 처리하지 못했습니다."
       );
     } finally {
       setIsAskingQuestion(false);
+      setPendingQuestion(null);
     }
+  }
+
+  function submitQuestion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void handleAskQuestion();
   }
 
   function markLatestResponseForDraft() {
@@ -306,7 +445,7 @@ export function ReviewDetailWorkspace({
       return;
     }
 
-    const latestEvidenceResponse = chatResponses.find(
+    const latestEvidenceResponse = [...chatResponses].reverse().find(
       (response) => response.answerType === "evidence_based"
     );
 
@@ -544,9 +683,8 @@ export function ReviewDetailWorkspace({
     }
   }
 
-  // Inner drawer panel JSX — preserve existing chat/draft/audit/files markup verbatim.
   const chatPanel = (
-    <div className="panel panel--compact">
+    <div className="panel panel--compact chat-panel">
         <div className="panel__header">
           <div>
             <p className="eyebrow">Issue Query</p>
@@ -554,7 +692,7 @@ export function ReviewDetailWorkspace({
           </div>
           <MessageSquareText size={20} aria-hidden="true" />
         </div>
-        <div className="chat-composer">
+        <form className="chat-composer" onSubmit={submitQuestion}>
           <label className="sr-only" htmlFor="rag-question">
             RAG question
           </label>
@@ -562,69 +700,88 @@ export function ReviewDetailWorkspace({
             id="rag-question"
             value={question}
             aria-label="RAG question"
+            placeholder="예: 최고금리 조건을 승인 가능하게 표시하려면?"
             disabled={!selectedIssue}
             onChange={(event) => setQuestion(event.target.value)}
           />
           <button
             className="icon-button"
-            type="button"
+            type="submit"
             aria-label="질문 보내기"
-            disabled={!selectedIssue || isAskingQuestion}
-            onClick={handleAskQuestion}
+            disabled={!selectedIssue || isAskingQuestion || question.trim().length === 0}
           >
             <Send size={17} aria-hidden="true" />
           </button>
-        </div>
+        </form>
 
-        <div className="chat-stack">
+        <div className="chat-thread" aria-label="채팅 대화" aria-live="polite">
           {!selectedIssue ? (
-            <div className="chat-answer chat-answer--empty">
-              <p className="chat-answer__question">선택 가능한 이슈가 없습니다.</p>
-              <p>
+            <div className="chat-empty-prompt">
+              <strong>선택 가능한 이슈가 없습니다.</strong>
+              <span>
                 {review.analysisNotice ??
                   "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
-              </p>
+              </span>
             </div>
-          ) : chatResponses.length === 0 ? (
-            <div className="chat-answer">
-              <p className="chat-answer__question">
-                우대금리 조건을 어느 수준까지 표시해야 하나요?
-              </p>
-              <p>
-                현재 근거상 조건부 혜택임을 본문 또는 인접 고지에서 명확히 표시하는 수정이
-                필요합니다.
-              </p>
-              <div className="evidence-inline">
-                {selectedIssue?.evidence.slice(0, 2).map((evidence) => (
-                  <span key={evidence.id}>{evidence.title}</span>
-                ))}
-              </div>
+          ) : chatResponses.length === 0 && !selectedPendingQuestion ? (
+            <div className="chat-empty-prompt">
+              <strong>선택된 이슈의 근거를 기준으로 답변합니다.</strong>
+              <span>입력창의 회색 예시처럼 질문을 작성하면 근거 문서와 이슈 내용을 함께 참조합니다.</span>
             </div>
           ) : (
             chatResponses.map((response) => (
               <article
                 key={response.id}
-                className="chat-answer"
+                className="chat-turn"
                 data-answer-type={response.answerType}
               >
-                <p className="chat-answer__question">{response.question}</p>
-                <p>{response.content}</p>
-                {response.requiredMaterials.length > 0 ? (
-                  <div className="evidence-inline">
-                    {response.requiredMaterials.map((material) => (
-                      <span key={material}>{material}</span>
-                    ))}
+                <div className="chat-message chat-message--user">
+                  <div className="chat-message__bubble">{response.question}</div>
+                </div>
+                <div className="chat-message chat-message--assistant">
+                  <span className="chat-message__avatar" aria-hidden="true">
+                    AI
+                  </span>
+                  <div className="chat-message__bubble">
+                    <FormattedChatContent content={response.content} />
+                    {response.requiredMaterials.length > 0 ? (
+                      <div className="evidence-inline">
+                        {response.requiredMaterials.map((material) => (
+                          <span key={material}>{material}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="evidence-inline">
+                        {response.evidence.slice(0, 3).map((evidence) => (
+                          <span key={evidence.id}>{evidence.title}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="evidence-inline">
-                    {response.evidence.slice(0, 2).map((evidence) => (
-                      <span key={evidence.id}>{evidence.title}</span>
-                    ))}
-                  </div>
-                )}
+                </div>
               </article>
             ))
           )}
+          {selectedPendingQuestion ? (
+            <article className="chat-turn chat-turn--pending">
+              <div className="chat-message chat-message--user">
+                <div className="chat-message__bubble">{selectedPendingQuestion.question}</div>
+              </div>
+              <div className="chat-message chat-message--assistant">
+                <span className="chat-message__avatar" aria-hidden="true">
+                  AI
+                </span>
+                <div className="chat-message__bubble chat-message__bubble--loading">
+                  <span>답변 생성 중</span>
+                  <span className="typing-dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
+                </div>
+              </div>
+            </article>
+          ) : null}
         </div>
 
         <button

@@ -45,6 +45,36 @@ describe("review AI service", () => {
     );
   });
 
+  it("includes prior chat turns in the RAG chat prompt", async () => {
+    const provider = modelProvider("이전 대화를 반영한 답변");
+    await answerReviewQuestionWithModel(
+      {
+        review,
+        issue,
+        question: "그럼 짧은 배너 문구는요?",
+        history: [
+          {
+            question: "어떤 조건을 함께 써야 하나요?",
+            answer: "기본금리와 우대조건을 같이 써야 합니다."
+          }
+        ]
+      },
+      provider
+    );
+
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: "rag_chat",
+        input: expect.stringContaining("어떤 조건을 함께 써야 하나요?")
+      })
+    );
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.stringContaining("기본금리와 우대조건을 같이 써야 합니다.")
+      })
+    );
+  });
+
   it("uses model text for draft generation", async () => {
     const provider = modelProvider("모델 수정 요청 초안");
     const draft = await generateDraftWithModel(review, [], provider);

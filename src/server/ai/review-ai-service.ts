@@ -16,6 +16,10 @@ type AnswerQuestionInput = {
   review: ReviewCase;
   issue: ReviewIssue;
   question: string;
+  history?: Array<{
+    question: string;
+    answer: string;
+  }>;
 };
 
 function reviewSummary(review: ReviewCase) {
@@ -69,6 +73,7 @@ export async function answerReviewQuestionWithModel(
       review: reviewSummary(input.review),
       issue: input.issue,
       question: input.question,
+      conversationHistory: input.history ?? [],
       fallback: fallback.content
     }),
     fallback: fallback.content

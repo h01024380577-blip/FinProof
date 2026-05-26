@@ -118,6 +118,17 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.queryByText(/조건부 혜택임을/)).not.toBeInTheDocument();
   });
 
+  it("starts chat with an empty input placeholder instead of a hardcoded example answer", () => {
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    expect(screen.getByLabelText("RAG question")).toHaveValue("");
+    expect(
+      screen.getByPlaceholderText("예: 최고금리 조건을 승인 가능하게 표시하려면?")
+    ).toBeInTheDocument();
+    expect(screen.getByText("선택된 이슈의 근거를 기준으로 답변합니다.")).toBeInTheDocument();
+    expect(screen.queryByText(/현재 근거상 조건부 혜택임을/)).not.toBeInTheDocument();
+  });
+
   it("loads analysis status and audit events when support data is enabled", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
@@ -290,7 +301,8 @@ describe("ReviewDetailWorkspace", () => {
         method: "POST",
         body: JSON.stringify({
           issueId: "issue-deposit-rate",
-          question: "약관에만 있는 중도해지 조건도 단정해도 되나요?"
+          question: "약관에만 있는 중도해지 조건도 단정해도 되나요?",
+          history: []
         })
       })
     );
@@ -298,6 +310,23 @@ describe("ReviewDetailWorkspace", () => {
     changeTextField("RAG question", "우대금리 조건을 어느 수준까지 표시해야 하나요?");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
     expect(await screen.findByText(/조건부 혜택임을/)).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/review-cases/rc-demo-deposit-001/chat",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          issueId: "issue-deposit-rate",
+          question: "우대금리 조건을 어느 수준까지 표시해야 하나요?",
+          history: [
+            {
+              question: "약관에만 있는 중도해지 조건도 단정해도 되나요?",
+              answer: "추가 확인 필요: 약관 자료가 필요합니다."
+            }
+          ]
+        })
+      })
+    );
     await user.click(screen.getByRole("button", { name: "초안에 반영" }));
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
 
@@ -331,6 +360,72 @@ describe("ReviewDetailWorkspace", () => {
         })
       })
     );
+  });
+
+  it("shows a loading chat bubble while a long answer is being generated", async () => {
+    const user = userEvent.setup();
+    let resolveChat!: (value: unknown) => void;
+    const chatPromise = new Promise((resolve) => {
+      resolveChat = resolve;
+    });
+    const fetchMock = vi.fn().mockReturnValueOnce(chatPromise);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    changeTextField("RAG question", "승인 가능한 문구로 바꿔줘");
+    await user.click(screen.getByRole("button", { name: "질문 보내기" }));
+
+    expect(screen.getByText("승인 가능한 문구로 바꿔줘")).toBeInTheDocument();
+    expect(screen.getByText("답변 생성 중")).toBeInTheDocument();
+
+    resolveChat({
+      ok: true,
+      json: async () => ({
+        response: {
+          id: "chat-loaded",
+          question: "승인 가능한 문구로 바꿔줘",
+          answerType: "evidence_based",
+          content: "조건 충족 시 최고 연 5.0%로 수정하세요.",
+          evidence: [],
+          requiredMaterials: []
+        }
+      })
+    });
+
+    expect(await screen.findByText("조건 충족 시 최고 연 5.0%로 수정하세요.")).toBeInTheDocument();
+    expect(screen.queryByText("답변 생성 중")).not.toBeInTheDocument();
+  });
+
+  it("renders long model answers as readable paragraphs and lists", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        response: {
+          id: "chat-markdown",
+          question: "어떤 조건을 써야 하나요?",
+          answerType: "evidence_based",
+          content:
+            "**승인 가능 문구**는 조건을 같이 써야 합니다.\n\n- 기본금리 연 2.0%\n- 우대조건 충족 시 최고 연 5.0%\n- 세전 기준",
+          evidence: [],
+          requiredMaterials: []
+        }
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    changeTextField("RAG question", "어떤 조건을 써야 하나요?");
+    await user.click(screen.getByRole("button", { name: "질문 보내기" }));
+
+    expect(await screen.findByText("승인 가능 문구")).toBeInTheDocument();
+    expect(screen.getByRole("listitem", { name: "기본금리 연 2.0%" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("listitem", { name: "우대조건 충족 시 최고 연 5.0%" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("listitem", { name: "세전 기준" })).toBeInTheDocument();
   });
 
   it("scopes chat responses and marked draft context to the selected issue", async () => {
@@ -368,6 +463,7 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
+    changeTextField("RAG question", "첫 번째 이슈 질문");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
     expect(await screen.findByText("첫 번째 이슈 전용 답변입니다.")).toBeInTheDocument();
 

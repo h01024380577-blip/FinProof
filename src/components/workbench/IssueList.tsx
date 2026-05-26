@@ -54,7 +54,7 @@ export function IssueList({
         ))}
       </div>
 
-      <div className="issue-list">
+      <div className="issue-list" aria-label="이슈 목록 스크롤 영역">
         {visible.length > 0 ? (
           visible.map((issue, index) => (
             <button
