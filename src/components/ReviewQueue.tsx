@@ -63,6 +63,13 @@ const finalizedStatuses = new Set<ReviewCase["status"]>([
   "archived"
 ]);
 
+type HistoryDecision = "approved" | "rejected";
+
+const historyDecisions: Array<{ key: HistoryDecision; label: string }> = [
+  { key: "approved", label: "승인" },
+  { key: "rejected", label: "반려" }
+];
+
 function isFinalizedReview(status: ReviewCase["status"]): boolean {
   return finalizedStatuses.has(status);
 }
@@ -77,13 +84,16 @@ export function ReviewQueue(): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
+  const [historyDecision, setHistoryDecision] = useState<HistoryDecision>("approved");
 
   const scopedReviews = useMemo(
     () =>
       reviews.filter((review) =>
-        scope === "history" ? isFinalizedReview(review.status) : !isFinalizedReview(review.status)
+        scope === "history"
+          ? review.status === historyDecision
+          : !isFinalizedReview(review.status)
       ),
-    [reviews, scope]
+    [historyDecision, reviews, scope]
   );
 
   const metrics: QueueMetricValues = useMemo(
@@ -218,6 +228,28 @@ export function ReviewQueue(): JSX.Element {
         onSelectDueSoon={() => setFilters((f) => ({ ...f, status: "all", risk: "all" }))}
       />
 
+      {scope === "history" ? (
+        <div className="history-decision-tabs tabs__list" role="tablist" aria-label="심의 이력 구분">
+          {historyDecisions.map((decision) => {
+            const selected = historyDecision === decision.key;
+
+            return (
+              <button
+                key={decision.key}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                className="tabs__tab"
+                data-active={selected}
+                onClick={() => setHistoryDecision(decision.key)}
+              >
+                {decision.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
       <section className="queue-panel">
         <QueueFilters
           state={filters}
@@ -240,7 +272,7 @@ export function ReviewQueue(): JSX.Element {
             scopedReviews.length > 0
               ? "검색 또는 필터 조건에 맞는 심의 건이 없습니다."
               : scope === "history"
-                ? "아직 완료된 심의 이력이 없습니다."
+                ? `아직 ${historyDecision === "approved" ? "승인" : "반려"}된 심의 이력이 없습니다.`
                 : "아직 심의 요청이 없습니다. 새 심의 요청을 생성해 자료 패키지를 업로드하세요."
           }
           onStartAnalysis={(review) => void startAnalysis(review)}

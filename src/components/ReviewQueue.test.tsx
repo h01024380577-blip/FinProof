@@ -59,6 +59,19 @@ const completedReviewSummary = {
   availableActions: ["view_audit"]
 };
 
+const rejectedReviewSummary = {
+  id: "rc-history-rejected-001",
+  title: "반려 완료된 신용대출 홍보물",
+  affiliate: "광주은행",
+  productType: "loan",
+  plannedPublishDate: "2026-06-02",
+  status: "rejected",
+  highestRiskLevel: "reject_recommended",
+  requester: "마케팅 담당자 최도윤",
+  reviewer: "준법심의자 박민준",
+  availableActions: ["view_audit"]
+};
+
 const requesterReviewSummaries = reviewSummaries.map((review) =>
   review.id === "rc-upload-001" ? { ...review, availableActions: [] } : review
 );
@@ -159,16 +172,44 @@ describe("ReviewQueue", () => {
     currentSearchParams = new URLSearchParams("scope=history");
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ reviewCases: [...reviewSummaries, completedReviewSummary] })
+      json: async () => ({
+        reviewCases: [...reviewSummaries, completedReviewSummary, rejectedReviewSummary]
+      })
     });
     vi.stubGlobal("fetch", fetchMock);
 
     renderQueue("reviewer");
 
     expect(await screen.findByText("심의 이력")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "승인" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "반려" })).toHaveAttribute("aria-selected", "false");
     expect(screen.getByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
+    expect(screen.queryByText("반려 완료된 신용대출 홍보물")).not.toBeInTheDocument();
     expect(screen.queryByText("최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
     expect(screen.queryByText("실제 업로드 적금 홍보물")).not.toBeInTheDocument();
+  });
+
+  it("switches review history between approved and rejected decisions", async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams("scope=history");
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        reviewCases: [...reviewSummaries, completedReviewSummary, rejectedReviewSummary]
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer");
+
+    expect(await screen.findByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "반려" }));
+
+    expect(screen.getByRole("tab", { name: "승인" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "반려" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("반려 완료된 신용대출 홍보물")).toBeInTheDocument();
+    expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
   });
 
   it("gates analysis start to reviewer roles", async () => {
