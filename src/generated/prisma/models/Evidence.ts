@@ -40,6 +40,10 @@ export type EvidenceMinAggregateOutputType = {
   id: string | null
   issueId: string | null
   sourceType: $Enums.EvidenceSourceType | null
+  documentId: string | null
+  chunkId: string | null
+  version: string | null
+  effectiveFrom: Date | null
   title: string | null
   page: number | null
   section: string | null
@@ -52,6 +56,10 @@ export type EvidenceMaxAggregateOutputType = {
   id: string | null
   issueId: string | null
   sourceType: $Enums.EvidenceSourceType | null
+  documentId: string | null
+  chunkId: string | null
+  version: string | null
+  effectiveFrom: Date | null
   title: string | null
   page: number | null
   section: string | null
@@ -64,6 +72,10 @@ export type EvidenceCountAggregateOutputType = {
   id: number
   issueId: number
   sourceType: number
+  documentId: number
+  chunkId: number
+  version: number
+  effectiveFrom: number
   title: number
   page: number
   section: number
@@ -88,6 +100,10 @@ export type EvidenceMinAggregateInputType = {
   id?: true
   issueId?: true
   sourceType?: true
+  documentId?: true
+  chunkId?: true
+  version?: true
+  effectiveFrom?: true
   title?: true
   page?: true
   section?: true
@@ -100,6 +116,10 @@ export type EvidenceMaxAggregateInputType = {
   id?: true
   issueId?: true
   sourceType?: true
+  documentId?: true
+  chunkId?: true
+  version?: true
+  effectiveFrom?: true
   title?: true
   page?: true
   section?: true
@@ -112,6 +132,10 @@ export type EvidenceCountAggregateInputType = {
   id?: true
   issueId?: true
   sourceType?: true
+  documentId?: true
+  chunkId?: true
+  version?: true
+  effectiveFrom?: true
   title?: true
   page?: true
   section?: true
@@ -211,6 +235,10 @@ export type EvidenceGroupByOutputType = {
   id: string
   issueId: string
   sourceType: $Enums.EvidenceSourceType
+  documentId: string | null
+  chunkId: string | null
+  version: string | null
+  effectiveFrom: Date | null
   title: string
   page: number | null
   section: string | null
@@ -246,6 +274,10 @@ export type EvidenceWhereInput = {
   id?: Prisma.StringFilter<"Evidence"> | string
   issueId?: Prisma.StringFilter<"Evidence"> | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFilter<"Evidence"> | $Enums.EvidenceSourceType
+  documentId?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  chunkId?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  version?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  effectiveFrom?: Prisma.DateTimeNullableFilter<"Evidence"> | Date | string | null
   title?: Prisma.StringFilter<"Evidence"> | string
   page?: Prisma.IntNullableFilter<"Evidence"> | number | null
   section?: Prisma.StringNullableFilter<"Evidence"> | string | null
@@ -253,12 +285,17 @@ export type EvidenceWhereInput = {
   relevanceScore?: Prisma.FloatFilter<"Evidence"> | number
   createdAt?: Prisma.DateTimeFilter<"Evidence"> | Date | string
   issue?: Prisma.XOR<Prisma.ReviewIssueScalarRelationFilter, Prisma.ReviewIssueWhereInput>
+  chunk?: Prisma.XOR<Prisma.EvidenceChunkNullableScalarRelationFilter, Prisma.EvidenceChunkWhereInput> | null
 }
 
 export type EvidenceOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   issueId?: Prisma.SortOrder
   sourceType?: Prisma.SortOrder
+  documentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  version?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   page?: Prisma.SortOrderInput | Prisma.SortOrder
   section?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -266,6 +303,7 @@ export type EvidenceOrderByWithRelationInput = {
   relevanceScore?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   issue?: Prisma.ReviewIssueOrderByWithRelationInput
+  chunk?: Prisma.EvidenceChunkOrderByWithRelationInput
 }
 
 export type EvidenceWhereUniqueInput = Prisma.AtLeast<{
@@ -275,6 +313,10 @@ export type EvidenceWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.EvidenceWhereInput | Prisma.EvidenceWhereInput[]
   issueId?: Prisma.StringFilter<"Evidence"> | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFilter<"Evidence"> | $Enums.EvidenceSourceType
+  documentId?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  chunkId?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  version?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  effectiveFrom?: Prisma.DateTimeNullableFilter<"Evidence"> | Date | string | null
   title?: Prisma.StringFilter<"Evidence"> | string
   page?: Prisma.IntNullableFilter<"Evidence"> | number | null
   section?: Prisma.StringNullableFilter<"Evidence"> | string | null
@@ -282,12 +324,17 @@ export type EvidenceWhereUniqueInput = Prisma.AtLeast<{
   relevanceScore?: Prisma.FloatFilter<"Evidence"> | number
   createdAt?: Prisma.DateTimeFilter<"Evidence"> | Date | string
   issue?: Prisma.XOR<Prisma.ReviewIssueScalarRelationFilter, Prisma.ReviewIssueWhereInput>
+  chunk?: Prisma.XOR<Prisma.EvidenceChunkNullableScalarRelationFilter, Prisma.EvidenceChunkWhereInput> | null
 }, "id">
 
 export type EvidenceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   issueId?: Prisma.SortOrder
   sourceType?: Prisma.SortOrder
+  documentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  version?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   page?: Prisma.SortOrderInput | Prisma.SortOrder
   section?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -308,6 +355,10 @@ export type EvidenceScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Evidence"> | string
   issueId?: Prisma.StringWithAggregatesFilter<"Evidence"> | string
   sourceType?: Prisma.EnumEvidenceSourceTypeWithAggregatesFilter<"Evidence"> | $Enums.EvidenceSourceType
+  documentId?: Prisma.StringNullableWithAggregatesFilter<"Evidence"> | string | null
+  chunkId?: Prisma.StringNullableWithAggregatesFilter<"Evidence"> | string | null
+  version?: Prisma.StringNullableWithAggregatesFilter<"Evidence"> | string | null
+  effectiveFrom?: Prisma.DateTimeNullableWithAggregatesFilter<"Evidence"> | Date | string | null
   title?: Prisma.StringWithAggregatesFilter<"Evidence"> | string
   page?: Prisma.IntNullableWithAggregatesFilter<"Evidence"> | number | null
   section?: Prisma.StringNullableWithAggregatesFilter<"Evidence"> | string | null
@@ -319,6 +370,9 @@ export type EvidenceScalarWhereWithAggregatesInput = {
 export type EvidenceCreateInput = {
   id: string
   sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
   title: string
   page?: number | null
   section?: string | null
@@ -326,12 +380,17 @@ export type EvidenceCreateInput = {
   relevanceScore: number
   createdAt?: Date | string
   issue: Prisma.ReviewIssueCreateNestedOneWithoutEvidenceInput
+  chunk?: Prisma.EvidenceChunkCreateNestedOneWithoutEvidenceInput
 }
 
 export type EvidenceUncheckedCreateInput = {
   id: string
   issueId: string
   sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  chunkId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
   title: string
   page?: number | null
   section?: string | null
@@ -343,6 +402,9 @@ export type EvidenceUncheckedCreateInput = {
 export type EvidenceUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -350,12 +412,17 @@ export type EvidenceUpdateInput = {
   relevanceScore?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   issue?: Prisma.ReviewIssueUpdateOneRequiredWithoutEvidenceNestedInput
+  chunk?: Prisma.EvidenceChunkUpdateOneWithoutEvidenceNestedInput
 }
 
 export type EvidenceUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   issueId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -368,6 +435,10 @@ export type EvidenceCreateManyInput = {
   id: string
   issueId: string
   sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  chunkId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
   title: string
   page?: number | null
   section?: string | null
@@ -379,6 +450,9 @@ export type EvidenceCreateManyInput = {
 export type EvidenceUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -391,6 +465,10 @@ export type EvidenceUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   issueId?: Prisma.StringFieldUpdateOperationsInput | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -413,6 +491,10 @@ export type EvidenceCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   issueId?: Prisma.SortOrder
   sourceType?: Prisma.SortOrder
+  documentId?: Prisma.SortOrder
+  chunkId?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   title?: Prisma.SortOrder
   page?: Prisma.SortOrder
   section?: Prisma.SortOrder
@@ -430,6 +512,10 @@ export type EvidenceMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   issueId?: Prisma.SortOrder
   sourceType?: Prisma.SortOrder
+  documentId?: Prisma.SortOrder
+  chunkId?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   title?: Prisma.SortOrder
   page?: Prisma.SortOrder
   section?: Prisma.SortOrder
@@ -442,6 +528,10 @@ export type EvidenceMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   issueId?: Prisma.SortOrder
   sourceType?: Prisma.SortOrder
+  documentId?: Prisma.SortOrder
+  chunkId?: Prisma.SortOrder
+  version?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
   title?: Prisma.SortOrder
   page?: Prisma.SortOrder
   section?: Prisma.SortOrder
@@ -501,28 +591,70 @@ export type EnumEvidenceSourceTypeFieldUpdateOperationsInput = {
   set?: $Enums.EvidenceSourceType
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type EvidenceCreateNestedManyWithoutChunkInput = {
+  create?: Prisma.XOR<Prisma.EvidenceCreateWithoutChunkInput, Prisma.EvidenceUncheckedCreateWithoutChunkInput> | Prisma.EvidenceCreateWithoutChunkInput[] | Prisma.EvidenceUncheckedCreateWithoutChunkInput[]
+  connectOrCreate?: Prisma.EvidenceCreateOrConnectWithoutChunkInput | Prisma.EvidenceCreateOrConnectWithoutChunkInput[]
+  createMany?: Prisma.EvidenceCreateManyChunkInputEnvelope
+  connect?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+}
+
+export type EvidenceUncheckedCreateNestedManyWithoutChunkInput = {
+  create?: Prisma.XOR<Prisma.EvidenceCreateWithoutChunkInput, Prisma.EvidenceUncheckedCreateWithoutChunkInput> | Prisma.EvidenceCreateWithoutChunkInput[] | Prisma.EvidenceUncheckedCreateWithoutChunkInput[]
+  connectOrCreate?: Prisma.EvidenceCreateOrConnectWithoutChunkInput | Prisma.EvidenceCreateOrConnectWithoutChunkInput[]
+  createMany?: Prisma.EvidenceCreateManyChunkInputEnvelope
+  connect?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+}
+
+export type EvidenceUpdateManyWithoutChunkNestedInput = {
+  create?: Prisma.XOR<Prisma.EvidenceCreateWithoutChunkInput, Prisma.EvidenceUncheckedCreateWithoutChunkInput> | Prisma.EvidenceCreateWithoutChunkInput[] | Prisma.EvidenceUncheckedCreateWithoutChunkInput[]
+  connectOrCreate?: Prisma.EvidenceCreateOrConnectWithoutChunkInput | Prisma.EvidenceCreateOrConnectWithoutChunkInput[]
+  upsert?: Prisma.EvidenceUpsertWithWhereUniqueWithoutChunkInput | Prisma.EvidenceUpsertWithWhereUniqueWithoutChunkInput[]
+  createMany?: Prisma.EvidenceCreateManyChunkInputEnvelope
+  set?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  disconnect?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  delete?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  connect?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  update?: Prisma.EvidenceUpdateWithWhereUniqueWithoutChunkInput | Prisma.EvidenceUpdateWithWhereUniqueWithoutChunkInput[]
+  updateMany?: Prisma.EvidenceUpdateManyWithWhereWithoutChunkInput | Prisma.EvidenceUpdateManyWithWhereWithoutChunkInput[]
+  deleteMany?: Prisma.EvidenceScalarWhereInput | Prisma.EvidenceScalarWhereInput[]
+}
+
+export type EvidenceUncheckedUpdateManyWithoutChunkNestedInput = {
+  create?: Prisma.XOR<Prisma.EvidenceCreateWithoutChunkInput, Prisma.EvidenceUncheckedCreateWithoutChunkInput> | Prisma.EvidenceCreateWithoutChunkInput[] | Prisma.EvidenceUncheckedCreateWithoutChunkInput[]
+  connectOrCreate?: Prisma.EvidenceCreateOrConnectWithoutChunkInput | Prisma.EvidenceCreateOrConnectWithoutChunkInput[]
+  upsert?: Prisma.EvidenceUpsertWithWhereUniqueWithoutChunkInput | Prisma.EvidenceUpsertWithWhereUniqueWithoutChunkInput[]
+  createMany?: Prisma.EvidenceCreateManyChunkInputEnvelope
+  set?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  disconnect?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  delete?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  connect?: Prisma.EvidenceWhereUniqueInput | Prisma.EvidenceWhereUniqueInput[]
+  update?: Prisma.EvidenceUpdateWithWhereUniqueWithoutChunkInput | Prisma.EvidenceUpdateWithWhereUniqueWithoutChunkInput[]
+  updateMany?: Prisma.EvidenceUpdateManyWithWhereWithoutChunkInput | Prisma.EvidenceUpdateManyWithWhereWithoutChunkInput[]
+  deleteMany?: Prisma.EvidenceScalarWhereInput | Prisma.EvidenceScalarWhereInput[]
 }
 
 export type EvidenceCreateWithoutIssueInput = {
   id: string
   sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
   title: string
   page?: number | null
   section?: string | null
   quoteSummary: string
   relevanceScore: number
   createdAt?: Date | string
+  chunk?: Prisma.EvidenceChunkCreateNestedOneWithoutEvidenceInput
 }
 
 export type EvidenceUncheckedCreateWithoutIssueInput = {
   id: string
   sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  chunkId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
   title: string
   page?: number | null
   section?: string | null
@@ -564,6 +696,10 @@ export type EvidenceScalarWhereInput = {
   id?: Prisma.StringFilter<"Evidence"> | string
   issueId?: Prisma.StringFilter<"Evidence"> | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFilter<"Evidence"> | $Enums.EvidenceSourceType
+  documentId?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  chunkId?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  version?: Prisma.StringNullableFilter<"Evidence"> | string | null
+  effectiveFrom?: Prisma.DateTimeNullableFilter<"Evidence"> | Date | string | null
   title?: Prisma.StringFilter<"Evidence"> | string
   page?: Prisma.IntNullableFilter<"Evidence"> | number | null
   section?: Prisma.StringNullableFilter<"Evidence"> | string | null
@@ -572,9 +708,69 @@ export type EvidenceScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Evidence"> | Date | string
 }
 
+export type EvidenceCreateWithoutChunkInput = {
+  id: string
+  sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
+  title: string
+  page?: number | null
+  section?: string | null
+  quoteSummary: string
+  relevanceScore: number
+  createdAt?: Date | string
+  issue: Prisma.ReviewIssueCreateNestedOneWithoutEvidenceInput
+}
+
+export type EvidenceUncheckedCreateWithoutChunkInput = {
+  id: string
+  issueId: string
+  sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
+  title: string
+  page?: number | null
+  section?: string | null
+  quoteSummary: string
+  relevanceScore: number
+  createdAt?: Date | string
+}
+
+export type EvidenceCreateOrConnectWithoutChunkInput = {
+  where: Prisma.EvidenceWhereUniqueInput
+  create: Prisma.XOR<Prisma.EvidenceCreateWithoutChunkInput, Prisma.EvidenceUncheckedCreateWithoutChunkInput>
+}
+
+export type EvidenceCreateManyChunkInputEnvelope = {
+  data: Prisma.EvidenceCreateManyChunkInput | Prisma.EvidenceCreateManyChunkInput[]
+  skipDuplicates?: boolean
+}
+
+export type EvidenceUpsertWithWhereUniqueWithoutChunkInput = {
+  where: Prisma.EvidenceWhereUniqueInput
+  update: Prisma.XOR<Prisma.EvidenceUpdateWithoutChunkInput, Prisma.EvidenceUncheckedUpdateWithoutChunkInput>
+  create: Prisma.XOR<Prisma.EvidenceCreateWithoutChunkInput, Prisma.EvidenceUncheckedCreateWithoutChunkInput>
+}
+
+export type EvidenceUpdateWithWhereUniqueWithoutChunkInput = {
+  where: Prisma.EvidenceWhereUniqueInput
+  data: Prisma.XOR<Prisma.EvidenceUpdateWithoutChunkInput, Prisma.EvidenceUncheckedUpdateWithoutChunkInput>
+}
+
+export type EvidenceUpdateManyWithWhereWithoutChunkInput = {
+  where: Prisma.EvidenceScalarWhereInput
+  data: Prisma.XOR<Prisma.EvidenceUpdateManyMutationInput, Prisma.EvidenceUncheckedUpdateManyWithoutChunkInput>
+}
+
 export type EvidenceCreateManyIssueInput = {
   id: string
   sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  chunkId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
   title: string
   page?: number | null
   section?: string | null
@@ -586,17 +782,25 @@ export type EvidenceCreateManyIssueInput = {
 export type EvidenceUpdateWithoutIssueInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   quoteSummary?: Prisma.StringFieldUpdateOperationsInput | string
   relevanceScore?: Prisma.FloatFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  chunk?: Prisma.EvidenceChunkUpdateOneWithoutEvidenceNestedInput
 }
 
 export type EvidenceUncheckedUpdateWithoutIssueInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -608,6 +812,70 @@ export type EvidenceUncheckedUpdateWithoutIssueInput = {
 export type EvidenceUncheckedUpdateManyWithoutIssueInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quoteSummary?: Prisma.StringFieldUpdateOperationsInput | string
+  relevanceScore?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type EvidenceCreateManyChunkInput = {
+  id: string
+  issueId: string
+  sourceType: $Enums.EvidenceSourceType
+  documentId?: string | null
+  version?: string | null
+  effectiveFrom?: Date | string | null
+  title: string
+  page?: number | null
+  section?: string | null
+  quoteSummary: string
+  relevanceScore: number
+  createdAt?: Date | string
+}
+
+export type EvidenceUpdateWithoutChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quoteSummary?: Prisma.StringFieldUpdateOperationsInput | string
+  relevanceScore?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  issue?: Prisma.ReviewIssueUpdateOneRequiredWithoutEvidenceNestedInput
+}
+
+export type EvidenceUncheckedUpdateWithoutChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  issueId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  quoteSummary?: Prisma.StringFieldUpdateOperationsInput | string
+  relevanceScore?: Prisma.FloatFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type EvidenceUncheckedUpdateManyWithoutChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  issueId?: Prisma.StringFieldUpdateOperationsInput | string
+  sourceType?: Prisma.EnumEvidenceSourceTypeFieldUpdateOperationsInput | $Enums.EvidenceSourceType
+  documentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  version?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -622,6 +890,10 @@ export type EvidenceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   id?: boolean
   issueId?: boolean
   sourceType?: boolean
+  documentId?: boolean
+  chunkId?: boolean
+  version?: boolean
+  effectiveFrom?: boolean
   title?: boolean
   page?: boolean
   section?: boolean
@@ -629,12 +901,17 @@ export type EvidenceSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   relevanceScore?: boolean
   createdAt?: boolean
   issue?: boolean | Prisma.ReviewIssueDefaultArgs<ExtArgs>
+  chunk?: boolean | Prisma.Evidence$chunkArgs<ExtArgs>
 }, ExtArgs["result"]["evidence"]>
 
 export type EvidenceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   issueId?: boolean
   sourceType?: boolean
+  documentId?: boolean
+  chunkId?: boolean
+  version?: boolean
+  effectiveFrom?: boolean
   title?: boolean
   page?: boolean
   section?: boolean
@@ -642,12 +919,17 @@ export type EvidenceSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   relevanceScore?: boolean
   createdAt?: boolean
   issue?: boolean | Prisma.ReviewIssueDefaultArgs<ExtArgs>
+  chunk?: boolean | Prisma.Evidence$chunkArgs<ExtArgs>
 }, ExtArgs["result"]["evidence"]>
 
 export type EvidenceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   issueId?: boolean
   sourceType?: boolean
+  documentId?: boolean
+  chunkId?: boolean
+  version?: boolean
+  effectiveFrom?: boolean
   title?: boolean
   page?: boolean
   section?: boolean
@@ -655,12 +937,17 @@ export type EvidenceSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   relevanceScore?: boolean
   createdAt?: boolean
   issue?: boolean | Prisma.ReviewIssueDefaultArgs<ExtArgs>
+  chunk?: boolean | Prisma.Evidence$chunkArgs<ExtArgs>
 }, ExtArgs["result"]["evidence"]>
 
 export type EvidenceSelectScalar = {
   id?: boolean
   issueId?: boolean
   sourceType?: boolean
+  documentId?: boolean
+  chunkId?: boolean
+  version?: boolean
+  effectiveFrom?: boolean
   title?: boolean
   page?: boolean
   section?: boolean
@@ -669,26 +956,34 @@ export type EvidenceSelectScalar = {
   createdAt?: boolean
 }
 
-export type EvidenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "issueId" | "sourceType" | "title" | "page" | "section" | "quoteSummary" | "relevanceScore" | "createdAt", ExtArgs["result"]["evidence"]>
+export type EvidenceOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "issueId" | "sourceType" | "documentId" | "chunkId" | "version" | "effectiveFrom" | "title" | "page" | "section" | "quoteSummary" | "relevanceScore" | "createdAt", ExtArgs["result"]["evidence"]>
 export type EvidenceInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   issue?: boolean | Prisma.ReviewIssueDefaultArgs<ExtArgs>
+  chunk?: boolean | Prisma.Evidence$chunkArgs<ExtArgs>
 }
 export type EvidenceIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   issue?: boolean | Prisma.ReviewIssueDefaultArgs<ExtArgs>
+  chunk?: boolean | Prisma.Evidence$chunkArgs<ExtArgs>
 }
 export type EvidenceIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   issue?: boolean | Prisma.ReviewIssueDefaultArgs<ExtArgs>
+  chunk?: boolean | Prisma.Evidence$chunkArgs<ExtArgs>
 }
 
 export type $EvidencePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Evidence"
   objects: {
     issue: Prisma.$ReviewIssuePayload<ExtArgs>
+    chunk: Prisma.$EvidenceChunkPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     issueId: string
     sourceType: $Enums.EvidenceSourceType
+    documentId: string | null
+    chunkId: string | null
+    version: string | null
+    effectiveFrom: Date | null
     title: string
     page: number | null
     section: string | null
@@ -1090,6 +1385,7 @@ readonly fields: EvidenceFieldRefs;
 export interface Prisma__EvidenceClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   issue<T extends Prisma.ReviewIssueDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewIssueDefaultArgs<ExtArgs>>): Prisma.Prisma__ReviewIssueClient<runtime.Types.Result.GetResult<Prisma.$ReviewIssuePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  chunk<T extends Prisma.Evidence$chunkArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Evidence$chunkArgs<ExtArgs>>): Prisma.Prisma__EvidenceChunkClient<runtime.Types.Result.GetResult<Prisma.$EvidenceChunkPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1122,6 +1418,10 @@ export interface EvidenceFieldRefs {
   readonly id: Prisma.FieldRef<"Evidence", 'String'>
   readonly issueId: Prisma.FieldRef<"Evidence", 'String'>
   readonly sourceType: Prisma.FieldRef<"Evidence", 'EvidenceSourceType'>
+  readonly documentId: Prisma.FieldRef<"Evidence", 'String'>
+  readonly chunkId: Prisma.FieldRef<"Evidence", 'String'>
+  readonly version: Prisma.FieldRef<"Evidence", 'String'>
+  readonly effectiveFrom: Prisma.FieldRef<"Evidence", 'DateTime'>
   readonly title: Prisma.FieldRef<"Evidence", 'String'>
   readonly page: Prisma.FieldRef<"Evidence", 'Int'>
   readonly section: Prisma.FieldRef<"Evidence", 'String'>
@@ -1526,6 +1826,25 @@ export type EvidenceDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inte
    * Limit how many Evidences to delete.
    */
   limit?: number
+}
+
+/**
+ * Evidence.chunk
+ */
+export type Evidence$chunkArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EvidenceChunk
+   */
+  select?: Prisma.EvidenceChunkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EvidenceChunk
+   */
+  omit?: Prisma.EvidenceChunkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EvidenceChunkInclude<ExtArgs> | null
+  where?: Prisma.EvidenceChunkWhereInput
 }
 
 /**

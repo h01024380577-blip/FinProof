@@ -23,14 +23,19 @@ describe("default review store", () => {
     delete process.env.FINPROOF_ENABLE_SAMPLE_DATA;
     const defaultModule = await importReviewStoreModule();
 
-    await expect(defaultModule.getReviewStore().listReviewSummaries(scope)).resolves.toEqual([]);
+    await expect(defaultModule.getReviewStore().listReviewSummaries(scope)).resolves.toMatchObject({
+      items: [],
+      reviewCases: []
+    });
 
     vi.resetModules();
     process.env.FINPROOF_ENABLE_SAMPLE_DATA = "true";
     const sampleModule = await importReviewStoreModule();
     sampleModule.resetDefaultReviewStoreForTests();
 
-    await expect(sampleModule.getReviewStore().listReviewSummaries(scope)).resolves.toHaveLength(2);
+    await expect(sampleModule.getReviewStore().listReviewSummaries(scope)).resolves.toMatchObject({
+      total: 2
+    });
   });
 
   it("keeps uploaded review cases readable across isolated server module loads", async () => {

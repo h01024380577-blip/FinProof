@@ -58,6 +58,46 @@ export type Evidence = Prisma.EvidenceModel
  */
 export type AnalysisJob = Prisma.AnalysisJobModel
 /**
+ * Model KnowledgeDocument
+ * 
+ */
+export type KnowledgeDocument = Prisma.KnowledgeDocumentModel
+/**
+ * Model EvidenceChunk
+ * 
+ */
+export type EvidenceChunk = Prisma.EvidenceChunkModel
+/**
+ * Model AgentRun
+ * 
+ */
+export type AgentRun = Prisma.AgentRunModel
+/**
+ * Model AgentFinding
+ * 
+ */
+export type AgentFinding = Prisma.AgentFindingModel
+/**
+ * Model ChatSession
+ * 
+ */
+export type ChatSession = Prisma.ChatSessionModel
+/**
+ * Model ChatMessage
+ * 
+ */
+export type ChatMessage = Prisma.ChatMessageModel
+/**
+ * Model DraftVersion
+ * 
+ */
+export type DraftVersion = Prisma.DraftVersionModel
+/**
+ * Model ReviewReport
+ * 
+ */
+export type ReviewReport = Prisma.ReviewReportModel
+/**
  * Model AuditLog
  * 
  */

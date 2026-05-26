@@ -51,17 +51,25 @@ export function createAnalysisWorker({
       }
 
       const scope = workerScope(input);
+      let artifacts;
 
       try {
-        const artifacts = await pipeline.run({ review: claimed.reviewCase });
-        await store.completeAnalysisJob(scope, claimed.id, artifacts);
-
-        return {
-          processed: true,
-          jobId: claimed.id,
+        artifacts = await pipeline.run({ review: claimed.reviewCase });
+        const persisted = await store.persistAnalysisOutputs(scope, {
           reviewCaseId: claimed.reviewCaseId,
-          status: "completed"
-        };
+          jobId: claimed.id,
+          artifacts
+        });
+
+        if (!persisted) {
+          throw new Error(`Analysis outputs were not persisted for job ${claimed.id}`);
+        }
+
+        const completed = await store.completeAnalysisJob(scope, claimed.id, artifacts);
+
+        if (!completed) {
+          throw new Error(`Analysis job ${claimed.id} was not completed`);
+        }
       } catch (error) {
         await store.failAnalysisJob(scope, claimed.id, errorMessage(error));
 
@@ -72,6 +80,29 @@ export function createAnalysisWorker({
           status: "failed"
         };
       }
+
+      try {
+        await store.recordAuditEvent(scope, {
+          action: "analysis.complete",
+          targetType: "review_case",
+          targetId: claimed.reviewCaseId,
+          afterValue: {
+            jobId: claimed.id,
+            extractedDocumentCount: artifacts.extractedDocuments.length,
+            evidenceCandidateCount: artifacts.evidenceCandidates.length,
+            findingCount: artifacts.findings?.length ?? artifacts.agentFindings?.length ?? 0
+          }
+        });
+      } catch {
+        // Audit failure must not roll back completed analysis state.
+      }
+
+      return {
+        processed: true,
+        jobId: claimed.id,
+        reviewCaseId: claimed.reviewCaseId,
+        status: "completed"
+      };
     }
   };
 }

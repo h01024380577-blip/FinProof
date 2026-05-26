@@ -1,6 +1,14 @@
-import type { Evidence, ReviewCase, ReviewFile } from "@/domain/types";
+import type {
+  AgentType,
+  Evidence,
+  ReviewCase,
+  ReviewFile,
+  ReviewIssue,
+  RiskLevel
+} from "@/domain/types";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
+import { buildAnalysisIssues } from "./issue-generation";
 import { getAnalysisProviderConfig } from "./provider-config";
 import {
   createReviewSubAgentOrchestrator,
@@ -21,11 +29,26 @@ export type RagEvidenceCandidate = Evidence & {
   sourceFileId?: string;
 };
 
+export type AgentFindingCandidate = {
+  agentType: AgentType;
+  issueType: string;
+  riskLevel: RiskLevel;
+  title: string;
+  targetText: string;
+  targetBbox: [number, number, number, number];
+  description: string;
+  suggestedAction: ReviewIssue["suggestedAction"];
+  suggestedCopy: string;
+  confidence: number;
+  evidence: RagEvidenceCandidate[];
+};
+
 export type AnalysisArtifacts = {
   generatedAt: string;
   extractedDocuments: ExtractedDocument[];
   evidenceCandidates: RagEvidenceCandidate[];
   agentFindings?: AgentFinding[];
+  findings?: AgentFindingCandidate[];
 };
 
 type OcrExtractInput = {
@@ -113,9 +136,10 @@ function stripHtml(text: string) {
 
 function decodeStoredText(file: ReviewFile, body: Uint8Array) {
   const decoded = new TextDecoder("utf-8", { fatal: false }).decode(body);
-  const text = file.contentType?.toLowerCase().includes("html") || /\.html?$/i.test(file.name)
-    ? stripHtml(decoded)
-    : decoded.replace(/\s+/g, " ").trim();
+  const text =
+    file.contentType?.toLowerCase().includes("html") || /\.html?$/i.test(file.name)
+      ? stripHtml(decoded)
+      : decoded.replace(/\s+/g, " ").trim();
 
   return text.length > 0 ? text : undefined;
 }
@@ -264,6 +288,43 @@ function defaultOcrProvider(fileBodyReader?: ReviewFileBodyReader) {
     : createDeterministicOcrProvider(fileBodyReader);
 }
 
+function agentTypeForIssue(issue: ReviewIssue): AgentType {
+  const [sourceAgent] = issue.sourceAgents;
+
+  if (sourceAgent === "creative_review") {
+    return "creative";
+  }
+
+  if (
+    sourceAgent === "main" ||
+    sourceAgent === "creative" ||
+    sourceAgent === "product_terms" ||
+    sourceAgent === "regulation" ||
+    sourceAgent === "internal_policy" ||
+    sourceAgent === "case_search"
+  ) {
+    return sourceAgent;
+  }
+
+  return "main";
+}
+
+function issueToFinding(issue: ReviewIssue): AgentFindingCandidate {
+  return {
+    agentType: agentTypeForIssue(issue),
+    issueType: issue.issueType,
+    riskLevel: issue.riskLevel,
+    title: issue.title,
+    targetText: issue.targetText,
+    targetBbox: issue.targetBbox,
+    description: issue.description,
+    suggestedAction: issue.suggestedAction,
+    suggestedCopy: issue.suggestedCopy,
+    confidence: issue.confidence ?? 0.86,
+    evidence: issue.evidence
+  };
+}
+
 export function createReviewAnalysisPipeline({
   fileBodyReader = defaultFileBodyReader(),
   ocrProvider = defaultOcrProvider(fileBodyReader),
@@ -281,11 +342,17 @@ export function createReviewAnalysisPipeline({
         extractedDocuments,
         evidenceCandidates
       });
-
-      return {
+      const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments,
         evidenceCandidates,
+        ...(agentFindings.length > 0 ? { agentFindings } : {})
+      };
+      const findings = buildAnalysisIssues(review, artifacts).map(issueToFinding);
+
+      return {
+        ...artifacts,
+        findings,
         ...(agentFindings.length > 0 ? { agentFindings } : {})
       };
     }

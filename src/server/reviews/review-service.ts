@@ -9,13 +9,20 @@ import { expandArchiveUploads } from "@/server/storage/archive-extraction";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
 import type { ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
 import { getReviewStore } from ".";
+import { StateConflictError } from "./route-utils";
 import type {
   AnalysisJob,
   AuditEvent,
+  CreateChatMessageInput,
+  CreateChatSessionInput,
+  CreateDraftVersionInput,
+  CreateKnowledgeDocumentInput,
+  CreateReviewReportInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseFromUploadedFilesInput,
   FinalReviewStatus,
   ListIssuesOptions,
+  ListReviewSummariesOptions,
   ReviewStore,
   ReviewStoreScope,
   SaveIssueDecisionInput
@@ -62,6 +69,10 @@ function analysisExecutionMode() {
   return process.env.FINPROOF_ANALYSIS_EXECUTION_MODE === "queued" ? "queued" : "inline";
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function availableActionsFor(role: RoleId, status: ReviewStatus): ReviewAction[] {
   if (status === "analysis_waiting" && (role === "reviewer" || role === "compliance_admin")) {
     return ["start_analysis"];
@@ -95,13 +106,18 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
     deps.analysisPipeline ?? createReviewAnalysisPipeline({ fileBodyReader: storage });
 
   return {
-    async listReviewSummaries(context: RequestContext) {
-      const summaries = await store.listReviewSummaries(scopeFromContext(context));
-
-      return summaries.map((summary) => ({
+    async listReviewSummaries(context: RequestContext, options: ListReviewSummariesOptions = {}) {
+      const page = await store.listReviewSummaries(scopeFromContext(context), options);
+      const items = page.items.map((summary) => ({
         ...summary,
         availableActions: availableActionsFor(context.role, summary.status)
       }));
+
+      return {
+        ...page,
+        items,
+        reviewCases: items
+      };
     },
 
     async getReviewCase(context: RequestContext, reviewCaseId: string) {
@@ -134,7 +150,18 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       }
     ) {
       const scope = scopeFromContext(context);
-      const reviewCaseId = input.reviewCaseId ?? nextUploadReviewCaseId();
+      let reviewCaseId = input.reviewCaseId;
+
+      if (reviewCaseId) {
+        if (!(await store.isReviewCaseIdAvailable(scope, reviewCaseId))) {
+          throw new Error("Review case id already exists");
+        }
+      } else {
+        do {
+          reviewCaseId = nextUploadReviewCaseId();
+        } while (!(await store.isReviewCaseIdAvailable(scope, reviewCaseId)));
+      }
+
       const uploadFiles = await expandArchiveUploads(input.files);
       const files = await Promise.all(
         uploadFiles.map(async (file, index) => {
@@ -192,24 +219,109 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
 
       const scope = scopeFromContext(context);
       const before = await store.getReviewCase(scope, reviewCaseId);
-      const result =
-        analysisExecutionMode() === "queued"
-          ? await store.enqueueAnalysis(scope, reviewCaseId)
-          : await store.startAnalysis(scope, reviewCaseId, {
-              artifacts: before ? await analysisPipeline.run({ review: before }) : undefined
-            });
 
-      if (result) {
-        await store.recordAuditEvent(scope, {
-          action: "analysis.start",
-          targetType: "review_case",
-          targetId: reviewCaseId,
-          beforeValue: before ? { status: before.status } : undefined,
-          afterValue: { status: result.status, jobId: result.jobId }
-        });
+      if (before && before.status !== "submitted" && before.status !== "analysis_waiting") {
+        throw new StateConflictError(`Cannot start analysis while review case is ${before.status}`);
       }
 
-      return result;
+      const recordAnalysisStart = async (queued: { status: string; jobId: string }) => {
+        try {
+          await store.recordAuditEvent(scope, {
+            action: "analysis.start",
+            targetType: "review_case",
+            targetId: reviewCaseId,
+            beforeValue: before ? { status: before.status } : undefined,
+            afterValue: { status: queued.status, jobId: queued.jobId }
+          });
+        } catch (error) {
+          try {
+            await store.failAnalysisJob(
+              scope,
+              queued.jobId,
+              `Analysis start audit failed: ${errorMessage(error)}`
+            );
+          } catch {
+            // Preserve the original audit failure for the caller.
+          }
+
+          throw error;
+        }
+      };
+      const recordAnalysisComplete = async (completed: {
+        jobId: string;
+        extractedDocumentCount?: number;
+        evidenceCandidateCount?: number;
+        issueCount: number;
+      }) => {
+        await store.recordAuditEvent(scope, {
+          action: "analysis.complete",
+          targetType: "review_case",
+          targetId: reviewCaseId,
+          afterValue: {
+            jobId: completed.jobId,
+            extractedDocumentCount: completed.extractedDocumentCount ?? 0,
+            evidenceCandidateCount: completed.evidenceCandidateCount ?? 0,
+            issueCount: completed.issueCount
+          }
+        });
+      };
+
+      if (analysisExecutionMode() === "queued") {
+        const queued = await store.enqueueAnalysis(scope, reviewCaseId);
+
+        if (queued) {
+          await recordAnalysisStart(queued);
+        }
+
+        return queued;
+      }
+
+      const queued = await store.enqueueAnalysis(scope, reviewCaseId);
+
+      if (queued) {
+        await recordAnalysisStart(queued);
+      }
+
+      if (queued && before) {
+        let result;
+
+        try {
+          const artifacts = await analysisPipeline.run({ review: before });
+          const persisted = await store.persistAnalysisOutputs(scope, {
+            reviewCaseId,
+            jobId: queued.jobId,
+            artifacts
+          });
+
+          if (!persisted) {
+            throw new Error(`Analysis outputs were not persisted for job ${queued.jobId}`);
+          }
+
+          const completed = await store.completeAnalysisJob(scope, queued.jobId, artifacts);
+
+          if (!completed) {
+            throw new Error(`Analysis job ${queued.jobId} was not completed`);
+          }
+
+          result = {
+            ...completed,
+            issueCount: persisted.issueCount
+          };
+        } catch (error) {
+          await store.failAnalysisJob(scope, queued.jobId, errorMessage(error));
+          throw error;
+        }
+
+        try {
+          await recordAnalysisComplete(result);
+        } catch {
+          // Audit failure must not roll back completed inline analysis state.
+        }
+
+        return result;
+      }
+
+      return queued;
     },
 
     async getLatestAnalysisJob(context: RequestContext, reviewCaseId: string) {
@@ -342,6 +454,164 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
 
     async listAuditEvents(context: RequestContext, targetType?: string, targetId?: string) {
       return store.listAuditEvents(scopeFromContext(context), { targetType, targetId });
+    },
+
+    async createKnowledgeDocument(context: RequestContext, input: CreateKnowledgeDocumentInput) {
+      requireRole(context, ["compliance_admin"], "create knowledge document");
+
+      const scope = scopeFromContext(context);
+      const document = await store.createKnowledgeDocument(scope, input);
+
+      await store.recordAuditEvent(scope, {
+        action: "knowledge_document.create",
+        targetType: "knowledge_document",
+        targetId: document.id,
+        afterValue: {
+          title: document.title,
+          version: document.version
+        }
+      });
+
+      return document;
+    },
+
+    async listKnowledgeDocuments(context: RequestContext) {
+      return store.listKnowledgeDocuments(scopeFromContext(context));
+    },
+
+    async approveKnowledgeDocument(context: RequestContext, documentId: string) {
+      requireRole(context, ["compliance_admin"], "approve knowledge document");
+
+      const scope = scopeFromContext(context);
+      const document = await store.approveKnowledgeDocument(scope, documentId);
+
+      if (document) {
+        await store.recordAuditEvent(scope, {
+          action: "knowledge_document.approve",
+          targetType: "knowledge_document",
+          targetId: document.id,
+          afterValue: { approvalStatus: document.approvalStatus }
+        });
+      }
+
+      return document;
+    },
+
+    async createChatSession(context: RequestContext, input: CreateChatSessionInput) {
+      requireRole(context, ["reviewer", "compliance_admin"], "create review chat session");
+
+      return store.createChatSession(scopeFromContext(context), input);
+    },
+
+    async createChatMessage(context: RequestContext, input: CreateChatMessageInput) {
+      requireRole(context, ["reviewer", "compliance_admin"], "create chat message");
+
+      const scope = scopeFromContext(context);
+      const result = await store.createChatMessage(scope, input);
+
+      if (result) {
+        await store.recordAuditEvent(scope, {
+          action: "chat.message.create",
+          targetType: "chat_session",
+          targetId: input.sessionId,
+          afterValue: {
+            userMessageId: result.userMessage.id,
+            assistantMessageId: result.assistantMessage.id
+          }
+        });
+      }
+
+      return result;
+    },
+
+    async markChatMessageForDraft(
+      context: RequestContext,
+      messageId: string,
+      markedForDraft: boolean
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "mark chat message for draft");
+
+      const scope = scopeFromContext(context);
+      const message = await store.markChatMessageForDraft(scope, messageId, markedForDraft);
+
+      if (message) {
+        await store.recordAuditEvent(scope, {
+          action: "chat.message.mark_for_draft",
+          targetType: "chat_message",
+          targetId: message.id,
+          afterValue: { markedForDraft: message.markedForDraft }
+        });
+      }
+
+      return message;
+    },
+
+    async createDraftVersion(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: CreateDraftVersionInput
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "create draft version");
+
+      const scope = scopeFromContext(context);
+      const draft = await store.createDraftVersion(scope, reviewCaseId, input);
+
+      if (draft) {
+        await store.recordAuditEvent(scope, {
+          action: "draft.version.create",
+          targetType: "draft_version",
+          targetId: draft.id,
+          afterValue: {
+            reviewCaseId: draft.reviewCaseId,
+            version: draft.version,
+            source: draft.source
+          }
+        });
+      }
+
+      return draft;
+    },
+
+    async createReviewReport(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: CreateReviewReportInput
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "create review report");
+
+      const scope = scopeFromContext(context);
+      const report = await store.createReviewReport(scope, reviewCaseId, input);
+
+      if (report) {
+        await store.recordAuditEvent(scope, {
+          action: "report.generate",
+          targetType: "review_report",
+          targetId: report.id,
+          afterValue: {
+            reviewCaseId: report.reviewCaseId,
+            reportType: report.reportType,
+            version: report.version
+          }
+        });
+      }
+
+      return report;
+    },
+
+    async listCaseLibrary(context: RequestContext, options: ListReviewSummariesOptions = {}) {
+      requireRole(context, ["reviewer", "compliance_admin"], "list case library");
+
+      const page = await store.listCaseLibrary(scopeFromContext(context), options);
+      const items = page.items.map((summary) => ({
+        ...summary,
+        availableActions: availableActionsFor(context.role, summary.status)
+      }));
+
+      return {
+        ...page,
+        items,
+        reviewCases: items
+      };
     },
 
     async listReviewCaseAuditEvents(

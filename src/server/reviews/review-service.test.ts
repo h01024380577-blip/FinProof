@@ -20,6 +20,13 @@ const reviewerContext = {
   ipAddress: "203.0.113.10"
 };
 
+const reviewerStoreScope = {
+  tenantId: reviewerContext.tenantId,
+  actorUserId: reviewerContext.userId,
+  actorRole: reviewerContext.role,
+  ipAddress: reviewerContext.ipAddress
+};
+
 const requesterContext = {
   tenantId: "tenant-demo",
   userId: "user-requester-demo",
@@ -121,13 +128,24 @@ describe("review service", () => {
       status: "analysis_complete",
       jobId: "job-rc-demo-deposit-001-001"
     });
-    expect(auditEvents[0]).toMatchObject({
-      action: "analysis.start",
-      targetType: "review_case",
-      targetId: "rc-demo-deposit-001",
-      userId: "user-reviewer-demo",
-      ipAddress: "203.0.113.10"
-    });
+    expect(auditEvents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: "analysis.start",
+          targetType: "review_case",
+          targetId: "rc-demo-deposit-001",
+          userId: "user-reviewer-demo",
+          ipAddress: "203.0.113.10"
+        }),
+        expect.objectContaining({
+          action: "analysis.complete",
+          targetType: "review_case",
+          targetId: "rc-demo-deposit-001",
+          userId: "user-reviewer-demo",
+          ipAddress: "203.0.113.10"
+        })
+      ])
+    );
   });
 
   it("stores OCR/RAG artifacts when analysis starts", async () => {
@@ -508,17 +526,22 @@ describe("review service", () => {
 
   it("queues, claims, and completes analysis jobs for workers", async () => {
     const store = createMockReviewStore();
-    const created = await store.createReviewCaseFromSamplePackage(reviewerContext, {
+    const created = await store.createReviewCaseFromSamplePackage(reviewerStoreScope, {
       samplePackageId: "rc-demo-deposit-001"
     });
 
     expect(created).toBeDefined();
 
-    const queued = await store.enqueueAnalysis(reviewerContext, "rc-demo-deposit-001");
+    const queued = await store.enqueueAnalysis(reviewerStoreScope, "rc-demo-deposit-001");
     const claimed = await store.claimNextAnalysisJob("tenant-demo", "worker-001");
-    const completed = await store.completeAnalysisJob(reviewerContext, claimed!.id, artifacts);
-    const latest = await store.getLatestAnalysisJob(reviewerContext, "rc-demo-deposit-001");
-    const review = await store.getReviewCase(reviewerContext, "rc-demo-deposit-001");
+    const persisted = await store.persistAnalysisOutputs(reviewerStoreScope, {
+      reviewCaseId: "rc-demo-deposit-001",
+      jobId: claimed!.id,
+      artifacts
+    });
+    const completed = await store.completeAnalysisJob(reviewerStoreScope, claimed!.id, artifacts);
+    const latest = await store.getLatestAnalysisJob(reviewerStoreScope, "rc-demo-deposit-001");
+    const review = await store.getReviewCase(reviewerStoreScope, "rc-demo-deposit-001");
 
     expect(queued).toMatchObject({
       status: "analysis_queued",
@@ -528,6 +551,10 @@ describe("review service", () => {
       id: "job-rc-demo-deposit-001-001",
       status: "running",
       currentStep: "worker_running"
+    });
+    expect(persisted).toMatchObject({
+      issueCount: expect.any(Number),
+      evidenceCount: expect.any(Number)
     });
     expect(completed).toMatchObject({
       status: "analysis_complete",

@@ -59,6 +59,14 @@ export const ModelName = {
   ReviewIssue: 'ReviewIssue',
   Evidence: 'Evidence',
   AnalysisJob: 'AnalysisJob',
+  KnowledgeDocument: 'KnowledgeDocument',
+  EvidenceChunk: 'EvidenceChunk',
+  AgentRun: 'AgentRun',
+  AgentFinding: 'AgentFinding',
+  ChatSession: 'ChatSession',
+  ChatMessage: 'ChatMessage',
+  DraftVersion: 'DraftVersion',
+  ReviewReport: 'ReviewReport',
   AuditLog: 'AuditLog'
 } as const
 
@@ -174,6 +182,10 @@ export const ReviewIssueScalarFieldEnum = {
   title: 'title',
   targetText: 'targetText',
   targetBbox: 'targetBbox',
+  targetFileId: 'targetFileId',
+  targetPage: 'targetPage',
+  confidence: 'confidence',
+  agentFindingId: 'agentFindingId',
   sourceAgents: 'sourceAgents',
   suggestedAction: 'suggestedAction',
   finalAction: 'finalAction',
@@ -192,6 +204,10 @@ export const EvidenceScalarFieldEnum = {
   id: 'id',
   issueId: 'issueId',
   sourceType: 'sourceType',
+  documentId: 'documentId',
+  chunkId: 'chunkId',
+  version: 'version',
+  effectiveFrom: 'effectiveFrom',
   title: 'title',
   page: 'page',
   section: 'section',
@@ -219,6 +235,135 @@ export const AnalysisJobScalarFieldEnum = {
 } as const
 
 export type AnalysisJobScalarFieldEnum = (typeof AnalysisJobScalarFieldEnum)[keyof typeof AnalysisJobScalarFieldEnum]
+
+
+export const KnowledgeDocumentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  affiliateId: 'affiliateId',
+  documentType: 'documentType',
+  productType: 'productType',
+  title: 'title',
+  version: 'version',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  approvalStatus: 'approvalStatus',
+  storageKey: 'storageKey',
+  createdById: 'createdById',
+  approvedById: 'approvedById',
+  createdAt: 'createdAt',
+  approvedAt: 'approvedAt'
+} as const
+
+export type KnowledgeDocumentScalarFieldEnum = (typeof KnowledgeDocumentScalarFieldEnum)[keyof typeof KnowledgeDocumentScalarFieldEnum]
+
+
+export const EvidenceChunkScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  knowledgeDocumentId: 'knowledgeDocumentId',
+  reviewFileId: 'reviewFileId',
+  chunkText: 'chunkText',
+  chunkSummary: 'chunkSummary',
+  embeddingModel: 'embeddingModel',
+  embeddingId: 'embeddingId',
+  page: 'page',
+  section: 'section',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type EvidenceChunkScalarFieldEnum = (typeof EvidenceChunkScalarFieldEnum)[keyof typeof EvidenceChunkScalarFieldEnum]
+
+
+export const AgentRunScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  analysisJobId: 'analysisJobId',
+  agentType: 'agentType',
+  status: 'status',
+  model: 'model',
+  modelTier: 'modelTier',
+  escalationReason: 'escalationReason',
+  inputSnapshot: 'inputSnapshot',
+  outputSnapshot: 'outputSnapshot',
+  errorMessage: 'errorMessage',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt'
+} as const
+
+export type AgentRunScalarFieldEnum = (typeof AgentRunScalarFieldEnum)[keyof typeof AgentRunScalarFieldEnum]
+
+
+export const AgentFindingScalarFieldEnum = {
+  id: 'id',
+  agentRunId: 'agentRunId',
+  reviewCaseId: 'reviewCaseId',
+  issueType: 'issueType',
+  riskLevel: 'riskLevel',
+  title: 'title',
+  targetText: 'targetText',
+  targetBbox: 'targetBbox',
+  outputSnapshot: 'outputSnapshot',
+  createdAt: 'createdAt'
+} as const
+
+export type AgentFindingScalarFieldEnum = (typeof AgentFindingScalarFieldEnum)[keyof typeof AgentFindingScalarFieldEnum]
+
+
+export const ChatSessionScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  issueId: 'issueId',
+  userId: 'userId',
+  mode: 'mode',
+  createdAt: 'createdAt'
+} as const
+
+export type ChatSessionScalarFieldEnum = (typeof ChatSessionScalarFieldEnum)[keyof typeof ChatSessionScalarFieldEnum]
+
+
+export const ChatMessageScalarFieldEnum = {
+  id: 'id',
+  chatSessionId: 'chatSessionId',
+  role: 'role',
+  content: 'content',
+  evidenceIds: 'evidenceIds',
+  markedForDraft: 'markedForDraft',
+  createdAt: 'createdAt'
+} as const
+
+export type ChatMessageScalarFieldEnum = (typeof ChatMessageScalarFieldEnum)[keyof typeof ChatMessageScalarFieldEnum]
+
+
+export const DraftVersionScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  version: 'version',
+  draft: 'draft',
+  source: 'source',
+  sourceMessageIds: 'sourceMessageIds',
+  evidenceIds: 'evidenceIds',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+} as const
+
+export type DraftVersionScalarFieldEnum = (typeof DraftVersionScalarFieldEnum)[keyof typeof DraftVersionScalarFieldEnum]
+
+
+export const ReviewReportScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  reportType: 'reportType',
+  contentMarkdown: 'contentMarkdown',
+  evidenceIds: 'evidenceIds',
+  storageKey: 'storageKey',
+  version: 'version',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+} as const
+
+export type ReviewReportScalarFieldEnum = (typeof ReviewReportScalarFieldEnum)[keyof typeof ReviewReportScalarFieldEnum]
 
 
 export const AuditLogScalarFieldEnum = {

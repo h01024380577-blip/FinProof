@@ -15,7 +15,7 @@ describeIfDb("prisma review store", () => {
 
     const summaries = await store.listReviewSummaries(scope);
 
-    expect(summaries.map((summary) => summary.id)).toEqual(
+    expect(summaries.items.map((summary) => summary.id)).toEqual(
       expect.arrayContaining(["rc-demo-deposit-001", "rc-demo-loan-001"])
     );
   });

@@ -184,6 +184,7 @@ export type AffiliateWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Affiliate"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   cases?: Prisma.ReviewCaseListRelationFilter
+  knowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
 }
 
 export type AffiliateOrderByWithRelationInput = {
@@ -194,6 +195,7 @@ export type AffiliateOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   cases?: Prisma.ReviewCaseOrderByRelationAggregateInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentOrderByRelationAggregateInput
 }
 
 export type AffiliateWhereUniqueInput = Prisma.AtLeast<{
@@ -208,6 +210,7 @@ export type AffiliateWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Affiliate"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   cases?: Prisma.ReviewCaseListRelationFilter
+  knowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
 }, "id" | "tenantId_code">
 
 export type AffiliateOrderByWithAggregationInput = {
@@ -239,6 +242,7 @@ export type AffiliateCreateInput = {
   createdAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutAffiliatesInput
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutAffiliateInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutAffiliateInput
 }
 
 export type AffiliateUncheckedCreateInput = {
@@ -248,6 +252,7 @@ export type AffiliateUncheckedCreateInput = {
   code: string
   createdAt?: Date | string
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutAffiliateInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutAffiliateInput
 }
 
 export type AffiliateUpdateInput = {
@@ -257,6 +262,7 @@ export type AffiliateUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutAffiliatesNestedInput
   cases?: Prisma.ReviewCaseUpdateManyWithoutAffiliateNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutAffiliateNestedInput
 }
 
 export type AffiliateUncheckedUpdateInput = {
@@ -266,6 +272,7 @@ export type AffiliateUncheckedUpdateInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutAffiliateNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutAffiliateNestedInput
 }
 
 export type AffiliateCreateManyInput = {
@@ -393,12 +400,29 @@ export type AffiliateUpdateOneWithoutCasesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AffiliateUpdateToOneWithWhereWithoutCasesInput, Prisma.AffiliateUpdateWithoutCasesInput>, Prisma.AffiliateUncheckedUpdateWithoutCasesInput>
 }
 
+export type AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput = {
+  create?: Prisma.XOR<Prisma.AffiliateCreateWithoutKnowledgeDocumentsInput, Prisma.AffiliateUncheckedCreateWithoutKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.AffiliateCreateOrConnectWithoutKnowledgeDocumentsInput
+  connect?: Prisma.AffiliateWhereUniqueInput
+}
+
+export type AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput = {
+  create?: Prisma.XOR<Prisma.AffiliateCreateWithoutKnowledgeDocumentsInput, Prisma.AffiliateUncheckedCreateWithoutKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.AffiliateCreateOrConnectWithoutKnowledgeDocumentsInput
+  upsert?: Prisma.AffiliateUpsertWithoutKnowledgeDocumentsInput
+  disconnect?: Prisma.AffiliateWhereInput | boolean
+  delete?: Prisma.AffiliateWhereInput | boolean
+  connect?: Prisma.AffiliateWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AffiliateUpdateToOneWithWhereWithoutKnowledgeDocumentsInput, Prisma.AffiliateUpdateWithoutKnowledgeDocumentsInput>, Prisma.AffiliateUncheckedUpdateWithoutKnowledgeDocumentsInput>
+}
+
 export type AffiliateCreateWithoutTenantInput = {
   id: string
   name: string
   code: string
   createdAt?: Date | string
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutAffiliateInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutAffiliateInput
 }
 
 export type AffiliateUncheckedCreateWithoutTenantInput = {
@@ -407,6 +431,7 @@ export type AffiliateUncheckedCreateWithoutTenantInput = {
   code: string
   createdAt?: Date | string
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutAffiliateInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutAffiliateInput
 }
 
 export type AffiliateCreateOrConnectWithoutTenantInput = {
@@ -452,6 +477,7 @@ export type AffiliateCreateWithoutCasesInput = {
   code: string
   createdAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutAffiliatesInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutAffiliateInput
 }
 
 export type AffiliateUncheckedCreateWithoutCasesInput = {
@@ -460,6 +486,7 @@ export type AffiliateUncheckedCreateWithoutCasesInput = {
   name: string
   code: string
   createdAt?: Date | string
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutAffiliateInput
 }
 
 export type AffiliateCreateOrConnectWithoutCasesInput = {
@@ -484,6 +511,7 @@ export type AffiliateUpdateWithoutCasesInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutAffiliatesNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutAffiliateNestedInput
 }
 
 export type AffiliateUncheckedUpdateWithoutCasesInput = {
@@ -492,6 +520,59 @@ export type AffiliateUncheckedUpdateWithoutCasesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutAffiliateNestedInput
+}
+
+export type AffiliateCreateWithoutKnowledgeDocumentsInput = {
+  id: string
+  name: string
+  code: string
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutAffiliatesInput
+  cases?: Prisma.ReviewCaseCreateNestedManyWithoutAffiliateInput
+}
+
+export type AffiliateUncheckedCreateWithoutKnowledgeDocumentsInput = {
+  id: string
+  tenantId: string
+  name: string
+  code: string
+  createdAt?: Date | string
+  cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutAffiliateInput
+}
+
+export type AffiliateCreateOrConnectWithoutKnowledgeDocumentsInput = {
+  where: Prisma.AffiliateWhereUniqueInput
+  create: Prisma.XOR<Prisma.AffiliateCreateWithoutKnowledgeDocumentsInput, Prisma.AffiliateUncheckedCreateWithoutKnowledgeDocumentsInput>
+}
+
+export type AffiliateUpsertWithoutKnowledgeDocumentsInput = {
+  update: Prisma.XOR<Prisma.AffiliateUpdateWithoutKnowledgeDocumentsInput, Prisma.AffiliateUncheckedUpdateWithoutKnowledgeDocumentsInput>
+  create: Prisma.XOR<Prisma.AffiliateCreateWithoutKnowledgeDocumentsInput, Prisma.AffiliateUncheckedCreateWithoutKnowledgeDocumentsInput>
+  where?: Prisma.AffiliateWhereInput
+}
+
+export type AffiliateUpdateToOneWithWhereWithoutKnowledgeDocumentsInput = {
+  where?: Prisma.AffiliateWhereInput
+  data: Prisma.XOR<Prisma.AffiliateUpdateWithoutKnowledgeDocumentsInput, Prisma.AffiliateUncheckedUpdateWithoutKnowledgeDocumentsInput>
+}
+
+export type AffiliateUpdateWithoutKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutAffiliatesNestedInput
+  cases?: Prisma.ReviewCaseUpdateManyWithoutAffiliateNestedInput
+}
+
+export type AffiliateUncheckedUpdateWithoutKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutAffiliateNestedInput
 }
 
 export type AffiliateCreateManyTenantInput = {
@@ -507,6 +588,7 @@ export type AffiliateUpdateWithoutTenantInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cases?: Prisma.ReviewCaseUpdateManyWithoutAffiliateNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutAffiliateNestedInput
 }
 
 export type AffiliateUncheckedUpdateWithoutTenantInput = {
@@ -515,6 +597,7 @@ export type AffiliateUncheckedUpdateWithoutTenantInput = {
   code?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutAffiliateNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutAffiliateNestedInput
 }
 
 export type AffiliateUncheckedUpdateManyWithoutTenantInput = {
@@ -531,10 +614,12 @@ export type AffiliateUncheckedUpdateManyWithoutTenantInput = {
 
 export type AffiliateCountOutputType = {
   cases: number
+  knowledgeDocuments: number
 }
 
 export type AffiliateCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   cases?: boolean | AffiliateCountOutputTypeCountCasesArgs
+  knowledgeDocuments?: boolean | AffiliateCountOutputTypeCountKnowledgeDocumentsArgs
 }
 
 /**
@@ -554,6 +639,13 @@ export type AffiliateCountOutputTypeCountCasesArgs<ExtArgs extends runtime.Types
   where?: Prisma.ReviewCaseWhereInput
 }
 
+/**
+ * AffiliateCountOutputType without action
+ */
+export type AffiliateCountOutputTypeCountKnowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.KnowledgeDocumentWhereInput
+}
+
 
 export type AffiliateSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -563,6 +655,7 @@ export type AffiliateSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   createdAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   cases?: boolean | Prisma.Affiliate$casesArgs<ExtArgs>
+  knowledgeDocuments?: boolean | Prisma.Affiliate$knowledgeDocumentsArgs<ExtArgs>
   _count?: boolean | Prisma.AffiliateCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["affiliate"]>
 
@@ -596,6 +689,7 @@ export type AffiliateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type AffiliateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   cases?: boolean | Prisma.Affiliate$casesArgs<ExtArgs>
+  knowledgeDocuments?: boolean | Prisma.Affiliate$knowledgeDocumentsArgs<ExtArgs>
   _count?: boolean | Prisma.AffiliateCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AffiliateIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -610,6 +704,7 @@ export type $AffiliatePayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     tenant: Prisma.$TenantPayload<ExtArgs>
     cases: Prisma.$ReviewCasePayload<ExtArgs>[]
+    knowledgeDocuments: Prisma.$KnowledgeDocumentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1013,6 +1108,7 @@ export interface Prisma__AffiliateClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   cases<T extends Prisma.Affiliate$casesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Affiliate$casesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewCasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  knowledgeDocuments<T extends Prisma.Affiliate$knowledgeDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Affiliate$knowledgeDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1469,6 +1565,30 @@ export type Affiliate$casesArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.ReviewCaseScalarFieldEnum | Prisma.ReviewCaseScalarFieldEnum[]
+}
+
+/**
+ * Affiliate.knowledgeDocuments
+ */
+export type Affiliate$knowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the KnowledgeDocument
+   */
+  select?: Prisma.KnowledgeDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the KnowledgeDocument
+   */
+  omit?: Prisma.KnowledgeDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KnowledgeDocumentInclude<ExtArgs> | null
+  where?: Prisma.KnowledgeDocumentWhereInput
+  orderBy?: Prisma.KnowledgeDocumentOrderByWithRelationInput | Prisma.KnowledgeDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.KnowledgeDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.KnowledgeDocumentScalarFieldEnum | Prisma.KnowledgeDocumentScalarFieldEnum[]
 }
 
 /**

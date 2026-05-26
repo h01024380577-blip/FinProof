@@ -186,6 +186,8 @@ export type TenantWhereInput = {
   users?: Prisma.UserListRelationFilter
   cases?: Prisma.ReviewCaseListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  knowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
+  evidenceChunks?: Prisma.EvidenceChunkListRelationFilter
 }
 
 export type TenantOrderByWithRelationInput = {
@@ -198,6 +200,8 @@ export type TenantOrderByWithRelationInput = {
   users?: Prisma.UserOrderByRelationAggregateInput
   cases?: Prisma.ReviewCaseOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentOrderByRelationAggregateInput
+  evidenceChunks?: Prisma.EvidenceChunkOrderByRelationAggregateInput
 }
 
 export type TenantWhereUniqueInput = Prisma.AtLeast<{
@@ -213,6 +217,8 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   users?: Prisma.UserListRelationFilter
   cases?: Prisma.ReviewCaseListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  knowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
+  evidenceChunks?: Prisma.EvidenceChunkListRelationFilter
 }, "id">
 
 export type TenantOrderByWithAggregationInput = {
@@ -247,6 +253,8 @@ export type TenantCreateInput = {
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateInput = {
@@ -259,6 +267,8 @@ export type TenantUncheckedCreateInput = {
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUpdateInput = {
@@ -271,6 +281,8 @@ export type TenantUpdateInput = {
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateInput = {
@@ -283,6 +295,8 @@ export type TenantUncheckedUpdateInput = {
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateManyInput = {
@@ -388,6 +402,34 @@ export type TenantUpdateOneRequiredWithoutCasesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutCasesInput, Prisma.TenantUpdateWithoutCasesInput>, Prisma.TenantUncheckedUpdateWithoutCasesInput>
 }
 
+export type TenantCreateNestedOneWithoutKnowledgeDocumentsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutKnowledgeDocumentsInput, Prisma.TenantUncheckedCreateWithoutKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutKnowledgeDocumentsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutKnowledgeDocumentsInput, Prisma.TenantUncheckedCreateWithoutKnowledgeDocumentsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutKnowledgeDocumentsInput
+  upsert?: Prisma.TenantUpsertWithoutKnowledgeDocumentsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutKnowledgeDocumentsInput, Prisma.TenantUpdateWithoutKnowledgeDocumentsInput>, Prisma.TenantUncheckedUpdateWithoutKnowledgeDocumentsInput>
+}
+
+export type TenantCreateNestedOneWithoutEvidenceChunksInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutEvidenceChunksInput, Prisma.TenantUncheckedCreateWithoutEvidenceChunksInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutEvidenceChunksInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutEvidenceChunksInput, Prisma.TenantUncheckedCreateWithoutEvidenceChunksInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutEvidenceChunksInput
+  upsert?: Prisma.TenantUpsertWithoutEvidenceChunksInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutEvidenceChunksInput, Prisma.TenantUpdateWithoutEvidenceChunksInput>, Prisma.TenantUncheckedUpdateWithoutEvidenceChunksInput>
+}
+
 export type TenantCreateNestedOneWithoutAuditLogsInput = {
   create?: Prisma.XOR<Prisma.TenantCreateWithoutAuditLogsInput, Prisma.TenantUncheckedCreateWithoutAuditLogsInput>
   connectOrCreate?: Prisma.TenantCreateOrConnectWithoutAuditLogsInput
@@ -411,6 +453,8 @@ export type TenantCreateWithoutAffiliatesInput = {
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAffiliatesInput = {
@@ -422,6 +466,8 @@ export type TenantUncheckedCreateWithoutAffiliatesInput = {
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAffiliatesInput = {
@@ -449,6 +495,8 @@ export type TenantUpdateWithoutAffiliatesInput = {
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAffiliatesInput = {
@@ -460,6 +508,8 @@ export type TenantUncheckedUpdateWithoutAffiliatesInput = {
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutUsersInput = {
@@ -471,6 +521,8 @@ export type TenantCreateWithoutUsersInput = {
   affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutUsersInput = {
@@ -482,6 +534,8 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutUsersInput = {
@@ -509,6 +563,8 @@ export type TenantUpdateWithoutUsersInput = {
   affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutUsersInput = {
@@ -520,6 +576,8 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutCasesInput = {
@@ -531,6 +589,8 @@ export type TenantCreateWithoutCasesInput = {
   affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutCasesInput = {
@@ -542,6 +602,8 @@ export type TenantUncheckedCreateWithoutCasesInput = {
   affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutCasesInput = {
@@ -569,6 +631,8 @@ export type TenantUpdateWithoutCasesInput = {
   affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutCasesInput = {
@@ -580,6 +644,144 @@ export type TenantUncheckedUpdateWithoutCasesInput = {
   affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutKnowledgeDocumentsInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutKnowledgeDocumentsInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutKnowledgeDocumentsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutKnowledgeDocumentsInput, Prisma.TenantUncheckedCreateWithoutKnowledgeDocumentsInput>
+}
+
+export type TenantUpsertWithoutKnowledgeDocumentsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutKnowledgeDocumentsInput, Prisma.TenantUncheckedUpdateWithoutKnowledgeDocumentsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutKnowledgeDocumentsInput, Prisma.TenantUncheckedCreateWithoutKnowledgeDocumentsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutKnowledgeDocumentsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutKnowledgeDocumentsInput, Prisma.TenantUncheckedUpdateWithoutKnowledgeDocumentsInput>
+}
+
+export type TenantUpdateWithoutKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutKnowledgeDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutEvidenceChunksInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutEvidenceChunksInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutEvidenceChunksInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutEvidenceChunksInput, Prisma.TenantUncheckedCreateWithoutEvidenceChunksInput>
+}
+
+export type TenantUpsertWithoutEvidenceChunksInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutEvidenceChunksInput, Prisma.TenantUncheckedUpdateWithoutEvidenceChunksInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutEvidenceChunksInput, Prisma.TenantUncheckedCreateWithoutEvidenceChunksInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutEvidenceChunksInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutEvidenceChunksInput, Prisma.TenantUncheckedUpdateWithoutEvidenceChunksInput>
+}
+
+export type TenantUpdateWithoutEvidenceChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutEvidenceChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutAuditLogsInput = {
@@ -591,6 +793,8 @@ export type TenantCreateWithoutAuditLogsInput = {
   affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
   users?: Prisma.UserCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAuditLogsInput = {
@@ -602,6 +806,8 @@ export type TenantUncheckedCreateWithoutAuditLogsInput = {
   affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
   users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAuditLogsInput = {
@@ -629,6 +835,8 @@ export type TenantUpdateWithoutAuditLogsInput = {
   affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAuditLogsInput = {
@@ -640,6 +848,8 @@ export type TenantUncheckedUpdateWithoutAuditLogsInput = {
   affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
   users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 
@@ -652,6 +862,8 @@ export type TenantCountOutputType = {
   users: number
   cases: number
   auditLogs: number
+  knowledgeDocuments: number
+  evidenceChunks: number
 }
 
 export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -659,6 +871,8 @@ export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   users?: boolean | TenantCountOutputTypeCountUsersArgs
   cases?: boolean | TenantCountOutputTypeCountCasesArgs
   auditLogs?: boolean | TenantCountOutputTypeCountAuditLogsArgs
+  knowledgeDocuments?: boolean | TenantCountOutputTypeCountKnowledgeDocumentsArgs
+  evidenceChunks?: boolean | TenantCountOutputTypeCountEvidenceChunksArgs
 }
 
 /**
@@ -699,6 +913,20 @@ export type TenantCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Type
   where?: Prisma.AuditLogWhereInput
 }
 
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountKnowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.KnowledgeDocumentWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountEvidenceChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EvidenceChunkWhereInput
+}
+
 
 export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -710,6 +938,8 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
   cases?: boolean | Prisma.Tenant$casesArgs<ExtArgs>
   auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
+  knowledgeDocuments?: boolean | Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs>
+  evidenceChunks?: boolean | Prisma.Tenant$evidenceChunksArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
@@ -743,6 +973,8 @@ export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
   cases?: boolean | Prisma.Tenant$casesArgs<ExtArgs>
   auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
+  knowledgeDocuments?: boolean | Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs>
+  evidenceChunks?: boolean | Prisma.Tenant$evidenceChunksArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -755,6 +987,8 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     users: Prisma.$UserPayload<ExtArgs>[]
     cases: Prisma.$ReviewCasePayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
+    knowledgeDocuments: Prisma.$KnowledgeDocumentPayload<ExtArgs>[]
+    evidenceChunks: Prisma.$EvidenceChunkPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1160,6 +1394,8 @@ export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.T
   users<T extends Prisma.Tenant$usersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$usersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   cases<T extends Prisma.Tenant$casesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$casesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewCasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.Tenant$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  knowledgeDocuments<T extends Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  evidenceChunks<T extends Prisma.Tenant$evidenceChunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$evidenceChunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvidenceChunkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1680,6 +1916,54 @@ export type Tenant$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
+}
+
+/**
+ * Tenant.knowledgeDocuments
+ */
+export type Tenant$knowledgeDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the KnowledgeDocument
+   */
+  select?: Prisma.KnowledgeDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the KnowledgeDocument
+   */
+  omit?: Prisma.KnowledgeDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KnowledgeDocumentInclude<ExtArgs> | null
+  where?: Prisma.KnowledgeDocumentWhereInput
+  orderBy?: Prisma.KnowledgeDocumentOrderByWithRelationInput | Prisma.KnowledgeDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.KnowledgeDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.KnowledgeDocumentScalarFieldEnum | Prisma.KnowledgeDocumentScalarFieldEnum[]
+}
+
+/**
+ * Tenant.evidenceChunks
+ */
+export type Tenant$evidenceChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EvidenceChunk
+   */
+  select?: Prisma.EvidenceChunkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EvidenceChunk
+   */
+  omit?: Prisma.EvidenceChunkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EvidenceChunkInclude<ExtArgs> | null
+  where?: Prisma.EvidenceChunkWhereInput
+  orderBy?: Prisma.EvidenceChunkOrderByWithRelationInput | Prisma.EvidenceChunkOrderByWithRelationInput[]
+  cursor?: Prisma.EvidenceChunkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EvidenceChunkScalarFieldEnum | Prisma.EvidenceChunkScalarFieldEnum[]
 }
 
 /**

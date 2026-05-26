@@ -1,5 +1,12 @@
 import type {
+  ChatMessage,
+  ChatMode,
+  ChatSession,
+  DraftVersion,
   Evidence,
+  KnowledgeDocument,
+  PaginatedResult,
+  PersistedReviewReport,
   ProductType,
   RoleId,
   ReviewCase,
@@ -118,9 +125,68 @@ export type ListIssuesOptions = {
   riskLevel?: RiskLevel;
 };
 
+export type ListReviewSummariesOptions = {
+  status?: ReviewCase["status"];
+  productType?: ProductType;
+  affiliateId?: string;
+  riskLevel?: RiskLevel;
+  page?: number;
+  pageSize?: number;
+};
+
+export type ReviewSummaryPage = PaginatedResult<ReviewSummary> & {
+  reviewCases: ReviewSummary[];
+};
+
+export type CreateKnowledgeDocumentInput = Pick<
+  KnowledgeDocument,
+  | "documentType"
+  | "affiliateId"
+  | "productType"
+  | "title"
+  | "version"
+  | "effectiveFrom"
+  | "storageKey"
+>;
+
+export type CreateChatSessionInput = {
+  reviewCaseId: string;
+  issueId?: string;
+  mode: ChatMode;
+};
+
+export type CreateChatMessageInput = {
+  sessionId: string;
+  content: string;
+};
+
+export type CreateChatMessageResult = {
+  userMessage: ChatMessage;
+  assistantMessage: ChatMessage;
+};
+
+export type CreateDraftVersionInput = {
+  draft?: string;
+  source: DraftVersion["source"];
+  sourceMessageIds?: string[];
+  evidenceIds?: string[];
+};
+
+export type CreateReviewReportInput = {
+  reportType: PersistedReviewReport["reportType"];
+  tone: "formal" | "soft" | "strict";
+  includeChatContext: boolean;
+  issueIds: string[];
+  draft?: string;
+};
+
 export interface ReviewStore {
-  listReviewSummaries(scope: ReviewStoreScope): Promise<ReviewSummary[]>;
+  listReviewSummaries(
+    scope: ReviewStoreScope,
+    options?: ListReviewSummariesOptions
+  ): Promise<ReviewSummaryPage>;
   getReviewCase(scope: ReviewStoreScope, id: string): Promise<ReviewCase | undefined>;
+  isReviewCaseIdAvailable(scope: ReviewStoreScope, id: string): Promise<boolean>;
   createReviewCaseFromSamplePackage(
     scope: ReviewStoreScope,
     input: CreateReviewCaseFromSamplePackageInput
@@ -147,6 +213,14 @@ export interface ReviewStore {
     jobId: string,
     artifacts: AnalysisArtifacts
   ): Promise<AnalysisResult | undefined>;
+  persistAnalysisOutputs(
+    scope: ReviewStoreScope,
+    input: {
+      reviewCaseId: string;
+      jobId: string;
+      artifacts: AnalysisArtifacts;
+    }
+  ): Promise<{ issueCount: number; evidenceCount: number } | undefined>;
   failAnalysisJob(
     scope: ReviewStoreScope,
     jobId: string,
@@ -183,4 +257,40 @@ export interface ReviewStore {
   ): Promise<ReviewCase | undefined>;
   recordAuditEvent(scope: ReviewStoreScope, input: AuditEventInput): Promise<AuditEvent>;
   listAuditEvents(scope: ReviewStoreScope, options?: ListAuditEventsOptions): Promise<AuditEvent[]>;
+  createKnowledgeDocument(
+    scope: ReviewStoreScope,
+    input: CreateKnowledgeDocumentInput
+  ): Promise<KnowledgeDocument>;
+  listKnowledgeDocuments(scope: ReviewStoreScope): Promise<KnowledgeDocument[]>;
+  approveKnowledgeDocument(
+    scope: ReviewStoreScope,
+    documentId: string
+  ): Promise<KnowledgeDocument | undefined>;
+  createChatSession(
+    scope: ReviewStoreScope,
+    input: CreateChatSessionInput
+  ): Promise<ChatSession | undefined>;
+  createChatMessage(
+    scope: ReviewStoreScope,
+    input: CreateChatMessageInput
+  ): Promise<CreateChatMessageResult | undefined>;
+  markChatMessageForDraft(
+    scope: ReviewStoreScope,
+    messageId: string,
+    markedForDraft: boolean
+  ): Promise<ChatMessage | undefined>;
+  createDraftVersion(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: CreateDraftVersionInput
+  ): Promise<DraftVersion | undefined>;
+  createReviewReport(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: CreateReviewReportInput
+  ): Promise<PersistedReviewReport | undefined>;
+  listCaseLibrary(
+    scope: ReviewStoreScope,
+    options?: ListReviewSummariesOptions
+  ): Promise<ReviewSummaryPage>;
 }
