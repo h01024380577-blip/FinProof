@@ -63,7 +63,8 @@ and audit events. With `FINPROOF_STORAGE_ADAPTER=s3`, uploaded file bytes are st
 the review case is created. With `FINPROOF_UPLOAD_SCAN_PROVIDER=http`, uploaded file bytes are
 scanned before they are stored. ZIP package uploads are expanded into individual review files with
 path traversal protection. Analysis start now stores OCR/RAG ingestion artifacts on the analysis
-job. It does not yet persist pgvector embeddings.
+job. Knowledge document ingestion persists embedding vectors for pgvector-backed retrieval when the
+Prisma store is active.
 
 `GET /api/v1/review-cases` includes role-aware `availableActions` for the review queue.
 The workbench reads analysis status from
@@ -85,6 +86,7 @@ Production mode is configured by environment variables rather than checked-in se
 FINPROOF_AUTH_MODE=jwt
 FINPROOF_REVIEW_STORE=prisma
 FINPROOF_MODEL_PROVIDER=router
+FINPROOF_EMBEDDING_PROVIDER=openai
 FINPROOF_OCR_PROVIDER=http
 FINPROOF_RAG_PROVIDER=postgres
 FINPROOF_ANALYSIS_EXECUTION_MODE=queued

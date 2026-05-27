@@ -125,8 +125,73 @@ export function createHttpEmbeddingProvider(
   };
 }
 
+export function createOpenAiEmbeddingProvider(
+  env: Env = process.env,
+  fetchImpl: FetchLike = fetch
+): EmbeddingProvider {
+  const endpoint =
+    value(env, "FINPROOF_EMBEDDING_ENDPOINT") ?? "https://api.openai.com/v1/embeddings";
+  const apiKey = value(env, "FINPROOF_EMBEDDING_API_KEY") ?? value(env, "OPENAI_API_KEY");
+  const model = value(env, "FINPROOF_EMBEDDING_MODEL") ?? "text-embedding-3-small";
+
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is required when embeddings use OpenAI");
+  }
+
+  return {
+    model,
+    async embed(texts) {
+      if (texts.length === 0) {
+        return [];
+      }
+
+      const response = await fetchImpl(endpoint, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          input: texts
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `OpenAI embedding provider failed: ${response.status ?? "unknown"} ${
+            response.statusText ?? ""
+          }`.trim()
+        );
+      }
+
+      const embeddings = parseEmbeddingResponse(await response.json());
+
+      if (embeddings.length !== texts.length) {
+        throw new Error("OpenAI embedding provider returned an unexpected embedding count");
+      }
+
+      return embeddings;
+    }
+  };
+}
+
 export function createEmbeddingProvider(env: Env = process.env): EmbeddingProvider {
-  return value(env, "FINPROOF_EMBEDDING_PROVIDER") === "http"
-    ? createHttpEmbeddingProvider(env)
+  const provider = value(env, "FINPROOF_EMBEDDING_PROVIDER");
+
+  if (provider === "http") {
+    return createHttpEmbeddingProvider(env);
+  }
+
+  if (provider === "openai") {
+    return createOpenAiEmbeddingProvider(env);
+  }
+
+  if (provider === "deterministic") {
+    return createDeterministicEmbeddingProvider();
+  }
+
+  return value(env, "FINPROOF_EMBEDDING_API_KEY") || value(env, "OPENAI_API_KEY")
+    ? createOpenAiEmbeddingProvider(env)
     : createDeterministicEmbeddingProvider();
 }

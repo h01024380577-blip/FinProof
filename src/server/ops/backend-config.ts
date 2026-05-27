@@ -22,6 +22,9 @@ export type BackendRuntimeConfig = {
     Partial<ModelRoutingConfig> & {
       model?: string;
     };
+  embedding: ProviderState & {
+    model: string;
+  };
   ocr: ProviderState;
   rag: ProviderState & {
     topK: number;
@@ -92,6 +95,16 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       ? modelProviderValue
       : "deterministic";
   const ocrProvider = value(env, "FINPROOF_OCR_PROVIDER") === "http" ? "http" : "deterministic";
+  const embeddingProviderValue = value(env, "FINPROOF_EMBEDDING_PROVIDER");
+  const embeddingProvider =
+    embeddingProviderValue === "openai" || embeddingProviderValue === "http"
+      ? embeddingProviderValue
+      : embeddingProviderValue === "deterministic"
+        ? "deterministic"
+        : value(env, "FINPROOF_EMBEDDING_API_KEY") || value(env, "OPENAI_API_KEY")
+          ? "openai"
+          : "deterministic";
+  const embeddingModel = value(env, "FINPROOF_EMBEDDING_MODEL") ?? "text-embedding-3-small";
   const ragProvider =
     value(env, "FINPROOF_RAG_PROVIDER") === "postgres" ? "postgres" : "deterministic";
   const rerankProvider =
@@ -127,6 +140,13 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   requireWhen(missing, modelProvider === "gemini", env, "GEMINI_API_KEY");
   requireWhen(missing, modelProvider === "router", env, "OPENAI_API_KEY");
   requireWhen(missing, modelProvider === "router", env, "GEMINI_API_KEY");
+  requireWhen(
+    missing,
+    embeddingProvider === "openai" && !value(env, "FINPROOF_EMBEDDING_API_KEY"),
+    env,
+    "OPENAI_API_KEY"
+  );
+  requireWhen(missing, embeddingProvider === "http", env, "FINPROOF_EMBEDDING_ENDPOINT");
   requireWhen(missing, ocrProvider === "http", env, "FINPROOF_OCR_ENDPOINT");
   requireWhen(missing, ragProvider === "postgres", env, "DATABASE_URL");
   requireWhen(missing, rerankProvider === "http", env, "FINPROOF_RERANK_ENDPOINT");
@@ -144,6 +164,11 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     productionGaps,
     modelProvider === "deterministic",
     "FINPROOF_MODEL_PROVIDER=router|openai|gemini"
+  );
+  requireProductionProvider(
+    productionGaps,
+    embeddingProvider !== "openai",
+    "FINPROOF_EMBEDDING_PROVIDER=openai"
   );
   requireProductionProvider(productionGaps, ocrProvider !== "http", "FINPROOF_OCR_PROVIDER=http");
   requireProductionProvider(
@@ -209,6 +234,16 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
           secretState(env, "OPENAI_API_KEY") === "set" &&
           secretState(env, "GEMINI_API_KEY") === "set")
     },
+    embedding: {
+      provider: embeddingProvider,
+      configured:
+        embeddingProvider === "deterministic" ||
+        (embeddingProvider === "openai" &&
+          (Boolean(value(env, "FINPROOF_EMBEDDING_API_KEY")) ||
+            Boolean(value(env, "OPENAI_API_KEY")))) ||
+        (embeddingProvider === "http" && Boolean(value(env, "FINPROOF_EMBEDDING_ENDPOINT"))),
+      model: embeddingProvider === "deterministic" ? "deterministic-embedding" : embeddingModel
+    },
     ocr: {
       provider: ocrProvider,
       configured: ocrProvider === "deterministic" || Boolean(value(env, "FINPROOF_OCR_ENDPOINT"))
@@ -247,6 +282,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       FINPROOF_AUTH_JWKS_URL: secretState(env, "FINPROOF_AUTH_JWKS_URL"),
       OPENAI_API_KEY: secretState(env, "OPENAI_API_KEY"),
       GEMINI_API_KEY: secretState(env, "GEMINI_API_KEY"),
+      FINPROOF_EMBEDDING_API_KEY: secretState(env, "FINPROOF_EMBEDDING_API_KEY"),
       FINPROOF_OCR_API_KEY: secretState(env, "FINPROOF_OCR_API_KEY"),
       FINPROOF_RERANK_API_KEY: secretState(env, "FINPROOF_RERANK_API_KEY"),
       FINPROOF_UPLOAD_SCAN_API_KEY: secretState(env, "FINPROOF_UPLOAD_SCAN_API_KEY"),

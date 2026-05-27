@@ -11,6 +11,7 @@ describe("backend runtime config", () => {
     expect(config.auth.mode).toBe("demo");
     expect(config.reviewStore.provider).toBe("mock");
     expect(config.model.provider).toBe("deterministic");
+    expect(config.embedding.provider).toBe("deterministic");
     expect(config.ocr.provider).toBe("deterministic");
     expect(config.rag.provider).toBe("deterministic");
     expect(config.rerank.provider).toBe("deterministic");
@@ -21,6 +22,7 @@ describe("backend runtime config", () => {
         "FINPROOF_AUTH_MODE=jwt",
         "FINPROOF_REVIEW_STORE=prisma",
         "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
+        "FINPROOF_EMBEDDING_PROVIDER=openai",
         "FINPROOF_OCR_PROVIDER=http",
         "FINPROOF_RAG_PROVIDER=postgres",
         "FINPROOF_RERANK_PROVIDER=http",
@@ -42,6 +44,7 @@ describe("backend runtime config", () => {
       expect.arrayContaining([
         "FINPROOF_REVIEW_STORE=prisma",
         "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
+        "FINPROOF_EMBEDDING_PROVIDER=openai",
         "FINPROOF_OCR_PROVIDER=http",
         "FINPROOF_RAG_PROVIDER=postgres",
         "FINPROOF_RERANK_PROVIDER=http",
@@ -140,6 +143,34 @@ describe("backend runtime config", () => {
     expect(config.missing).toContain("FINPROOF_RERANK_ENDPOINT");
   });
 
+  it("requires an OpenAI key when OpenAI embeddings are selected", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_EMBEDDING_PROVIDER: "openai"
+    });
+
+    expect(config.embedding).toEqual({
+      provider: "openai",
+      configured: false,
+      model: "text-embedding-3-small"
+    });
+    expect(config.missing).toContain("OPENAI_API_KEY");
+  });
+
+  it("accepts a dedicated embedding API key for OpenAI embeddings", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_EMBEDDING_PROVIDER: "openai",
+      FINPROOF_EMBEDDING_API_KEY: "sk-embedding",
+      FINPROOF_EMBEDDING_MODEL: "text-embedding-3-large"
+    });
+
+    expect(config.embedding).toEqual({
+      provider: "openai",
+      configured: true,
+      model: "text-embedding-3-large"
+    });
+    expect(config.missing).not.toContain("OPENAI_API_KEY");
+  });
+
   it("redacts secrets before exposing readiness", () => {
     const config = getBackendRuntimeConfig({
       FINPROOF_AUTH_MODE: "jwt",
@@ -194,6 +225,7 @@ describe("backend runtime config", () => {
       FINPROOF_MODEL_PROVIDER: "router",
       OPENAI_API_KEY: "sk-real",
       GEMINI_API_KEY: "gemini-real",
+      FINPROOF_EMBEDDING_PROVIDER: "openai",
       FINPROOF_OCR_PROVIDER: "http",
       FINPROOF_OCR_ENDPOINT: "https://ocr.example.com/extract",
       FINPROOF_RAG_PROVIDER: "postgres",

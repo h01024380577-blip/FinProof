@@ -45,6 +45,7 @@ FINPROOF_MODEL_ESCALATION_TEXT=gpt-5.4
 FINPROOF_MODEL_HIGHEST_PRECISION_TEXT=gpt-5.5
 FINPROOF_MODEL_MULTIMODAL=gemini-2.5-flash
 FINPROOF_MODEL_MULTIMODAL_ESCALATION=gemini-2.5-pro
+FINPROOF_EMBEDDING_PROVIDER=openai
 FINPROOF_EMBEDDING_MODEL=text-embedding-3-small
 FINPROOF_EMBEDDING_ESCALATION_MODEL=text-embedding-3-large
 
@@ -156,7 +157,7 @@ Model routing follows the accepted Obsidian decision `Decision 016 - AI Model Ro
 - Sensitive final rejection wording or executive-review output: `gpt-5.5`
 - Image/PDF and visual document understanding: `gemini-2.5-flash`
 - Complex visual review, dense tables, tiny disclosures, difficult OCR correction: `gemini-2.5-pro`
-- Default embeddings: `text-embedding-3-small`
+- Default OpenAI embeddings: `text-embedding-3-small`
 - High-recall retrieval fallback: `text-embedding-3-large`
 
 Start with conservative retrieval:
