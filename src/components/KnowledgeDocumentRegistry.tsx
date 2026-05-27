@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent, type JSX } from "react";
-import { BookOpenCheck, CheckCircle2, Database, Send, ShieldCheck } from "lucide-react";
+import { BookOpenCheck, CheckCircle2, Database, RotateCcw, Send, ShieldCheck } from "lucide-react";
 import type { KnowledgeDocument, KnowledgeDocumentType, ProductType } from "@/domain/types";
 import { DropZone } from "@/components/ui";
 import { useRoleContext } from "./RoleContext";
@@ -167,6 +167,24 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
     setStatus("승인 완료");
   }
 
+  async function unapproveDocument(documentId: string): Promise<void> {
+    const response = await fetch(`/api/v1/knowledge-documents/${documentId}/approve`, {
+      method: "DELETE",
+      headers: roleContext?.apiHeaders()
+    });
+
+    if (!response.ok) {
+      setStatus("지식문서 승인해제에 실패했습니다.");
+      return;
+    }
+
+    const body = (await response.json()) as { document: KnowledgeDocument };
+    setDocuments((current) =>
+      current.map((document) => (document.id === documentId ? body.document : document))
+    );
+    setStatus("승인해제 완료");
+  }
+
   return (
     <main className="knowledge-page">
       <section className="knowledge-page__header">
@@ -282,6 +300,15 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
                   >
                     <CheckCircle2 size={16} aria-hidden="true" />
                     승인
+                  </button>
+                ) : document.approvalStatus === "approved" ? (
+                  <button
+                    className="secondary-action"
+                    type="button"
+                    onClick={() => void unapproveDocument(document.id)}
+                  >
+                    <RotateCcw size={16} aria-hidden="true" />
+                    승인해제
                   </button>
                 ) : null}
               </article>

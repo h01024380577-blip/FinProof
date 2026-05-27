@@ -1184,6 +1184,25 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return clone(approved);
     },
 
+    async unapproveKnowledgeDocument(scope: ReviewStoreScope, documentId) {
+      const document = knowledgeDocuments.get(documentId);
+
+      if (!document || document.tenantId !== scope.tenantId) {
+        return undefined;
+      }
+
+      const draft: KnowledgeDocument = {
+        ...document,
+        approvalStatus: "draft",
+        approvedBy: undefined,
+        approvedAt: undefined
+      };
+
+      knowledgeDocuments.set(documentId, draft);
+
+      return clone(draft);
+    },
+
     async replaceKnowledgeDocumentChunks(
       scope: ReviewStoreScope,
       documentId,

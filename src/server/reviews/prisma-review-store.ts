@@ -750,6 +750,29 @@ export function createPrismaReviewStore(): ReviewStore {
       });
     },
 
+    async unapproveKnowledgeDocument(scope, documentId) {
+      return prisma.$transaction(async (tx) => {
+        const updated = await tx.knowledgeDocument.updateMany({
+          where: { id: documentId, tenantId: scope.tenantId },
+          data: {
+            approvalStatus: "draft",
+            approvedById: null,
+            approvedAt: null
+          }
+        });
+
+        if (updated.count !== 1) {
+          return undefined;
+        }
+
+        const document = await tx.knowledgeDocument.findUniqueOrThrow({
+          where: { id: documentId }
+        });
+
+        return toKnowledgeDocument(document);
+      });
+    },
+
     async replaceKnowledgeDocumentChunks(
       scope,
       documentId,

@@ -292,6 +292,10 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     documentId: string
   ): Promise<KnowledgeDocument | undefined>;
+  unapproveKnowledgeDocument(
+    scope: ReviewStoreScope,
+    documentId: string
+  ): Promise<KnowledgeDocument | undefined>;
   replaceKnowledgeDocumentChunks(
     scope: ReviewStoreScope,
     documentId: string,

@@ -24,3 +24,21 @@ export async function POST(request: Request, context: RouteContext<{ documentId:
     return jsonForbidden(error);
   }
 }
+
+export async function DELETE(request: Request, context: RouteContext<{ documentId: string }>) {
+  try {
+    const { documentId } = await context.params;
+    const document = await createReviewService().unapproveKnowledgeDocument(
+      await requestContext(request),
+      documentId
+    );
+
+    if (!document) {
+      return jsonError("Knowledge document not found", 404, "NOT_FOUND");
+    }
+
+    return NextResponse.json({ document });
+  } catch (error) {
+    return jsonForbidden(error);
+  }
+}

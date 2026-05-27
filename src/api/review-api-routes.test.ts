@@ -20,6 +20,10 @@ import { PATCH as issuePATCH } from "@/app/api/v1/review-cases/[caseId]/issues/[
 import { GET as listGET, POST as createPOST } from "@/app/api/v1/review-cases/route";
 import { GET as evidenceGET } from "@/app/api/v1/issues/[issueId]/evidence/route";
 import { GET as knowledgeGET, POST as knowledgePOST } from "@/app/api/v1/knowledge-documents/route";
+import {
+  DELETE as knowledgeApprovalDELETE,
+  POST as knowledgeApprovalPOST
+} from "@/app/api/v1/knowledge-documents/[documentId]/approve/route";
 import { GET as samplePackageGET } from "@/app/api/v1/sample-packages/[samplePackageId]/route";
 import { GET as samplePackagesGET } from "@/app/api/v1/sample-packages/route";
 
@@ -290,6 +294,40 @@ describe("review API routes", () => {
         title: "예금 광고 심의 지침"
       })
     ]);
+  });
+
+  it("unapproves an approved knowledge document", async () => {
+    const createResponse = await knowledgePOST(
+      jsonRequest("/api/v1/knowledge-documents", {
+        title: "예금 광고 심의 지침",
+        version: "2026.05",
+        documentType: "internal_policy",
+        productType: "deposit",
+        effectiveFrom: "2026-05-01",
+        storageKey: "manual/knowledge-documents/deposit-policy.txt"
+      })
+    );
+    const createBody = await createResponse.json();
+    const documentId = createBody.document.id as string;
+    const approveResponse = await knowledgeApprovalPOST(
+      roleRequest(`/api/v1/knowledge-documents/${documentId}/approve`, "reviewer", "POST"),
+      params({ documentId })
+    );
+    const unapproveResponse = await knowledgeApprovalDELETE(
+      roleRequest(`/api/v1/knowledge-documents/${documentId}/approve`, "reviewer", "DELETE"),
+      params({ documentId })
+    );
+    const unapproveBody = await unapproveResponse.json();
+
+    expect(createResponse.status).toBe(201);
+    expect(approveResponse.status).toBe(200);
+    expect(unapproveResponse.status).toBe(200);
+    expect(unapproveBody.document).toMatchObject({
+      id: documentId,
+      approvalStatus: "draft"
+    });
+    expect(unapproveBody.document.approvedAt).toBeUndefined();
+    expect(unapproveBody.document.approvedBy).toBeUndefined();
   });
 
   it("blocks requester analysis start and allows reviewer analysis start", async () => {

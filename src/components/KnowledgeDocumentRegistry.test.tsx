@@ -64,4 +64,62 @@ describe("KnowledgeDocumentRegistry", () => {
     expect(screen.getByText("예금 광고 심의 지침")).toBeInTheDocument();
     expect(screen.getByText("초안")).toBeInTheDocument();
   });
+
+  it("unapproves an approved knowledge document from the list", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          documents: [
+            {
+              id: "knowledge-001",
+              title: "예금 광고 심의 지침",
+              version: "2026.05",
+              documentType: "internal_policy",
+              productType: "deposit",
+              effectiveFrom: "2026-05-01",
+              approvalStatus: "approved",
+              approvedAt: "2026-05-27T00:00:00.000Z",
+              approvedBy: "user-reviewer-demo",
+              storageKey: "local/knowledge-documents/knowledge-001/deposit-policy.txt",
+              createdAt: "2026-05-26T00:00:00.000Z"
+            }
+          ]
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          document: {
+            id: "knowledge-001",
+            title: "예금 광고 심의 지침",
+            version: "2026.05",
+            documentType: "internal_policy",
+            productType: "deposit",
+            effectiveFrom: "2026-05-01",
+            approvalStatus: "draft",
+            storageKey: "local/knowledge-documents/knowledge-001/deposit-policy.txt",
+            createdAt: "2026-05-26T00:00:00.000Z"
+          }
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<KnowledgeDocumentRegistry />);
+
+    expect(await screen.findByText("승인")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "승인해제" }));
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/knowledge-documents/knowledge-001/approve",
+      expect.objectContaining({
+        method: "DELETE"
+      })
+    );
+    expect(await screen.findByText("승인해제 완료")).toBeInTheDocument();
+    expect(screen.getByText("초안")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "승인" })).toBeInTheDocument();
+  });
 });
