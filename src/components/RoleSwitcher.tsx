@@ -10,8 +10,6 @@ export function RoleSwitcher() {
   const [fallbackRole, setFallbackRole] = useState<RoleId>("reviewer");
   const activeRole = context?.activeRole ?? fallbackRole;
   const setActiveRole = context?.setActiveRole ?? setFallbackRole;
-  const authToken = context?.authToken ?? "";
-  const setAuthToken = context?.setAuthToken;
   const role = roles.find((item) => item.id === activeRole) ?? roles[0];
 
   return (
@@ -33,18 +31,6 @@ export function RoleSwitcher() {
           </button>
         ))}
       </div>
-      {setAuthToken ? (
-        <label className="role-switcher__token">
-          <span>JWT</span>
-          <input
-            aria-label="Bearer JWT"
-            type="password"
-            value={authToken}
-            placeholder="Bearer token"
-            onChange={(event) => setAuthToken(event.target.value)}
-          />
-        </label>
-      ) : null}
     </div>
   );
 }

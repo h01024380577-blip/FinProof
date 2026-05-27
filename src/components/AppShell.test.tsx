@@ -46,7 +46,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("button", { name: "설정" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "사용자 메뉴" })).toBeInTheDocument();
     expect(screen.getByText("Review List Content")).toBeInTheDocument();
-    expect(screen.getByText("현재 역할: Reviewer")).toBeInTheDocument();
+    expect(screen.getByText("현재 역할: 심의자")).toBeInTheDocument();
   });
 
   it("moves the active sidebar state to review history when scope is history", () => {

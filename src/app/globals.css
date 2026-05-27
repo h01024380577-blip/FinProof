@@ -419,18 +419,10 @@ a {
 }
 
 .topbar__role .role-switcher__buttons {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 10;
-  display: none;
-  width: 282px;
-  box-shadow: var(--shadow-popover);
-}
-
-.topbar__role .role-switcher:hover .role-switcher__buttons,
-.topbar__role .role-switcher:focus-within .role-switcher__buttons {
+  position: static;
   display: grid;
+  width: 252px;
+  box-shadow: none;
 }
 
 .role-switcher__button,
@@ -454,45 +446,6 @@ a {
   border-color: var(--primary);
   background: var(--primary);
   color: #ffffff;
-}
-
-.role-switcher__token {
-  display: grid;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 800;
-}
-
-.role-switcher__token input {
-  width: 100%;
-  min-width: 0;
-  min-height: 32px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  padding: 0 9px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
-
-.topbar__role .role-switcher__token {
-  position: absolute;
-  top: calc(100% + 50px);
-  right: 0;
-  z-index: 10;
-  display: none;
-  width: 282px;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--surface);
-  box-shadow: var(--shadow-popover);
-}
-
-.topbar__role .role-switcher:hover .role-switcher__token,
-.topbar__role .role-switcher:focus-within .role-switcher__token {
-  display: grid;
 }
 
 .panel,

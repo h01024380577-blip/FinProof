@@ -7,7 +7,7 @@ function HeaderProbe() {
   const { apiHeaders } = useRole();
   const headers = apiHeaders();
 
-  return <output aria-label="headers">{headers.authorization ?? "no-token"}</output>;
+  return <output aria-label="headers">{headers["x-finproof-role"]}</output>;
 }
 
 describe("RoleSwitcher", () => {
@@ -15,21 +15,15 @@ describe("RoleSwitcher", () => {
     const user = userEvent.setup();
     render(<RoleSwitcher />);
 
-    expect(screen.getByRole("button", { name: "Reviewer" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
+    expect(screen.getByRole("button", { name: "심의자" })).toHaveAttribute("aria-pressed", "true");
 
-    await user.click(screen.getByRole("button", { name: "Requester" }));
+    await user.click(screen.getByRole("button", { name: "요청자" }));
 
-    expect(screen.getByRole("button", { name: "Requester" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
-    expect(screen.getByText("현재 역할: Requester")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "요청자" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("현재 역할: 요청자")).toBeInTheDocument();
   });
 
-  it("stores an operator JWT for production API calls", async () => {
+  it("changes API role headers by clicking role buttons and does not render JWT input", async () => {
     const user = userEvent.setup();
     render(
       <RoleProvider>
@@ -38,8 +32,14 @@ describe("RoleSwitcher", () => {
       </RoleProvider>
     );
 
-    await user.type(screen.getByLabelText("Bearer JWT"), "operator.jwt");
+    expect(screen.queryByLabelText("Bearer JWT")).not.toBeInTheDocument();
+    expect(screen.queryByText("JWT")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("headers")).toHaveTextContent("reviewer");
 
-    expect(screen.getByLabelText("headers")).toHaveTextContent("Bearer operator.jwt");
+    await user.click(screen.getByRole("button", { name: "관리자" }));
+
+    expect(screen.getByRole("button", { name: "관리자" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("현재 역할: 관리자")).toBeInTheDocument();
+    expect(screen.getByLabelText("headers")).toHaveTextContent("compliance_admin");
   });
 });

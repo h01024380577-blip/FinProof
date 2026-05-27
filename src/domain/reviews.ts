@@ -13,17 +13,17 @@ export const reviewCases = sampleReviewCases as ReviewCase[];
 export const roles: Array<{ id: RoleId; label: string; description: string }> = [
   {
     id: "reviewer",
-    label: "Reviewer",
+    label: "심의자",
     description: "AI 분석 결과 검토"
   },
   {
     id: "requester",
-    label: "Requester",
+    label: "요청자",
     description: "심의 요청 생성"
   },
   {
     id: "compliance_admin",
-    label: "Admin",
+    label: "관리자",
     description: "기준과 사례 관리"
   }
 ];
