@@ -384,6 +384,7 @@ a {
 }
 
 .role-switcher {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -410,7 +411,7 @@ a {
 
 .role-switcher__buttons {
   display: grid;
-  grid-template-columns: repeat(3, minmax(76px, 1fr));
+  grid-template-columns: repeat(2, minmax(76px, 1fr));
   gap: 3px;
   padding: 3px;
   border: 1px solid var(--line);
@@ -421,7 +422,7 @@ a {
 .topbar__role .role-switcher__buttons {
   position: static;
   display: grid;
-  width: 252px;
+  width: 170px;
   box-shadow: none;
 }
 
@@ -446,6 +447,63 @@ a {
   border-color: var(--primary);
   background: var(--primary);
   color: #ffffff;
+}
+
+.role-switcher__security {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: grid;
+  width: 260px;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+}
+
+.role-switcher__security label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.role-switcher__security input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 10px;
+  background: var(--surface-subtle);
+  color: var(--text);
+  font: inherit;
+}
+
+.role-switcher__security small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.role-switcher__security-error {
+  color: var(--risk-high);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.role-switcher__security-submit {
+  min-height: 32px;
+  border: 1px solid var(--primary);
+  border-radius: 3px;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
 }
 
 .panel,

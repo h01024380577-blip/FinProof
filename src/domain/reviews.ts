@@ -20,11 +20,6 @@ export const roles: Array<{ id: RoleId; label: string; description: string }> = 
     id: "requester",
     label: "요청자",
     description: "심의 요청 생성"
-  },
-  {
-    id: "compliance_admin",
-    label: "관리자",
-    description: "기준과 사례 관리"
   }
 ];
 

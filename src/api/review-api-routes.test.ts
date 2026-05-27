@@ -261,7 +261,7 @@ describe("review API routes", () => {
         method: "POST",
         headers: {
           "content-type": `multipart/form-data; boundary=${boundary}`,
-          "x-finproof-role": "compliance_admin"
+          "x-finproof-role": "reviewer"
         },
         body: multipartBody
       })

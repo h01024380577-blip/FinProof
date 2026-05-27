@@ -487,7 +487,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       context: RequestContext,
       input: CreateKnowledgeDocumentServiceInput
     ): Promise<CreateKnowledgeDocumentServiceResult> {
-      requireRole(context, ["compliance_admin"], "create knowledge document");
+      requireRole(context, ["reviewer", "compliance_admin"], "create knowledge document");
 
       const scope = scopeFromContext(context);
       const documentId = input.id ?? `knowledge-${randomUUID()}`;
@@ -562,7 +562,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
     },
 
     async approveKnowledgeDocument(context: RequestContext, documentId: string) {
-      requireRole(context, ["compliance_admin"], "approve knowledge document");
+      requireRole(context, ["reviewer", "compliance_admin"], "approve knowledge document");
 
       const scope = scopeFromContext(context);
       const document = await store.approveKnowledgeDocument(scope, documentId);
