@@ -43,7 +43,15 @@ export function jsonRouteError(error: unknown) {
     return jsonError(error.message, 409, "STATE_CONFLICT");
   }
 
-  return jsonForbidden(error);
+  if (error instanceof InvalidAuthTokenError) {
+    return jsonError(error.message, 401, "UNAUTHORIZED");
+  }
+
+  if (error instanceof ForbiddenError) {
+    return jsonError(error.message, 403, "FORBIDDEN");
+  }
+
+  return jsonError("Internal server error", 500, "INTERNAL_ERROR");
 }
 
 export function requestContext(request: Request): Promise<RequestContext> {

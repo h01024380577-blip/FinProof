@@ -171,7 +171,7 @@ describe("review service", () => {
                 title: "poster.png",
                 quoteSummary: "최고 연 5.0% 우대금리 조건 추출",
                 relevanceScore: 0.86,
-                sourceFileId: "file-upload-001"
+                sourceFileId: review.files[0]?.id ?? "missing-file"
               }
             ]
           };
@@ -205,7 +205,7 @@ describe("review service", () => {
     expect(job?.artifacts).toMatchObject({
       extractedDocuments: [
         expect.objectContaining({
-          fileId: "file-upload-001",
+          fileId: created.files[0]?.id,
           provider: "fixture-ocr"
         })
       ],
@@ -241,7 +241,7 @@ describe("review service", () => {
                 title: "actual-package/poster.txt",
                 quoteSummary: "최고 연 5.0% 금리를 누구나 받을 수 있는 적금 상품입니다.",
                 relevanceScore: 0.91,
-                sourceFileId: "file-upload-001"
+                sourceFileId: review.files[0]?.id ?? "missing-file"
               }
             ]
           };
@@ -383,10 +383,49 @@ describe("review service", () => {
 
     expect(result.reviewCase.id).toBe("rc-upload-001");
     expect(result.files[0]).toMatchObject({
-      id: "file-upload-001",
+      id: "rc-upload-001-file-upload-001",
       storageProvider: "local",
-      storageKey: "local/rc-upload-001/file-upload-001/real-deposit-poster.png"
+      storageKey: "local/rc-upload-001/rc-upload-001-file-upload-001/real-deposit-poster.png"
     });
+  });
+
+  it("generates upload file ids that are unique across review cases", async () => {
+    const store = createMockReviewStore([]);
+    const service = createReviewService({ store });
+
+    const first = await service.createReviewCaseFromUploadedFiles(requesterContext, {
+      title: "첫 번째 실제 업로드",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [
+        {
+          name: "first-poster.txt",
+          type: "text/plain",
+          size: 5,
+          body: new TextEncoder().encode("first")
+        }
+      ]
+    });
+
+    const second = await service.createReviewCaseFromUploadedFiles(requesterContext, {
+      title: "두 번째 실제 업로드",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-21",
+      files: [
+        {
+          name: "second-poster.txt",
+          type: "text/plain",
+          size: 6,
+          body: new TextEncoder().encode("second")
+        }
+      ]
+    });
+
+    expect(first.files[0]?.id).not.toBe(second.files[0]?.id);
   });
 
   it("passes uploaded file bytes to the storage adapter", async () => {

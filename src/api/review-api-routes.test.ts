@@ -9,7 +9,11 @@ import {
   PATCH as draftPATCH,
   POST as draftPOST
 } from "@/app/api/v1/review-cases/[caseId]/draft/route";
-import { GET as detailGET } from "@/app/api/v1/review-cases/[caseId]/route";
+import {
+  DELETE as detailDELETE,
+  GET as detailGET,
+  PATCH as detailPATCH
+} from "@/app/api/v1/review-cases/[caseId]/route";
 import { POST as analysisPOST } from "@/app/api/v1/review-cases/[caseId]/analysis/start/route";
 import { GET as analysisStatusGET } from "@/app/api/v1/review-cases/[caseId]/analysis/status/route";
 import { GET as auditEventsGET } from "@/app/api/v1/review-cases/[caseId]/audit-events/route";
@@ -143,6 +147,87 @@ describe("review API routes", () => {
       id: "rc-demo-deposit-001",
       status: "analysis_complete"
     });
+  });
+
+  it("allows reviewers to update the assigned reviewer and rejects requesters", async () => {
+    const updateResponse = await detailPATCH(
+      jsonRoleRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001",
+        { reviewer: "준법심의자 이수민" },
+        "reviewer",
+        "PATCH"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const updateBody = await updateResponse.json();
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateBody.reviewCase).toMatchObject({
+      id: "rc-demo-deposit-001",
+      reviewer: "준법심의자 이수민"
+    });
+
+    const detailResponse = await detailGET(
+      new Request("http://localhost/api/v1/review-cases/rc-demo-deposit-001"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const detailBody = await detailResponse.json();
+
+    expect(detailBody.reviewCase.reviewer).toBe("준법심의자 이수민");
+
+    const requesterResponse = await detailPATCH(
+      jsonRoleRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001",
+        { reviewer: "요청자 김지현" },
+        "requester",
+        "PATCH"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+
+    expect(requesterResponse.status).toBe(403);
+  });
+
+  it("allows reviewers to delete finalized review history and rejects unsafe deletes", async () => {
+    const requesterResponse = await detailDELETE(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001", "requester", "DELETE"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const activeResponse = await detailDELETE(
+      roleRequest("/api/v1/review-cases/rc-demo-loan-001", "reviewer", "DELETE"),
+      params({ caseId: "rc-demo-loan-001" })
+    );
+
+    expect(requesterResponse.status).toBe(403);
+    expect(activeResponse.status).toBe(409);
+
+    await finalizePOST(
+      jsonRoleRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/finalize",
+        { finalAction: "approve" },
+        "reviewer"
+      ),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+
+    const deleteResponse = await detailDELETE(
+      roleRequest("/api/v1/review-cases/rc-demo-deposit-001", "reviewer", "DELETE"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const deleteBody = await deleteResponse.json();
+
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteBody).toEqual({
+      deleted: true,
+      reviewCaseId: "rc-demo-deposit-001"
+    });
+
+    const detailResponse = await detailGET(
+      new Request("http://localhost/api/v1/review-cases/rc-demo-deposit-001"),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+
+    expect(detailResponse.status).toBe(404);
   });
 
   it("creates upload-backed review cases from multipart files", async () => {

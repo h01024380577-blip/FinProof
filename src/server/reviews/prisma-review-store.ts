@@ -37,6 +37,7 @@ import type {
   CreateReviewCaseFromUploadedFilesInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseResult,
+  CaseHistoryEvidenceSearchInput,
   FinalReviewStatus,
   ListAuditEventsOptions,
   ListIssuesOptions,
@@ -45,7 +46,8 @@ import type {
   ReviewStore,
   ReviewSummaryPage,
   ReviewStoreScope,
-  SaveIssueDecisionInput
+  SaveIssueDecisionInput,
+  UpdateReviewReviewerInput
 } from "./review-store";
 
 const reviewInclude = {
@@ -59,6 +61,11 @@ const reviewInclude = {
 } as const;
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
+
+const longWriteTransactionOptions = {
+  maxWait: 10_000,
+  timeout: 30_000
+} as const;
 
 function plannedDate(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
@@ -367,7 +374,7 @@ function chunkIdForKnowledgeDocument(documentId: string): string {
   return `chunk-${documentId}-001`;
 }
 
-function lexicalKnowledgeScore(query: string, text: string): number {
+function lexicalKnowledgeScore(query: string, text: string, title = ""): number {
   const terms = query
     .split(/[\s.,:;!?()[\]{}"'`~|\\/]+/)
     .map((term) => term.trim())
@@ -377,10 +384,22 @@ function lexicalKnowledgeScore(query: string, text: string): number {
     return 0.72;
   }
 
-  const target = text.toLowerCase();
+  const target = `${title} ${text}`.toLowerCase();
   const matches = terms.filter((term) => target.includes(term.toLowerCase())).length;
+  const titleTarget = title.toLowerCase();
+  const titleMatches = titleTarget
+    ? terms.filter((term) => titleTarget.includes(term.toLowerCase())).length
+    : 0;
+  const normalizedQuery = query.replace(/\s+/g, " ").trim().toLowerCase();
+  const normalizedTitle = title.replace(/\s+/g, " ").trim().toLowerCase();
+  const titleBoost =
+    normalizedTitle && normalizedQuery.includes(normalizedTitle)
+      ? 0.35
+      : titleMatches > 0
+        ? Math.min(0.2, titleMatches / terms.length)
+        : 0;
 
-  return Math.max(0.55, Math.min(0.99, 0.55 + matches / terms.length / 2));
+  return Math.max(0.55, Math.min(0.99, 0.55 + matches / terms.length / 2 + titleBoost));
 }
 
 function documentSourceType(
@@ -828,13 +847,14 @@ export function createPrismaReviewStore(): ReviewStore {
         });
 
         return rows.map(toEvidenceChunk);
-      });
+      }, longWriteTransactionOptions);
     },
 
     async searchKnowledgeEvidence(scope, input: KnowledgeEvidenceSearchInput) {
       const topK = input.topK ?? 4;
       const minScore = input.minScore ?? 0.72;
       const queryVector = vectorLiteral(input.queryEmbedding);
+      let vectorEvidence: Evidence[] = [];
 
       if (queryVector) {
         const params: Array<string | number> = [scope.tenantId, queryVector];
@@ -882,14 +902,10 @@ export function createPrismaReviewStore(): ReviewStore {
             `,
             ...params
           );
-          const evidence = rows
+          vectorEvidence = rows
             .map(vectorRowToEvidence)
             .filter((item) => item.relevanceScore >= minScore)
             .slice(0, topK);
-
-          if (evidence.length > 0) {
-            return evidence;
-          }
         } catch {
           // Fall back to lexical retrieval when pgvector is not available in a local database.
         }
@@ -928,7 +944,7 @@ export function createPrismaReviewStore(): ReviewStore {
         take: Math.max(topK * 4, topK)
       });
 
-      return rows
+      const lexicalEvidence = rows
         .flatMap((chunk) => {
           const document = chunk.knowledgeDocument;
 
@@ -936,7 +952,11 @@ export function createPrismaReviewStore(): ReviewStore {
             return [];
           }
 
-          const score = lexicalKnowledgeScore(input.query, chunk.chunkText);
+          const score = lexicalKnowledgeScore(
+            input.query,
+            [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
+            document.title
+          );
 
           if (score < minScore) {
             return [];
@@ -954,6 +974,84 @@ export function createPrismaReviewStore(): ReviewStore {
               page: chunk.page ?? undefined,
               section: chunk.section ?? undefined,
               quoteSummary: chunk.chunkSummary ?? chunk.chunkText,
+              relevanceScore: score
+            }
+          ];
+        });
+      const evidenceById = new Map<string, Evidence>();
+
+      for (const evidence of [...vectorEvidence, ...lexicalEvidence]) {
+        const existing = evidenceById.get(evidence.id);
+
+        if (!existing || evidence.relevanceScore > existing.relevanceScore) {
+          evidenceById.set(evidence.id, evidence);
+        }
+      }
+
+      return Array.from(evidenceById.values())
+        .sort((left, right) => right.relevanceScore - left.relevanceScore)
+        .slice(0, topK);
+    },
+
+    async searchCaseHistoryEvidence(scope, input: CaseHistoryEvidenceSearchInput) {
+      const topK = input.topK ?? 4;
+      const minScore = input.minScore ?? 0.72;
+      const finalStatuses = ["approved", "change_requested", "rejected", "on_hold"] as const;
+
+      const rows = await prisma.reviewIssue.findMany({
+        where: {
+          reviewCase: {
+            tenantId: scope.tenantId,
+            status: { in: [...finalStatuses] },
+            ...(input.excludeReviewCaseId ? { id: { not: input.excludeReviewCaseId } } : {}),
+            ...(input.productType ? { productType: input.productType } : {})
+          }
+        },
+        include: {
+          reviewCase: {
+            select: {
+              id: true,
+              title: true,
+              affiliateName: true,
+              productType: true,
+              status: true,
+              finalDecisionAt: true
+            }
+          },
+          evidence: true
+        },
+        orderBy: { updatedAt: "desc" },
+        take: Math.max(topK * 8, topK)
+      });
+
+      return rows
+        .flatMap((issue): Evidence[] => {
+          const searchableText = [
+            issue.reviewCase.title,
+            issue.reviewCase.affiliateName,
+            issue.title,
+            issue.issueType,
+            issue.targetText,
+            issue.description,
+            issue.suggestedCopy,
+            issue.reviewerComment,
+            ...issue.evidence.map((evidence) => evidence.quoteSummary)
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const score = lexicalKnowledgeScore(input.query, searchableText, issue.title);
+
+          if (score < minScore) {
+            return [];
+          }
+
+          return [
+            {
+              id: `case-history-evidence-${issue.id}`,
+              sourceType: "case_history",
+              documentId: issue.reviewCase.id,
+              title: issue.reviewCase.id,
+              quoteSummary: `${issue.title}: ${issue.suggestedCopy}`,
               relevanceScore: score
             }
           ];
@@ -1891,7 +1989,7 @@ export function createPrismaReviewStore(): ReviewStore {
           }
 
           return { issueCount, evidenceCount };
-        });
+        }, longWriteTransactionOptions);
       } catch (error) {
         if (error instanceof AnalysisJobTransitionConflictError) {
           return undefined;
@@ -2050,6 +2148,26 @@ export function createPrismaReviewStore(): ReviewStore {
       return toReviewCase(reviewRow(updated));
     },
 
+    async updateReviewReviewer(scope, input: UpdateReviewReviewerInput) {
+      const review = await prisma.reviewCase.findFirst({
+        where: { id: input.reviewCaseId, tenantId: scope.tenantId }
+      });
+
+      if (!review) {
+        return undefined;
+      }
+
+      const updated = await prisma.reviewCase.update({
+        where: { id: input.reviewCaseId },
+        data: {
+          reviewerName: input.reviewer
+        },
+        include: reviewInclude
+      });
+
+      return toReviewCase(reviewRow(updated));
+    },
+
     async updateReviewStatus(scope, reviewCaseId, status: FinalReviewStatus) {
       const review = await prisma.reviewCase.findFirst({
         where: { id: reviewCaseId, tenantId: scope.tenantId }
@@ -2069,6 +2187,23 @@ export function createPrismaReviewStore(): ReviewStore {
       });
 
       return toReviewCase(reviewRow(updated));
+    },
+
+    async deleteReviewCase(scope, reviewCaseId) {
+      const review = await prisma.reviewCase.findFirst({
+        where: { id: reviewCaseId, tenantId: scope.tenantId },
+        include: reviewInclude
+      });
+
+      if (!review) {
+        return undefined;
+      }
+
+      await prisma.reviewCase.delete({
+        where: { id: reviewCaseId }
+      });
+
+      return toReviewCase(reviewRow(review));
     },
 
     async recordAuditEvent(scope, input: AuditEventInput): Promise<AuditEvent> {

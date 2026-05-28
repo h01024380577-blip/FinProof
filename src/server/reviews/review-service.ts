@@ -26,11 +26,13 @@ import type {
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseFromUploadedFilesInput,
   FinalReviewStatus,
+  KnowledgeEvidenceSearchInput,
   ListIssuesOptions,
   ListReviewSummariesOptions,
   ReviewStore,
   ReviewStoreScope,
-  SaveIssueDecisionInput
+  SaveIssueDecisionInput,
+  UpdateReviewReviewerInput
 } from "./review-store";
 
 export type AnalysisStatusResponse = {
@@ -91,12 +93,20 @@ function nextUploadReviewCaseId() {
   return id;
 }
 
+function uploadFileId(reviewCaseId: string, index: number) {
+  return `${reviewCaseId}-file-upload-${String(index + 1).padStart(3, "0")}`;
+}
+
 function analysisExecutionMode() {
   return process.env.FINPROOF_ANALYSIS_EXECUTION_MODE === "queued" ? "queued" : "inline";
 }
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function isDeletableHistoryStatus(status: ReviewStatus): boolean {
+  return status === "approved" || status === "rejected";
 }
 
 export function availableActionsFor(role: RoleId, status: ReviewStatus): ReviewAction[] {
@@ -192,7 +202,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       const uploadFiles = await expandArchiveUploads(input.files);
       const files = await Promise.all(
         uploadFiles.map(async (file, index) => {
-          const fileId = `file-upload-${String(index + 1).padStart(3, "0")}`;
+          const fileId = uploadFileId(reviewCaseId, index);
           const contentType = file.type || "application/octet-stream";
           await uploadScanner.scanReviewFile({
             reviewCaseId,
@@ -455,6 +465,26 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       return review;
     },
 
+    async updateReviewReviewer(context: RequestContext, input: UpdateReviewReviewerInput) {
+      requireRole(context, ["reviewer", "compliance_admin"], "update review assignee");
+
+      const scope = scopeFromContext(context);
+      const before = await store.getReviewCase(scope, input.reviewCaseId);
+      const review = await store.updateReviewReviewer(scope, input);
+
+      if (review) {
+        await store.recordAuditEvent(scope, {
+          action: "review_case.reviewer.update",
+          targetType: "review_case",
+          targetId: input.reviewCaseId,
+          beforeValue: before ? { reviewer: before.reviewer } : undefined,
+          afterValue: { reviewer: review.reviewer }
+        });
+      }
+
+      return review;
+    },
+
     async updateReviewStatus(
       context: RequestContext,
       reviewCaseId: string,
@@ -477,6 +507,38 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       }
 
       return review;
+    },
+
+    async deleteReviewHistory(context: RequestContext, reviewCaseId: string) {
+      requireRole(context, ["reviewer", "compliance_admin"], "delete review history");
+
+      const scope = scopeFromContext(context);
+      const before = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!before) {
+        return undefined;
+      }
+
+      if (!isDeletableHistoryStatus(before.status)) {
+        throw new StateConflictError("Only approved or rejected review history can be deleted");
+      }
+
+      const deleted = await store.deleteReviewCase(scope, reviewCaseId);
+
+      if (deleted) {
+        await store.recordAuditEvent(scope, {
+          action: "review_case.history.delete",
+          targetType: "review_case",
+          targetId: reviewCaseId,
+          beforeValue: {
+            status: before.status,
+            title: before.title
+          },
+          afterValue: { deleted: true }
+        });
+      }
+
+      return deleted;
     },
 
     async listAuditEvents(context: RequestContext, targetType?: string, targetId?: string) {
@@ -559,6 +621,12 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
 
     async listKnowledgeDocuments(context: RequestContext) {
       return store.listKnowledgeDocuments(scopeFromContext(context));
+    },
+
+    async searchKnowledgeEvidence(context: RequestContext, input: KnowledgeEvidenceSearchInput) {
+      requireRole(context, ["reviewer", "compliance_admin"], "search knowledge evidence");
+
+      return store.searchKnowledgeEvidence(scopeFromContext(context), input);
     },
 
     async approveKnowledgeDocument(context: RequestContext, documentId: string) {

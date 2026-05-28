@@ -38,12 +38,14 @@ import type {
   ListReviewSummariesOptions,
   ListAuditEventsOptions,
   ListIssuesOptions,
+  CaseHistoryEvidenceSearchInput,
   KnowledgeEvidenceSearchInput,
   ReviewStore,
   ReviewSummaryPage,
   ReviewStoreScope,
   ClaimAnalysisJobResult,
-  SaveIssueDecisionInput
+  SaveIssueDecisionInput,
+  UpdateReviewReviewerInput
 } from "./review-store";
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
@@ -307,7 +309,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     });
   }
 
-  function lexicalKnowledgeScore(query: string, text: string): number {
+  function lexicalKnowledgeScore(query: string, text: string, title = ""): number {
     const terms = query
       .split(/[\s.,:;!?()[\]{}"'`~|\\/]+/)
       .map((term) => term.trim())
@@ -317,10 +319,22 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return 0.72;
     }
 
-    const target = text.toLowerCase();
+    const target = `${title} ${text}`.toLowerCase();
     const matches = terms.filter((term) => target.includes(term.toLowerCase())).length;
+    const titleTarget = title.toLowerCase();
+    const titleMatches = titleTarget
+      ? terms.filter((term) => titleTarget.includes(term.toLowerCase())).length
+      : 0;
+    const normalizedQuery = query.replace(/\s+/g, " ").trim().toLowerCase();
+    const normalizedTitle = title.replace(/\s+/g, " ").trim().toLowerCase();
+    const titleBoost =
+      normalizedTitle && normalizedQuery.includes(normalizedTitle)
+        ? 0.35
+        : titleMatches > 0
+          ? Math.min(0.2, titleMatches / terms.length)
+          : 0;
 
-    return Math.max(0.55, Math.min(0.99, 0.55 + matches / terms.length / 2));
+    return Math.max(0.55, Math.min(0.99, 0.55 + matches / terms.length / 2 + titleBoost));
   }
 
   function documentSourceType(document: KnowledgeDocument): "law" | "internal_policy" {
@@ -1082,6 +1096,26 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return clone(updatedReview);
     },
 
+    async updateReviewReviewer(
+      scope: ReviewStoreScope,
+      { reviewCaseId, reviewer }: UpdateReviewReviewerInput
+    ) {
+      const review = cases.get(reviewCaseId);
+
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      const updatedReview = {
+        ...review,
+        reviewer
+      };
+
+      cases.set(reviewCaseId, updatedReview);
+
+      return clone(updatedReview);
+    },
+
     async updateReviewStatus(scope: ReviewStoreScope, reviewCaseId, status) {
       const review = cases.get(reviewCaseId);
 
@@ -1097,6 +1131,18 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       cases.set(reviewCaseId, updatedReview);
 
       return clone(updatedReview);
+    },
+
+    async deleteReviewCase(scope: ReviewStoreScope, reviewCaseId) {
+      const review = cases.get(reviewCaseId);
+
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      cases.delete(reviewCaseId);
+
+      return clone(review);
     },
 
     async recordAuditEvent(scope, input) {
@@ -1253,7 +1299,11 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
             return [];
           }
 
-          const score = lexicalKnowledgeScore(input.query, chunk.chunkText);
+          const score = lexicalKnowledgeScore(
+            input.query,
+            [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
+            document.title
+          );
 
           if (score < minScore) {
             return [];
@@ -1275,6 +1325,74 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
             }
           ];
         })
+        .sort((left, right) => right.relevanceScore - left.relevanceScore)
+        .slice(0, topK);
+    },
+
+    async searchCaseHistoryEvidence(
+      scope: ReviewStoreScope,
+      input: CaseHistoryEvidenceSearchInput
+    ) {
+      const minScore = input.minScore ?? 0.72;
+      const topK = input.topK ?? 4;
+      const finalStatuses: ReviewCase["status"][] = [
+        "approved",
+        "change_requested",
+        "rejected",
+        "on_hold"
+      ];
+
+      return Array.from(cases.values())
+        .filter(
+          (review) =>
+            canAccessCase(scope, review.id) &&
+            review.id !== input.excludeReviewCaseId &&
+            finalStatuses.includes(review.status) &&
+            (!input.productType || review.productType === input.productType)
+        )
+        .flatMap((review) =>
+          review.issues.map((issue) => {
+            const searchableText = [
+              review.title,
+              review.affiliate,
+              issue.title,
+              issue.issueType,
+              issue.targetText,
+              issue.description,
+              issue.suggestedCopy,
+              issue.reviewerComment,
+              ...issue.evidence.map((evidence) => evidence.quoteSummary)
+            ]
+              .filter(Boolean)
+              .join(" ");
+            const score = lexicalKnowledgeScore(input.query, searchableText, issue.title);
+
+            if (score < minScore) {
+              return undefined;
+            }
+
+            return {
+              id: `case-history-evidence-${issue.id}`,
+              sourceType: "case_history" as const,
+              documentId: review.id,
+              title: review.id,
+              quoteSummary: `${issue.title}: ${issue.suggestedCopy}`,
+              relevanceScore: score
+            };
+          })
+        )
+        .filter(
+          (
+            evidence
+          ): evidence is {
+            id: string;
+            sourceType: "case_history";
+            documentId: string;
+            title: string;
+            quoteSummary: string;
+            relevanceScore: number;
+          } => Boolean(evidence)
+        )
         .sort((left, right) => right.relevanceScore - left.relevanceScore)
         .slice(0, topK);
     },

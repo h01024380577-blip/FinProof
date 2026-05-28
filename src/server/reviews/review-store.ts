@@ -117,6 +117,11 @@ export type SaveIssueDecisionInput = {
   reviewerComment: string;
 };
 
+export type UpdateReviewReviewerInput = {
+  reviewCaseId: string;
+  reviewer: string;
+};
+
 export type FinalReviewStatus = Extract<
   ReviewCase["status"],
   "approved" | "change_requested" | "rejected" | "on_hold"
@@ -173,6 +178,10 @@ export type KnowledgeEvidenceSearchInput = {
   topK?: number;
   minScore?: number;
   queryEmbedding?: number[];
+};
+
+export type CaseHistoryEvidenceSearchInput = KnowledgeEvidenceSearchInput & {
+  excludeReviewCaseId?: string;
 };
 
 export type CreateChatSessionInput = {
@@ -276,11 +285,16 @@ export interface ReviewStore {
     reviewCaseId: string,
     draft: string
   ): Promise<ReviewCase | undefined>;
+  updateReviewReviewer(
+    scope: ReviewStoreScope,
+    input: UpdateReviewReviewerInput
+  ): Promise<ReviewCase | undefined>;
   updateReviewStatus(
     scope: ReviewStoreScope,
     reviewCaseId: string,
     status: FinalReviewStatus
   ): Promise<ReviewCase | undefined>;
+  deleteReviewCase(scope: ReviewStoreScope, reviewCaseId: string): Promise<ReviewCase | undefined>;
   recordAuditEvent(scope: ReviewStoreScope, input: AuditEventInput): Promise<AuditEvent>;
   listAuditEvents(scope: ReviewStoreScope, options?: ListAuditEventsOptions): Promise<AuditEvent[]>;
   createKnowledgeDocument(
@@ -304,6 +318,10 @@ export interface ReviewStore {
   searchKnowledgeEvidence(
     scope: ReviewStoreScope,
     input: KnowledgeEvidenceSearchInput
+  ): Promise<Evidence[]>;
+  searchCaseHistoryEvidence(
+    scope: ReviewStoreScope,
+    input: CaseHistoryEvidenceSearchInput
   ): Promise<Evidence[]>;
   createChatSession(
     scope: ReviewStoreScope,
