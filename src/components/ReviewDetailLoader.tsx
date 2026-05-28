@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type JSX } from "react";
+import { Loader2 } from "lucide-react";
 import type { ReviewCase } from "@/domain/types";
 import { useRole } from "./RoleContext";
 import { ReviewDetailWorkspace } from "./ReviewDetailWorkspace";
@@ -61,7 +62,12 @@ export function ReviewDetailLoader({ reviewId }: { reviewId: string }): JSX.Elem
   }, [apiHeaders, reviewId]);
 
   if (isLoading) {
-    return <p className="queue-empty-state">심의 건을 불러오는 중입니다.</p>;
+    return (
+      <p className="queue-empty-state">
+        <Loader2 className="action-spinner" size={18} aria-hidden="true" />
+        심의 건을 불러오는 중입니다.
+      </p>
+    );
   }
 
   if (error) {

@@ -60,6 +60,7 @@ describe("ReviewDetailWorkspace", () => {
     replaceMock.mockClear();
     pushMock.mockClear();
     currentSearchParams = new URLSearchParams();
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -364,6 +365,40 @@ describe("ReviewDetailWorkspace", () => {
     );
   });
 
+  it("does not render evidence document names under chat answers", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        response: {
+          id: "chat-evidence-file-name",
+          question: "이 문구의 근거를 확인해줘",
+          answerType: "evidence_based",
+          content: "현재 근거상 조건부 혜택임을 인접 고지에서 명확히 표시해야 합니다.",
+          evidence: [
+            {
+              id: "evidence-uploaded-file",
+              sourceType: "product_doc",
+              title: "finproof-pipeline-retest-20260527.txt",
+              quoteSummary: "우대금리 조건",
+              relevanceScore: 0.92
+            }
+          ],
+          requiredMaterials: []
+        }
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    changeTextField("RAG question", "이 문구의 근거를 확인해줘");
+    await user.click(screen.getByRole("button", { name: "질문 보내기" }));
+
+    expect(await screen.findByText(/조건부 혜택임을/)).toBeInTheDocument();
+    expect(screen.queryByText("finproof-pipeline-retest-20260527.txt")).not.toBeInTheDocument();
+  });
+
   it("shows a loading chat bubble while a long answer is being generated", async () => {
     const user = userEvent.setup();
     let resolveChat!: (value: unknown) => void;
@@ -430,7 +465,76 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByRole("listitem", { name: "세전 기준" })).toBeInTheDocument();
   });
 
-  it("automatically carries reviewer chat context into draft generation across issue switches", async () => {
+  it("expands the chat drawer for long answers while keeping the chat thread scrollable", async () => {
+    const user = userEvent.setup();
+    const longAnswer = Array.from(
+      { length: 18 },
+      (_, index) =>
+        `${index + 1}. 금융규제 가이드라인 근거에 따라 최고금리 조건과 제한사항을 본문 인접 영역에 명확히 표시해야 합니다.`
+    ).join("\n\n");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        response: {
+          id: "chat-long-answer",
+          question: "금융규제 가이드라인 기준을 길게 설명해줘",
+          answerType: "evidence_based",
+          content: longAnswer,
+          evidence: [],
+          requiredMaterials: []
+        }
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { container } = render(
+      <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
+    );
+
+    changeTextField("RAG question", "금융규제 가이드라인 기준을 길게 설명해줘");
+    await user.click(screen.getByRole("button", { name: "질문 보내기" }));
+
+    expect(await screen.findByText(/18\. 금융규제 가이드라인 근거/)).toBeInTheDocument();
+    expect(container.querySelector(".workbench-drawer")).toHaveAttribute("data-size", "expanded");
+    expect(container.querySelector(".chat-thread")).toHaveAttribute(
+      "data-scroll-region",
+      "chat-history"
+    );
+  });
+
+  it("restores reviewer chat history after the detail workspace remounts", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        response: {
+          id: "chat-restored",
+          question: "금융규제 가이드라인 기준을 알려줘",
+          answerType: "evidence_based",
+          content: "등록된 지식문서 근거를 기준으로 최고금리 조건을 함께 표시해야 합니다.",
+          evidence: [],
+          requiredMaterials: []
+        }
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+    const { unmount } = render(<ReviewDetailWorkspace review={review} />);
+
+    changeTextField("RAG question", "금융규제 가이드라인 기준을 알려줘");
+    await user.click(screen.getByRole("button", { name: "질문 보내기" }));
+
+    expect(await screen.findByText(/등록된 지식문서 근거/)).toBeInTheDocument();
+
+    unmount();
+    render(<ReviewDetailWorkspace review={review} />);
+
+    expect(screen.getByText("금융규제 가이드라인 기준을 알려줘")).toBeInTheDocument();
+    expect(screen.getByText(/등록된 지식문서 근거/)).toBeInTheDocument();
+  });
+
+  it("keeps reviewer chat visible and carries it into draft generation across issue switches", async () => {
     const user = userEvent.setup();
     const fetchMock = vi
       .fn()
@@ -471,7 +575,7 @@ describe("ReviewDetailWorkspace", () => {
 
     await user.click(screen.getByText("조건부 혜택의 무조건 표현"));
 
-    expect(screen.queryByText("첫 번째 이슈 전용 답변입니다.")).not.toBeInTheDocument();
+    expect(screen.getByText("첫 번째 이슈 전용 답변입니다.")).toBeInTheDocument();
 
     await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));

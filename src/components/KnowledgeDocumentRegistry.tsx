@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent, type JSX } from "react";
-import { BookOpenCheck, CheckCircle2, Database, RotateCcw, Send, ShieldCheck } from "lucide-react";
+import {
+  BookOpenCheck,
+  CheckCircle2,
+  Database,
+  LoaderCircle,
+  RotateCcw,
+  Send,
+  ShieldCheck
+} from "lucide-react";
 import type { KnowledgeDocument, KnowledgeDocumentType, ProductType } from "@/domain/types";
 import { DropZone } from "@/components/ui";
 import { useRoleContext } from "./RoleContext";
@@ -58,6 +66,10 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingDocumentAction, setPendingDocumentAction] = useState<{
+    documentId: string;
+    action: "approve" | "unapprove";
+  } | null>(null);
 
   const registeredCount = useMemo(() => documents.length, [documents]);
 
@@ -150,39 +162,51 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
   }
 
   async function approveDocument(documentId: string): Promise<void> {
-    const response = await fetch(`/api/v1/knowledge-documents/${documentId}/approve`, {
-      method: "POST",
-      headers: roleContext?.apiHeaders()
-    });
+    setPendingDocumentAction({ documentId, action: "approve" });
 
-    if (!response.ok) {
-      setStatus("지식문서 승인에 실패했습니다.");
-      return;
+    try {
+      const response = await fetch(`/api/v1/knowledge-documents/${documentId}/approve`, {
+        method: "POST",
+        headers: roleContext?.apiHeaders()
+      });
+
+      if (!response.ok) {
+        setStatus("지식문서 승인에 실패했습니다.");
+        return;
+      }
+
+      const body = (await response.json()) as { document: KnowledgeDocument };
+      setDocuments((current) =>
+        current.map((document) => (document.id === documentId ? body.document : document))
+      );
+      setStatus("승인 완료");
+    } finally {
+      setPendingDocumentAction(null);
     }
-
-    const body = (await response.json()) as { document: KnowledgeDocument };
-    setDocuments((current) =>
-      current.map((document) => (document.id === documentId ? body.document : document))
-    );
-    setStatus("승인 완료");
   }
 
   async function unapproveDocument(documentId: string): Promise<void> {
-    const response = await fetch(`/api/v1/knowledge-documents/${documentId}/approve`, {
-      method: "DELETE",
-      headers: roleContext?.apiHeaders()
-    });
+    setPendingDocumentAction({ documentId, action: "unapprove" });
 
-    if (!response.ok) {
-      setStatus("지식문서 승인해제에 실패했습니다.");
-      return;
+    try {
+      const response = await fetch(`/api/v1/knowledge-documents/${documentId}/approve`, {
+        method: "DELETE",
+        headers: roleContext?.apiHeaders()
+      });
+
+      if (!response.ok) {
+        setStatus("지식문서 승인해제에 실패했습니다.");
+        return;
+      }
+
+      const body = (await response.json()) as { document: KnowledgeDocument };
+      setDocuments((current) =>
+        current.map((document) => (document.id === documentId ? body.document : document))
+      );
+      setStatus("승인해제 완료");
+    } finally {
+      setPendingDocumentAction(null);
     }
-
-    const body = (await response.json()) as { document: KnowledgeDocument };
-    setDocuments((current) =>
-      current.map((document) => (document.id === documentId ? body.document : document))
-    );
-    setStatus("승인해제 완료");
   }
 
   return (
@@ -268,8 +292,17 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
           />
 
           <button className="primary-action" type="submit" disabled={isSubmitting}>
-            <Send size={17} aria-hidden="true" />
-            지식문서 등록
+            {isSubmitting ? (
+              <>
+                <LoaderCircle className="action-spinner" size={17} aria-hidden="true" />
+                등록중
+              </>
+            ) : (
+              <>
+                <Send size={17} aria-hidden="true" />
+                지식문서 등록
+              </>
+            )}
           </button>
           {status ? <p className="form-status">{status}</p> : null}
         </form>
@@ -281,38 +314,75 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
               <span>등록된 지식문서가 없습니다.</span>
             </div>
           ) : (
-            documents.map((document) => (
-              <article className="knowledge-list__item" key={document.id}>
-                <div>
-                  <h2>{document.title}</h2>
-                  <p>
-                    {document.version} · {document.effectiveFrom}
-                  </p>
-                </div>
-                <span className="status-pill" data-status={document.approvalStatus}>
-                  {statusLabel(document.approvalStatus)}
-                </span>
-                {document.approvalStatus === "draft" ? (
-                  <button
-                    className="secondary-action"
-                    type="button"
-                    onClick={() => void approveDocument(document.id)}
-                  >
-                    <CheckCircle2 size={16} aria-hidden="true" />
-                    승인
-                  </button>
-                ) : document.approvalStatus === "approved" ? (
-                  <button
-                    className="secondary-action"
-                    type="button"
-                    onClick={() => void unapproveDocument(document.id)}
-                  >
-                    <RotateCcw size={16} aria-hidden="true" />
-                    승인해제
-                  </button>
-                ) : null}
-              </article>
-            ))
+            documents.map((document) => {
+              const pendingAction =
+                pendingDocumentAction?.documentId === document.id
+                  ? pendingDocumentAction.action
+                  : null;
+
+              return (
+                <article className="knowledge-list__item" key={document.id}>
+                  <div>
+                    <h2>{document.title}</h2>
+                    <p>
+                      {document.version} · {document.effectiveFrom}
+                    </p>
+                  </div>
+                  {document.approvalStatus !== "draft" ? (
+                    <span className="status-pill" data-status={document.approvalStatus}>
+                      {statusLabel(document.approvalStatus)}
+                    </span>
+                  ) : null}
+                  {document.approvalStatus === "draft" ? (
+                    <button
+                      className="secondary-action"
+                      type="button"
+                      disabled={pendingAction === "approve"}
+                      onClick={() => void approveDocument(document.id)}
+                    >
+                      {pendingAction === "approve" ? (
+                        <>
+                          <LoaderCircle
+                            className="action-spinner"
+                            size={16}
+                            aria-hidden="true"
+                          />
+                          승인중
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={16} aria-hidden="true" />
+                          승인
+                        </>
+                      )}
+                    </button>
+                  ) : document.approvalStatus === "approved" ? (
+                    <button
+                      className="secondary-action"
+                      type="button"
+                      disabled={pendingAction === "unapprove"}
+                      onClick={() => void unapproveDocument(document.id)}
+                    >
+                      {pendingAction === "unapprove" ? (
+                        <>
+                          <LoaderCircle
+                            className="action-spinner"
+                            size={16}
+                            aria-hidden="true"
+                          />
+                          승인해제중
+                        </>
+                      ) : (
+                        <>
+                          <RotateCcw size={16} aria-hidden="true" />
+                          승인해제
+                        </>
+                      )}
+                    </button>
+                  ) : null}
+                </article>
+              );
+            })
           )}
         </div>
       </section>

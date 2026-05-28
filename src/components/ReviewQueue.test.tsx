@@ -154,7 +154,7 @@ describe("ReviewQueue", () => {
 
     renderQueue("reviewer");
 
-    expect(await screen.findByText("심의 큐")).toBeInTheDocument();
+    expect(await screen.findByText("심의 대기 목록")).toBeInTheDocument();
     expect(screen.getAllByText("분석 대기").length).toBeGreaterThan(0);
     expect(screen.getAllByText("검토 중").length).toBeGreaterThan(0);
     expect(screen.getAllByText("반려 권고").length).toBeGreaterThan(0);
@@ -236,6 +236,19 @@ describe("ReviewQueue", () => {
     expect(statusFilter).toHaveValue("all");
   });
 
+  it("shows a spinning history loader while review history is loading", async () => {
+    currentSearchParams = new URLSearchParams("scope=history");
+    const fetchMock = vi.fn(() => new Promise(() => undefined));
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer");
+
+    const loadingMessage = await screen.findByText("심의 이력을 불러오는 중입니다.");
+    expect(
+      loadingMessage.closest(".queue-empty-state")?.querySelector(".action-spinner")
+    ).toBeInTheDocument();
+  });
+
   it("switches review history between approved and rejected decisions", async () => {
     const user = userEvent.setup();
     currentSearchParams = new URLSearchParams("scope=history");
@@ -263,6 +276,74 @@ describe("ReviewQueue", () => {
     expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
   });
 
+  it("asks for confirmation before deleting a review history item", async () => {
+    const user = userEvent.setup();
+    const confirmMock = vi.fn(() => false);
+    currentSearchParams = new URLSearchParams("scope=history");
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ reviewCases: [completedReviewSummary, rejectedReviewSummary] })
+    });
+    vi.stubGlobal("confirm", confirmMock);
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer", "reviewer.jwt");
+
+    const approvedRow = await screen.findByRole("row", { name: /승인 완료된 정기예금 홍보물/ });
+    await user.click(
+      within(approvedRow).getByRole("button", {
+        name: "심의 이력 삭제: 승인 완료된 정기예금 홍보물"
+      })
+    );
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      "이 심의 이력을 삭제하시겠습니까? 삭제 후에는 목록에서 사라집니다."
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("승인 완료된 정기예금 홍보물")).toBeInTheDocument();
+  });
+
+  it("deletes a confirmed review history item and removes it from the list", async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams("scope=history");
+    vi.stubGlobal("confirm", vi.fn(() => true));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ reviewCases: [completedReviewSummary, rejectedReviewSummary] })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ deleted: true, reviewCaseId: "rc-history-approved-001" })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer", "reviewer.jwt");
+
+    const approvedRow = await screen.findByRole("row", { name: /승인 완료된 정기예금 홍보물/ });
+    await user.click(
+      within(approvedRow).getByRole("button", {
+        name: "심의 이력 삭제: 승인 완료된 정기예금 홍보물"
+      })
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-history-approved-001",
+        expect.objectContaining({
+          method: "DELETE",
+          headers: expect.objectContaining({
+            "x-finproof-role": "reviewer",
+            authorization: "Bearer reviewer.jwt"
+          })
+        })
+      );
+    });
+    expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
+    expect(screen.getByText("반려 완료된 신용대출 홍보물")).toBeInTheDocument();
+  });
+
   it("gates analysis start to reviewer roles", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -285,6 +366,51 @@ describe("ReviewQueue", () => {
         })
       })
     );
+  });
+
+  it("lets reviewers update the assigned reviewer from the active queue", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ reviewCases: reviewSummaries })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCase: {
+            id: "rc-demo-deposit-001",
+            reviewer: "준법심의자 이수민"
+          }
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer", "reviewer.jwt");
+
+    const reviewerInput = await screen.findByLabelText(
+      "담당자: 최고 연 5.0% 적금 홍보물 심의"
+    );
+    await user.clear(reviewerInput);
+    await user.type(reviewerInput, "준법심의자 이수민");
+    await user.tab();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-demo-deposit-001",
+        expect.objectContaining({
+          method: "PATCH",
+          headers: expect.objectContaining({
+            "content-type": "application/json",
+            "x-finproof-role": "reviewer",
+            authorization: "Bearer reviewer.jwt"
+          }),
+          body: JSON.stringify({ reviewer: "준법심의자 이수민" })
+        })
+      );
+    });
+    expect(await screen.findByDisplayValue("준법심의자 이수민")).toBeInTheDocument();
   });
 
   it("starts analysis from a waiting row and exposes the completed workbench navigation", async () => {

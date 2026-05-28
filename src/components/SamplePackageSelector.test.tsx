@@ -104,8 +104,10 @@ describe("SamplePackageSelector", () => {
     expect(screen.getAllByText("홍보물 시안").length).toBeGreaterThan(0);
     expect(screen.getAllByText("내부 체크리스트").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /분석 시작/ })).not.toBeInTheDocument();
-    expect(screen.getByText("심의 큐에 분석 대기 건으로 등록되었습니다.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "심의 큐에서 확인" })).toHaveAttribute(
+    expect(
+      screen.getByText("심의 대기 목록에 분석 대기 건으로 등록되었습니다.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "심의 대기 목록에서 확인" })).toHaveAttribute(
       "href",
       "/reviews"
     );

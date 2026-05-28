@@ -1,7 +1,7 @@
 "use client";
 
-import type { JSX } from "react";
-import { Loader2, PlayCircle } from "lucide-react";
+import { useState, type JSX, type KeyboardEvent } from "react";
+import { Loader2, PlayCircle, Trash2 } from "lucide-react";
 import { RiskBadge, StatusBadge } from "@/components/Badges";
 import { statusLabels } from "@/domain/reviews";
 import type { ProductType, ReviewAction, ReviewCase, ReviewSummary, RoleId } from "@/domain/types";
@@ -30,6 +30,10 @@ function canOpenWorkbench(status: ReviewCase["status"]): boolean {
   );
 }
 
+function isFinalizedHistoryStatus(status: ReviewCase["status"]): boolean {
+  return status === "approved" || status === "rejected";
+}
+
 function fallbackActionsFor(role: RoleId, status: ReviewCase["status"]): ReviewAction[] {
   if (status === "analysis_waiting" && (role === "reviewer" || role === "compliance_admin")) {
     return ["start_analysis"];
@@ -56,17 +60,86 @@ export type QueueTableProps = {
   activeRole: RoleId;
   activeAnalysisId: string | null;
   isLoading?: boolean;
+  loadingMessage?: string;
   emptyMessage?: string;
+  canEditReviewer?: boolean;
+  savingReviewerIds?: string[];
+  canDeleteReviewHistory?: boolean;
+  deletingReviewHistoryIds?: string[];
+  onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
+  onDeleteReviewHistory?: (review: ReviewSummary) => void;
   onStartAnalysis: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
+
+function ReviewerEditor({
+  review,
+  isSaving,
+  onSaveReviewer
+}: {
+  review: ReviewSummary;
+  isSaving: boolean;
+  onSaveReviewer: (review: ReviewSummary, reviewer: string) => void;
+}): JSX.Element {
+  const [draft, setDraft] = useState(review.reviewer);
+
+  function commitDraft(): void {
+    const nextReviewer = draft.trim();
+
+    if (!nextReviewer) {
+      setDraft(review.reviewer);
+      return;
+    }
+
+    if (nextReviewer !== review.reviewer) {
+      onSaveReviewer(review, nextReviewer);
+    } else {
+      setDraft(nextReviewer);
+    }
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
+    event.stopPropagation();
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.currentTarget.blur();
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setDraft(review.reviewer);
+      event.currentTarget.blur();
+    }
+  }
+
+  return (
+    <input
+      className="reviewer-editor__input"
+      aria-label={`담당자: ${review.title}`}
+      value={draft}
+      disabled={isSaving}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commitDraft}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={handleKeyDown}
+    />
+  );
+}
 
 export function QueueTable({
   rows,
   activeRole,
   activeAnalysisId,
   isLoading = false,
+  loadingMessage = "심의 대기 목록을 불러오는 중입니다.",
   emptyMessage,
+  canEditReviewer = false,
+  savingReviewerIds = [],
+  canDeleteReviewHistory = false,
+  deletingReviewHistoryIds = [],
+  onSaveReviewer,
+  onDeleteReviewHistory,
   onStartAnalysis,
   onOpenReview
 }: QueueTableProps): JSX.Element {
@@ -86,7 +159,8 @@ export function QueueTable({
 
       {isLoading ? (
         <div className="queue-empty-state">
-          <Loader2 size={18} aria-hidden="true" /> 심의 큐를 불러오는 중입니다.
+          <Loader2 className="action-spinner" size={18} aria-hidden="true" />
+          {loadingMessage}
         </div>
       ) : null}
 
@@ -101,6 +175,11 @@ export function QueueTable({
         const canOpen = rowActions.includes("open_workbench");
         const canViewAudit = rowActions.includes("view_audit");
         const openable = canOpen || canViewAudit;
+        const canDelete =
+          canDeleteReviewHistory &&
+          isFinalizedHistoryStatus(review.status) &&
+          Boolean(onDeleteReviewHistory);
+        const isDeleting = deletingReviewHistoryIds.includes(review.id);
 
         return (
           <div
@@ -135,9 +214,25 @@ export function QueueTable({
               )}
             </span>
             <span role="cell">{review.plannedPublishDate}</span>
-            <span role="cell">{review.reviewer}</span>
             <span
-              className="queue-row-actions"
+              className="reviewer-editor"
+              role="cell"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              {canEditReviewer && onSaveReviewer ? (
+                <ReviewerEditor
+                  key={`${review.id}:${review.reviewer}`}
+                  review={review}
+                  isSaving={savingReviewerIds.includes(review.id)}
+                  onSaveReviewer={onSaveReviewer}
+                />
+              ) : (
+                review.reviewer
+              )}
+            </span>
+            <span
+              className={`queue-row-actions${canDelete ? " queue-row-actions--delete" : ""}`}
               role="cell"
               onClick={(event) => event.stopPropagation()}
             >
@@ -148,8 +243,33 @@ export function QueueTable({
                   disabled={!canStart || activeAnalysisId === review.id}
                   onClick={() => onStartAnalysis(review)}
                 >
-                  <PlayCircle size={15} aria-hidden="true" />
-                  {activeAnalysisId === review.id ? "시작 중" : "AI 분석 시작"}
+                  {activeAnalysisId === review.id ? (
+                    <>
+                      <Loader2 className="action-spinner" size={15} aria-hidden="true" />
+                      분석중
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle size={15} aria-hidden="true" />
+                      AI 분석 시작
+                    </>
+                  )}
+                </button>
+              ) : null}
+              {canDelete ? (
+                <button
+                  className="icon-button icon-button--small icon-button--danger"
+                  type="button"
+                  aria-label={`심의 이력 삭제: ${review.title}`}
+                  title="심의 이력 삭제"
+                  disabled={isDeleting}
+                  onClick={() => onDeleteReviewHistory?.(review)}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="action-spinner" size={16} aria-hidden="true" />
+                  ) : (
+                    <Trash2 size={16} aria-hidden="true" />
+                  )}
                 </button>
               ) : null}
               {!waiting && !openable ? (

@@ -21,6 +21,9 @@ type AnalysisStartResponse = {
   status: ReviewCase["status"];
   analysisHref: string;
 };
+type ReviewerUpdateResponse = {
+  reviewCase?: Pick<ReviewCase, "id" | "reviewer">;
+};
 
 function isAnalysisWaiting(status: ReviewCase["status"]): boolean {
   return status === "submitted" || status === "analysis_waiting";
@@ -86,6 +89,8 @@ export function ReviewQueue(): JSX.Element {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
+  const [savingReviewerIds, setSavingReviewerIds] = useState<string[]>([]);
+  const [deletingHistoryIds, setDeletingHistoryIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -93,6 +98,12 @@ export function ReviewQueue(): JSX.Element {
     pageSize: queuePageSize,
     total: 0
   });
+  const listLabel = scope === "history" ? "심의 이력" : "심의 대기 목록";
+  const loadingMessage = `${listLabel}을 불러오는 중입니다.`;
+  const canEditReviewer =
+    scope === "active" && (activeRole === "reviewer" || activeRole === "compliance_admin");
+  const canDeleteReviewHistory =
+    scope === "history" && (activeRole === "reviewer" || activeRole === "compliance_admin");
 
   const scopedReviews = useMemo(
     () =>
@@ -155,7 +166,7 @@ export function ReviewQueue(): JSX.Element {
         const response = await fetch(reviewCasesUrl(page, filters), {
           headers: apiHeaders()
         });
-        if (!response.ok) throw new Error("심의 큐를 불러오지 못했습니다.");
+        if (!response.ok) throw new Error(`${listLabel}을 불러오지 못했습니다.`);
         const body = (await response.json()) as ReviewCasesResponse;
         if (mounted) {
           const rows = body.reviewCases ?? body.items ?? [];
@@ -168,7 +179,9 @@ export function ReviewQueue(): JSX.Element {
         }
       } catch (error) {
         if (mounted)
-          setLoadError(error instanceof Error ? error.message : "심의 큐를 불러오지 못했습니다.");
+          setLoadError(
+            error instanceof Error ? error.message : `${listLabel}을 불러오지 못했습니다.`
+          );
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -176,7 +189,7 @@ export function ReviewQueue(): JSX.Element {
     return () => {
       mounted = false;
     };
-  }, [activeRole, apiHeaders, filters, page]);
+  }, [activeRole, apiHeaders, filters, listLabel, page]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent): void {
@@ -228,6 +241,78 @@ export function ReviewQueue(): JSX.Element {
     }
   }
 
+  async function saveReviewer(review: ReviewSummary, reviewer: string): Promise<void> {
+    setSavingReviewerIds((current) =>
+      current.includes(review.id) ? current : [...current, review.id]
+    );
+    setLoadError(null);
+
+    try {
+      const response = await fetch(`/api/v1/review-cases/${review.id}`, {
+        method: "PATCH",
+        headers: apiHeaders({ "content-type": "application/json" }),
+        body: JSON.stringify({ reviewer })
+      });
+
+      if (!response.ok) {
+        throw new Error("담당자 저장 권한 또는 요청을 확인해 주세요.");
+      }
+
+      const body = (await response.json()) as ReviewerUpdateResponse;
+      const savedReviewer = body.reviewCase?.reviewer ?? reviewer;
+
+      setReviews((current) =>
+        current.map((candidate) =>
+          candidate.id === review.id ? { ...candidate, reviewer: savedReviewer } : candidate
+        )
+      );
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "담당자 저장 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setSavingReviewerIds((current) => current.filter((id) => id !== review.id));
+    }
+  }
+
+  async function deleteReviewHistory(review: ReviewSummary): Promise<void> {
+    const confirmed = window.confirm(
+      "이 심의 이력을 삭제하시겠습니까? 삭제 후에는 목록에서 사라집니다."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingHistoryIds((current) =>
+      current.includes(review.id) ? current : [...current, review.id]
+    );
+    setLoadError(null);
+
+    try {
+      const response = await fetch(`/api/v1/review-cases/${review.id}`, {
+        method: "DELETE",
+        headers: apiHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error("심의 이력 삭제 권한 또는 요청을 확인해 주세요.");
+      }
+
+      setReviews((current) => current.filter((candidate) => candidate.id !== review.id));
+      setPagination((current) => ({
+        ...current,
+        total: Math.max(0, current.total - 1)
+      }));
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "심의 이력 삭제 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setDeletingHistoryIds((current) => current.filter((id) => id !== review.id));
+    }
+  }
+
   function selectHistoryDecision(decision: HistoryDecision): void {
     setPage(1);
     setFilters((current) => ({ ...current, status: decision }));
@@ -247,7 +332,7 @@ export function ReviewQueue(): JSX.Element {
     <div className="review-queue">
       <section className="queue-head">
         <div>
-          <h2>{scope === "history" ? "심의 이력" : "심의 큐"}</h2>
+          <h2>{scope === "history" ? "심의 이력" : "심의 대기 목록"}</h2>
           <p>
             {scope === "history"
               ? "승인 또는 반려 판단이 완료된 심의 건을 확인합니다."
@@ -310,6 +395,11 @@ export function ReviewQueue(): JSX.Element {
           activeRole={activeRole}
           activeAnalysisId={activeAnalysisId}
           isLoading={isLoading}
+          loadingMessage={loadingMessage}
+          canEditReviewer={canEditReviewer}
+          savingReviewerIds={savingReviewerIds}
+          canDeleteReviewHistory={canDeleteReviewHistory}
+          deletingReviewHistoryIds={deletingHistoryIds}
           emptyMessage={
             scopedReviews.length > 0
               ? "검색 또는 필터 조건에 맞는 심의 건이 없습니다."
@@ -321,11 +411,13 @@ export function ReviewQueue(): JSX.Element {
                     : "아직 심의 이력이 없습니다."
                 : "아직 심의 요청이 없습니다. 새 심의 요청을 생성해 자료 패키지를 업로드하세요."
           }
+          onSaveReviewer={(review, reviewer) => void saveReviewer(review, reviewer)}
+          onDeleteReviewHistory={(review) => void deleteReviewHistory(review)}
           onStartAnalysis={(review) => void startAnalysis(review)}
           onOpenReview={(id) => router.push(`/reviews/${id}`)}
         />
         {pagination.total > pagination.pageSize ? (
-          <div className="queue-pagination" aria-label="심의 큐 페이지네이션">
+          <div className="queue-pagination" aria-label="심의 대기 목록 페이지네이션">
             <button
               className="button button--small"
               type="button"

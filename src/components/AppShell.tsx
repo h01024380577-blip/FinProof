@@ -36,7 +36,7 @@ const navigation: NavigationItem[] = [
   },
   {
     href: "/reviews",
-    label: "심의 큐",
+    label: "심의 대기 목록",
     icon: ClipboardList,
     roles: ["reviewer", "compliance_admin"]
   },
@@ -82,10 +82,10 @@ function getBreadcrumb(pathname: string): string[] {
   if (pathname.startsWith("/reviews/")) {
     const reviewId = decodeURIComponent(pathname.split("/").filter(Boolean).at(-1) ?? "심의 상세");
 
-    return ["심의 큐", reviewId];
+    return ["심의 대기 목록", reviewId];
   }
 
-  return ["FinProof Agent", "심의 큐"];
+  return ["FinProof Agent", "심의 대기 목록"];
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {

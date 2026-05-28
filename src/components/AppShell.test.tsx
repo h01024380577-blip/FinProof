@@ -33,7 +33,10 @@ describe("AppShell", () => {
     expect(
       screen.getByRole("link", { name: "FinProof home" }).querySelector(".brand__mark")
     ).not.toBeNull();
-    expect(screen.getByRole("link", { name: /심의 큐/ })).toHaveAttribute("href", "/reviews");
+    expect(screen.getByRole("link", { name: /심의 대기 목록/ })).toHaveAttribute(
+      "href",
+      "/reviews"
+    );
     expect(screen.queryByRole("link", { name: /신규 요청/ })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /심의 이력/ })).toHaveAttribute(
       "href",
@@ -45,7 +48,7 @@ describe("AppShell", () => {
     );
     expect(screen.queryByRole("link", { name: /Compliance workbench/ })).not.toBeInTheDocument();
     expect(screen.getByText("FinProof Agent")).toBeInTheDocument();
-    expect(screen.getAllByText("심의 큐").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("심의 대기 목록").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "알림" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "설정" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "사용자 메뉴" })).toBeInTheDocument();
@@ -62,7 +65,10 @@ describe("AppShell", () => {
       </AppShell>
     );
 
-    expect(screen.getByRole("link", { name: /심의 큐/ })).toHaveAttribute("data-active", "false");
+    expect(screen.getByRole("link", { name: /심의 대기 목록/ })).toHaveAttribute(
+      "data-active",
+      "false"
+    );
     expect(screen.getByRole("link", { name: /심의 이력/ })).toHaveAttribute("data-active", "true");
   });
 
@@ -78,7 +84,7 @@ describe("AppShell", () => {
       within(primaryNav)
         .getAllByRole("link")
         .map((link) => link.textContent)
-    ).toEqual(["심의 큐", "심의 이력", "지식문서 등록"]);
+    ).toEqual(["심의 대기 목록", "심의 이력", "지식문서 등록"]);
   });
 
   it("shows only the new request navigation for requesters and redirects review pages", async () => {
@@ -100,7 +106,7 @@ describe("AppShell", () => {
       "href",
       "/reviews/new"
     );
-    expect(screen.queryByRole("link", { name: /심의 큐/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /심의 대기 목록/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /심의 이력/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /지식문서 등록/ })).not.toBeInTheDocument();
 
@@ -121,7 +127,7 @@ describe("AppShell", () => {
     const breadcrumb = screen.getByRole("navigation", { name: "Breadcrumb" });
     expect(within(breadcrumb).getByText("신규 요청")).toBeInTheDocument();
     expect(within(breadcrumb).getByText("신규 심의 요청")).toBeInTheDocument();
-    expect(within(breadcrumb).queryByText("심의 큐")).not.toBeInTheDocument();
+    expect(within(breadcrumb).queryByText("심의 대기 목록")).not.toBeInTheDocument();
   });
 
   it("redirects reviewers away from the requester-only new request page", async () => {

@@ -589,6 +589,22 @@ a {
   background: var(--surface-muted);
 }
 
+.icon-button--small {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
+.icon-button--danger {
+  color: var(--risk-reject);
+}
+
+.icon-button--danger:hover {
+  border-color: #e9aaa1;
+  background: var(--risk-reject-bg);
+}
+
 .review-table {
   display: grid;
   margin-top: 18px;
@@ -704,6 +720,12 @@ a.review-table__row:hover {
   border-color: #bfddcf;
   background: var(--verified-bg);
   color: var(--verified);
+}
+
+.status-badge[data-status="rejected"] {
+  border-color: #e9aaa1;
+  background: var(--risk-reject-bg);
+  color: var(--risk-reject);
 }
 
 .dashboard-grid {
@@ -862,6 +884,38 @@ a.review-table__row:hover {
   align-items: center;
   justify-content: flex-end;
   gap: 7px;
+}
+
+.queue-row-actions--delete {
+  justify-content: flex-start;
+  padding-left: 2px;
+}
+
+.reviewer-editor {
+  min-width: 0;
+}
+
+.reviewer-editor__input {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+}
+
+.reviewer-editor__input:hover,
+.reviewer-editor__input:focus {
+  border-color: var(--line-strong);
+  background: #ffffff;
+  outline: none;
+}
+
+.reviewer-editor__input:disabled {
+  color: var(--muted);
+  cursor: progress;
 }
 
 .queue-empty-state,
@@ -1414,6 +1468,8 @@ a.review-table__row:hover {
 }
 
 .workbench-drawer {
+  --drawer-height: clamp(430px, 54vh, 560px);
+
   display: grid;
   gap: 0;
   overflow: hidden;
@@ -1424,11 +1480,16 @@ a.review-table__row:hover {
   background: var(--surface);
 }
 
+.workbench-drawer[data-size="expanded"] {
+  --drawer-height: clamp(540px, 72vh, 760px);
+}
+
 .workbench-drawer .tabs {
   display: flex;
-  height: clamp(430px, 54vh, 560px);
+  height: var(--drawer-height);
   min-height: 0;
   flex-direction: column;
+  transition: height 160ms ease;
 }
 
 .workbench-drawer .tabs__panel {
@@ -2783,6 +2844,15 @@ a.review-table__row:hover {
   background: var(--surface);
   color: var(--text-soft);
   padding: 0 var(--space-3);
+  font-size: var(--font-size-sm);
+}
+.action-spinner {
+  animation: actionSpin 0.8s linear infinite;
+}
+@keyframes actionSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .form-status {
   margin: 0;

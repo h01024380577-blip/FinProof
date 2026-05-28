@@ -14,6 +14,21 @@ describe("ReviewDetailLoader", () => {
     vi.unstubAllGlobals();
   });
 
+  it("shows a spinning loader while the review case is loading", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+
+    render(
+      <RoleProvider>
+        <ReviewDetailLoader reviewId="rc-upload-001" />
+      </RoleProvider>
+    );
+
+    const loadingMessage = screen.getByText("심의 건을 불러오는 중입니다.");
+    expect(
+      loadingMessage.closest(".queue-empty-state")?.querySelector(".action-spinner")
+    ).toBeInTheDocument();
+  });
+
   it("loads a real review case through the API with bearer authorization", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce({
       ok: true,

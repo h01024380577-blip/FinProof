@@ -9,18 +9,24 @@ export type WorkbenchDrawerProps = {
   draftNode: ReactNode;
   filesNode: ReactNode;
   defaultCollapsed?: boolean;
+  expanded?: boolean;
 };
 
 export function WorkbenchDrawer({
   chatNode,
   draftNode,
   filesNode,
-  defaultCollapsed = false
+  defaultCollapsed = false,
+  expanded = false
 }: WorkbenchDrawerProps): JSX.Element {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   return (
-    <section className="workbench-drawer" aria-label="Workbench bottom drawer">
+    <section
+      className="workbench-drawer"
+      data-size={expanded ? "expanded" : "default"}
+      aria-label="Workbench bottom drawer"
+    >
       <div className="workbench-drawer__head">
         <button
           type="button"

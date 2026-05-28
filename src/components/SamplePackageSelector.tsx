@@ -228,9 +228,9 @@ export function SamplePackageSelector(): JSX.Element {
         <div className="intake-footer-bar">
           {uploadResult ? (
             <section className="submission-notice" aria-label="Submission status">
-              <p>심의 큐에 분석 대기 건으로 등록되었습니다.</p>
+              <p>심의 대기 목록에 분석 대기 건으로 등록되었습니다.</p>
               <Link className="button" href="/reviews">
-                심의 큐에서 확인
+                심의 대기 목록에서 확인
               </Link>
               <button className="button" type="button" onClick={resetForNextRequest}>
                 다른 요청 작성

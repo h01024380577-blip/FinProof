@@ -51,6 +51,8 @@ const finalActionPriority: Array<NonNullable<ReviewIssue["finalAction"]>> = [
   "approve"
 ];
 const NOTICE_AUTO_DISMISS_MS = 4000;
+const CHAT_HISTORY_RETENTION_MS = 24 * 60 * 60 * 1000;
+const CHAT_HISTORY_STORAGE_PREFIX = "finproof.review-chat-history.v1";
 
 const finalDecisionConfirmPhrases: Record<FinalDecisionAction, string> = {
   approve: "승인으로",
@@ -186,6 +188,129 @@ function getInitialSavedDecisions(review: ReviewCase): Record<string, SavedDecis
   );
 }
 
+function chatHistoryStorageKey(reviewCaseId: string): string {
+  return `${CHAT_HISTORY_STORAGE_PREFIX}.${reviewCaseId}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isReviewChatResponse(value: unknown): value is ReviewChatResponse {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === "string" &&
+    typeof value.question === "string" &&
+    typeof value.content === "string" &&
+    (value.answerType === "evidence_based" || value.answerType === "insufficient_evidence") &&
+    Array.isArray(value.evidence) &&
+    Array.isArray(value.requiredMaterials)
+  );
+}
+
+function hasStoredChatResponses(responsesByIssueId: ChatResponsesByIssueId): boolean {
+  return Object.values(responsesByIssueId).some((responses) => responses.length > 0);
+}
+
+function normalizeStoredChatResponses(value: unknown): ChatResponsesByIssueId {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([issueId, responses]) => {
+      if (!Array.isArray(responses)) {
+        return [];
+      }
+
+      const validResponses = responses.filter(isReviewChatResponse);
+
+      return validResponses.length > 0 ? [[issueId, validResponses]] : [];
+    })
+  );
+}
+
+function loadCachedChatResponses(reviewCaseId: string): ChatResponsesByIssueId {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const storageKey = chatHistoryStorageKey(reviewCaseId);
+    const rawCache = window.localStorage.getItem(storageKey);
+
+    if (!rawCache) {
+      return {};
+    }
+
+    const parsed = JSON.parse(rawCache) as unknown;
+
+    if (!isRecord(parsed) || typeof parsed.expiresAt !== "number") {
+      window.localStorage.removeItem(storageKey);
+      return {};
+    }
+
+    if (parsed.expiresAt <= Date.now()) {
+      window.localStorage.removeItem(storageKey);
+      return {};
+    }
+
+    return normalizeStoredChatResponses(parsed.responsesByIssueId);
+  } catch {
+    return {};
+  }
+}
+
+function loadCachedChatResponsesByReviewId(): ChatResponsesByReviewId {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const storagePrefix = `${CHAT_HISTORY_STORAGE_PREFIX}.`;
+    const storageKeys = Array.from({ length: window.localStorage.length }, (_, index) =>
+      window.localStorage.key(index)
+    ).filter((key): key is string => key?.startsWith(storagePrefix) ?? false);
+
+    return Object.fromEntries(
+      storageKeys.flatMap((storageKey) => {
+        const reviewCaseId = storageKey.slice(storagePrefix.length);
+        const cachedChatResponses = loadCachedChatResponses(reviewCaseId);
+
+        return hasStoredChatResponses(cachedChatResponses)
+          ? [[reviewCaseId, cachedChatResponses]]
+          : [];
+      })
+    );
+  } catch {
+    return {};
+  }
+}
+
+function persistCachedChatResponses(
+  reviewCaseId: string,
+  responsesByIssueId: ChatResponsesByIssueId
+): void {
+  if (typeof window === "undefined" || !hasStoredChatResponses(responsesByIssueId)) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      chatHistoryStorageKey(reviewCaseId),
+      JSON.stringify({
+        expiresAt: Date.now() + CHAT_HISTORY_RETENTION_MS,
+        responsesByIssueId
+      })
+    );
+  } catch {
+    // Local browser storage can be unavailable in restricted modes; chat still works in memory.
+  }
+}
+
 export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.Element {
   const roleContext = useRoleContext();
   const activeRole = roleContext?.activeRole ?? "reviewer";
@@ -209,7 +334,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("");
   const [chatResponsesByReviewId, setChatResponsesByReviewId] = useState<ChatResponsesByReviewId>(
-    {}
+    () => loadCachedChatResponsesByReviewId()
   );
   const [reviewerRiskLevel, setReviewerRiskLevel] = useState<RiskLevel>(
     review.issues[0]?.reviewerRiskLevel ?? review.issues[0]?.riskLevel ?? "info"
@@ -235,7 +360,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const chatResponsesByIssueId = chatResponsesByReviewId[review.id] ?? {};
   const selectedIssue: ReviewIssue | undefined =
     review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
-  const chatResponses = selectedIssue ? (chatResponsesByIssueId[selectedIssue.id] ?? []) : [];
+  const visibleChatResponses = Object.entries(chatResponsesByIssueId).flatMap(
+    ([issueId, responses]) => responses.map((response) => ({ issueId, response }))
+  );
+  const chatHasLongAnswer = visibleChatResponses.some(
+    ({ response }) => response.content.length >= 900
+  );
   const selectedPendingQuestion =
     selectedIssue && pendingQuestion?.issueId === selectedIssue.id ? pendingQuestion : null;
   const savedDecision = selectedIssue ? (savedDecisionsByIssueId[selectedIssue.id] ?? null) : null;
@@ -248,6 +378,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const initialTab: IssueDetailTabKey =
     rawTab === "evidence" || rawTab === "opinion" ? rawTab : "checklist";
   const [activeTab, setActiveTabState] = useState<IssueDetailTabKey>(initialTab);
+
+  useEffect(() => {
+    const currentReviewChatResponses = chatResponsesByReviewId[review.id] ?? {};
+
+    persistCachedChatResponses(review.id, currentReviewChatResponses);
+  }, [chatResponsesByReviewId, review.id]);
 
   useEffect(() => {
     if (!finalizedNotice && !reportNotice && !draftNotice) {
@@ -608,7 +744,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                 "선택 이슈가 생성된 후 근거 기반 질의를 사용할 수 있습니다."}
             </span>
           </div>
-        ) : chatResponses.length === 0 && !selectedPendingQuestion ? (
+        ) : visibleChatResponses.length === 0 && !selectedPendingQuestion ? (
           <div className="chat-empty-prompt">
             <strong>선택된 이슈의 근거를 기준으로 답변합니다.</strong>
             <span>
@@ -616,8 +752,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             </span>
           </div>
         ) : (
-          chatResponses.map((response) => (
-            <article key={response.id} className="chat-turn" data-answer-type={response.answerType}>
+          visibleChatResponses.map(({ issueId, response }) => (
+            <article
+              key={`${issueId}-${response.id}`}
+              className="chat-turn"
+              data-answer-type={response.answerType}
+            >
               <div className="chat-message chat-message--user">
                 <div className="chat-message__bubble">{response.question}</div>
               </div>
@@ -633,13 +773,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                         <span key={material}>{material}</span>
                       ))}
                     </div>
-                  ) : (
-                    <div className="evidence-inline">
-                      {response.evidence.slice(0, 3).map((evidence) => (
-                        <span key={evidence.id}>{evidence.title}</span>
-                      ))}
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </article>
@@ -815,6 +949,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
       <WorkbenchDrawer
         defaultCollapsed={activeRole === "requester"}
+        expanded={chatHasLongAnswer}
         chatNode={chatPanel}
         draftNode={draftPanel}
         filesNode={filesPanel}
