@@ -23,7 +23,7 @@ if [ -f "$RELEASE_ENV" ]; then
   set +a
 fi
 
-npm ci
+npm ci --include=dev
 npm run db:generate
 npm run build
 npm run db:deploy

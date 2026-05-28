@@ -5,6 +5,7 @@ import {
   renderEc2RuntimeEnvExample,
   renderEc2SystemdUnit
 } from "./render-ec2-deployment";
+import { readFileSync } from "node:fs";
 
 describe("EC2 deployment artifacts", () => {
   it("renders a systemd unit for the production Next.js server", () => {
@@ -55,11 +56,30 @@ describe("EC2 deployment artifacts", () => {
     expect(runtimeEnv).toContain("FINPROOF_AUTH_JWT_AUDIENCE=finproof-agent");
     expect(runtimeEnv).toContain("FINPROOF_ANALYSIS_EXECUTION_MODE=queued");
     expect(runtimeEnv).toContain("FINPROOF_WORKER_TENANT_ID=tenant-demo");
+    expect(runtimeEnv).toContain("FINPROOF_OCR_PROVIDER=gemini");
+    expect(runtimeEnv).toContain("FINPROOF_OCR_MODEL=gemini-2.5-flash-lite");
+    expect(runtimeEnv).toContain("FINPROOF_RERANK_PROVIDER=cohere");
     expect(runtimeEnv).toContain("FINPROOF_UPLOAD_SCAN_PROVIDER=http");
     expect(runtimeEnv).toContain("FINPROOF_UPLOAD_SCAN_ENDPOINT=");
     expect(runtimeEnv).not.toContain("DIRECT_URL=");
     expect(releaseEnv).toContain("DIRECT_URL=");
     expect(releaseEnv).toContain("DATABASE_URL=");
+  });
+
+  it("keeps S3 enabled only for the EC2 runtime template", () => {
+    const localEnvExample = readFileSync(".env.example", "utf8");
+    const runtimeEnv = renderEc2RuntimeEnvExample();
+    const releaseEnv = renderEc2ReleaseEnvExample();
+
+    expect(localEnvExample).toContain('FINPROOF_STORAGE_ADAPTER="local-metadata"');
+    expect(localEnvExample).toContain('FINPROOF_S3_BUCKET=""');
+    expect(localEnvExample).toContain('AWS_REGION=""');
+    expect(runtimeEnv).toContain("FINPROOF_STORAGE_ADAPTER=s3");
+    expect(runtimeEnv).toContain("FINPROOF_S3_BUCKET=finproof-s3");
+    expect(runtimeEnv).toContain("AWS_REGION=us-east-1");
+    expect(releaseEnv).not.toContain("FINPROOF_STORAGE_ADAPTER");
+    expect(releaseEnv).not.toContain("FINPROOF_S3_BUCKET");
+    expect(releaseEnv).not.toContain("AWS_REGION");
   });
 
   it("builds the expected EC2 artifact set", () => {
@@ -83,6 +103,7 @@ describe("EC2 deployment artifacts", () => {
     expect(deployScript!.indexOf("npm run build")).toBeLessThan(
       deployScript!.indexOf("npm run db:deploy")
     );
+    expect(deployScript).toContain("npm ci --include=dev");
     expect(deployScript).toContain('RUNTIME_ENV="/etc/finproof-agent/finproof-agent.env"');
     expect(deployScript).toContain('if [ -f "$RUNTIME_ENV" ]; then');
     expect(deployScript).toContain('sudo systemctl restart "$SERVICE_NAME"');

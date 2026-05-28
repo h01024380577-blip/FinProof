@@ -29,6 +29,32 @@ describe("analysis provider config", () => {
     expect(config.missing).toContain("FINPROOF_OCR_ENDPOINT");
   });
 
+  it("uses Gemini OCR with the shared Gemini API key", () => {
+    const config = getAnalysisProviderConfig({
+      FINPROOF_OCR_PROVIDER: "gemini",
+      GEMINI_API_KEY: "gemini-real",
+      FINPROOF_OCR_MODEL: "gemini-2.5-flash-lite"
+    });
+
+    expect(config.ocr).toEqual({
+      provider: "gemini",
+      apiKeyConfigured: true,
+      model: "gemini-2.5-flash-lite"
+    });
+    expect(config.missing).not.toContain("GEMINI_API_KEY");
+  });
+
+  it("requires the shared Gemini API key when Gemini OCR is enabled", () => {
+    const config = getAnalysisProviderConfig({ FINPROOF_OCR_PROVIDER: "gemini" });
+
+    expect(config.ocr).toEqual({
+      provider: "gemini",
+      apiKeyConfigured: false,
+      model: "gemini-2.5-flash-lite"
+    });
+    expect(config.missing).toContain("GEMINI_API_KEY");
+  });
+
   it("parses RAG tuning knobs", () => {
     const config = getAnalysisProviderConfig({
       FINPROOF_RAG_PROVIDER: "postgres",
@@ -61,5 +87,20 @@ describe("analysis provider config", () => {
       topK: 4
     });
     expect(config.missing).toContain("FINPROOF_RERANK_ENDPOINT");
+  });
+
+  it("requires a Cohere API key when Cohere rerank is enabled", () => {
+    const config = getAnalysisProviderConfig({
+      FINPROOF_RERANK_PROVIDER: "cohere",
+      FINPROOF_RERANK_TOP_K: "3"
+    });
+
+    expect(config.rerank).toEqual({
+      provider: "cohere",
+      apiKeyConfigured: false,
+      model: "rerank-v3.5",
+      topK: 3
+    });
+    expect(config.missing).toContain("COHERE_API_KEY");
   });
 });

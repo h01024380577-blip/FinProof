@@ -25,7 +25,9 @@ export type BackendRuntimeConfig = {
   embedding: ProviderState & {
     model: string;
   };
-  ocr: ProviderState;
+  ocr: ProviderState & {
+    model?: string;
+  };
   rag: ProviderState & {
     topK: number;
     minScore: number;
@@ -94,7 +96,12 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     modelProviderValue === "router"
       ? modelProviderValue
       : "deterministic";
-  const ocrProvider = value(env, "FINPROOF_OCR_PROVIDER") === "http" ? "http" : "deterministic";
+  const ocrProviderValue = value(env, "FINPROOF_OCR_PROVIDER");
+  const ocrProvider =
+    ocrProviderValue === "http" || ocrProviderValue === "gemini"
+      ? ocrProviderValue
+      : "deterministic";
+  const ocrModel = value(env, "FINPROOF_OCR_MODEL") ?? "gemini-2.5-flash-lite";
   const embeddingProviderValue = value(env, "FINPROOF_EMBEDDING_PROVIDER");
   const embeddingProvider =
     embeddingProviderValue === "openai" || embeddingProviderValue === "http"
@@ -107,9 +114,14 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   const embeddingModel = value(env, "FINPROOF_EMBEDDING_MODEL") ?? "text-embedding-3-small";
   const ragProvider =
     value(env, "FINPROOF_RAG_PROVIDER") === "postgres" ? "postgres" : "deterministic";
+  const rerankProviderValue = value(env, "FINPROOF_RERANK_PROVIDER");
   const rerankProvider =
-    value(env, "FINPROOF_RERANK_PROVIDER") === "http" ? "http" : "deterministic";
-  const rerankModel = value(env, "FINPROOF_RERANK_MODEL") ?? "bge-reranker-v2-m3";
+    rerankProviderValue === "http" || rerankProviderValue === "cohere"
+      ? rerankProviderValue
+      : "deterministic";
+  const rerankModel =
+    value(env, "FINPROOF_RERANK_MODEL") ??
+    (rerankProvider === "cohere" ? "rerank-v3.5" : "bge-reranker-v2-m3");
   const analysisExecutionMode =
     value(env, "FINPROOF_ANALYSIS_EXECUTION_MODE") === "queued" ? "queued" : "inline";
   const uploadScanProvider =
@@ -143,8 +155,10 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   requireWhen(missing, embeddingProvider === "openai", env, "OPENAI_API_KEY");
   requireWhen(missing, embeddingProvider === "http", env, "FINPROOF_EMBEDDING_ENDPOINT");
   requireWhen(missing, ocrProvider === "http", env, "FINPROOF_OCR_ENDPOINT");
+  requireWhen(missing, ocrProvider === "gemini", env, "GEMINI_API_KEY");
   requireWhen(missing, ragProvider === "postgres", env, "DATABASE_URL");
   requireWhen(missing, rerankProvider === "http", env, "FINPROOF_RERANK_ENDPOINT");
+  requireWhen(missing, rerankProvider === "cohere", env, "COHERE_API_KEY");
   requireWhen(missing, uploadScanProvider === "http", env, "FINPROOF_UPLOAD_SCAN_ENDPOINT");
   requireWhen(missing, storageProvider === "s3", env, "FINPROOF_S3_BUCKET");
   requireWhen(missing, storageProvider === "s3", env, "AWS_REGION");
@@ -165,7 +179,11 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     embeddingProvider !== "openai",
     "FINPROOF_EMBEDDING_PROVIDER=openai"
   );
-  requireProductionProvider(productionGaps, ocrProvider !== "http", "FINPROOF_OCR_PROVIDER=http");
+  requireProductionProvider(
+    productionGaps,
+    ocrProvider !== "http" && ocrProvider !== "gemini",
+    "FINPROOF_OCR_PROVIDER=gemini|http"
+  );
   requireProductionProvider(
     productionGaps,
     ragProvider !== "postgres",
@@ -173,8 +191,8 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   );
   requireProductionProvider(
     productionGaps,
-    rerankProvider !== "http",
-    "FINPROOF_RERANK_PROVIDER=http"
+    rerankProvider !== "cohere",
+    "FINPROOF_RERANK_PROVIDER=cohere"
   );
   requireProductionProvider(
     productionGaps,
@@ -239,7 +257,11 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     },
     ocr: {
       provider: ocrProvider,
-      configured: ocrProvider === "deterministic" || Boolean(value(env, "FINPROOF_OCR_ENDPOINT"))
+      configured:
+        ocrProvider === "deterministic" ||
+        (ocrProvider === "http" && Boolean(value(env, "FINPROOF_OCR_ENDPOINT"))) ||
+        (ocrProvider === "gemini" && Boolean(value(env, "GEMINI_API_KEY"))),
+      ...(ocrProvider === "gemini" ? { model: ocrModel } : {})
     },
     rag: {
       provider: ragProvider,
@@ -251,7 +273,9 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     rerank: {
       provider: rerankProvider,
       configured:
-        rerankProvider === "deterministic" || Boolean(value(env, "FINPROOF_RERANK_ENDPOINT")),
+        rerankProvider === "deterministic" ||
+        (rerankProvider === "http" && Boolean(value(env, "FINPROOF_RERANK_ENDPOINT"))) ||
+        (rerankProvider === "cohere" && Boolean(value(env, "COHERE_API_KEY"))),
       model: rerankProvider === "deterministic" ? "deterministic-reranker" : rerankModel
     },
     uploadScan: {
@@ -275,6 +299,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       FINPROOF_AUTH_JWKS_URL: secretState(env, "FINPROOF_AUTH_JWKS_URL"),
       OPENAI_API_KEY: secretState(env, "OPENAI_API_KEY"),
       GEMINI_API_KEY: secretState(env, "GEMINI_API_KEY"),
+      COHERE_API_KEY: secretState(env, "COHERE_API_KEY"),
       FINPROOF_OCR_API_KEY: secretState(env, "FINPROOF_OCR_API_KEY"),
       FINPROOF_RERANK_API_KEY: secretState(env, "FINPROOF_RERANK_API_KEY"),
       FINPROOF_UPLOAD_SCAN_API_KEY: secretState(env, "FINPROOF_UPLOAD_SCAN_API_KEY"),

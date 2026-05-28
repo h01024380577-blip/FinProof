@@ -23,6 +23,8 @@ export type Reranker = {
   rerank(input: RerankInput): Promise<RagEvidenceCandidate[]>;
 };
 
+const COHERE_RERANK_ENDPOINT = "https://api.cohere.com/v1/rerank";
+
 function value(env: Env, key: string): string | undefined {
   const raw = env[key];
 
@@ -76,7 +78,12 @@ function parseRerankResponse(
 
       const id = "id" in item && typeof item.id === "string" ? item.id : undefined;
       const index = "index" in item && typeof item.index === "number" ? item.index : undefined;
-      const score = "score" in item && typeof item.score === "number" ? item.score : undefined;
+      const score =
+        "score" in item && typeof item.score === "number"
+          ? item.score
+          : "relevance_score" in item && typeof item.relevance_score === "number"
+            ? item.relevance_score
+            : undefined;
       const candidate = id ? byId.get(id) : index !== undefined ? candidates[index] : undefined;
 
       return candidate ? [{ ...candidate, relevanceScore: score ?? candidate.relevanceScore }] : [];
@@ -130,8 +137,60 @@ export function createHttpReranker(env: Env = process.env, fetchImpl: FetchLike 
   };
 }
 
+export function createCohereReranker(
+  env: Env = process.env,
+  fetchImpl: FetchLike = fetch
+): Reranker {
+  const config = getAnalysisProviderConfig(env).rerank;
+  const apiKey = value(env, "COHERE_API_KEY");
+
+  if (config.provider !== "cohere" || !apiKey) {
+    throw new Error("COHERE_API_KEY is required when FINPROOF_RERANK_PROVIDER=cohere");
+  }
+
+  return {
+    provider: config.model,
+    async rerank({ query, candidates }) {
+      const response = await fetchImpl(COHERE_RERANK_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: config.model,
+          query,
+          documents: candidates.map((candidate) => ({
+            text: candidate.quoteSummary,
+            title: candidate.title,
+            sourceType: candidate.sourceType
+          })),
+          top_n: config.topK,
+          return_documents: false
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Cohere rerank failed: ${response.status ?? "unknown"} ${response.statusText ?? ""}`.trim()
+        );
+      }
+
+      return parseRerankResponse(await response.json(), candidates);
+    }
+  };
+}
+
 export function createReranker(env: Env = process.env): Reranker {
-  return getAnalysisProviderConfig(env).rerank.provider === "http"
-    ? createHttpReranker(env)
-    : createDeterministicReranker();
+  const provider = getAnalysisProviderConfig(env).rerank.provider;
+
+  if (provider === "http") {
+    return createHttpReranker(env);
+  }
+
+  if (provider === "cohere") {
+    return createCohereReranker(env);
+  }
+
+  return createDeterministicReranker();
 }

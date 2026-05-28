@@ -2,7 +2,8 @@ type Env = Record<string, string | undefined>;
 
 type OcrConfig =
   | { provider: "deterministic" }
-  | { provider: "http"; endpoint: string | undefined; apiKeyConfigured: boolean };
+  | { provider: "http"; endpoint: string | undefined; apiKeyConfigured: boolean }
+  | { provider: "gemini"; apiKeyConfigured: boolean; model: string };
 
 type RagConfig =
   | {
@@ -31,6 +32,12 @@ type RerankConfig =
       apiKeyConfigured: boolean;
       model: string;
       topK: number;
+    }
+  | {
+      provider: "cohere";
+      apiKeyConfigured: boolean;
+      model: string;
+      topK: number;
     };
 
 export type AnalysisProviderConfig = {
@@ -55,22 +62,35 @@ function positiveNumber(env: Env, key: string, fallback: number) {
 
 export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProviderConfig {
   const missing: string[] = [];
-  const ocrProvider = value(env, "FINPROOF_OCR_PROVIDER") === "http" ? "http" : "deterministic";
+  const ocrProviderValue = value(env, "FINPROOF_OCR_PROVIDER");
+  const ocrProvider =
+    ocrProviderValue === "http" || ocrProviderValue === "gemini"
+      ? ocrProviderValue
+      : "deterministic";
   const ragProvider =
     value(env, "FINPROOF_RAG_PROVIDER") === "postgres" ? "postgres" : "deterministic";
   const topK = positiveNumber(env, "FINPROOF_RAG_TOP_K", 4);
   const minScore = positiveNumber(env, "FINPROOF_RAG_MIN_SCORE", 0.72);
   const maxContextChars = positiveNumber(env, "FINPROOF_RAG_MAX_CONTEXT_CHARS", 6000);
+  const rerankProviderValue = value(env, "FINPROOF_RERANK_PROVIDER");
   const rerankProvider =
-    value(env, "FINPROOF_RERANK_PROVIDER") === "http" ? "http" : "deterministic";
-  const rerankModel = value(env, "FINPROOF_RERANK_MODEL") ?? "bge-reranker-v2-m3";
+    rerankProviderValue === "http" || rerankProviderValue === "cohere"
+      ? rerankProviderValue
+      : "deterministic";
+  const rerankModel =
+    value(env, "FINPROOF_RERANK_MODEL") ??
+    (rerankProvider === "cohere" ? "rerank-v3.5" : "bge-reranker-v2-m3");
   const rerankTopK = positiveNumber(env, "FINPROOF_RERANK_TOP_K", topK);
   const endpoint = value(env, "FINPROOF_OCR_ENDPOINT");
+  const ocrModel = value(env, "FINPROOF_OCR_MODEL") ?? "gemini-2.5-flash-lite";
   const rerankEndpoint = value(env, "FINPROOF_RERANK_ENDPOINT");
   const databaseUrl = value(env, "DATABASE_URL");
 
   if (ocrProvider === "http" && !endpoint) {
     missing.push("FINPROOF_OCR_ENDPOINT");
+  }
+  if (ocrProvider === "gemini" && !value(env, "GEMINI_API_KEY")) {
+    missing.push("GEMINI_API_KEY");
   }
 
   if (ragProvider === "postgres" && !databaseUrl) {
@@ -79,6 +99,9 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
 
   if (rerankProvider === "http" && !rerankEndpoint) {
     missing.push("FINPROOF_RERANK_ENDPOINT");
+  }
+  if (rerankProvider === "cohere" && !value(env, "COHERE_API_KEY")) {
+    missing.push("COHERE_API_KEY");
   }
 
   return {
@@ -89,6 +112,12 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
             endpoint,
             apiKeyConfigured: Boolean(value(env, "FINPROOF_OCR_API_KEY"))
           }
+        : ocrProvider === "gemini"
+          ? {
+              provider: "gemini",
+              apiKeyConfigured: Boolean(value(env, "GEMINI_API_KEY")),
+              model: ocrModel
+            }
         : { provider: "deterministic" },
     rag:
       ragProvider === "postgres"
@@ -114,11 +143,18 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
             model: rerankModel,
             topK: rerankTopK
           }
-        : {
-            provider: "deterministic",
-            model: "deterministic-reranker",
-            topK: rerankTopK
-          },
+        : rerankProvider === "cohere"
+          ? {
+              provider: "cohere",
+              apiKeyConfigured: Boolean(value(env, "COHERE_API_KEY")),
+              model: rerankModel,
+              topK: rerankTopK
+            }
+          : {
+              provider: "deterministic",
+              model: "deterministic-reranker",
+              topK: rerankTopK
+            },
     missing
   };
 }

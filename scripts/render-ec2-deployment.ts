@@ -115,15 +115,17 @@ export function renderEc2RuntimeEnvExample() {
     FINPROOF_EMBEDDING_MODEL=text-embedding-3-small
     FINPROOF_EMBEDDING_ESCALATION_MODEL=text-embedding-3-large
 
-    STITCH_API_KEY=
-
-    FINPROOF_OCR_PROVIDER=http
-    FINPROOF_OCR_ENDPOINT=
-    FINPROOF_OCR_API_KEY=
+    FINPROOF_OCR_PROVIDER=gemini
+    FINPROOF_OCR_MODEL=gemini-2.5-flash-lite
+    FINPROOF_OCR_MAX_INLINE_BYTES=20971520
     FINPROOF_RAG_PROVIDER=postgres
     FINPROOF_RAG_TOP_K=4
     FINPROOF_RAG_MIN_SCORE=0.72
     FINPROOF_RAG_MAX_CONTEXT_CHARS=6000
+    FINPROOF_RERANK_PROVIDER=cohere
+    COHERE_API_KEY=
+    FINPROOF_RERANK_MODEL=rerank-v3.5
+    FINPROOF_RERANK_TOP_K=4
     FINPROOF_ANALYSIS_EXECUTION_MODE=queued
     FINPROOF_WORKER_TENANT_ID=tenant-demo
     FINPROOF_ANALYSIS_WORKER_ID=finproof-analysis-worker
@@ -176,7 +178,7 @@ export function renderEc2DeployScript(options: Ec2SystemdOptions = DEFAULT_OPTIO
       set +a
     fi
 
-    npm ci
+    npm ci --include=dev
     npm run db:generate
     npm run build
     npm run db:deploy

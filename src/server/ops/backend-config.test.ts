@@ -23,9 +23,9 @@ describe("backend runtime config", () => {
         "FINPROOF_REVIEW_STORE=prisma",
         "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
         "FINPROOF_EMBEDDING_PROVIDER=openai",
-        "FINPROOF_OCR_PROVIDER=http",
+        "FINPROOF_OCR_PROVIDER=gemini|http",
         "FINPROOF_RAG_PROVIDER=postgres",
-        "FINPROOF_RERANK_PROVIDER=http",
+        "FINPROOF_RERANK_PROVIDER=cohere",
         "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
         "FINPROOF_STORAGE_ADAPTER=s3"
       ])
@@ -45,9 +45,9 @@ describe("backend runtime config", () => {
         "FINPROOF_REVIEW_STORE=prisma",
         "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
         "FINPROOF_EMBEDDING_PROVIDER=openai",
-        "FINPROOF_OCR_PROVIDER=http",
+        "FINPROOF_OCR_PROVIDER=gemini|http",
         "FINPROOF_RAG_PROVIDER=postgres",
-        "FINPROOF_RERANK_PROVIDER=http",
+        "FINPROOF_RERANK_PROVIDER=cohere",
         "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
         "FINPROOF_STORAGE_ADAPTER=s3"
       ])
@@ -59,9 +59,9 @@ describe("backend runtime config", () => {
     const config = getBackendRuntimeConfig({
       FINPROOF_AUTH_MODE: "jwt",
       FINPROOF_MODEL_PROVIDER: "openai",
-      FINPROOF_OCR_PROVIDER: "http",
+      FINPROOF_OCR_PROVIDER: "gemini",
       FINPROOF_RAG_PROVIDER: "postgres",
-      FINPROOF_RERANK_PROVIDER: "http",
+      FINPROOF_RERANK_PROVIDER: "cohere",
       FINPROOF_UPLOAD_SCAN_PROVIDER: "http",
       FINPROOF_STORAGE_ADAPTER: "s3"
     });
@@ -70,8 +70,8 @@ describe("backend runtime config", () => {
       expect.arrayContaining([
         "FINPROOF_AUTH_JWT_SECRET",
         "OPENAI_API_KEY",
-        "FINPROOF_OCR_ENDPOINT",
-        "FINPROOF_RERANK_ENDPOINT",
+        "GEMINI_API_KEY",
+        "COHERE_API_KEY",
         "FINPROOF_UPLOAD_SCAN_ENDPOINT",
         "DATABASE_URL",
         "FINPROOF_S3_BUCKET",
@@ -141,6 +141,35 @@ describe("backend runtime config", () => {
       model: "bge-reranker-v2-m3"
     });
     expect(config.missing).toContain("FINPROOF_RERANK_ENDPOINT");
+  });
+
+  it("requires a Cohere API key when Cohere rerank is enabled", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_RERANK_PROVIDER: "cohere"
+    });
+
+    expect(config.rerank).toEqual({
+      provider: "cohere",
+      configured: false,
+      model: "rerank-v3.5"
+    });
+    expect(config.missing).toContain("COHERE_API_KEY");
+  });
+
+  it("configures Gemini OCR with the shared Gemini API key", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_OCR_PROVIDER: "gemini",
+      GEMINI_API_KEY: "gemini-real",
+      FINPROOF_OCR_MODEL: "gemini-2.5-flash-lite"
+    });
+
+    expect(config.ocr).toEqual({
+      provider: "gemini",
+      configured: true,
+      model: "gemini-2.5-flash-lite"
+    });
+    expect(config.missing).not.toContain("GEMINI_API_KEY");
+    expect(config.productionGaps).not.toContain("FINPROOF_OCR_PROVIDER=gemini|http");
   });
 
   it("requires an OpenAI key when OpenAI embeddings are selected", () => {
@@ -240,11 +269,11 @@ describe("backend runtime config", () => {
       OPENAI_API_KEY: "sk-real",
       GEMINI_API_KEY: "gemini-real",
       FINPROOF_EMBEDDING_PROVIDER: "openai",
-      FINPROOF_OCR_PROVIDER: "http",
-      FINPROOF_OCR_ENDPOINT: "https://ocr.example.com/extract",
+      FINPROOF_OCR_PROVIDER: "gemini",
+      FINPROOF_OCR_MODEL: "gemini-2.5-flash-lite",
       FINPROOF_RAG_PROVIDER: "postgres",
-      FINPROOF_RERANK_PROVIDER: "http",
-      FINPROOF_RERANK_ENDPOINT: "https://rerank.example.com/rerank",
+      FINPROOF_RERANK_PROVIDER: "cohere",
+      COHERE_API_KEY: "cohere-real",
       FINPROOF_UPLOAD_SCAN_PROVIDER: "http",
       FINPROOF_UPLOAD_SCAN_ENDPOINT: "https://scanner.example.com/scan",
       FINPROOF_STORAGE_ADAPTER: "s3",

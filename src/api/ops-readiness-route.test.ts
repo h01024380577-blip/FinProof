@@ -36,8 +36,8 @@ describe("ops readiness route", () => {
     process.env.FINPROOF_OCR_ENDPOINT = "https://ocr.example.com/extract";
     process.env.FINPROOF_RAG_PROVIDER = "postgres";
     process.env.DATABASE_URL = "postgresql://example";
-    process.env.FINPROOF_RERANK_PROVIDER = "http";
-    process.env.FINPROOF_RERANK_ENDPOINT = "https://rerank.example.com/rerank";
+    process.env.FINPROOF_RERANK_PROVIDER = "cohere";
+    process.env.COHERE_API_KEY = "cohere-real";
     process.env.FINPROOF_UPLOAD_SCAN_PROVIDER = "http";
     process.env.FINPROOF_UPLOAD_SCAN_ENDPOINT = "https://scanner.example.com/scan";
     process.env.FINPROOF_STORAGE_ADAPTER = "s3";
@@ -58,11 +58,13 @@ describe("ops readiness route", () => {
         productionReady: true,
         secrets: {
           FINPROOF_AUTH_JWT_SECRET: "set",
-          OPENAI_API_KEY: "set"
+          OPENAI_API_KEY: "set",
+          COHERE_API_KEY: "set"
         }
       }
     });
     expect(JSON.stringify(body)).not.toContain("sk-real");
+    expect(JSON.stringify(body)).not.toContain("cohere-real");
     expect(JSON.stringify(body)).not.toContain("jwt-secret");
   });
 });
