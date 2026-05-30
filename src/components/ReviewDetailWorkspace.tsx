@@ -541,9 +541,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
           }
         };
       });
-      if (!isChatWidgetOpen) {
-        setHasUnreadChatResponse(true);
-      }
+      setHasUnreadChatResponse(true);
     } catch (error) {
       setQuestion(submittedQuestion);
       setInteractionError(
