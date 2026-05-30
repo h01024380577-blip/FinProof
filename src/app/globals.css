@@ -721,16 +721,22 @@ a.review-table__row:hover {
   color: var(--verified);
 }
 
-.status-badge--analysis-waiting {
-  border-color: #f2d28d;
-  background: var(--risk-caution-bg);
-  color: var(--risk-caution);
+.status-badge--analysis-waiting,
+.status-badge--analysis-complete,
+.status-badge--plain {
+  min-height: auto;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
 }
 
-.status-badge--analysis-complete {
-  border-color: #bfddcf;
-  background: var(--verified-bg);
-  color: var(--verified);
+.status-badge--weight-regular {
+  font-weight: 500;
+}
+
+.status-badge--weight-strong {
+  font-weight: 800;
 }
 
 .status-badge[data-status="rejected"] {
@@ -895,6 +901,10 @@ a.review-table__row:hover {
   align-items: center;
   justify-content: flex-end;
   gap: 7px;
+}
+
+.queue-row-actions--left {
+  justify-content: flex-start;
 }
 
 .queue-row-actions--delete {

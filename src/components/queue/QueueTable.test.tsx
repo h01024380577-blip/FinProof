@@ -115,7 +115,7 @@ describe("QueueTable", () => {
     expect(onStart).toHaveBeenCalledWith(baseRow);
   });
 
-  it("renders waiting and completed analysis status badges with distinct status tones", () => {
+  it("renders analysis statuses as plain text with weight-only emphasis", () => {
     render(
       <QueueTable
         rows={[
@@ -143,9 +143,13 @@ describe("QueueTable", () => {
 
     expect(waitingBadge).toHaveClass("status-badge");
     expect(waitingBadge).toHaveClass("status-badge--analysis-waiting");
+    expect(waitingBadge).toHaveClass("status-badge--plain");
+    expect(waitingBadge).toHaveClass("status-badge--weight-regular");
     expect(waitingBadge).toHaveAttribute("data-status", "analysis_waiting");
     expect(completedBadge).toHaveClass("status-badge");
     expect(completedBadge).toHaveClass("status-badge--analysis-complete");
+    expect(completedBadge).toHaveClass("status-badge--plain");
+    expect(completedBadge).toHaveClass("status-badge--weight-strong");
     expect(completedBadge).toHaveAttribute("data-status", "analysis_complete");
   });
 
@@ -214,8 +218,10 @@ describe("QueueTable", () => {
     );
 
     expect(waitingCells).toHaveLength(9);
+    expect(waitingCells[8]).toHaveClass("queue-row-actions--left");
     expect(within(waitingCells[8]).getByRole("button", { name: "AI 분석 시작" })).toBeInTheDocument();
     expect(completedCells).toHaveLength(9);
+    expect(completedCells[8]).not.toHaveClass("queue-row-actions--left");
     expect(completedCells[8]).toHaveTextContent("분석 완료");
     expect(within(completedCells[8]).queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "담당자 확인 후 AI 분석" })).not.toBeInTheDocument();

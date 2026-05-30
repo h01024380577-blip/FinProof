@@ -233,7 +233,9 @@ export function QueueTable({
               )}
             </span>
             <span
-              className={`queue-row-actions${canDelete ? " queue-row-actions--delete" : ""}`}
+              className={`queue-row-actions${waiting ? " queue-row-actions--left" : ""}${
+                canDelete ? " queue-row-actions--delete" : ""
+              }`}
               role="cell"
               onClick={(event) => event.stopPropagation()}
             >
