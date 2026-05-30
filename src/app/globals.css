@@ -1831,6 +1831,7 @@ a.review-table__row:hover {
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
+  font-size: 0.9rem;
   border: 1px solid rgba(20, 24, 31, 0.1);
   border-radius: 28px;
   background: #f6f6f8;
@@ -1845,10 +1846,10 @@ a.review-table__row:hover {
 .chat-widget__header {
   position: relative;
   display: grid;
-  grid-template-columns: 78px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
-  padding: 28px 28px 20px;
+  padding: 24px 26px 18px;
 }
 
 .chat-widget__header::before {
@@ -1873,38 +1874,38 @@ a.review-table__row:hover {
 }
 
 .chat-widget__brand-mark {
-  width: 72px;
-  height: 72px;
-  border-radius: 24px;
+  width: 66px;
+  height: 66px;
+  border-radius: 22px;
 }
 
 .chat-widget__mini-mark {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
   border-radius: 999px;
 }
 
 .chat-widget__brand-name {
   margin: 0 0 3px;
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 800;
 }
 
 .chat-widget__header h2 {
   margin: 0;
   color: var(--text);
-  font-size: 1.58rem;
+  font-size: 1.38rem;
   line-height: 1.18;
 }
 
 .chat-widget__intro {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-start;
-  margin: 0 20px 14px;
-  padding: 15px;
+  margin: 0 18px 12px;
+  padding: 13px;
   border: 1px solid rgba(20, 24, 31, 0.07);
   border-radius: 8px;
   background: #ffffff;
@@ -1913,21 +1914,21 @@ a.review-table__row:hover {
 .chat-widget__intro strong {
   display: block;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   line-height: 1.35;
 }
 
 .chat-widget__intro p {
-  margin: 7px 0 0;
+  margin: 6px 0 0;
   color: var(--text-soft);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   line-height: 1.5;
 }
 
 .chat-widget__body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0 20px;
+  padding: 0 18px 18px;
 }
 
 .chat-widget__body .chat-panel {
@@ -1943,24 +1944,56 @@ a.review-table__row:hover {
 }
 
 .chat-widget__body .chat-thread {
+  gap: 12px;
   margin-top: 0;
   padding-right: 2px;
+  font-size: 0.83rem;
 }
 
 .chat-widget__body .chat-empty-prompt {
-  min-height: 180px;
+  min-height: 160px;
   border-radius: 8px;
+  padding: 18px;
+  font-size: 0.82rem;
 }
 
-.chat-widget__status {
-  display: inline-flex;
+.chat-widget__body .chat-empty-prompt strong {
+  font-size: 0.84rem;
+}
+
+.chat-widget__body .chat-empty-prompt span {
+  max-width: 360px;
+  font-size: 0.8rem;
+  line-height: 1.48;
+}
+
+.chat-widget__body .chat-message__avatar {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+  font-size: 0.6rem;
+}
+
+.chat-widget__body .chat-message__bubble {
+  padding: 10px 12px;
+  font-size: 0.83rem;
+  line-height: 1.55;
+}
+
+.chat-widget__body .chat-response-body {
+  gap: 8px;
+}
+
+.chat-widget__body .chat-composer {
   gap: 7px;
-  align-items: center;
-  justify-content: center;
-  margin: 14px 0 18px;
-  color: #7b818a;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.chat-widget__body .chat-composer input {
+  min-height: 38px;
+  padding: 0 13px;
   font-size: 0.82rem;
-  font-weight: 800;
 }
 
 .chat-launcher {
@@ -2778,18 +2811,18 @@ a.review-table__row:hover {
   }
 
   .chat-widget__header {
-    grid-template-columns: 58px minmax(0, 1fr);
-    padding: 22px 20px 16px;
+    grid-template-columns: 54px minmax(0, 1fr);
+    padding: 20px 18px 14px;
   }
 
   .chat-widget__brand-mark {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
+    width: 52px;
+    height: 52px;
+    border-radius: 17px;
   }
 
   .chat-widget__header h2 {
-    font-size: 1.32rem;
+    font-size: 1.2rem;
   }
 
   .chat-widget__intro,
@@ -2801,7 +2834,7 @@ a.review-table__row:hover {
   }
 
   .chat-widget__intro {
-    padding: 13px;
+    padding: 12px;
   }
 
   .chat-launcher {

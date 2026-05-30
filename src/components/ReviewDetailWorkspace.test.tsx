@@ -128,6 +128,7 @@ describe("ReviewDetailWorkspace", () => {
     expect(
       within(chatDialog).getByText("선택된 이슈의 근거를 기준으로 답변합니다.")
     ).toBeInTheDocument();
+    expect(within(chatDialog).queryByText(/평일 오전 10:00/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "근거 채팅 닫기" }));
     expect(screen.queryByRole("dialog", { name: "근거 채팅" })).not.toBeInTheDocument();
