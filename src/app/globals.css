@@ -2797,6 +2797,15 @@ a.review-table__row:hover {
   border-radius: var(--radius-md);
   background: var(--surface);
 }
+.knowledge-list {
+  align-content: start;
+}
+.knowledge-list--bounded {
+  max-height: min(720px, calc(100vh - 192px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
 .form-grid {
   display: grid;
   gap: var(--space-4);

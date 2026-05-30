@@ -371,4 +371,33 @@ describe("KnowledgeDocumentRegistry", () => {
     expect(screen.queryByText("예금 광고 심의 지침")).not.toBeInTheDocument();
     expect(screen.getByText("등록된 지식문서가 없습니다.")).toBeInTheDocument();
   });
+
+  it("renders the registered document list as a bounded scroll region", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        documents: Array.from({ length: 8 }, (_, index) => ({
+          id: `knowledge-${index + 1}`,
+          title: `승인 지식문서 ${index + 1}`,
+          version: "2026.05",
+          documentType: "internal_policy",
+          productType: "deposit",
+          effectiveFrom: "2026-05-01",
+          approvalStatus: "approved",
+          approvedAt: "2026-05-27T00:00:00.000Z",
+          approvedBy: "user-reviewer-demo",
+          storageKey: `local/knowledge-documents/knowledge-${index + 1}/policy.txt`,
+          createdAt: "2026-05-26T00:00:00.000Z"
+        }))
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<KnowledgeDocumentRegistry />);
+
+    const listRegion = await screen.findByRole("region", { name: "등록된 지식문서" });
+    expect(listRegion).toHaveClass("knowledge-list--bounded");
+    expect(listRegion).toHaveAttribute("tabindex", "0");
+    expect(await screen.findByText("승인 지식문서 8")).toBeInTheDocument();
+  });
 });

@@ -339,7 +339,12 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
           {status ? <p className="form-status">{status}</p> : null}
         </form>
 
-        <div className="knowledge-list" aria-label="등록된 지식문서">
+        <div
+          className="knowledge-list knowledge-list--bounded"
+          role="region"
+          tabIndex={0}
+          aria-label="등록된 지식문서"
+        >
           {documents.length === 0 ? (
             <div className="knowledge-empty">
               <ShieldCheck size={22} aria-hidden="true" />
