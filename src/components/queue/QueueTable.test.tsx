@@ -152,10 +152,19 @@ describe("QueueTable", () => {
     expect(screen.queryByText("시작 중")).not.toBeInTheDocument();
   });
 
-  it("shows work status text in the work column while keeping the analysis button action", () => {
+  it("shows the analysis action in the work column before analysis and a completed note after analysis", () => {
     render(
       <QueueTable
-        rows={[{ ...baseRow, reviewer: "" }]}
+        rows={[
+          { ...baseRow, reviewer: "" },
+          {
+            ...baseRow,
+            id: "RC-2026-002",
+            title: "분석 완료된 적금 홍보물",
+            status: "analysis_complete",
+            reviewer: "박심의"
+          }
+        ]}
         activeRole="reviewer"
         activeAnalysisId={null}
         onStartAnalysis={() => undefined}
@@ -163,11 +172,18 @@ describe("QueueTable", () => {
       />
     );
 
-    const row = screen.getByRole("row", { name: /최고 연 5.0%/ });
-    const cells = within(row).getAllByRole("cell");
+    const waitingCells = within(screen.getByRole("row", { name: /최고 연 5.0%/ })).getAllByRole(
+      "cell"
+    );
+    const completedCells = within(screen.getByRole("row", { name: /분석 완료된 적금/ })).getAllByRole(
+      "cell"
+    );
 
-    expect(cells[8]).toHaveTextContent("분석 대기");
-    expect(within(cells[9]).getByRole("button", { name: "AI 분석 시작" })).toBeInTheDocument();
+    expect(waitingCells).toHaveLength(9);
+    expect(within(waitingCells[8]).getByRole("button", { name: "AI 분석 시작" })).toBeInTheDocument();
+    expect(completedCells).toHaveLength(9);
+    expect(completedCells[8]).toHaveTextContent("분석 완료");
+    expect(within(completedCells[8]).queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "담당자 확인 후 AI 분석" })).not.toBeInTheDocument();
   });
 

@@ -48,10 +48,6 @@ function actionsFor(review: ReviewSummary, role: RoleId): ReviewAction[] {
   return review.availableActions ?? fallbackActionsFor(role, review.status);
 }
 
-function workStatusLabel(review: ReviewSummary, isActiveAnalysis: boolean): string {
-  return isActiveAnalysis ? "AI 분석 중" : statusLabels[review.status];
-}
-
 function requestDepartment(review: ReviewSummary): string {
   if (review.requester.includes("업로드")) return "디지털마케팅팀";
   if (review.productType === "card") return "제휴마케팅팀";
@@ -160,7 +156,6 @@ export function QueueTable({
         <span role="columnheader">마감일</span>
         <span role="columnheader">담당자</span>
         <span role="columnheader">작업</span>
-        <span role="columnheader" aria-label="실행" />
       </div>
 
       {isLoading ? (
@@ -237,11 +232,6 @@ export function QueueTable({
                 review.reviewer || "미배정"
               )}
             </span>
-            <span role="cell">
-              <span className="queue-row-note">
-                {workStatusLabel(review, activeAnalysisId === review.id)}
-              </span>
-            </span>
             <span
               className={`queue-row-actions${canDelete ? " queue-row-actions--delete" : ""}`}
               role="cell"
@@ -266,6 +256,12 @@ export function QueueTable({
                     </>
                   )}
                 </button>
+              ) : null}
+              {!waiting && review.status === "analysis_complete" ? (
+                <span className="queue-row-note">분석 완료</span>
+              ) : null}
+              {!waiting && !openable ? (
+                <span className="queue-row-note">{statusLabels[review.status]}</span>
               ) : null}
               {canDelete ? (
                 <button

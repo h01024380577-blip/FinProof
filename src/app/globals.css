@@ -637,8 +637,7 @@ a {
     minmax(110px, 0.88fr)
     minmax(95px, 0.78fr)
     minmax(120px, 0.9fr)
-    minmax(112px, 0.84fr)
-    minmax(116px, 0.95fr);
+    minmax(132px, 1fr);
 }
 
 .review-table__row:first-child {
