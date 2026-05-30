@@ -134,7 +134,16 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.queryByRole("dialog", { name: "근거 채팅" })).not.toBeInTheDocument();
   });
 
-  it("does not show sample RAG answers when an uploaded case has no selected issue", () => {
+  it("does not show sample RAG answers when an uploaded case has no selected issue", async () => {
+    const createObjectURL = vi.fn(() => "blob:http://localhost/real-deposit-poster");
+    const revokeObjectURL = vi.fn();
+    restoreUrlFunction("createObjectURL", createObjectURL);
+    restoreUrlFunction("revokeObjectURL", revokeObjectURL);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: () => Promise.resolve(new Blob(["poster"], { type: "image/png" }))
+    });
+    vi.stubGlobal("fetch", fetchMock);
     const uploadReview = {
       ...getReviewCaseById("rc-demo-deposit-001")!,
       id: "rc-upload-001",
@@ -146,7 +155,20 @@ describe("ReviewDetailWorkspace", () => {
       disclosure: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
       expectedDraft:
         "deposit 상품 실제 업로드 자료는 접수되었습니다. 현재 Demo MVP에서는 OCR/RAG 분석 전이므로 파일 분류와 누락 자료 확인 결과를 기준으로 추가 확인이 필요합니다.",
-      analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
+      analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
+      files: [
+        {
+          id: "file-upload-001",
+          name: "real-deposit-poster.png",
+          fileType: "promotional_creative" as const,
+          classificationConfidence: 0.91,
+          parseStatus: "pending" as const,
+          storageProvider: "local" as const,
+          storageKey: "local/rc-upload-001/file-upload-001/real-deposit-poster.png",
+          contentType: "image/png",
+          sizeBytes: 6
+        }
+      ]
     };
 
     render(<ReviewDetailWorkspace review={uploadReview} />);
@@ -157,6 +179,18 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByRole("button", { name: "질문 보내기" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "초안에 반영" })).not.toBeInTheDocument();
     expect(screen.queryByText(/조건부 혜택임을/)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-upload-001/files/file-upload-001/content",
+        expect.objectContaining({
+          headers: expect.objectContaining({ "x-finproof-role": "reviewer" })
+        })
+      );
+      expect(
+        screen.getByRole("img", { name: "real-deposit-poster.png 실제 심의자료 포스터" })
+      ).toHaveAttribute("src", "blob:http://localhost/real-deposit-poster");
+    });
+    expect(screen.queryByText("FinProof Bank")).not.toBeInTheDocument();
   });
 
   it("starts chat with an empty input placeholder instead of a hardcoded example answer", async () => {

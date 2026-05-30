@@ -14,6 +14,7 @@ import {
   GET as detailGET,
   PATCH as detailPATCH
 } from "@/app/api/v1/review-cases/[caseId]/route";
+import { GET as fileContentGET } from "@/app/api/v1/review-cases/[caseId]/files/[fileId]/content/route";
 import { POST as analysisPOST } from "@/app/api/v1/review-cases/[caseId]/analysis/start/route";
 import { GET as analysisStatusGET } from "@/app/api/v1/review-cases/[caseId]/analysis/status/route";
 import { GET as auditEventsGET } from "@/app/api/v1/review-cases/[caseId]/audit-events/route";
@@ -313,6 +314,53 @@ describe("review API routes", () => {
       jobId: "job-rc-upload-001-001",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
+  });
+
+  it("serves uploaded promotional creative bytes for the review viewer", async () => {
+    const boundary = "----finproof-upload-file-content-test";
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="title"',
+      "",
+      "실제 업로드 대출 홍보물",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="affiliate"',
+      "",
+      "Mirae Loan",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "loan",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="poster_mirae_loan.png"',
+      "Content-Type: image/png",
+      "",
+      "poster-image-bytes",
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    const createResponse = await createPOST(
+      new Request("http://localhost/api/v1/review-cases", {
+        method: "POST",
+        headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+        body: multipartBody
+      })
+    );
+    const createBody = await createResponse.json();
+    const creativeFile = createBody.files.find(
+      (file: { fileType: string }) => file.fileType === "promotional_creative"
+    );
+    const contentResponse = await fileContentGET(
+      new Request(
+        `http://localhost/api/v1/review-cases/rc-upload-001/files/${creativeFile.id}/content`
+      ),
+      params({ caseId: "rc-upload-001", fileId: creativeFile.id })
+    );
+
+    expect(contentResponse.status).toBe(200);
+    expect(contentResponse.headers.get("content-type")).toBe("image/png");
+    expect(await contentResponse.text()).toBe("poster-image-bytes");
   });
 
   it("registers an attached knowledge document and returns ingestion metadata", async () => {

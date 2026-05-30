@@ -34,4 +34,25 @@ describe("CreativeViewer", () => {
     await userEvent.click(screen.getByTitle("title"));
     expect(onSelect).toHaveBeenCalledWith("issue-1");
   });
+
+  it("renders an uploaded promotional creative image instead of the mock poster", () => {
+    render(
+      <CreativeViewer
+        copy="실제 업로드 자료 분석 대기"
+        disclosure="mock disclosure"
+        creativeImage={{
+          src: "blob:http://localhost/uploaded-poster",
+          alt: "poster_mirae_loan.png"
+        }}
+        issues={[]}
+        onSelectIssue={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole("img", { name: "poster_mirae_loan.png 실제 심의자료 포스터" })
+    ).toHaveAttribute("src", "blob:http://localhost/uploaded-poster");
+    expect(screen.queryByText("FinProof Bank")).not.toBeInTheDocument();
+    expect(screen.queryByText("실제 업로드 자료 분석 대기")).not.toBeInTheDocument();
+  });
 });

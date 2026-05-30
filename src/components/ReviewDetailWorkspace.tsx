@@ -311,12 +311,28 @@ function persistCachedChatResponses(
   }
 }
 
+function isUploadedCreativeImage(file: ReviewCase["files"][number]) {
+  const contentType = file.contentType?.toLowerCase() ?? "";
+  const hasImageExtension = /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+
+  return (
+    file.fileType === "promotional_creative" &&
+    file.storageProvider !== "sample" &&
+    Boolean(file.storageKey) &&
+    (contentType.startsWith("image/") || hasImageExtension)
+  );
+}
+
 export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.Element {
   const roleContext = useRoleContext();
   const activeRole = roleContext?.activeRole ?? "reviewer";
   const roleHeaders = useMemo(
     () => roleContext?.apiHeaders() ?? { "x-finproof-role": activeRole },
     [activeRole, roleContext]
+  );
+  const uploadedCreativeFile = useMemo(
+    () => review.files.find(isUploadedCreativeImage),
+    [review.files]
   );
   const jsonHeaders = useMemo(
     () =>
@@ -331,6 +347,10 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
   const [draft, setDraftState] = useState(review.currentDraft ?? review.expectedDraft);
   const latestDraftRef = useRef(draft);
+  const [uploadedCreativeObject, setUploadedCreativeObject] = useState<{
+    fileId: string;
+    url: string;
+  } | null>(null);
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("");
   const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
@@ -371,6 +391,10 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     selectedIssue && pendingQuestion?.issueId === selectedIssue.id ? pendingQuestion : null;
   const savedDecision = selectedIssue ? (savedDecisionsByIssueId[selectedIssue.id] ?? null) : null;
   const finalReviewAction = getFinalReviewAction(savedDecisionsByIssueId);
+  const uploadedCreativeObjectUrl =
+    uploadedCreativeObject && uploadedCreativeObject.fileId === uploadedCreativeFile?.id
+      ? uploadedCreativeObject.url
+      : null;
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -385,6 +409,38 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
     persistCachedChatResponses(review.id, currentReviewChatResponses);
   }, [chatResponsesByReviewId, review.id]);
+
+  useEffect(() => {
+    if (!uploadedCreativeFile) {
+      return undefined;
+    }
+
+    let objectUrl: string | null = null;
+    let cancelled = false;
+    const contentUrl = `/api/v1/review-cases/${encodeURIComponent(
+      review.id
+    )}/files/${encodeURIComponent(uploadedCreativeFile.id)}/content`;
+
+    fetch(contentUrl, { headers: roleHeaders })
+      .then((response) => (response.ok ? response.blob() : undefined))
+      .then((blob) => {
+        if (!blob || cancelled) {
+          return;
+        }
+
+        objectUrl = URL.createObjectURL(blob);
+        setUploadedCreativeObject({ fileId: uploadedCreativeFile.id, url: objectUrl });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [review.id, roleHeaders, uploadedCreativeFile]);
 
   useEffect(() => {
     if (!finalizedNotice && !reportNotice && !draftNotice) {
@@ -926,6 +982,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         <CreativeViewer
           copy={review.promotionalCopy}
           disclosure={review.disclosure}
+          creativeImage={
+            uploadedCreativeFile && uploadedCreativeObjectUrl
+              ? { src: uploadedCreativeObjectUrl, alt: uploadedCreativeFile.name }
+              : undefined
+          }
           issues={review.issues}
           selectedIssueId={selectedIssue?.id}
           onSelectIssue={selectIssue}
