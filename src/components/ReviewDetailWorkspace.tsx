@@ -354,6 +354,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("");
   const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
+  const [hasUnreadChatResponse, setHasUnreadChatResponse] = useState(false);
   const [chatResponsesByReviewId, setChatResponsesByReviewId] = useState<ChatResponsesByReviewId>(
     () => loadCachedChatResponsesByReviewId()
   );
@@ -540,6 +541,9 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
           }
         };
       });
+      if (!isChatWidgetOpen) {
+        setHasUnreadChatResponse(true);
+      }
     } catch (error) {
       setQuestion(submittedQuestion);
       setInteractionError(
@@ -1051,14 +1055,21 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
           type="button"
           aria-label={isChatWidgetOpen ? "근거 채팅 닫기" : "근거 채팅 열기"}
           title={isChatWidgetOpen ? "근거 채팅 닫기" : "근거 채팅 열기"}
-          onClick={() => setIsChatWidgetOpen((current) => !current)}
+          onClick={() => {
+            setIsChatWidgetOpen((current) => {
+              if (!current) setHasUnreadChatResponse(false);
+              return !current;
+            });
+          }}
         >
           {isChatWidgetOpen ? (
             <X size={34} aria-hidden="true" />
           ) : (
             <>
               <MessageCircle size={34} aria-hidden="true" />
-              <span className="chat-launcher__badge" aria-hidden="true" />
+              {hasUnreadChatResponse && (
+                <span className="chat-launcher__badge" aria-hidden="true" />
+              )}
             </>
           )}
         </button>
