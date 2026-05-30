@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Download, FilePenLine, Save, Send } from "lucide-react";
+import { Clock3, Download, FilePenLine, MessageCircle, Save, Send, X } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { productLabels, riskLabels, statusLabels } from "@/domain/reviews";
@@ -333,6 +333,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const latestDraftRef = useRef(draft);
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("");
+  const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
   const [chatResponsesByReviewId, setChatResponsesByReviewId] = useState<ChatResponsesByReviewId>(
     () => loadCachedChatResponsesByReviewId()
   );
@@ -949,11 +950,62 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
       <WorkbenchDrawer
         defaultCollapsed={activeRole === "requester"}
-        expanded={chatHasLongAnswer}
-        chatNode={chatPanel}
         draftNode={draftPanel}
         filesNode={filesPanel}
       />
+
+      <div className="chat-widget" data-open={isChatWidgetOpen ? "true" : "false"}>
+        {isChatWidgetOpen ? (
+          <section
+            className="chat-widget__panel"
+            data-size={chatHasLongAnswer ? "expanded" : "default"}
+            role="dialog"
+            aria-label="근거 채팅"
+            aria-modal="false"
+          >
+            <header className="chat-widget__header">
+              <span className="chat-widget__brand-mark" aria-hidden="true">
+                <MessageCircle size={32} />
+              </span>
+              <div>
+                <p className="chat-widget__brand-name">FinProof Agent</p>
+                <h2>근거 채팅</h2>
+              </div>
+            </header>
+            <div className="chat-widget__intro">
+              <span className="chat-widget__mini-mark" aria-hidden="true">
+                <MessageCircle size={20} />
+              </span>
+              <div>
+                <strong>안녕하세요, FinProof Agent입니다.</strong>
+                <p>선택한 이슈와 승인 지식문서를 기준으로 답변합니다.</p>
+              </div>
+            </div>
+            <div className="chat-widget__body">{chatPanel}</div>
+            <p className="chat-widget__status">
+              <Clock3 size={17} aria-hidden="true" />
+              평일 오전 10:00부터 운영해요
+            </p>
+          </section>
+        ) : null}
+        <button
+          className="chat-launcher"
+          data-open={isChatWidgetOpen ? "true" : "false"}
+          type="button"
+          aria-label={isChatWidgetOpen ? "근거 채팅 닫기" : "근거 채팅 열기"}
+          title={isChatWidgetOpen ? "근거 채팅 닫기" : "근거 채팅 열기"}
+          onClick={() => setIsChatWidgetOpen((current) => !current)}
+        >
+          {isChatWidgetOpen ? (
+            <X size={34} aria-hidden="true" />
+          ) : (
+            <>
+              <MessageCircle size={34} aria-hidden="true" />
+              <span className="chat-launcher__badge" aria-hidden="true" />
+            </>
+          )}
+        </button>
+      </div>
 
       {interactionError ? (
         <p className="interaction-error" role="alert">

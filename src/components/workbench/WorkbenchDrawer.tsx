@@ -5,26 +5,21 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Tabs } from "@/components/ui";
 
 export type WorkbenchDrawerProps = {
-  chatNode: ReactNode;
   draftNode: ReactNode;
   filesNode: ReactNode;
   defaultCollapsed?: boolean;
-  expanded?: boolean;
 };
 
 export function WorkbenchDrawer({
-  chatNode,
   draftNode,
   filesNode,
-  defaultCollapsed = false,
-  expanded = false
+  defaultCollapsed = false
 }: WorkbenchDrawerProps): JSX.Element {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   return (
     <section
       className="workbench-drawer"
-      data-size={expanded ? "expanded" : "default"}
       aria-label="Workbench bottom drawer"
     >
       <div className="workbench-drawer__head">
@@ -44,8 +39,8 @@ export function WorkbenchDrawer({
       {!collapsed ? (
         <Tabs
           ariaLabel="Workbench drawer tabs"
+          defaultActiveKey="draft"
           items={[
-            { key: "chat", label: "근거 채팅", panel: chatNode },
             { key: "draft", label: "의견 초안", panel: draftNode },
             { key: "files", label: "파일", panel: filesNode }
           ]}

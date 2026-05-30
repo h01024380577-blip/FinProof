@@ -48,6 +48,10 @@ async function openDraftTab(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("tab", { name: "의견 초안" }));
 }
 
+async function openChatWidget(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "근거 채팅 열기" }));
+}
+
 function changeTextField(label: string, value: string) {
   const field = screen.getByLabelText(label);
   fireEvent.change(field, { target: { value } });
@@ -94,9 +98,9 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByRole("tab", { name: "체크리스트" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "근거 자료" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "의견서" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "근거 채팅" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "근거 채팅" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "근거 채팅 열기" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "초안에 반영" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "초안 생성" })).not.toBeInTheDocument();
 
     await openOpinionTab(user);
 
@@ -106,6 +110,27 @@ describe("ReviewDetailWorkspace", () => {
     await openDraftTab(user);
 
     expect(screen.getByRole("button", { name: "초안 생성" })).toBeInTheDocument();
+  });
+
+  it("opens chat from a floating launcher while draft and file tabs stay in the drawer", async () => {
+    const user = userEvent.setup();
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    expect(screen.getByRole("tab", { name: "의견 초안" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "파일" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "근거 채팅" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "근거 채팅" })).not.toBeInTheDocument();
+
+    await openChatWidget(user);
+
+    const chatDialog = screen.getByRole("dialog", { name: "근거 채팅" });
+    expect(within(chatDialog).getByLabelText("RAG question")).toHaveValue("");
+    expect(
+      within(chatDialog).getByText("선택된 이슈의 근거를 기준으로 답변합니다.")
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "근거 채팅 닫기" }));
+    expect(screen.queryByRole("dialog", { name: "근거 채팅" })).not.toBeInTheDocument();
   });
 
   it("does not show sample RAG answers when an uploaded case has no selected issue", () => {
@@ -127,15 +152,20 @@ describe("ReviewDetailWorkspace", () => {
 
     expect(screen.getByText("추가 확인 필요")).toBeInTheDocument();
     expect(screen.getAllByText(/OCR\/RAG 분석 전/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "근거 채팅 열기" }));
     expect(screen.getByRole("button", { name: "질문 보내기" })).toBeDisabled();
     expect(screen.queryByRole("button", { name: "초안에 반영" })).not.toBeInTheDocument();
     expect(screen.queryByText(/조건부 혜택임을/)).not.toBeInTheDocument();
   });
 
-  it("starts chat with an empty input placeholder instead of a hardcoded example answer", () => {
+  it("starts chat with an empty input placeholder instead of a hardcoded example answer", async () => {
+    const user = userEvent.setup();
     const { container } = render(
       <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
     );
+
+    await openChatWidget(user);
+
     const chatThread = container.querySelector(".chat-thread");
     const chatComposer = container.querySelector(".chat-composer");
 
@@ -268,6 +298,7 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
+    await openChatWidget(user);
     changeTextField("RAG question", "약관에만 있는 중도해지 조건도 단정해도 되나요?");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
@@ -392,6 +423,7 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
+    await openChatWidget(user);
     changeTextField("RAG question", "이 문구의 근거를 확인해줘");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
@@ -410,6 +442,7 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
+    await openChatWidget(user);
     changeTextField("RAG question", "승인 가능한 문구로 바꿔줘");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
@@ -454,6 +487,7 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
+    await openChatWidget(user);
     changeTextField("RAG question", "어떤 조건을 써야 하나요?");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
@@ -465,7 +499,7 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.getByRole("listitem", { name: "세전 기준" })).toBeInTheDocument();
   });
 
-  it("expands the chat drawer for long answers while keeping the chat thread scrollable", async () => {
+  it("expands the chat widget for long answers while keeping the chat thread scrollable", async () => {
     const user = userEvent.setup();
     const longAnswer = Array.from(
       { length: 18 },
@@ -491,11 +525,15 @@ describe("ReviewDetailWorkspace", () => {
       <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
     );
 
+    await openChatWidget(user);
     changeTextField("RAG question", "금융규제 가이드라인 기준을 길게 설명해줘");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
     expect(await screen.findByText(/18\. 금융규제 가이드라인 근거/)).toBeInTheDocument();
-    expect(container.querySelector(".workbench-drawer")).toHaveAttribute("data-size", "expanded");
+    expect(container.querySelector(".chat-widget__panel")).toHaveAttribute(
+      "data-size",
+      "expanded"
+    );
     expect(container.querySelector(".chat-thread")).toHaveAttribute(
       "data-scroll-region",
       "chat-history"
@@ -522,6 +560,7 @@ describe("ReviewDetailWorkspace", () => {
     const review = getReviewCaseById("rc-demo-deposit-001")!;
     const { unmount } = render(<ReviewDetailWorkspace review={review} />);
 
+    await openChatWidget(user);
     changeTextField("RAG question", "금융규제 가이드라인 기준을 알려줘");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
@@ -530,6 +569,7 @@ describe("ReviewDetailWorkspace", () => {
     unmount();
     render(<ReviewDetailWorkspace review={review} />);
 
+    await openChatWidget(user);
     expect(screen.getByText("금융규제 가이드라인 기준을 알려줘")).toBeInTheDocument();
     expect(screen.getByText(/등록된 지식문서 근거/)).toBeInTheDocument();
   });
@@ -569,6 +609,7 @@ describe("ReviewDetailWorkspace", () => {
 
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
+    await openChatWidget(user);
     changeTextField("RAG question", "첫 번째 이슈 질문");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
     expect(await screen.findByText("첫 번째 이슈 전용 답변입니다.")).toBeInTheDocument();
@@ -646,6 +687,7 @@ describe("ReviewDetailWorkspace", () => {
       <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
     );
 
+    await openChatWidget(user);
     changeTextField("RAG question", "예금 심의건 질문");
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
     expect(await screen.findByText("예금 심의건에만 속한 답변입니다.")).toBeInTheDocument();
