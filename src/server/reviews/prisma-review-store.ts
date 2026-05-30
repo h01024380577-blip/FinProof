@@ -1590,6 +1590,8 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async claimNextAnalysisJob(tenantId, workerId) {
+      void workerId;
+
       const queued = await prisma.analysisJob.findFirst({
         where: { tenantId, status: "queued" },
         orderBy: { queuedAt: "asc" }
@@ -1606,7 +1608,6 @@ export function createPrismaReviewStore(): ReviewStore {
           status: "running",
           progress: 20,
           currentStep: "worker_running",
-          startedByUserId: workerId,
           startedAt: now
         }
       });

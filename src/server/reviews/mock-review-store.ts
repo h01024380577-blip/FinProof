@@ -665,8 +665,10 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
 
     async claimNextAnalysisJob(
       tenantId: string,
-      workerId: string
+      _workerId: string
     ): Promise<ClaimAnalysisJobResult | undefined> {
+      void _workerId;
+
       for (const [reviewCaseId, jobs] of analysisJobs) {
         const jobIndex = jobs.findIndex((job) => job.status === "queued");
 
@@ -685,7 +687,6 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
           status: "running",
           progress: 20,
           currentStep: "worker_running",
-          startedByUserId: workerId,
           startedAt: nowIso()
         };
 

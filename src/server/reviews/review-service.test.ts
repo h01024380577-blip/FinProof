@@ -642,8 +642,10 @@ describe("review service", () => {
     expect(claimed).toMatchObject({
       id: "job-rc-demo-deposit-001-001",
       status: "running",
-      currentStep: "worker_running"
+      currentStep: "worker_running",
+      startedByUserId: reviewerStoreScope.actorUserId
     });
+    expect(claimed?.startedByUserId).not.toBe("worker-001");
     expect(persisted).toMatchObject({
       issueCount: expect.any(Number),
       evidenceCount: expect.any(Number)
