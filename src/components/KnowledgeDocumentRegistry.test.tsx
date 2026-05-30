@@ -308,4 +308,67 @@ describe("KnowledgeDocumentRegistry", () => {
     expect(screen.queryByText("초안")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "승인" })).toBeInTheDocument();
   });
+
+  it("deletes a registered knowledge document from the list", async () => {
+    const user = userEvent.setup();
+    const deleteRequest = createDeferred<{
+      ok: boolean;
+      json: () => Promise<{
+        deleted: boolean;
+        documentId: string;
+      }>;
+    }>();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          documents: [
+            {
+              id: "knowledge-001",
+              title: "예금 광고 심의 지침",
+              version: "2026.05",
+              documentType: "internal_policy",
+              productType: "deposit",
+              effectiveFrom: "2026-05-01",
+              approvalStatus: "draft",
+              storageKey: "local/knowledge-documents/knowledge-001/deposit-policy.txt",
+              createdAt: "2026-05-26T00:00:00.000Z"
+            }
+          ]
+        })
+      })
+      .mockReturnValueOnce(deleteRequest.promise);
+    vi.stubGlobal("fetch", fetchMock);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<KnowledgeDocumentRegistry />);
+
+    expect(await screen.findByText("예금 광고 심의 지침")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "삭제" }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("예금 광고 심의 지침 지식문서를 삭제할까요?");
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/v1/knowledge-documents/knowledge-001",
+      expect.objectContaining({
+        method: "DELETE"
+      })
+    );
+
+    const pendingButton = await screen.findByRole("button", { name: "삭제중" });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton.querySelector(".action-spinner")).toBeInTheDocument();
+
+    deleteRequest.resolve({
+      ok: true,
+      json: async () => ({
+        deleted: true,
+        documentId: "knowledge-001"
+      })
+    });
+
+    expect(await screen.findByText("삭제 완료")).toBeInTheDocument();
+    expect(screen.queryByText("예금 광고 심의 지침")).not.toBeInTheDocument();
+    expect(screen.getByText("등록된 지식문서가 없습니다.")).toBeInTheDocument();
+  });
 });

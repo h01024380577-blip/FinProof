@@ -310,6 +310,10 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     documentId: string
   ): Promise<KnowledgeDocument | undefined>;
+  deleteKnowledgeDocument(
+    scope: ReviewStoreScope,
+    documentId: string
+  ): Promise<KnowledgeDocument | undefined>;
   replaceKnowledgeDocumentChunks(
     scope: ReviewStoreScope,
     documentId: string,

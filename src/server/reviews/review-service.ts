@@ -665,6 +665,29 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       return document;
     },
 
+    async deleteKnowledgeDocument(context: RequestContext, documentId: string) {
+      requireRole(context, ["reviewer", "compliance_admin"], "delete knowledge document");
+
+      const scope = scopeFromContext(context);
+      const document = await store.deleteKnowledgeDocument(scope, documentId);
+
+      if (document) {
+        await store.recordAuditEvent(scope, {
+          action: "knowledge_document.delete",
+          targetType: "knowledge_document",
+          targetId: document.id,
+          beforeValue: {
+            title: document.title,
+            version: document.version,
+            approvalStatus: document.approvalStatus
+          },
+          afterValue: { deleted: true }
+        });
+      }
+
+      return document;
+    },
+
     async createChatSession(context: RequestContext, input: CreateChatSessionInput) {
       requireRole(context, ["reviewer", "compliance_admin"], "create review chat session");
 

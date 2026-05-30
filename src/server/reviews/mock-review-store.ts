@@ -548,7 +548,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         status: "analysis_waiting",
         highestRiskLevel: "info",
         requester: "업로드 요청자",
-        reviewer: "준법심의자 박민준",
+        reviewer: "",
         promotionalCopy: "실제 업로드 자료 분석 대기",
         disclosure: uploadAnalysisNotice,
         productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다.",
@@ -1247,6 +1247,24 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       knowledgeDocuments.set(documentId, draft);
 
       return clone(draft);
+    },
+
+    async deleteKnowledgeDocument(scope: ReviewStoreScope, documentId) {
+      const document = knowledgeDocuments.get(documentId);
+
+      if (!document || document.tenantId !== scope.tenantId) {
+        return undefined;
+      }
+
+      knowledgeDocuments.delete(documentId);
+
+      for (const [chunkId, chunk] of evidenceChunks) {
+        if (chunk.knowledgeDocumentId === documentId) {
+          evidenceChunks.delete(chunkId);
+        }
+      }
+
+      return clone(document);
     },
 
     async replaceKnowledgeDocumentChunks(

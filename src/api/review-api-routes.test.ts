@@ -24,6 +24,7 @@ import { PATCH as issuePATCH } from "@/app/api/v1/review-cases/[caseId]/issues/[
 import { GET as listGET, POST as createPOST } from "@/app/api/v1/review-cases/route";
 import { GET as evidenceGET } from "@/app/api/v1/issues/[issueId]/evidence/route";
 import { GET as knowledgeGET, POST as knowledgePOST } from "@/app/api/v1/knowledge-documents/route";
+import { DELETE as knowledgeDELETE } from "@/app/api/v1/knowledge-documents/[documentId]/route";
 import {
   DELETE as knowledgeApprovalDELETE,
   POST as knowledgeApprovalPOST
@@ -280,6 +281,7 @@ describe("review API routes", () => {
     expect(createBody.reviewCase).toMatchObject({
       id: "rc-upload-001",
       status: "analysis_waiting",
+      reviewer: "",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
     expect(createBody.files).toEqual(
@@ -413,6 +415,39 @@ describe("review API routes", () => {
     });
     expect(unapproveBody.document.approvedAt).toBeUndefined();
     expect(unapproveBody.document.approvedBy).toBeUndefined();
+  });
+
+  it("deletes a registered knowledge document", async () => {
+    const createResponse = await knowledgePOST(
+      jsonRequest("/api/v1/knowledge-documents", {
+        title: "예금 광고 심의 지침",
+        version: "2026.05",
+        documentType: "internal_policy",
+        productType: "deposit",
+        effectiveFrom: "2026-05-01",
+        storageKey: "manual/knowledge-documents/deposit-policy.txt"
+      })
+    );
+    const createBody = await createResponse.json();
+    const documentId = createBody.document.id as string;
+    const deleteResponse = await knowledgeDELETE(
+      roleRequest(`/api/v1/knowledge-documents/${documentId}`, "reviewer", "DELETE"),
+      params({ documentId })
+    );
+    const deleteBody = await deleteResponse.json();
+    const listResponse = await knowledgeGET(
+      roleRequest("/api/v1/knowledge-documents", "reviewer", "GET")
+    );
+    const listBody = await listResponse.json();
+
+    expect(createResponse.status).toBe(201);
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteBody).toEqual({
+      deleted: true,
+      documentId
+    });
+    expect(listResponse.status).toBe(200);
+    expect(listBody.documents).toEqual([]);
   });
 
   it("blocks requester analysis start and allows reviewer analysis start", async () => {

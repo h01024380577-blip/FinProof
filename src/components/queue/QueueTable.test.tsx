@@ -115,6 +115,26 @@ describe("QueueTable", () => {
     expect(onStart).toHaveBeenCalledWith(baseRow);
   });
 
+  it("shows unassigned reviewer rows without a hardcoded default name", () => {
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, reviewer: "" }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        canEditReviewer
+        onSaveReviewer={() => undefined}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(screen.getByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")).toHaveAttribute(
+      "placeholder",
+      "미배정"
+    );
+    expect(screen.queryByText("준법심의자 박민준")).not.toBeInTheDocument();
+  });
+
   it("labels the active analysis action as analyzing", () => {
     render(
       <QueueTable

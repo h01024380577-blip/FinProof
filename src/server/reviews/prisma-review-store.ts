@@ -792,6 +792,22 @@ export function createPrismaReviewStore(): ReviewStore {
       });
     },
 
+    async deleteKnowledgeDocument(scope, documentId) {
+      const document = await prisma.knowledgeDocument.findFirst({
+        where: { id: documentId, tenantId: scope.tenantId }
+      });
+
+      if (!document) {
+        return undefined;
+      }
+
+      await prisma.knowledgeDocument.delete({
+        where: { id: documentId }
+      });
+
+      return toKnowledgeDocument(document);
+    },
+
     async replaceKnowledgeDocumentChunks(
       scope,
       documentId,
@@ -1420,9 +1436,9 @@ export function createPrismaReviewStore(): ReviewStore {
           status: "analysis_waiting",
           highestRiskLevel: "info",
           requesterId: scope.actorUserId,
-          reviewerId: process.env.FINPROOF_DEFAULT_REVIEWER_USER_ID ?? "user-reviewer-demo",
+          reviewerId: null,
           requesterName: "업로드 요청자",
-          reviewerName: "준법심의자 박민준",
+          reviewerName: "",
           promotionalCopy: "실제 업로드 자료 분석 대기",
           disclosure: uploadAnalysisNotice,
           productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다.",

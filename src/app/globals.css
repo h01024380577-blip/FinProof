@@ -2846,6 +2846,10 @@ a.review-table__row:hover {
   padding: 0 var(--space-3);
   font-size: var(--font-size-sm);
 }
+.secondary-action--danger {
+  border-color: var(--tone-reject);
+  color: var(--tone-reject);
+}
 .action-spinner {
   animation: actionSpin 0.8s linear infinite;
 }
@@ -2869,7 +2873,7 @@ a.review-table__row:hover {
 }
 .knowledge-list__item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
   padding-bottom: var(--space-4);
@@ -2888,6 +2892,13 @@ a.review-table__row:hover {
   margin: var(--space-1) 0 0;
   color: var(--muted);
   font-size: var(--font-size-sm);
+}
+.knowledge-list__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
 }
 .status-pill {
   display: inline-flex;

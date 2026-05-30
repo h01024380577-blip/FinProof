@@ -209,9 +209,35 @@ export function ReviewQueue(): JSX.Element {
   }, []);
 
   async function startAnalysis(review: ReviewSummary): Promise<void> {
+    const promptedReviewer = window.prompt("AI 분석 담당자 이름을 입력해 주세요.", review.reviewer);
+
+    if (promptedReviewer === null) {
+      return;
+    }
+
+    const reviewer = promptedReviewer.trim();
+
+    if (!reviewer) {
+      setLoadError("AI 분석 담당자 이름을 입력해 주세요.");
+      return;
+    }
+
     setActiveAnalysisId(review.id);
     setLoadError(null);
+    let savedReviewer = review.reviewer;
     try {
+      if (reviewer !== review.reviewer) {
+        setSavingReviewerIds((current) =>
+          current.includes(review.id) ? current : [...current, review.id]
+        );
+        savedReviewer = await persistReviewer(review, reviewer);
+        setReviews((current) =>
+          current.map((candidate) =>
+            candidate.id === review.id ? { ...candidate, reviewer: savedReviewer } : candidate
+          )
+        );
+      }
+
       const response = await fetch(`/api/v1/review-cases/${review.id}/analysis/start`, {
         method: "POST",
         headers: apiHeaders()
@@ -223,6 +249,7 @@ export function ReviewQueue(): JSX.Element {
           candidate.id === review.id
             ? {
                 ...candidate,
+                reviewer: savedReviewer,
                 status: body.status,
                 availableActions: fallbackActionsFor(
                   activeRole,
@@ -238,7 +265,24 @@ export function ReviewQueue(): JSX.Element {
       );
     } finally {
       setActiveAnalysisId(null);
+      setSavingReviewerIds((current) => current.filter((id) => id !== review.id));
     }
+  }
+
+  async function persistReviewer(review: ReviewSummary, reviewer: string): Promise<string> {
+    const response = await fetch(`/api/v1/review-cases/${review.id}`, {
+      method: "PATCH",
+      headers: apiHeaders({ "content-type": "application/json" }),
+      body: JSON.stringify({ reviewer })
+    });
+
+    if (!response.ok) {
+      throw new Error("담당자 저장 권한 또는 요청을 확인해 주세요.");
+    }
+
+    const body = (await response.json()) as ReviewerUpdateResponse;
+
+    return body.reviewCase?.reviewer ?? reviewer;
   }
 
   async function saveReviewer(review: ReviewSummary, reviewer: string): Promise<void> {
@@ -248,18 +292,7 @@ export function ReviewQueue(): JSX.Element {
     setLoadError(null);
 
     try {
-      const response = await fetch(`/api/v1/review-cases/${review.id}`, {
-        method: "PATCH",
-        headers: apiHeaders({ "content-type": "application/json" }),
-        body: JSON.stringify({ reviewer })
-      });
-
-      if (!response.ok) {
-        throw new Error("담당자 저장 권한 또는 요청을 확인해 주세요.");
-      }
-
-      const body = (await response.json()) as ReviewerUpdateResponse;
-      const savedReviewer = body.reviewCase?.reviewer ?? reviewer;
+      const savedReviewer = await persistReviewer(review, reviewer);
 
       setReviews((current) =>
         current.map((candidate) =>

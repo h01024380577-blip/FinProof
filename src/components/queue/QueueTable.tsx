@@ -118,6 +118,7 @@ function ReviewerEditor({
       className="reviewer-editor__input"
       aria-label={`담당자: ${review.title}`}
       value={draft}
+      placeholder="미배정"
       disabled={isSaving}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commitDraft}
@@ -228,7 +229,7 @@ export function QueueTable({
                   onSaveReviewer={onSaveReviewer}
                 />
               ) : (
-                review.reviewer
+                review.reviewer || "미배정"
               )}
             </span>
             <span

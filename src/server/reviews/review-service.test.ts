@@ -148,6 +148,44 @@ describe("review service", () => {
     );
   });
 
+  it("deletes a registered knowledge document and records audit", async () => {
+    const store = createMockReviewStore();
+    const service = createReviewService({ store });
+    const { document } = await service.createKnowledgeDocument(reviewerContext, {
+      title: "예금 광고 심의 지침",
+      version: "2026.05",
+      documentType: "internal_policy",
+      productType: "deposit",
+      effectiveFrom: "2026-05-01",
+      sourceText: "최고 금리 표현은 조건과 한도를 함께 고지합니다."
+    });
+
+    const deleted = await service.deleteKnowledgeDocument(reviewerContext, document.id);
+    const documents = await service.listKnowledgeDocuments(reviewerContext);
+    const auditEvents = await service.listAuditEvents(
+      reviewerContext,
+      "knowledge_document",
+      document.id
+    );
+
+    expect(deleted).toMatchObject({
+      id: document.id,
+      title: "예금 광고 심의 지침"
+    });
+    expect(documents).toEqual([]);
+    expect(auditEvents[0]).toMatchObject({
+      action: "knowledge_document.delete",
+      targetType: "knowledge_document",
+      targetId: document.id,
+      beforeValue: {
+        title: "예금 광고 심의 지침",
+        version: "2026.05",
+        approvalStatus: "draft"
+      },
+      afterValue: { deleted: true }
+    });
+  });
+
   it("stores OCR/RAG artifacts when analysis starts", async () => {
     const store = createMockReviewStore();
     const service = createReviewService({

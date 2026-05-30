@@ -8,7 +8,8 @@ import {
   LoaderCircle,
   RotateCcw,
   Send,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from "lucide-react";
 import type { KnowledgeDocument, KnowledgeDocumentType, ProductType } from "@/domain/types";
 import { DropZone } from "@/components/ui";
@@ -24,6 +25,11 @@ type KnowledgeDocumentCreateResponse = {
     chunkCount: number;
     embeddingModel: string;
   };
+};
+
+type KnowledgeDocumentDeleteResponse = {
+  deleted: boolean;
+  documentId: string;
 };
 
 const documentTypes: Array<{ value: KnowledgeDocumentType; label: string }> = [
@@ -68,7 +74,7 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingDocumentAction, setPendingDocumentAction] = useState<{
     documentId: string;
-    action: "approve" | "unapprove";
+    action: "approve" | "unapprove" | "delete";
   } | null>(null);
 
   const registeredCount = useMemo(() => documents.length, [documents]);
@@ -209,6 +215,32 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
     }
   }
 
+  async function deleteDocument(document: KnowledgeDocument): Promise<void> {
+    if (!window.confirm(`${document.title} 지식문서를 삭제할까요?`)) {
+      return;
+    }
+
+    setPendingDocumentAction({ documentId: document.id, action: "delete" });
+
+    try {
+      const response = await fetch(`/api/v1/knowledge-documents/${document.id}`, {
+        method: "DELETE",
+        headers: roleContext?.apiHeaders()
+      });
+
+      if (!response.ok) {
+        setStatus("지식문서 삭제에 실패했습니다.");
+        return;
+      }
+
+      const body = (await response.json()) as KnowledgeDocumentDeleteResponse;
+      setDocuments((current) => current.filter((item) => item.id !== body.documentId));
+      setStatus("삭제 완료");
+    } finally {
+      setPendingDocumentAction(null);
+    }
+  }
+
   return (
     <main className="knowledge-page">
       <section className="knowledge-page__header">
@@ -328,58 +360,82 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
                       {document.version} · {document.effectiveFrom}
                     </p>
                   </div>
-                  {document.approvalStatus !== "draft" ? (
-                    <span className="status-pill" data-status={document.approvalStatus}>
-                      {statusLabel(document.approvalStatus)}
-                    </span>
-                  ) : null}
-                  {document.approvalStatus === "draft" ? (
+                  <div className="knowledge-list__actions">
+                    {document.approvalStatus !== "draft" ? (
+                      <span className="status-pill" data-status={document.approvalStatus}>
+                        {statusLabel(document.approvalStatus)}
+                      </span>
+                    ) : null}
+                    {document.approvalStatus === "draft" ? (
+                      <button
+                        className="secondary-action"
+                        type="button"
+                        disabled={pendingAction === "approve" || pendingAction === "delete"}
+                        onClick={() => void approveDocument(document.id)}
+                      >
+                        {pendingAction === "approve" ? (
+                          <>
+                            <LoaderCircle
+                              className="action-spinner"
+                              size={16}
+                              aria-hidden="true"
+                            />
+                            승인중
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={16} aria-hidden="true" />
+                            승인
+                          </>
+                        )}
+                      </button>
+                    ) : document.approvalStatus === "approved" ? (
+                      <button
+                        className="secondary-action"
+                        type="button"
+                        disabled={pendingAction === "unapprove" || pendingAction === "delete"}
+                        onClick={() => void unapproveDocument(document.id)}
+                      >
+                        {pendingAction === "unapprove" ? (
+                          <>
+                            <LoaderCircle
+                              className="action-spinner"
+                              size={16}
+                              aria-hidden="true"
+                            />
+                            승인해제중
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw size={16} aria-hidden="true" />
+                            승인해제
+                          </>
+                        )}
+                      </button>
+                    ) : null}
                     <button
-                      className="secondary-action"
+                      className="secondary-action secondary-action--danger"
                       type="button"
-                      disabled={pendingAction === "approve"}
-                      onClick={() => void approveDocument(document.id)}
+                      disabled={pendingAction !== null}
+                      onClick={() => void deleteDocument(document)}
                     >
-                      {pendingAction === "approve" ? (
+                      {pendingAction === "delete" ? (
                         <>
                           <LoaderCircle
                             className="action-spinner"
                             size={16}
                             aria-hidden="true"
                           />
-                          승인중
+                          삭제중
                         </>
                       ) : (
                         <>
-                          <CheckCircle2 size={16} aria-hidden="true" />
-                          승인
+                          <Trash2 size={16} aria-hidden="true" />
+                          삭제
                         </>
                       )}
                     </button>
-                  ) : document.approvalStatus === "approved" ? (
-                    <button
-                      className="secondary-action"
-                      type="button"
-                      disabled={pendingAction === "unapprove"}
-                      onClick={() => void unapproveDocument(document.id)}
-                    >
-                      {pendingAction === "unapprove" ? (
-                        <>
-                          <LoaderCircle
-                            className="action-spinner"
-                            size={16}
-                            aria-hidden="true"
-                          />
-                          승인해제중
-                        </>
-                      ) : (
-                        <>
-                          <RotateCcw size={16} aria-hidden="true" />
-                          승인해제
-                        </>
-                      )}
-                    </button>
-                  ) : null}
+                  </div>
                 </article>
               );
             })
