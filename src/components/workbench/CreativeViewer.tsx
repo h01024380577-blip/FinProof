@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
+import { useState, type CSSProperties, type JSX } from "react";
 import Image from "next/image";
 import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import type { ReviewIssue } from "@/domain/types";
@@ -63,23 +63,13 @@ export function CreativeViewer({
   selectedIssueId,
   onSelectIssue
 }: CreativeViewerProps): JSX.Element {
-  const viewerRef = useRef<HTMLElement>(null);
   const [zoom, setZoom] = useState(100);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFrameFit, setIsFrameFit] = useState(false);
   const zoomScale = zoom / 100;
   const zoomStageStyle = {
-    "--viewer-zoom": `${zoomScale}`,
-    "--viewer-zoom-height": `${POSTER_BASE_HEIGHT * zoomScale}px`
+    "--viewer-zoom": `${isFrameFit ? 1 : zoomScale}`,
+    "--viewer-zoom-height": isFrameFit ? "100%" : `${POSTER_BASE_HEIGHT * zoomScale}px`
   } as CSSProperties;
-
-  useEffect(() => {
-    const syncFullscreenState = (): void => {
-      setIsFullscreen(document.fullscreenElement === viewerRef.current);
-    };
-
-    document.addEventListener("fullscreenchange", syncFullscreenState);
-    return () => document.removeEventListener("fullscreenchange", syncFullscreenState);
-  }, []);
 
   const adjustZoom = (direction: "in" | "out"): void => {
     setZoom((currentZoom) => {
@@ -89,41 +79,15 @@ export function CreativeViewer({
     });
   };
 
-  const toggleFullscreen = async (): Promise<void> => {
-    const viewerElement = viewerRef.current;
-
-    if (!viewerElement) {
-      return;
-    }
-
-    if (isFullscreen || document.fullscreenElement === viewerElement) {
-      try {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        }
-      } catch {
-        // Keep the CSS fallback in sync even if the browser rejects fullscreen exit.
-      }
-      setIsFullscreen(false);
-      return;
-    }
-
-    try {
-      if (viewerElement.requestFullscreen) {
-        await viewerElement.requestFullscreen();
-      }
-    } catch {
-      // Fall back to the fixed-position viewer for unsupported or rejected fullscreen requests.
-    }
-    setIsFullscreen(true);
+  const toggleFrameFit = (): void => {
+    setIsFrameFit((currentValue) => !currentValue);
   };
 
   return (
     <section
-      ref={viewerRef}
       className="creative-viewer"
       aria-label="문서 미리보기"
-      data-fullscreen={isFullscreen}
+      data-frame-fit={isFrameFit}
     >
       <div className="viewer-toolbar" aria-label="문서 보기 도구">
         <button
@@ -149,10 +113,10 @@ export function CreativeViewer({
         <button
           className="icon-button icon-button--small"
           type="button"
-          aria-label={isFullscreen ? "전체 화면 종료" : "전체 화면"}
-          onClick={toggleFullscreen}
+          aria-label={isFrameFit ? "전체 화면 종료" : "전체 화면"}
+          onClick={toggleFrameFit}
         >
-          {isFullscreen ? (
+          {isFrameFit ? (
             <Minimize2 size={15} aria-hidden="true" />
           ) : (
             <Maximize2 size={15} aria-hidden="true" />
@@ -163,6 +127,7 @@ export function CreativeViewer({
         <div
           className="poster-zoom-stage"
           data-testid="creative-viewer-zoom-stage"
+          data-frame-fit={isFrameFit}
           style={zoomStageStyle}
         >
           {creativeImage ? (

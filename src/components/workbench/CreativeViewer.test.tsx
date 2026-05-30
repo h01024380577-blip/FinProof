@@ -83,19 +83,14 @@ describe("CreativeViewer", () => {
     expect(zoomStage).toHaveStyle({ "--viewer-zoom": "1" });
   });
 
-  it("toggles fullscreen mode from the toolbar", async () => {
+  it("fits the creative preview to its own viewer frame from the toolbar", async () => {
     Object.defineProperty(HTMLElement.prototype, "requestFullscreen", {
-      configurable: true,
-      value: vi.fn()
-    });
-    Object.defineProperty(document, "exitFullscreen", {
       configurable: true,
       value: vi.fn()
     });
     const requestFullscreen = vi
       .spyOn(HTMLElement.prototype, "requestFullscreen")
       .mockResolvedValue(undefined);
-    const exitFullscreen = vi.spyOn(document, "exitFullscreen").mockResolvedValue(undefined);
 
     render(
       <CreativeViewer
@@ -108,19 +103,20 @@ describe("CreativeViewer", () => {
 
     const user = userEvent.setup();
     const viewer = screen.getByLabelText("문서 미리보기");
+    const zoomStage = screen.getByTestId("creative-viewer-zoom-stage");
 
     await user.click(screen.getByRole("button", { name: "전체 화면" }));
 
-    expect(requestFullscreen).toHaveBeenCalledTimes(1);
-    expect(viewer).toHaveAttribute("data-fullscreen", "true");
+    expect(requestFullscreen).not.toHaveBeenCalled();
+    expect(viewer).toHaveAttribute("data-frame-fit", "true");
+    expect(zoomStage).toHaveAttribute("data-frame-fit", "true");
     expect(screen.getByRole("button", { name: "전체 화면 종료" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "전체 화면 종료" }));
 
-    expect(exitFullscreen).toHaveBeenCalledTimes(1);
-    expect(viewer).toHaveAttribute("data-fullscreen", "false");
+    expect(viewer).toHaveAttribute("data-frame-fit", "false");
+    expect(zoomStage).toHaveAttribute("data-frame-fit", "false");
 
     requestFullscreen.mockRestore();
-    exitFullscreen.mockRestore();
   });
 });
