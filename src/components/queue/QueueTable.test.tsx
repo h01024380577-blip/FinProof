@@ -111,7 +111,7 @@ describe("QueueTable", () => {
         onOpenReview={() => undefined}
       />
     );
-    await userEvent.click(screen.getByRole("button", { name: /AI 분석 시작/ }));
+    await userEvent.click(screen.getByRole("button", { name: /담당자 확인 후 AI 분석/ }));
     expect(onStart).toHaveBeenCalledWith(baseRow);
   });
 
@@ -150,6 +150,23 @@ describe("QueueTable", () => {
     expect(analyzingButton).toBeDisabled();
     expect(analyzingButton.querySelector(".action-spinner")).toBeInTheDocument();
     expect(screen.queryByText("시작 중")).not.toBeInTheDocument();
+  });
+
+  it("labels waiting-row analysis actions as requiring reviewer confirmation", () => {
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, reviewer: "" }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(
+      screen.getByRole("button", { name: "담당자 확인 후 AI 분석" })
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "AI 분석 시작" })).not.toBeInTheDocument();
   });
 
   it("navigates via row click when case is openable", async () => {

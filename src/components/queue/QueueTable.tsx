@@ -252,7 +252,7 @@ export function QueueTable({
                   ) : (
                     <>
                       <PlayCircle size={15} aria-hidden="true" />
-                      AI 분석 시작
+                      담당자 확인 후 AI 분석
                     </>
                   )}
                 </button>
