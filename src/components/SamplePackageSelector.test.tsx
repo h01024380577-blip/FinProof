@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SamplePackageSelector } from "./SamplePackageSelector";
 
 describe("SamplePackageSelector", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("shows the reference metadata form, stepper, upload zone, and side checks", () => {
@@ -104,13 +105,72 @@ describe("SamplePackageSelector", () => {
     expect(screen.getAllByText("홍보물 시안").length).toBeGreaterThan(0);
     expect(screen.getAllByText("내부 체크리스트").length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /분석 시작/ })).not.toBeInTheDocument();
-    expect(
-      screen.getByText("심의 대기 목록에 분석 대기 건으로 등록되었습니다.")
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "심의 대기 목록에서 확인" })).toHaveAttribute(
-      "href",
-      "/reviews"
+    expect(screen.getByRole("status", { name: "심의 요청 등록 완료" })).toHaveTextContent(
+      "심의 요청이 등록되었습니다."
     );
+    expect(screen.queryByRole("link", { name: "심의 대기 목록에서 확인" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다른 요청 작성" })).not.toBeInTheDocument();
+  });
+
+  it("places the completion notice above metadata and hides it automatically", async () => {
+    const user = userEvent.setup();
+    let hideNotice: (() => void) | undefined;
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        reviewCase: {
+          id: "rc-upload-001",
+          title: "실제 업로드 적금 홍보물",
+          productType: "deposit"
+        },
+        files: [],
+        missingMaterials: [],
+        analysisStartHref: "/api/v1/review-cases/rc-upload-001/analysis/start"
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SamplePackageSelector />);
+
+    await user.type(screen.getByLabelText("심의 요청 제목"), "실제 업로드 적금 홍보물");
+    await user.selectOptions(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
+    await user.selectOptions(screen.getByLabelText("상품군"), "deposit");
+    await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
+    await user.upload(
+      screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
+        selector: "input"
+      }),
+      new File(["poster"], "real-deposit-poster.png", { type: "image/png" })
+    );
+
+    vi.spyOn(window, "setTimeout").mockImplementation((handler) => {
+      if (typeof handler === "function") {
+        hideNotice = handler as () => void;
+      }
+
+      return 1;
+    });
+    vi.spyOn(window, "clearTimeout").mockImplementation(() => undefined);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "심의 요청 제출" }));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const notice = screen.getByRole("status", { name: "심의 요청 등록 완료" });
+    const flow = screen.getByRole("heading", { name: "신규 심의 요청" }).closest(".intake-flow");
+    const orderedNodes = Array.from(
+      flow?.querySelectorAll("h2, .submission-notice, input[aria-label='심의 요청 제목']") ?? []
+    );
+
+    expect(orderedNodes[0]).toHaveTextContent("신규 심의 요청");
+    expect(orderedNodes[1]).toBe(notice);
+    expect(orderedNodes[2]).toBe(screen.getByLabelText("심의 요청 제목"));
+
+    act(() => hideNotice?.());
+
+    expect(screen.queryByRole("status", { name: "심의 요청 등록 완료" })).not.toBeInTheDocument();
   });
 
   it("blocks unsupported real file uploads before calling the API", async () => {

@@ -2179,6 +2179,7 @@ a.review-table__row:hover {
 .classification-list,
 .materials-grid {
   display: grid;
+  min-width: 0;
   gap: 10px;
   margin-top: 13px;
 }
@@ -2304,6 +2305,7 @@ a.review-table__row:hover {
 .classification-row,
 .material-row {
   display: flex;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -2314,7 +2316,13 @@ a.review-table__row:hover {
   background: var(--surface);
 }
 
-.classification-row div {
+.classification-row svg,
+.classification-row em {
+  flex: 0 0 auto;
+}
+
+.classification-row__body {
+  min-width: 0;
   flex: 1;
   display: grid;
   gap: 4px;
@@ -2330,6 +2338,15 @@ a.review-table__row:hover {
 .classification-row em {
   color: var(--primary);
   font-weight: 800;
+}
+
+.classification-row__filename {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.28;
 }
 
 .material-row {
@@ -2385,9 +2402,8 @@ a.review-table__row:hover {
 .submission-notice {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
-  margin-top: 12px;
   padding: 10px 12px;
   border: 1px solid #bfddcf;
   border-radius: 8px;

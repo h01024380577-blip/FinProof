@@ -36,9 +36,9 @@ export function IntakeClassificationPanel({ files }: IntakeClassificationPanelPr
           files.map((file) => (
             <article key={file.id} className="classification-row">
               <Paperclip size={16} aria-hidden="true" />
-              <div>
+              <div className="classification-row__body">
                 <span>{fileTypeLabels[file.fileType] ?? file.fileType}</span>
-                <strong>{file.name}</strong>
+                <strong className="classification-row__filename">{file.name}</strong>
               </div>
               <em>{Math.round(file.classificationConfidence * 100)}%</em>
             </article>
@@ -46,9 +46,9 @@ export function IntakeClassificationPanel({ files }: IntakeClassificationPanelPr
         ) : (
           <article className="classification-row classification-row--empty">
             <Paperclip size={16} aria-hidden="true" />
-            <div>
+            <div className="classification-row__body">
               <span>기타 첨부</span>
-              <strong>-</strong>
+              <strong className="classification-row__filename">-</strong>
             </div>
             <em>대기</em>
           </article>

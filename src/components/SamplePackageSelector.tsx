@@ -1,7 +1,6 @@
 "use client";
 
-import { type FormEvent, useMemo, useState, type JSX } from "react";
-import Link from "next/link";
+import { type FormEvent, useEffect, useMemo, useState, type JSX } from "react";
 import { getRequiredMaterialRows, type RequiredMaterialRow } from "@/domain/intake";
 import type { ProductType, ReviewFile } from "@/domain/types";
 import { IntakeClassificationPanel } from "./intake/IntakeClassificationPanel";
@@ -32,6 +31,7 @@ const initialMeta: IntakeMetaState = {
   channels: { mobile_app: false, website: false, offline: false },
   requestMemo: ""
 };
+const submissionNoticeDurationMs = 3500;
 
 function getRepresentedMissingKeys(materialRows: RequiredMaterialRow[]): Set<string> {
   return new Set(
@@ -105,8 +105,21 @@ export function SamplePackageSelector(): JSX.Element {
   const [meta, setMeta] = useState<IntakeMetaState>(initialMeta);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [showSubmissionNotice, setShowSubmissionNotice] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (!showSubmissionNotice) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShowSubmissionNotice(false);
+    }, submissionNoticeDurationMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showSubmissionNotice]);
 
   const localFilePreview = useMemo(() => buildLocalFilePreview(uploadFiles), [uploadFiles]);
   const classifiedFiles = uploadResult?.files ?? localFilePreview;
@@ -125,6 +138,7 @@ export function SamplePackageSelector(): JSX.Element {
   async function submitUpload(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setUploadResult(null);
+    setShowSubmissionNotice(false);
 
     if (uploadFiles.length === 0) {
       if (!uploadError) {
@@ -171,18 +185,12 @@ export function SamplePackageSelector(): JSX.Element {
       }
 
       setUploadResult((await response.json()) as UploadResult);
+      setShowSubmissionNotice(true);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "업로드 요청을 처리하지 못했습니다.");
     } finally {
       setIsUploading(false);
     }
-  }
-
-  function resetForNextRequest(): void {
-    setMeta(initialMeta);
-    setUploadFiles([]);
-    setUploadResult(null);
-    setUploadError(null);
   }
 
   return (
@@ -198,6 +206,16 @@ export function SamplePackageSelector(): JSX.Element {
         />
       </div>
 
+      {uploadResult && showSubmissionNotice ? (
+        <section
+          className="submission-notice"
+          role="status"
+          aria-label="심의 요청 등록 완료"
+        >
+          <p>심의 요청이 등록되었습니다.</p>
+        </section>
+      ) : null}
+
       <form className="intake-reference-layout" onSubmit={submitUpload}>
         <section className="intake-main-column">
           <IntakeMetaForm state={meta} onChange={setMeta} />
@@ -207,6 +225,7 @@ export function SamplePackageSelector(): JSX.Element {
             onFilesChange={(next) => {
               setUploadFiles(next);
               setUploadResult(null);
+              setShowSubmissionNotice(false);
             }}
             error={uploadError}
             onError={setUploadError}
@@ -225,18 +244,8 @@ export function SamplePackageSelector(): JSX.Element {
           </IntakeRequiredMaterialsPanel>
         </aside>
 
-        <div className="intake-footer-bar">
-          {uploadResult ? (
-            <section className="submission-notice" aria-label="Submission status">
-              <p>심의 대기 목록에 분석 대기 건으로 등록되었습니다.</p>
-              <Link className="button" href="/reviews">
-                심의 대기 목록에서 확인
-              </Link>
-              <button className="button" type="button" onClick={resetForNextRequest}>
-                다른 요청 작성
-              </button>
-            </section>
-          ) : (
+        {!uploadResult ? (
+          <div className="intake-footer-bar">
             <button
               className="button button--primary upload-submit"
               type="submit"
@@ -244,8 +253,8 @@ export function SamplePackageSelector(): JSX.Element {
             >
               {isUploading ? "제출 중" : "심의 요청 제출"}
             </button>
-          )}
-        </div>
+          </div>
+        ) : null}
       </form>
     </div>
   );
