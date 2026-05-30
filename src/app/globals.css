@@ -2190,6 +2190,14 @@ a.review-table__row:hover {
   margin-top: 13px;
 }
 
+.classification-list--scrollable {
+  max-height: min(560px, calc(100vh - 360px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+
 .intake-mode-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

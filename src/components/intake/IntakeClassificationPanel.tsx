@@ -31,10 +31,14 @@ export function IntakeClassificationPanel({ files }: IntakeClassificationPanelPr
         <FileCheck2 size={20} aria-hidden="true" />
       </div>
 
-      <div className="classification-list">
+      <div
+        className="classification-list classification-list--scrollable"
+        role="list"
+        aria-label="자동 분류 파일 목록"
+      >
         {files.length > 0 ? (
           files.map((file) => (
-            <article key={file.id} className="classification-row">
+            <article key={file.id} className="classification-row" role="listitem">
               <Paperclip size={16} aria-hidden="true" />
               <div className="classification-row__body">
                 <span>{fileTypeLabels[file.fileType] ?? file.fileType}</span>
@@ -44,7 +48,7 @@ export function IntakeClassificationPanel({ files }: IntakeClassificationPanelPr
             </article>
           ))
         ) : (
-          <article className="classification-row classification-row--empty">
+          <article className="classification-row classification-row--empty" role="listitem">
             <Paperclip size={16} aria-hidden="true" />
             <div className="classification-row__body">
               <span>기타 첨부</span>
