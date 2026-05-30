@@ -24,6 +24,8 @@ describe("GitHub Actions workflow artifacts", () => {
 
     expect(workflow).toContain("name: Deploy EC2");
     expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).toContain("tags:");
+    expect(workflow).toContain("- deploy-*");
     expect(workflow).toContain("secrets.EC2_SSH_PRIVATE_KEY");
     expect(workflow).toContain("secrets.EC2_HOST");
     expect(workflow).toContain("secrets.EC2_USER");

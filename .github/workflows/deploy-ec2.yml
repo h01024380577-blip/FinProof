@@ -2,6 +2,9 @@ name: Deploy EC2
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - deploy-*
 
 permissions:
   contents: read

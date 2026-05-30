@@ -60,6 +60,9 @@ export function renderEc2DeployWorkflow() {
 
     on:
       workflow_dispatch:
+      push:
+        tags:
+          - deploy-*
 
     permissions:
       contents: read
