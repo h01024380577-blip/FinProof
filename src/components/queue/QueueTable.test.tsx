@@ -201,6 +201,13 @@ describe("QueueTable", () => {
             title: "분석 완료된 적금 홍보물",
             status: "analysis_complete",
             reviewer: "박심의"
+          },
+          {
+            ...baseRow,
+            id: "RC-2026-003",
+            title: "AI 분석 대기 중인 적금 홍보물",
+            status: "analysis_queued",
+            reviewer: "박심의"
           }
         ]}
         activeRole="reviewer"
@@ -213,18 +220,28 @@ describe("QueueTable", () => {
     const waitingCells = within(screen.getByRole("row", { name: /최고 연 5.0%/ })).getAllByRole(
       "cell"
     );
-    const completedCells = within(screen.getByRole("row", { name: /분석 완료된 적금/ })).getAllByRole(
-      "cell"
-    );
+    const completedCells = within(
+      screen.getByRole("row", { name: /분석 완료된 적금/ })
+    ).getAllByRole("cell");
+    const queuedCells = within(
+      screen.getByRole("row", { name: /AI 분석 대기 중인 적금/ })
+    ).getAllByRole("cell");
 
     expect(waitingCells).toHaveLength(9);
     expect(waitingCells[8]).toHaveClass("queue-row-actions--left");
-    expect(within(waitingCells[8]).getByRole("button", { name: "AI 분석 시작" })).toBeInTheDocument();
+    expect(
+      within(waitingCells[8]).getByRole("button", { name: "AI 분석 시작" })
+    ).toBeInTheDocument();
+    expect(queuedCells).toHaveLength(9);
+    expect(queuedCells[8]).toHaveClass("queue-row-actions--left");
+    expect(queuedCells[8]).toHaveTextContent("분석 대기 중");
     expect(completedCells).toHaveLength(9);
-    expect(completedCells[8]).not.toHaveClass("queue-row-actions--left");
+    expect(completedCells[8]).toHaveClass("queue-row-actions--left");
     expect(completedCells[8]).toHaveTextContent("분석 완료");
     expect(within(completedCells[8]).queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "담당자 확인 후 AI 분석" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "담당자 확인 후 AI 분석" })
+    ).not.toBeInTheDocument();
   });
 
   it("navigates via row click when case is openable", async () => {
@@ -259,9 +276,13 @@ describe("QueueTable", () => {
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "심의 이력 삭제: 최고 연 5.0% 적금 홍보물 심의" }));
+    await user.click(
+      screen.getByRole("button", { name: "심의 이력 삭제: 최고 연 5.0% 적금 홍보물 심의" })
+    );
 
-    expect(onDeleteReviewHistory).toHaveBeenCalledWith(expect.objectContaining({ id: "RC-2026-001" }));
+    expect(onDeleteReviewHistory).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "RC-2026-001" })
+    );
     expect(onOpen).not.toHaveBeenCalled();
   });
 

@@ -233,7 +233,7 @@ export function QueueTable({
               )}
             </span>
             <span
-              className={`queue-row-actions${waiting ? " queue-row-actions--left" : ""}${
+              className={`queue-row-actions queue-row-actions--left${
                 canDelete ? " queue-row-actions--delete" : ""
               }`}
               role="cell"

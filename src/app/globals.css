@@ -912,6 +912,12 @@ a.review-table__row:hover {
   padding-left: 2px;
 }
 
+.queue-row-actions .button--small,
+.queue-row-actions .queue-row-note {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .reviewer-editor {
   min-width: 0;
 }
