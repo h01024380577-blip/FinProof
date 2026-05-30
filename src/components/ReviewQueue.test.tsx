@@ -354,9 +354,7 @@ describe("ReviewQueue", () => {
     renderQueue("requester", "requester.jwt");
 
     const uploadRow = await screen.findByRole("row", { name: /실제 업로드 적금 홍보물/ });
-    const requesterAction = within(uploadRow).getByRole("button", {
-      name: "담당자 확인 후 AI 분석"
-    });
+    const requesterAction = within(uploadRow).getByRole("button", { name: "AI 분석 시작" });
 
     expect(requesterAction).toBeDisabled();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -462,7 +460,7 @@ describe("ReviewQueue", () => {
     renderQueue("reviewer", "reviewer.jwt");
 
     const uploadRow = await screen.findByRole("row", { name: /실제 업로드 적금 홍보물/ });
-    await user.click(within(uploadRow).getByRole("button", { name: "담당자 확인 후 AI 분석" }));
+    await user.click(within(uploadRow).getByRole("button", { name: "AI 분석 시작" }));
 
     expect(promptSpy).toHaveBeenCalledWith("AI 분석 담당자 이름을 입력해 주세요.", "");
     await waitFor(() => {

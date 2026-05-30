@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueueTable } from "./QueueTable";
 import type { ReviewSummary } from "@/domain/types";
@@ -111,7 +111,7 @@ describe("QueueTable", () => {
         onOpenReview={() => undefined}
       />
     );
-    await userEvent.click(screen.getByRole("button", { name: /담당자 확인 후 AI 분석/ }));
+    await userEvent.click(screen.getByRole("button", { name: /AI 분석 시작/ }));
     expect(onStart).toHaveBeenCalledWith(baseRow);
   });
 
@@ -152,7 +152,7 @@ describe("QueueTable", () => {
     expect(screen.queryByText("시작 중")).not.toBeInTheDocument();
   });
 
-  it("labels waiting-row analysis actions as requiring reviewer confirmation", () => {
+  it("shows work status text in the work column while keeping the analysis button action", () => {
     render(
       <QueueTable
         rows={[{ ...baseRow, reviewer: "" }]}
@@ -163,10 +163,12 @@ describe("QueueTable", () => {
       />
     );
 
-    expect(
-      screen.getByRole("button", { name: "담당자 확인 후 AI 분석" })
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "AI 분석 시작" })).not.toBeInTheDocument();
+    const row = screen.getByRole("row", { name: /최고 연 5.0%/ });
+    const cells = within(row).getAllByRole("cell");
+
+    expect(cells[8]).toHaveTextContent("분석 대기");
+    expect(within(cells[9]).getByRole("button", { name: "AI 분석 시작" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "담당자 확인 후 AI 분석" })).not.toBeInTheDocument();
   });
 
   it("navigates via row click when case is openable", async () => {
@@ -226,6 +228,6 @@ describe("QueueTable", () => {
       />
     );
 
-    expect(screen.getByText("반려")).toHaveAttribute("data-status", "rejected");
+    expect(screen.getAllByText("반려")[0]).toHaveAttribute("data-status", "rejected");
   });
 });
