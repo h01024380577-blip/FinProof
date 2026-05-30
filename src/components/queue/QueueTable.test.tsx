@@ -115,6 +115,40 @@ describe("QueueTable", () => {
     expect(onStart).toHaveBeenCalledWith(baseRow);
   });
 
+  it("renders waiting and completed analysis status badges with distinct status tones", () => {
+    render(
+      <QueueTable
+        rows={[
+          baseRow,
+          {
+            ...baseRow,
+            id: "RC-2026-002",
+            title: "분석 완료된 적금 홍보물",
+            status: "analysis_complete"
+          }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    const waitingBadge = within(screen.getByRole("row", { name: /최고 연 5.0%/ })).getByText(
+      "분석 대기"
+    );
+    const completedBadge = within(screen.getByRole("row", { name: /분석 완료된 적금/ })).getByText(
+      "AI 분석 완료"
+    );
+
+    expect(waitingBadge).toHaveClass("status-badge");
+    expect(waitingBadge).toHaveClass("status-badge--analysis-waiting");
+    expect(waitingBadge).toHaveAttribute("data-status", "analysis_waiting");
+    expect(completedBadge).toHaveClass("status-badge");
+    expect(completedBadge).toHaveClass("status-badge--analysis-complete");
+    expect(completedBadge).toHaveAttribute("data-status", "analysis_complete");
+  });
+
   it("shows unassigned reviewer rows without a hardcoded default name", () => {
     render(
       <QueueTable

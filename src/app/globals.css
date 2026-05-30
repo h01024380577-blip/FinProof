@@ -721,6 +721,18 @@ a.review-table__row:hover {
   color: var(--verified);
 }
 
+.status-badge--analysis-waiting {
+  border-color: #f2d28d;
+  background: var(--risk-caution-bg);
+  color: var(--risk-caution);
+}
+
+.status-badge--analysis-complete {
+  border-color: #bfddcf;
+  background: var(--verified-bg);
+  color: var(--verified);
+}
+
 .status-badge[data-status="rejected"] {
   border-color: #e9aaa1;
   background: var(--risk-reject-bg);

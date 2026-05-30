@@ -11,7 +11,10 @@ export function RiskBadge({ level }: { level: RiskLevel }) {
 
 export function StatusBadge({ status }: { status: ReviewCase["status"] }) {
   return (
-    <span className="status-badge" data-status={status}>
+    <span
+      className={`status-badge status-badge--${status.replaceAll("_", "-")}`}
+      data-status={status}
+    >
       {statusLabels[status]}
     </span>
   );
