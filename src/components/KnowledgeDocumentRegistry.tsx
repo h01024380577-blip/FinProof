@@ -277,21 +277,6 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
         </div>
       </section>
 
-      <section className="knowledge-console-grid" aria-label="지식문서 운영 카테고리">
-        <article>
-          <strong>내부 정책</strong>
-          <small>상품 광고 심의 기준과 내부 체크 기준을 관리합니다.</small>
-        </article>
-        <article>
-          <strong>법령 근거</strong>
-          <small>규정 변경과 시행일을 기준으로 검색 가능한 근거를 축적합니다.</small>
-        </article>
-        <article>
-          <strong>검토 체크리스트</strong>
-          <small>심의자가 반복 확인하는 항목을 구조화된 지식으로 유지합니다.</small>
-        </article>
-      </section>
-
       <section className="knowledge-layout">
         <form className="knowledge-form" onSubmit={handleSubmit}>
           <div className="knowledge-panel__header">

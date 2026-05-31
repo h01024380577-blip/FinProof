@@ -254,7 +254,6 @@ export function LandingServiceFlow() {
     >
       <div className="service-flow-header">
         <div>
-          <span className="service-flow-kicker">FinProof workflow</span>
           <h2 id="service-flow-title">심의 요청부터 보고서까지, 업무가 한 흐름으로 이어집니다</h2>
           <p>
             담당자가 실제로 마주하는 접수, 대기열, AI 분석, 근거 확인, 보고서 화면을 기준으로 검토
@@ -284,7 +283,6 @@ export function LandingServiceFlow() {
               <div className="service-flow-copy">
                 <div className="service-flow-card__topline">
                   <span>{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{step.label}</strong>
                 </div>
 
                 <div className="service-flow-card__body">
