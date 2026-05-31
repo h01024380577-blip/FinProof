@@ -627,6 +627,7 @@ function multilingualSnapshotsFromIssueContext(issue: ReviewIssue) {
 
   return {
     localizedRiskFinding: {
+      id: multilingualContext.segmentId,
       segmentId: multilingualContext.segmentId,
       language: multilingualContext.language,
       originalText: multilingualContext.originalText,

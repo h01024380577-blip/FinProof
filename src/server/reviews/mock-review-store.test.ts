@@ -204,6 +204,7 @@ describe("mock review store", () => {
             }
           ],
           localizedRiskFinding: {
+            id: "risk-en-approval",
             segmentId: "seg-en-001",
             language: "en",
             originalText: "Guaranteed approval in 3 minutes",
@@ -219,7 +220,7 @@ describe("mock review store", () => {
             confidence: 0.91
           },
           koreanComplianceMapping: {
-            localizedFindingId: "seg-en-001",
+            localizedFindingId: "risk-en-approval",
             issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
             koreanComplianceCategory: "승인 보장 오인 표현",
             koreanComplianceReason: "대출 승인 가능성을 확정적으로 고지하는 표현으로 볼 수 있음",
@@ -258,7 +259,7 @@ describe("mock review store", () => {
     expect(findings[0]).toMatchObject({
       localizedRiskFinding: expect.objectContaining({ segmentId: "seg-en-001" }),
       koreanComplianceMapping: expect.objectContaining({
-        localizedFindingId: "seg-en-001"
+        localizedFindingId: "risk-en-approval"
       })
     });
   });

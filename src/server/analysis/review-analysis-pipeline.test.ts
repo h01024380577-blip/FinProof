@@ -821,7 +821,7 @@ describe("review analysis pipeline", () => {
       modelProvider: provider,
       subAgentOrchestrator: emptySubAgentOrchestrator(),
       ocrProvider: fixedOcrProvider(
-        "Guaranteed approval in 3 minutes\n最短3分で審査完了\n最低利率 无需审核"
+        "Guaranteed approval in 3 minutes 最短3分で審査完了 最低利率 无需审核"
       )
     });
 

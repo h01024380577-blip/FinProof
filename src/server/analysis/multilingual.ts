@@ -15,6 +15,7 @@ export type MultilingualSegment = {
 };
 
 export type LocalizedRiskFinding = {
+  id: string;
   segmentId: string;
   language: SupportedReviewLanguage;
   originalText: string;
@@ -29,7 +30,7 @@ export type LocalizedRiskFinding = {
 };
 
 export type KoreanComplianceMapping = {
-  localizedFindingId: LocalizedRiskFinding["segmentId"];
+  localizedFindingId: LocalizedRiskFinding["id"];
   issueType: string;
   koreanComplianceCategory: string;
   koreanComplianceReason: string;
@@ -49,13 +50,23 @@ export type MultilingualAgentError = {
 
 const ENGLISH_FINANCIAL_AD_TERMS =
   /\b(approval|approved|guaranteed|guarantee|loan|rate|rates|fee|fees|screening|eligible|instant|lowest|hidden)\b/i;
-const LATIN_LETTER_PATTERN = /[A-Za-z]/g;
+const LATIN_LETTER_COUNT_PATTERN = /[A-Za-z]/g;
+const LATIN_LETTER_PATTERN = /[A-Za-z]/;
 const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
 const JAPANESE_HAN_AD_TERMS = /(審査|手数料|無料|金利|優遇)/;
 const HAN_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff]/;
 const HANGUL_PATTERN = /[\uac00-\ud7af]/;
+const NON_CJK_LATIN_SPAN_PATTERN =
+  /[^\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]+/gu;
+const CJK_SPAN_PATTERN =
+  /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff0-9０-９%％.．,，·・ー〜~]+/gu;
 
 type SegmentCounter = Record<SupportedReviewLanguage, number>;
+type DetectedLanguageSpan = {
+  language: SupportedReviewLanguage;
+  text: string;
+  index: number;
+};
 
 export function segmentMultilingualDocuments(
   documents: ExtractedDocument[]
@@ -69,29 +80,125 @@ export function segmentMultilingualDocuments(
 
   for (const document of documents) {
     for (const line of document.text.split(/\r?\n/)) {
-      const normalizedText = normalizeSegmentText(line);
-      if (normalizedText.length === 0) {
-        continue;
+      for (const draft of segmentDraftsForLine(line)) {
+        counters[draft.language] += 1;
+        segments.push({
+          id: segmentId(draft.language, counters[draft.language]),
+          language: draft.language,
+          originalText: draft.originalText,
+          normalizedText: draft.normalizedText,
+          sourceFileId: document.fileId,
+          confidence: segmentConfidence(draft.language, draft.normalizedText, document.confidence)
+        });
       }
-
-      const language = detectSupportedLanguage(normalizedText);
-      if (language === undefined) {
-        continue;
-      }
-
-      counters[language] += 1;
-      segments.push({
-        id: segmentId(language, counters[language]),
-        language,
-        originalText: line.trim(),
-        normalizedText,
-        sourceFileId: document.fileId,
-        confidence: segmentConfidence(language, normalizedText, document.confidence)
-      });
     }
   }
 
   return segments;
+}
+
+function segmentDraftsForLine(line: string) {
+  const normalizedText = normalizeSegmentText(line);
+  if (normalizedText.length === 0) {
+    return [];
+  }
+
+  const spans = detectedLanguageSpans(normalizedText);
+  const detectedLanguages = [...new Set(spans.map((span) => span.language))];
+
+  if (detectedLanguages.length <= 1) {
+    const language = detectSupportedLanguage(normalizedText);
+
+    return language
+      ? [
+          {
+            language,
+            originalText: line.trim(),
+            normalizedText
+          }
+        ]
+      : [];
+  }
+
+  const languageOrder: SupportedReviewLanguage[] = [];
+  const spanTextsByLanguage = new Map<SupportedReviewLanguage, string[]>();
+
+  for (const span of spans) {
+    const text = normalizeSegmentText(span.text);
+    if (text.length === 0) {
+      continue;
+    }
+
+    if (!spanTextsByLanguage.has(span.language)) {
+      languageOrder.push(span.language);
+      spanTextsByLanguage.set(span.language, []);
+    }
+
+    spanTextsByLanguage.get(span.language)?.push(text);
+  }
+
+  return languageOrder.map((language) => {
+    const text = normalizeSegmentText((spanTextsByLanguage.get(language) ?? []).join(" "));
+
+    return {
+      language,
+      originalText: text,
+      normalizedText: text
+    };
+  });
+}
+
+function detectedLanguageSpans(text: string): DetectedLanguageSpan[] {
+  return [
+    ...detectedLatinSpans(text),
+    ...detectedCjkSpans(text)
+  ].sort((left, right) => left.index - right.index);
+}
+
+function detectedLatinSpans(text: string): DetectedLanguageSpan[] {
+  return [...text.matchAll(NON_CJK_LATIN_SPAN_PATTERN)]
+    .map((match) => ({
+      text: trimBoundaryPunctuation(match[0]),
+      index: match.index ?? 0
+    }))
+    .filter((span) => isEnglishSegment(span.text))
+    .map((span) => ({
+      language: "en" as const,
+      text: span.text,
+      index: span.index
+    }));
+}
+
+function detectedCjkSpans(text: string): DetectedLanguageSpan[] {
+  return [...text.matchAll(CJK_SPAN_PATTERN)]
+    .map((match) => ({
+      text: trimBoundaryPunctuation(match[0]),
+      index: match.index ?? 0
+    }))
+    .map((span): DetectedLanguageSpan | undefined => {
+      if (span.text.length === 0) {
+        return undefined;
+      }
+
+      if (isJapaneseSegment(span.text)) {
+        return {
+          language: "ja",
+          text: span.text,
+          index: span.index
+        };
+      }
+
+      if (HAN_PATTERN.test(span.text) && !isKoreanOnlySegment(span.text)) {
+        return {
+          language: "zh",
+          text: span.text,
+          index: span.index
+        };
+      }
+
+      return undefined;
+    })
+    .filter((span): span is DetectedLanguageSpan => Boolean(span));
 }
 
 function detectSupportedLanguage(text: string): SupportedReviewLanguage | undefined {
@@ -115,7 +222,7 @@ function isEnglishSegment(text: string) {
     return true;
   }
 
-  const latinLetters = text.match(LATIN_LETTER_PATTERN)?.length ?? 0;
+  const latinLetters = text.match(LATIN_LETTER_COUNT_PATTERN)?.length ?? 0;
   if (latinLetters === 0) {
     return false;
   }
@@ -134,6 +241,13 @@ function isKoreanOnlySegment(text: string) {
 
 function normalizeSegmentText(text: string) {
   return text.replace(/\s+/g, " ").trim();
+}
+
+function trimBoundaryPunctuation(text: string) {
+  return text
+    .replace(/^[\s:;|/\\()[\]{}"'“”‘’.,!?-]+/u, "")
+    .replace(/[\s:;|/\\()[\]{}"'“”‘’.,!?-]+$/u, "")
+    .trim();
 }
 
 function segmentId(language: SupportedReviewLanguage, counter: number) {

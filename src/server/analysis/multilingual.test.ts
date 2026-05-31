@@ -45,6 +45,28 @@ describe("segmentMultilingualDocuments", () => {
     });
   });
 
+  it("splits mixed English Japanese and Chinese copy on a collapsed OCR line", () => {
+    const segments = segmentMultilingualDocuments([
+      document("Guaranteed approval 最短3分で審査完了 最低利率 无需审核")
+    ]);
+
+    expect(segments.map((segment) => segment.language)).toEqual(["en", "ja", "zh"]);
+    expect(segments).toEqual([
+      expect.objectContaining({
+        id: "seg-en-001",
+        originalText: "Guaranteed approval"
+      }),
+      expect.objectContaining({
+        id: "seg-ja-001",
+        originalText: "最短3分で審査完了"
+      }),
+      expect.objectContaining({
+        id: "seg-zh-001",
+        originalText: "最低利率 无需审核"
+      })
+    ]);
+  });
+
   it("routes Han-only Japanese financial ad terms to Japanese", () => {
     const segments = segmentMultilingualDocuments([
       document("審査完了\n手数料無料\n金利優遇\n最低利率 无需审核")

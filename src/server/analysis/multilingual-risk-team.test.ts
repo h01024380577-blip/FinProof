@@ -128,6 +128,205 @@ describe("runMultilingualRiskTeam", () => {
     });
   });
 
+  it("maps multiple localized risks on the same segment by finding id", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            id: "risk-approval",
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval with the lowest rate",
+            literalTranslation: "승인 보장",
+            complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["approval guarantee"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.9
+          },
+          {
+            id: "risk-rate",
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval with the lowest rate",
+            literalTranslation: "최저 금리",
+            complianceMeaning: "조건 없이 최저 금리가 적용되는 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["lowest rate"],
+            riskLevelHint: "caution",
+            suggestedCopyOriginalLanguage: "Rate may vary by eligibility.",
+            suggestedCopyKoreanMeaning: "금리는 조건에 따라 달라질 수 있습니다.",
+            confidence: 0.87
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "risk-approval",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "승인 보장 표현",
+            koreanComplianceReason: "승인 보장 표현은 심사 조건을 오인시킬 수 있습니다.",
+            evidenceQuery: "approval guarantee",
+            suggestedAction: "reject"
+          },
+          {
+            localizedFindingId: "risk-rate",
+            issueType: "MULTILINGUAL_RATE_CONDITION",
+            koreanComplianceCategory: "최저 금리 조건 표현",
+            koreanComplianceReason: "최저 금리 표현은 적용 조건을 함께 밝혀야 합니다.",
+            evidenceQuery: "lowest rate",
+            suggestedAction: "change_request"
+          }
+        ]
+      })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval with the lowest rate"
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(result.agentFindings.map((finding) => finding.issueType)).toEqual([
+      "MULTILINGUAL_APPROVAL_GUARANTEE",
+      "MULTILINGUAL_RATE_CONDITION"
+    ]);
+    expect(result.agentFindings.map((finding) => finding.localizedRiskFinding?.riskSignals)).toEqual([
+      ["approval guarantee"],
+      ["lowest rate"]
+    ]);
+    expect(result.agentFindings.map((finding) => finding.suggestedCopy)).toEqual([
+      "Approval may vary after review.",
+      "Rate may vary by eligibility."
+    ]);
+  });
+
+  it("does not map an ambiguous segment id when one segment has multiple localized risks", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            id: "risk-approval",
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval with the lowest rate",
+            literalTranslation: "승인 보장",
+            complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["approval guarantee"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.9
+          },
+          {
+            id: "risk-rate",
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval with the lowest rate",
+            literalTranslation: "최저 금리",
+            complianceMeaning: "조건 없이 최저 금리가 적용되는 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["lowest rate"],
+            riskLevelHint: "caution",
+            suggestedCopyOriginalLanguage: "Rate may vary by eligibility.",
+            suggestedCopyKoreanMeaning: "금리는 조건에 따라 달라질 수 있습니다.",
+            confidence: 0.87
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_AMBIGUOUS",
+            koreanComplianceCategory: "모호한 다국어 매핑",
+            koreanComplianceReason: "세그먼트 ID만으로는 리스크를 특정할 수 없습니다.",
+            evidenceQuery: "ambiguous",
+            suggestedAction: "hold"
+          }
+        ]
+      })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval with the lowest rate"
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(result.koreanComplianceMappings).toEqual([]);
+    expect(result.agentFindings).toEqual([]);
+  });
+
+  it("drops localized findings without non-empty risk signals before mapping", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 내 승인 보장",
+            complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["   "],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.88
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "대출 승인 보장 표현",
+            koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+            evidenceQuery: "대출 승인 보장 금융광고",
+            suggestedAction: "reject"
+          }
+        ]
+      })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes"
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(provider.calls).toEqual(["english_translator_risk"]);
+    expect(result.localizedRiskFindings).toEqual([]);
+    expect(result.agentFindings).toEqual([]);
+  });
+
   it("continues when one language agent fails", async () => {
     const provider = providerReturning({
       japanese_translator_risk: new Error("model timeout"),

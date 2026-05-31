@@ -102,7 +102,9 @@ function stringField(value: unknown, fallback = "") {
 
 function stringArray(value: unknown) {
   return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    ? value
+        .map((item) => (typeof item === "string" ? item.trim() : ""))
+        .filter((item) => item.length > 0)
     : [];
 }
 
@@ -192,7 +194,7 @@ function languageAgentInput(input: {
     evidenceCandidates: evidencePayload(input.evidenceCandidates),
     outputSchema: {
       findings:
-        "array of { segmentId, language, originalText, literalTranslation, complianceMeaning, riskCategory, riskSignals, riskLevelHint, suggestedCopyOriginalLanguage, suggestedCopyKoreanMeaning, confidence }",
+        "array of { id, segmentId, language, originalText, literalTranslation, complianceMeaning, riskCategory, riskSignals, riskLevelHint, suggestedCopyOriginalLanguage, suggestedCopyKoreanMeaning, confidence }. id must be unique per localized risk finding.",
       allowedRiskCategories: ["expression_risk", "compliance_risk", "both"],
       allowedRiskLevelHints: ["info", "caution", "high", "reject_recommended"]
     }
@@ -218,7 +220,8 @@ function mappingAgentInput(input: {
 
 function normalizeLocalizedFinding(
   item: unknown,
-  segmentById: Map<string, MultilingualSegment>
+  segmentById: Map<string, MultilingualSegment>,
+  index: number
 ): LocalizedRiskFinding | undefined {
   if (!item || typeof item !== "object") {
     return undefined;
@@ -228,19 +231,21 @@ function normalizeLocalizedFinding(
   const segmentId = stringField(fields.segmentId);
   const segment = segmentById.get(segmentId);
   const complianceMeaning = stringField(fields.complianceMeaning);
+  const riskSignals = stringArray(fields.riskSignals);
 
-  if (!segment || !complianceMeaning) {
+  if (!segment || !complianceMeaning || riskSignals.length === 0) {
     return undefined;
   }
 
   return {
+    id: stringField(fields.id, localizedFindingId(segmentId, index)),
     segmentId,
     language: segment.language,
     originalText: segment.originalText,
     literalTranslation: stringField(fields.literalTranslation, segment.originalText),
     complianceMeaning,
     riskCategory: normalizeRiskCategory(fields.riskCategory),
-    riskSignals: stringArray(fields.riskSignals),
+    riskSignals,
     riskLevelHint: normalizeRiskLevel(fields.riskLevelHint),
     suggestedCopyOriginalLanguage: stringField(
       fields.suggestedCopyOriginalLanguage,
@@ -251,20 +256,58 @@ function normalizeLocalizedFinding(
   };
 }
 
+function localizedFindingId(segmentId: string, index: number) {
+  return `localized-finding-${segmentId}-${String(index + 1).padStart(3, "0")}`;
+}
+
+function findingsBySegmentId(findings: LocalizedRiskFinding[]) {
+  const grouped = new Map<string, LocalizedRiskFinding[]>();
+
+  for (const finding of findings) {
+    grouped.set(finding.segmentId, [...(grouped.get(finding.segmentId) ?? []), finding]);
+  }
+
+  return grouped;
+}
+
+function resolveLocalizedFindingId({
+  rawId,
+  findingById,
+  findingBySegmentId
+}: {
+  rawId: string;
+  findingById: Map<string, LocalizedRiskFinding>;
+  findingBySegmentId: Map<string, LocalizedRiskFinding[]>;
+}) {
+  if (findingById.has(rawId)) {
+    return rawId;
+  }
+
+  const segmentMatches = findingBySegmentId.get(rawId) ?? [];
+
+  return segmentMatches.length === 1 ? segmentMatches[0].id : undefined;
+}
+
 function normalizeMapping(
   item: unknown,
-  findingById: Map<string, LocalizedRiskFinding>
+  findingById: Map<string, LocalizedRiskFinding>,
+  findingBySegmentId: Map<string, LocalizedRiskFinding[]>
 ): KoreanComplianceMapping | undefined {
   if (!item || typeof item !== "object") {
     return undefined;
   }
 
   const fields = item as Record<string, unknown>;
-  const localizedFindingId = stringField(fields.localizedFindingId);
+  const rawLocalizedFindingId = stringField(fields.localizedFindingId);
+  const localizedFindingId = resolveLocalizedFindingId({
+    rawId: rawLocalizedFindingId,
+    findingById,
+    findingBySegmentId
+  });
   const issueType = stringField(fields.issueType);
   const koreanComplianceReason = stringField(fields.koreanComplianceReason);
 
-  if (!findingById.has(localizedFindingId) || !issueType || !koreanComplianceReason) {
+  if (!localizedFindingId || !issueType || !koreanComplianceReason) {
     return undefined;
   }
 
@@ -449,7 +492,7 @@ export async function runMultilingualRiskTeam(input: {
       });
       const segmentById = new Map(segments.map((segment) => [segment.id, segment]));
       const findings = rawFindings(extractJson(result.text))
-        .map((finding) => normalizeLocalizedFinding(finding, segmentById))
+        .map((finding, index) => normalizeLocalizedFinding(finding, segmentById, index))
         .filter((finding): finding is LocalizedRiskFinding => Boolean(finding));
 
       localizedRiskFindings.push(...findings);
@@ -471,7 +514,8 @@ export async function runMultilingualRiskTeam(input: {
     };
   }
 
-  const findingById = new Map(localizedRiskFindings.map((finding) => [finding.segmentId, finding]));
+  const findingById = new Map(localizedRiskFindings.map((finding) => [finding.id, finding]));
+  const findingBySegmentId = findingsBySegmentId(localizedRiskFindings);
   let koreanComplianceMappings: KoreanComplianceMapping[];
 
   try {
@@ -491,7 +535,7 @@ export async function runMultilingualRiskTeam(input: {
     });
 
     koreanComplianceMappings = rawMappings(extractJson(result.text))
-      .map((mapping) => normalizeMapping(mapping, findingById))
+      .map((mapping) => normalizeMapping(mapping, findingById, findingBySegmentId))
       .filter((mapping): mapping is KoreanComplianceMapping => Boolean(mapping));
   } catch (error) {
     errors.push({
