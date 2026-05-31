@@ -6957,14 +6957,6 @@ body {
   background: #eef3fa;
 }
 
-.role-switcher__button[aria-pressed="true"],
-.button--primary {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: #ffffff;
-  box-shadow: 0 8px 18px rgba(10, 78, 201, 0.18);
-}
-
 .button {
   min-height: 38px;
   border-color: #d8e0ea;
@@ -6975,6 +6967,14 @@ body {
 .button:hover {
   border-color: #b8c5d6;
   background: #f7fbff;
+}
+
+.role-switcher__button[aria-pressed="true"],
+.button--primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(10, 78, 201, 0.18);
 }
 
 .button--primary:hover {
