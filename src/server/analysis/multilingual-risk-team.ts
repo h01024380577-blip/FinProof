@@ -278,13 +278,70 @@ function normalizeMapping(
   };
 }
 
-function topEvidenceIds(evidenceCandidates: RagEvidenceCandidate[]) {
+function textTokens(text: string) {
+  return text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+}
+
+function overlapScore(leftText: string, rightText: string) {
+  const leftTerms = new Set(textTokens(leftText));
+  const rightTerms = new Set(textTokens(rightText));
+
+  return [...leftTerms].filter((term) => rightTerms.has(term)).length;
+}
+
+function evidenceMatchText(mapping: KoreanComplianceMapping, finding: LocalizedRiskFinding) {
+  return [
+    mapping.evidenceQuery,
+    mapping.koreanComplianceCategory,
+    mapping.koreanComplianceReason,
+    finding.complianceMeaning,
+    finding.literalTranslation,
+    ...finding.riskSignals
+  ].join(" ");
+}
+
+function primaryEvidenceMatchText(mapping: KoreanComplianceMapping, finding: LocalizedRiskFinding) {
+  return [mapping.evidenceQuery, ...finding.riskSignals].join(" ");
+}
+
+function candidateMatchText(candidate: RagEvidenceCandidate) {
+  return [candidate.title, candidate.quoteSummary, candidate.section].filter(Boolean).join(" ");
+}
+
+function topEvidenceIds(
+  mapping: KoreanComplianceMapping,
+  finding: LocalizedRiskFinding,
+  evidenceCandidates: RagEvidenceCandidate[]
+) {
+  const matchText = evidenceMatchText(mapping, finding);
+  const primaryMatchText = primaryEvidenceMatchText(mapping, finding);
+
   return evidenceCandidates
     .filter((candidate) => candidate.relevanceScore >= 0.72)
+    .map((candidate) => {
+      const candidateText = candidateMatchText(candidate);
+      const primaryScore = overlapScore(primaryMatchText, candidateText);
+      const contextScore = overlapScore(matchText, candidateText);
+
+      return {
+        candidate,
+        score: primaryScore * 3 + contextScore,
+        primaryScore,
+        contextScore
+      };
+    })
+    .filter(({ primaryScore, contextScore }) => primaryScore > 0 || contextScore >= 2)
     .slice()
-    .sort((left, right) => right.relevanceScore - left.relevanceScore)
+    .sort(
+      (left, right) =>
+        right.score - left.score || right.candidate.relevanceScore - left.candidate.relevanceScore
+    )
     .slice(0, 3)
-    .map((candidate) => candidate.id);
+    .map(({ candidate }) => candidate.id);
 }
 
 function findingTitle(finding: LocalizedRiskFinding, mapping: KoreanComplianceMapping) {
@@ -320,12 +377,11 @@ function findingSuggestedAction(
 function findingDescription(
   finding: LocalizedRiskFinding,
   mapping: KoreanComplianceMapping,
-  evidenceCandidates: RagEvidenceCandidate[]
+  hasSelectedEvidence: boolean
 ) {
-  const evidenceNote =
-    evidenceCandidates.length === 0
-      ? "연결 가능한 근거 후보가 없어 리뷰어 확인이 필요한 불충분 근거 상태입니다."
-      : undefined;
+  const evidenceNote = !hasSelectedEvidence
+    ? "연결 가능한 근거 후보가 없어 리뷰어 확인이 필요한 불충분 근거 상태입니다."
+    : undefined;
 
   return [finding.complianceMeaning, mapping.koreanComplianceReason, evidenceNote]
     .filter((part): part is string => Boolean(part))
@@ -338,6 +394,8 @@ function agentFindingFromMapping(
   index: number,
   evidenceCandidates: RagEvidenceCandidate[]
 ): AgentFinding {
+  const evidenceCandidateIds = topEvidenceIds(mapping, finding, evidenceCandidates);
+
   return {
     id: `finding-korean_compliance_mapping-${String(index + 1).padStart(3, "0")}`,
     agent: "korean_compliance_mapping",
@@ -345,10 +403,10 @@ function agentFindingFromMapping(
     riskLevel: findingRiskLevel(finding, mapping),
     title: findingTitle(finding, mapping),
     targetText: finding.originalText,
-    description: findingDescription(finding, mapping, evidenceCandidates),
+    description: findingDescription(finding, mapping, evidenceCandidateIds.length > 0),
     suggestedAction: findingSuggestedAction(finding, mapping),
     suggestedCopy: finding.suggestedCopyOriginalLanguage,
-    evidenceCandidateIds: topEvidenceIds(evidenceCandidates),
+    evidenceCandidateIds,
     confidence: finding.confidence,
     localizedRiskFinding: finding,
     koreanComplianceMapping: mapping
