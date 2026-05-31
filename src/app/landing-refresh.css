@@ -1560,7 +1560,7 @@ body:has(.landing-page) {
     radial-gradient(circle at 22% 18%, rgba(96, 165, 250, 0.18), transparent 34%),
     radial-gradient(circle at 82% 24%, rgba(34, 211, 238, 0.12), transparent 32%),
     linear-gradient(120deg, transparent 0%, rgba(59, 130, 246, 0.08) 46%, transparent 72%);
-  animation: landing-vignette-drift 13s ease-in-out infinite alternate;
+  animation: none;
 }
 
 .landing-page::after {
@@ -2219,7 +2219,6 @@ body:has(.landing-page) {
 }
 
 .animate-fade-up {
-  opacity: 0;
   animation-duration: 980ms;
 }
 
