@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { JSX } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Bot,
+  ClipboardCheck,
+  FileCheck2,
+  FileSearch,
+  LibraryBig,
+  type LucideIcon
+} from "lucide-react";
 import type { ReviewCase, ReviewSummary } from "@/domain/types";
 import { QueueMetrics, type QueueMetricValues } from "./queue/QueueMetrics";
 import { QueueFilters, type QueueFilterState } from "./queue/QueueFilters";
@@ -62,6 +71,47 @@ const defaultFilterState: QueueFilterState = {
   product: "all"
 };
 const queuePageSize = 10;
+
+const consoleModules: Array<{
+  title: string;
+  label: string;
+  description: string;
+  href?: string;
+  icon: LucideIcon;
+}> = [
+  {
+    title: "심의 요청",
+    label: "Review Queue",
+    description: "접수된 금융 광고 심의 건을 상태, 위험도, 담당자 기준으로 관리합니다.",
+    href: "/reviews",
+    icon: ClipboardCheck
+  },
+  {
+    title: "지식문서",
+    label: "Knowledge Base",
+    description: "법령, 내부 정책, 체크리스트를 AI 분석 근거로 등록하고 승인합니다.",
+    href: "/knowledge-documents",
+    icon: LibraryBig
+  },
+  {
+    title: "AI 분석",
+    label: "Analysis",
+    description: "분석 대기 건을 실행해 문구 위험도와 보완 포인트를 자동 정리합니다.",
+    icon: Bot
+  },
+  {
+    title: "근거 검토",
+    label: "Evidence",
+    description: "상품 설명서, 약관, 지식문서의 근거를 함께 확인해 판단합니다.",
+    icon: FileSearch
+  },
+  {
+    title: "보고서",
+    label: "Report",
+    description: "심의 결과와 수정 요청 근거를 최종 보고서 흐름으로 정리합니다.",
+    icon: FileCheck2
+  }
+];
 
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 
@@ -209,35 +259,9 @@ export function ReviewQueue(): JSX.Element {
   }, []);
 
   async function startAnalysis(review: ReviewSummary): Promise<void> {
-    const promptedReviewer = window.prompt("AI 분석 담당자 이름을 입력해 주세요.", review.reviewer);
-
-    if (promptedReviewer === null) {
-      return;
-    }
-
-    const reviewer = promptedReviewer.trim();
-
-    if (!reviewer) {
-      setLoadError("AI 분석 담당자 이름을 입력해 주세요.");
-      return;
-    }
-
     setActiveAnalysisId(review.id);
     setLoadError(null);
-    let savedReviewer = review.reviewer;
     try {
-      if (reviewer !== review.reviewer) {
-        setSavingReviewerIds((current) =>
-          current.includes(review.id) ? current : [...current, review.id]
-        );
-        savedReviewer = await persistReviewer(review, reviewer);
-        setReviews((current) =>
-          current.map((candidate) =>
-            candidate.id === review.id ? { ...candidate, reviewer: savedReviewer } : candidate
-          )
-        );
-      }
-
       const response = await fetch(`/api/v1/review-cases/${review.id}/analysis/start`, {
         method: "POST",
         headers: apiHeaders()
@@ -249,7 +273,6 @@ export function ReviewQueue(): JSX.Element {
           candidate.id === review.id
             ? {
                 ...candidate,
-                reviewer: savedReviewer,
                 status: body.status,
                 availableActions: fallbackActionsFor(
                   activeRole,
@@ -265,24 +288,7 @@ export function ReviewQueue(): JSX.Element {
       );
     } finally {
       setActiveAnalysisId(null);
-      setSavingReviewerIds((current) => current.filter((id) => id !== review.id));
     }
-  }
-
-  async function persistReviewer(review: ReviewSummary, reviewer: string): Promise<string> {
-    const response = await fetch(`/api/v1/review-cases/${review.id}`, {
-      method: "PATCH",
-      headers: apiHeaders({ "content-type": "application/json" }),
-      body: JSON.stringify({ reviewer })
-    });
-
-    if (!response.ok) {
-      throw new Error("담당자 저장 권한 또는 요청을 확인해 주세요.");
-    }
-
-    const body = (await response.json()) as ReviewerUpdateResponse;
-
-    return body.reviewCase?.reviewer ?? reviewer;
   }
 
   async function saveReviewer(review: ReviewSummary, reviewer: string): Promise<void> {
@@ -292,7 +298,18 @@ export function ReviewQueue(): JSX.Element {
     setLoadError(null);
 
     try {
-      const savedReviewer = await persistReviewer(review, reviewer);
+      const response = await fetch(`/api/v1/review-cases/${review.id}`, {
+        method: "PATCH",
+        headers: apiHeaders({ "content-type": "application/json" }),
+        body: JSON.stringify({ reviewer })
+      });
+
+      if (!response.ok) {
+        throw new Error("담당자 저장 권한 또는 요청을 확인해 주세요.");
+      }
+
+      const body = (await response.json()) as ReviewerUpdateResponse;
+      const savedReviewer = body.reviewCase?.reviewer ?? reviewer;
 
       setReviews((current) =>
         current.map((candidate) =>
@@ -365,13 +382,46 @@ export function ReviewQueue(): JSX.Element {
     <div className="review-queue">
       <section className="queue-head">
         <div>
+          <span className="product-eyebrow">FinProof review console</span>
           <h2>{scope === "history" ? "심의 이력" : "심의 대기 목록"}</h2>
           <p>
             {scope === "history"
               ? "승인 또는 반려 판단이 완료된 심의 건을 확인합니다."
               : "업로드된 심의 요청을 확인하고 분석 대기 건을 배정합니다."}
           </p>
+          <p className="queue-head__slogan">검토는 빠르게, 판단은 정확하게</p>
         </div>
+        <div className="queue-head__summary" aria-label="FinProof operating promise">
+          <span>Review Faster</span>
+          <strong>Decide Smarter.</strong>
+          <small>AI 근거 검색과 심의 워크플로우를 한 화면에서 관리합니다.</small>
+        </div>
+      </section>
+
+      <section className="console-hub" aria-label="FinProof console modules">
+        {consoleModules.map((module) => {
+          const Icon = module.icon;
+          const content = (
+            <>
+              <span className="console-card__icon">
+                <Icon size={18} aria-hidden="true" />
+              </span>
+              <span className="console-card__label">{module.label}</span>
+              <strong>{module.title}</strong>
+              <small>{module.description}</small>
+            </>
+          );
+
+          return module.href ? (
+            <Link className="console-card" href={module.href} key={module.title}>
+              {content}
+            </Link>
+          ) : (
+            <article className="console-card" key={module.title}>
+              {content}
+            </article>
+          );
+        })}
       </section>
 
       {scope === "active" ? (
