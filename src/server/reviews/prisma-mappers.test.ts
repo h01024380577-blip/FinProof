@@ -138,6 +138,27 @@ describe("prisma review mappers", () => {
     });
   });
 
+  it.each([
+    ["missing", undefined],
+    ["not an array", "approval_guarantee"],
+    ["empty after filtering", [123]]
+  ])(
+    "does not map multilingual context when riskSignals is %s",
+    (_caseName, riskSignals) => {
+      const malformedRow = structuredClone(row);
+      const localizedRiskFinding = malformedRow.issues[0].agentFinding.outputSnapshot
+        .localizedRiskFinding as Record<string, unknown>;
+
+      if (riskSignals === undefined) {
+        delete localizedRiskFinding.riskSignals;
+      } else {
+        localizedRiskFinding.riskSignals = riskSignals;
+      }
+
+      expect(toReviewCase(malformedRow).issues[0].multilingualContext).toBeUndefined();
+    }
+  );
+
   it("maps a review summary row", () => {
     expect(toReviewSummary(row)).toEqual({
       id: "rc-demo-deposit-001",
