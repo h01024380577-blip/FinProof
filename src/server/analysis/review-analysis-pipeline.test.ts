@@ -2,6 +2,7 @@ import type { ReviewCase } from "@/domain/types";
 import { createGeminiOcrProvider, createReviewAnalysisPipeline } from "./review-analysis-pipeline";
 import type { ModelProvider } from "@/server/ai/model-provider";
 import type { ReviewStoreScope } from "@/server/reviews";
+import type { ReviewSubAgentOrchestrator } from "./review-subagents";
 
 const review: ReviewCase = {
   id: "rc-upload-001",
@@ -574,7 +575,8 @@ describe("review analysis pipeline", () => {
                 description:
                   "홍보물의 절대 표현과 상품자료 조건, 유사 사례를 종합하면 수정 전 승인은 어렵습니다.",
                 suggestedAction: "reject",
-                suggestedCopy: "조건 충족 시 최고 연 5.0%로 문구를 조정하고 우대 조건을 인접 표시해 주세요.",
+                suggestedCopy:
+                  "조건 충족 시 최고 연 5.0%로 문구를 조정하고 우대 조건을 인접 표시해 주세요.",
                 evidenceCandidateIds: [
                   "evidence-candidate-file-upload-001-001",
                   "case-history-evidence-001"
@@ -679,4 +681,327 @@ describe("review analysis pipeline", () => {
       })
     ]);
   });
+
+  it("integrates English multilingual findings before domain subagents run", async () => {
+    const provider = multilingualProviderReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 내 승인 보장",
+            complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["guaranteed approval"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.89
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "대출 승인 보장 표현",
+            koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+            evidenceQuery: "대출 승인 보장 금융광고",
+            suggestedAction: "reject"
+          }
+        ]
+      })
+    });
+    const subAgentOrchestrator: ReviewSubAgentOrchestrator = {
+      run: vi.fn(async () => [])
+    };
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator,
+      ocrProvider: fixedOcrProvider("Guaranteed approval in 3 minutes")
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.multilingualSegments?.map((segment) => segment.language)).toEqual(["en"]);
+    expect(artifacts.localizedRiskFindings?.[0]?.originalText).toBe(
+      "Guaranteed approval in 3 minutes"
+    );
+    expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        priorFindings: expect.arrayContaining([
+          expect.objectContaining({
+            agent: "korean_compliance_mapping",
+            targetText: "Guaranteed approval in 3 minutes"
+          })
+        ])
+      })
+    );
+  });
+
+  it("routes Japanese OCR text through the Japanese translator risk agent", async () => {
+    const provider = multilingualProviderReturning({
+      japanese_translator_risk: "[]"
+    });
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator: emptySubAgentOrchestrator(),
+      ocrProvider: fixedOcrProvider("最短3分で審査完了")
+    });
+
+    await pipeline.run({ review });
+
+    expect(provider.calls).toEqual(["japanese_translator_risk"]);
+  });
+
+  it("routes Chinese OCR text through the Chinese translator risk agent", async () => {
+    const provider = multilingualProviderReturning({
+      chinese_translator_risk: "[]"
+    });
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator: emptySubAgentOrchestrator(),
+      ocrProvider: fixedOcrProvider("最低利率 无需审核")
+    });
+
+    await pipeline.run({ review });
+
+    expect(provider.calls).toEqual(["chinese_translator_risk"]);
+  });
+
+  it("routes mixed English Japanese and Chinese OCR text through all multilingual agents and mapping", async () => {
+    const provider = multilingualProviderReturning({
+      english_translator_risk: localizedFindingOutput({
+        segmentId: "seg-en-001",
+        language: "en",
+        originalText: "Guaranteed approval in 3 minutes"
+      }),
+      japanese_translator_risk: localizedFindingOutput({
+        segmentId: "seg-ja-001",
+        language: "ja",
+        originalText: "最短3分で審査完了"
+      }),
+      chinese_translator_risk: localizedFindingOutput({
+        segmentId: "seg-zh-001",
+        language: "zh",
+        originalText: "最低利率 无需审核"
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "다국어 승인 확정 표현",
+            koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+            evidenceQuery: "승인 보장 금융광고",
+            suggestedAction: "reject"
+          },
+          {
+            localizedFindingId: "seg-ja-001",
+            issueType: "MULTILINGUAL_FAST_REVIEW",
+            koreanComplianceCategory: "다국어 심사 속도 표현",
+            koreanComplianceReason: "심사 완료 시점을 단정해 오인 가능성이 있습니다.",
+            evidenceQuery: "심사 완료 단정 금융광고",
+            suggestedAction: "change_request"
+          },
+          {
+            localizedFindingId: "seg-zh-001",
+            issueType: "MULTILINGUAL_NO_SCREENING",
+            koreanComplianceCategory: "다국어 무심사 표현",
+            koreanComplianceReason: "심사 없이 가능하다는 표현은 대출 조건 오인 위험이 있습니다.",
+            evidenceQuery: "무심사 대출 금융광고",
+            suggestedAction: "reject"
+          }
+        ]
+      })
+    });
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator: emptySubAgentOrchestrator(),
+      ocrProvider: fixedOcrProvider(
+        "Guaranteed approval in 3 minutes\n最短3分で審査完了\n最低利率 无需审核"
+      )
+    });
+
+    await pipeline.run({ review });
+
+    expect(provider.calls).toEqual([
+      "english_translator_risk",
+      "japanese_translator_risk",
+      "chinese_translator_risk",
+      "korean_compliance_mapping"
+    ]);
+  });
+
+  it("keeps Korean-only OCR unchanged and skips multilingual model tasks", async () => {
+    const provider = multilingualProviderReturning({});
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator: emptySubAgentOrchestrator(),
+      ocrProvider: fixedOcrProvider("최고 연 5.0% 우대금리는 급여이체 조건 충족 시 제공됩니다.")
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.multilingualSegments).toBeUndefined();
+    expect(provider.calls).not.toEqual(
+      expect.arrayContaining([
+        "english_translator_risk",
+        "japanese_translator_risk",
+        "chinese_translator_risk",
+        "korean_compliance_mapping"
+      ])
+    );
+  });
+
+  it("preserves multilingual source agent context when issues convert to finding candidates", async () => {
+    vi.resetModules();
+    vi.doMock("./issue-generation", () => ({
+      buildAnalysisIssues: vi.fn(() => [
+        {
+          id: "issue-rc-upload-001-multilingual",
+          issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+          riskLevel: "high",
+          title: "대출 승인 보장 표현",
+          targetText: "Guaranteed approval in 3 minutes",
+          targetBbox: [0, 0, 0, 0],
+          sourceAgents: ["korean_compliance_mapping"],
+          suggestedAction: "change_request",
+          status: "open",
+          description: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+          suggestedCopy: "Approval may vary after review.",
+          confidence: 0.81,
+          multilingualContext: {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 내 승인 보장",
+            complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["guaranteed approval"],
+            koreanComplianceCategory: "대출 승인 보장 표현",
+            koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+            evidenceQuery: "대출 승인 보장 금융광고",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다."
+          },
+          evidence: []
+        }
+      ])
+    }));
+    const { createReviewAnalysisPipeline: createPipelineWithMockedIssues } =
+      await import("./review-analysis-pipeline");
+    const pipeline = createPipelineWithMockedIssues({
+      subAgentOrchestrator: emptySubAgentOrchestrator(),
+      ocrProvider: fixedOcrProvider("최고 연 5.0% 우대금리"),
+      ragRetriever: {
+        async retrieve() {
+          return [];
+        }
+      },
+      reranker: {
+        provider: "fixture-reranker",
+        async rerank({ candidates }) {
+          return candidates;
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.findings?.[0]).toMatchObject({
+      agentType: "korean_compliance_mapping",
+      localizedRiskFinding: {
+        segmentId: "seg-en-001",
+        language: "en",
+        originalText: "Guaranteed approval in 3 minutes",
+        riskLevelHint: "high",
+        confidence: 0.81
+      },
+      koreanComplianceMapping: {
+        localizedFindingId: "seg-en-001",
+        issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+        koreanComplianceCategory: "대출 승인 보장 표현",
+        koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+        evidenceQuery: "대출 승인 보장 금융광고",
+        suggestedAction: "change_request"
+      }
+    });
+    vi.doUnmock("./issue-generation");
+  });
 });
+
+function fixedOcrProvider(text: string) {
+  return {
+    async extract(input: { files: typeof review.files }) {
+      return input.files.map((file) => ({
+        fileId: file.id,
+        fileName: file.name,
+        storageKey: file.storageKey,
+        text,
+        confidence: 0.94,
+        provider: "fixture-ocr"
+      }));
+    }
+  };
+}
+
+function emptySubAgentOrchestrator(): ReviewSubAgentOrchestrator {
+  return {
+    run: vi.fn(async () => [])
+  };
+}
+
+function multilingualProviderReturning(
+  outputs: Record<string, string | Error>
+): ModelProvider & { calls: string[] } {
+  const calls: string[] = [];
+
+  return {
+    calls,
+    generateText: vi.fn(async ({ task }) => {
+      calls.push(String(task));
+      const output = outputs[String(task)] ?? "[]";
+
+      if (output instanceof Error) {
+        throw output;
+      }
+
+      return {
+        provider: "deterministic",
+        model: "fixture",
+        text: output
+      };
+    })
+  };
+}
+
+function localizedFindingOutput({
+  segmentId,
+  language,
+  originalText
+}: {
+  segmentId: string;
+  language: "en" | "ja" | "zh";
+  originalText: string;
+}) {
+  return JSON.stringify({
+    findings: [
+      {
+        segmentId,
+        language,
+        originalText,
+        literalTranslation: "번역 문구",
+        complianceMeaning: "외국어 금융 광고 표현에 오인 가능성이 있습니다.",
+        riskCategory: "both",
+        riskSignals: ["approval"],
+        riskLevelHint: "high",
+        suggestedCopyOriginalLanguage: "Review conditions apply.",
+        suggestedCopyKoreanMeaning: "조건에 따라 달라질 수 있습니다.",
+        confidence: 0.86
+      }
+    ]
+  });
+}

@@ -45,6 +45,7 @@ export type ReviewSubAgentOrchestrator = {
     review: ReviewCase;
     extractedDocuments: ExtractedDocument[];
     evidenceCandidates: RagEvidenceCandidate[];
+    priorFindings?: AgentFinding[];
   }): Promise<AgentFinding[]>;
 };
 
@@ -260,10 +261,7 @@ function evidenceScoresForFinding(
     .filter((score): score is number => typeof score === "number");
 }
 
-function findingHasWeakEvidence(
-  finding: AgentFinding,
-  evidenceCandidates: RagEvidenceCandidate[]
-) {
+function findingHasWeakEvidence(finding: AgentFinding, evidenceCandidates: RagEvidenceCandidate[]) {
   const scores = evidenceScoresForFinding(finding, evidenceCandidates);
 
   return scores.length === 0 || scores.some((score) => score < 0.72);
@@ -444,18 +442,17 @@ export function createReviewSubAgentOrchestrator(
 ): ReviewSubAgentOrchestrator {
   return {
     async run(input) {
-      const domainFindings = (
-        await Promise.all(
-          domainSubAgents.map((agent) =>
-            runAgent({
-              provider,
-              agent,
-              input
-            })
-          )
+      const priorFindings = input.priorFindings ?? [];
+      const domainFindings = await Promise.all(
+        domainSubAgents.map((agent) =>
+          runAgent({
+            provider,
+            agent,
+            input
+          })
         )
       );
-      const findings = domainFindings.flat();
+      const findings = [...priorFindings, ...domainFindings.flat()];
 
       if (findings.length === 0) {
         return findings;

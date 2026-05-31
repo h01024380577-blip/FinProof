@@ -18,6 +18,14 @@ import {
 import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import { buildAnalysisIssues } from "./issue-generation";
+import {
+  segmentMultilingualDocuments,
+  type KoreanComplianceMapping,
+  type LocalizedRiskFinding,
+  type MultilingualAgentError,
+  type MultilingualSegment
+} from "./multilingual";
+import { runMultilingualRiskTeam } from "./multilingual-risk-team";
 import { getAnalysisProviderConfig } from "./provider-config";
 import { createReranker, type Reranker } from "./rerank-provider";
 import {
@@ -51,6 +59,8 @@ export type AgentFindingCandidate = {
   suggestedCopy: string;
   confidence: number;
   evidence: RagEvidenceCandidate[];
+  localizedRiskFinding?: LocalizedRiskFinding;
+  koreanComplianceMapping?: KoreanComplianceMapping;
 };
 
 export type AnalysisArtifacts = {
@@ -59,6 +69,10 @@ export type AnalysisArtifacts = {
   evidenceCandidates: RagEvidenceCandidate[];
   agentFindings?: AgentFinding[];
   findings?: AgentFindingCandidate[];
+  multilingualSegments?: MultilingualSegment[];
+  localizedRiskFindings?: LocalizedRiskFinding[];
+  koreanComplianceMappings?: KoreanComplianceMapping[];
+  multilingualAgentErrors?: MultilingualAgentError[];
 };
 
 type OcrExtractInput = {
@@ -557,6 +571,15 @@ function defaultOcrProvider(fileBodyReader?: ReviewFileBodyReader) {
 function agentTypeForIssue(issue: ReviewIssue): AgentType {
   const [sourceAgent] = issue.sourceAgents;
 
+  if (
+    sourceAgent === "english_translator_risk" ||
+    sourceAgent === "japanese_translator_risk" ||
+    sourceAgent === "chinese_translator_risk" ||
+    sourceAgent === "korean_compliance_mapping"
+  ) {
+    return sourceAgent;
+  }
+
   if (sourceAgent === "creative_review") {
     return "creative";
   }
@@ -576,6 +599,8 @@ function agentTypeForIssue(issue: ReviewIssue): AgentType {
 }
 
 function issueToFinding(issue: ReviewIssue): AgentFindingCandidate {
+  const multilingualContext = issue.multilingualContext;
+
   return {
     agentType: agentTypeForIssue(issue),
     issueType: issue.issueType,
@@ -587,7 +612,32 @@ function issueToFinding(issue: ReviewIssue): AgentFindingCandidate {
     suggestedAction: issue.suggestedAction,
     suggestedCopy: issue.suggestedCopy,
     confidence: issue.confidence ?? 0.86,
-    evidence: issue.evidence
+    evidence: issue.evidence,
+    ...(multilingualContext
+      ? {
+          localizedRiskFinding: {
+            segmentId: multilingualContext.segmentId,
+            language: multilingualContext.language,
+            originalText: multilingualContext.originalText,
+            literalTranslation: multilingualContext.literalTranslation,
+            complianceMeaning: multilingualContext.complianceMeaning,
+            riskCategory: multilingualContext.riskCategory,
+            riskSignals: multilingualContext.riskSignals,
+            riskLevelHint: issue.riskLevel,
+            suggestedCopyOriginalLanguage: multilingualContext.suggestedCopyOriginalLanguage,
+            suggestedCopyKoreanMeaning: multilingualContext.suggestedCopyKoreanMeaning,
+            confidence: issue.confidence ?? 0.72
+          },
+          koreanComplianceMapping: {
+            localizedFindingId: multilingualContext.segmentId,
+            issueType: issue.issueType,
+            koreanComplianceCategory: multilingualContext.koreanComplianceCategory,
+            koreanComplianceReason: multilingualContext.koreanComplianceReason,
+            evidenceQuery: multilingualContext.evidenceQuery,
+            suggestedAction: issue.suggestedAction
+          }
+        }
+      : {})
   };
 }
 
@@ -617,16 +667,42 @@ export function createReviewAnalysisPipeline({
           candidates: retrievedCandidates
         })
       ).slice(0, config.rerank.topK);
+      const multilingualSegments = segmentMultilingualDocuments(extractedDocuments);
+      const multilingualResult =
+        multilingualSegments.length > 0
+          ? await runMultilingualRiskTeam({
+              review,
+              segments: multilingualSegments,
+              evidenceCandidates,
+              provider: modelProvider
+            })
+          : {
+              localizedRiskFindings: [],
+              koreanComplianceMappings: [],
+              agentFindings: [],
+              errors: []
+            };
       const agentFindings = await subAgentOrchestrator.run({
         review,
         extractedDocuments,
-        evidenceCandidates
+        evidenceCandidates,
+        priorFindings: multilingualResult.agentFindings
       });
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments,
         evidenceCandidates,
-        ...(agentFindings.length > 0 ? { agentFindings } : {})
+        ...(agentFindings.length > 0 ? { agentFindings } : {}),
+        ...(multilingualSegments.length > 0 ? { multilingualSegments } : {}),
+        ...(multilingualResult.localizedRiskFindings.length > 0
+          ? { localizedRiskFindings: multilingualResult.localizedRiskFindings }
+          : {}),
+        ...(multilingualResult.koreanComplianceMappings.length > 0
+          ? { koreanComplianceMappings: multilingualResult.koreanComplianceMappings }
+          : {}),
+        ...(multilingualResult.errors.length > 0
+          ? { multilingualAgentErrors: multilingualResult.errors }
+          : {})
       };
       const findings = buildAnalysisIssues(review, artifacts).map(issueToFinding);
 
