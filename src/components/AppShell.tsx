@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -59,6 +60,10 @@ function defaultHrefForRole(role: RoleId): string {
 }
 
 function canAccessPath(pathname: string, role: RoleId): boolean {
+  if (pathname === "/") {
+    return true;
+  }
+
   if (role === "requester") {
     return pathname.startsWith("/reviews/new");
   }
@@ -105,18 +110,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [activeRole, defaultHref, pathname, router]);
 
+  if (pathname === "/") {
+    return <ErrorBoundary>{children}</ErrorBoundary>;
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <Link className="brand brand--wordmark" href={defaultHref} aria-label="FinProof home">
           <span className="brand__mark" aria-hidden="true">
-            <ShieldCheck size={20} />
+            <Image src="/finproof-logo.svg" alt="" width={168} height={42} priority />
           </span>
           <span>
             <strong>FinProof</strong>
+            <small>검토는 빠르게, 판단은 정확하게</small>
           </span>
         </Link>
+        <div className="sidebar__slogan" aria-label="FinProof slogan">
+          <span>AI Compliance Review</span>
+          <strong>Review Faster. Decide Smarter.</strong>
+        </div>
 
+        <span className="sidebar__section-label">Console</span>
         <nav className="sidebar__nav" aria-label="Primary navigation">
           {visibleNavigation.map((item) => {
             const Icon = item.icon;
@@ -149,6 +164,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             ))}
           </nav>
+          <div className="topbar__slogan" aria-hidden="true">
+            <ShieldCheck size={15} />
+            <span>검토는 빠르게, 판단은 정확하게</span>
+          </div>
           <div className="topbar__actions">
             <button className="topbar__icon-button" type="button" aria-label="알림" title="알림">
               <Bell size={19} aria-hidden="true" />
