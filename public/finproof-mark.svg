@@ -1,0 +1,17 @@
+<svg width="210" height="210" viewBox="0 0 210 210" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FinProof mark">
+  <defs>
+    <linearGradient id="shield" x1="54" y1="28" x2="160" y2="155" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#031B4E"/>
+      <stop offset="0.58" stop-color="#0A367A"/>
+      <stop offset="1" stop-color="#0E6BDB"/>
+    </linearGradient>
+    <linearGradient id="check" x1="122" y1="123" x2="178" y2="87" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B8A80"/>
+      <stop offset="1" stop-color="#36C2A5"/>
+    </linearGradient>
+  </defs>
+  <path d="M104.4 16L169.1 46.2C173.4 48.2 176.2 52.6 176.2 57.3V88.4L161.1 103.4V66.1C161.1 62.7 159.1 59.6 156 58.2L104.4 34.3L53 58.1C49.9 59.5 47.9 62.6 47.9 66V101C47.9 121.4 59.2 140.2 77.3 149.9L104.4 164.4L118.7 156.7L128.6 169.3L104.4 182L69.9 163.6C46.8 151.3 32.4 127.2 32.4 101V57.3C32.4 52.6 35.2 48.2 39.5 46.2L104.4 16Z" fill="url(#shield)"/>
+  <path d="M78 96.7L96.2 87.2V134.7L78 125.1V96.7Z" fill="#08245C"/>
+  <path d="M107 77.1L127.2 66.5V118.5L107 139V77.1Z" fill="#1465F4"/>
+  <path d="M102.3 146.4L133.7 114.7L176.2 72.3V95.6L119.4 153.8L102.3 146.4Z" fill="url(#check)"/>
+</svg>
