@@ -23,11 +23,11 @@ const capabilityCards = [
     icon: BookOpenCheck
   },
   {
-    title: "내부 정책 추적",
-    label: "내부 정책 추적",
+    title: "규제 변경 추적",
+    label: "규제 추적",
     description: "최신 내부 정책과 체크리스트를 기준으로 검토 맥락을 유지하고 판단 누락을 줄입니다.",
-    href: "/dashboard",
-    cta: "대시보드 보기",
+    href: "/regulatory-sources",
+    cta: "규제 변경 보기",
     icon: ClipboardCheck
   },
   {
@@ -136,7 +136,7 @@ export default function HomePage() {
           <div className="lp-nav-links">
             <Link href="/reviews">심의 콘솔</Link>
             <Link href="/knowledge-documents">지식문서</Link>
-            <Link href="/dashboard">대시보드</Link>
+            <Link href="/regulatory-sources">규제 변경</Link>
           </div>
           <Link className="lp-nav-cta" href="/reviews">
             시작하기
