@@ -2,16 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { JSX } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Bot,
-  ClipboardCheck,
-  FileCheck2,
-  FileSearch,
-  LibraryBig,
-  type LucideIcon
-} from "lucide-react";
 import type { ReviewCase, ReviewSummary } from "@/domain/types";
 import { QueueMetrics, type QueueMetricValues } from "./queue/QueueMetrics";
 import { QueueFilters, type QueueFilterState } from "./queue/QueueFilters";
@@ -72,46 +63,6 @@ const defaultFilterState: QueueFilterState = {
 };
 const queuePageSize = 10;
 
-const consoleModules: Array<{
-  title: string;
-  label: string;
-  description: string;
-  href?: string;
-  icon: LucideIcon;
-}> = [
-  {
-    title: "심의 요청",
-    label: "Review Queue",
-    description: "접수된 금융 광고 심의 건을 상태, 위험도, 담당자 기준으로 관리합니다.",
-    href: "/reviews",
-    icon: ClipboardCheck
-  },
-  {
-    title: "지식문서",
-    label: "Knowledge Base",
-    description: "법령, 내부 정책, 체크리스트를 AI 분석 근거로 등록하고 승인합니다.",
-    href: "/knowledge-documents",
-    icon: LibraryBig
-  },
-  {
-    title: "AI 분석",
-    label: "Analysis",
-    description: "분석 대기 건을 실행해 문구 위험도와 보완 포인트를 자동 정리합니다.",
-    icon: Bot
-  },
-  {
-    title: "근거 검토",
-    label: "Evidence",
-    description: "상품 설명서, 약관, 지식문서의 근거를 함께 확인해 판단합니다.",
-    icon: FileSearch
-  },
-  {
-    title: "보고서",
-    label: "Report",
-    description: "심의 결과와 수정 요청 근거를 최종 보고서 흐름으로 정리합니다.",
-    icon: FileCheck2
-  }
-];
 
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 

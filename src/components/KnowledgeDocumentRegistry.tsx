@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type FormEvent, type JSX } from "react";
 import {
-  BookOpenCheck,
   CheckCircle2,
   Database,
   FileText,
@@ -258,10 +257,6 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
     <main className="knowledge-page">
       <section className="knowledge-page__header">
         <div className="knowledge-page__heading">
-          <span className="section-eyebrow">
-            <BookOpenCheck size={16} aria-hidden="true" />
-            지식문서 관리
-          </span>
           <h1>컴플라이언스 지식문서 관리</h1>
           <p>
             법령, 내부 정책, 체크리스트를 한곳에 정리해 금융 광고 심의의 기준 근거로
@@ -365,9 +360,8 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
         </form>
 
         <section
-          className={`knowledge-list${documents.length >= 8 ? " knowledge-list--bounded" : ""}`}
+          className="knowledge-list"
           aria-label="등록된 지식문서"
-          tabIndex={documents.length >= 8 ? 0 : undefined}
         >
           <div className="knowledge-panel__header knowledge-panel__header--list">
             <div>

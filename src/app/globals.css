@@ -6327,7 +6327,7 @@ a.review-table__row:hover {
 .knowledge-page__header h1 {
   margin: 0;
   color: var(--text);
-  font-size: 2rem;
+  font-size: 1.5rem;
   line-height: var(--line-height-tight);
   word-break: keep-all;
 }
@@ -6382,6 +6382,11 @@ a.review-table__row:hover {
   border-radius: var(--radius-md);
   background: var(--surface);
   box-shadow: var(--shadow-card);
+}
+.knowledge-list {
+  max-height: 80vh;
+  overflow-y: auto;
+  align-content: start;
 }
 .knowledge-panel__header {
   display: flex;
@@ -7019,7 +7024,7 @@ body {
 .knowledge-page__header h1 {
   margin-top: 8px;
   color: var(--text);
-  font-size: clamp(1.75rem, 2.4vw, 2.55rem);
+  font-size: clamp(1.25rem, 1.8vw, 1.75rem);
   font-weight: 900;
   line-height: 1.18;
   word-break: keep-all;
