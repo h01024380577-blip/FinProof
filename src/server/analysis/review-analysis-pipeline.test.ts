@@ -907,6 +907,90 @@ describe("review analysis pipeline", () => {
       }
     });
   });
+
+  it("keeps multilingual prior findings when the real orchestrator returns main findings", async () => {
+    const provider = multilingualProviderReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 내 승인 보장",
+            complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["guaranteed approval"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.88
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "대출 승인 보장 표현",
+            koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+            evidenceQuery: "guaranteed approval",
+            suggestedAction: "change_request"
+          }
+        ]
+      }),
+      main_compliance: JSON.stringify([
+        {
+          title: "팀장 검토: 승인 보장 표현 수정 필요",
+          issueType: "ai_main_compliance",
+          riskLevel: "high",
+          targetText: "Guaranteed approval in 3 minutes",
+          description: "대출 승인 보장 표현은 심사 조건을 오인시킬 수 있습니다.",
+          suggestedAction: "change_request",
+          suggestedCopy: "Approval is subject to review.",
+          evidenceCandidateIds: ["evidence-candidate-file-upload-001-001"],
+          confidence: 0.9
+        }
+      ])
+    });
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      ocrProvider: fixedOcrProvider("Guaranteed approval in 3 minutes")
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.agentFindings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agent: "korean_compliance_mapping",
+          localizedRiskFinding: expect.objectContaining({
+            originalText: "Guaranteed approval in 3 minutes"
+          }),
+          koreanComplianceMapping: expect.objectContaining({
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE"
+          })
+        }),
+        expect.objectContaining({
+          agent: "main",
+          title: "팀장 검토: 승인 보장 표현 수정 필요"
+        })
+      ])
+    );
+    expect(artifacts.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentType: "korean_compliance_mapping",
+          localizedRiskFinding: expect.objectContaining({
+            originalText: "Guaranteed approval in 3 minutes"
+          }),
+          koreanComplianceMapping: expect.objectContaining({
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE"
+          })
+        })
+      ])
+    );
+  });
 });
 
 function fixedOcrProvider(text: string) {

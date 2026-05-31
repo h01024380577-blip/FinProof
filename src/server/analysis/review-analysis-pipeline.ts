@@ -691,6 +691,19 @@ function issueToFinding(
   };
 }
 
+function combineAgentFindings(priorFindings: AgentFinding[], orchestratedFindings: AgentFinding[]) {
+  const seenIds = new Set<string>();
+
+  return [...priorFindings, ...orchestratedFindings].filter((finding) => {
+    if (seenIds.has(finding.id)) {
+      return false;
+    }
+
+    seenIds.add(finding.id);
+    return true;
+  });
+}
+
 export function createReviewAnalysisPipeline({
   fileBodyReader = defaultFileBodyReader(),
   ocrProvider = defaultOcrProvider(fileBodyReader),
@@ -732,12 +745,16 @@ export function createReviewAnalysisPipeline({
               agentFindings: [],
               errors: []
             };
-      const agentFindings = await subAgentOrchestrator.run({
+      const orchestratedFindings = await subAgentOrchestrator.run({
         review,
         extractedDocuments,
         evidenceCandidates,
         priorFindings: multilingualResult.agentFindings
       });
+      const agentFindings = combineAgentFindings(
+        multilingualResult.agentFindings,
+        orchestratedFindings
+      );
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments,
