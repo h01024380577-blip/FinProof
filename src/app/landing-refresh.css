@@ -8,6 +8,7 @@ html, body {
 
 .landing-page {
   width: 100%;
+  overflow-x: clip;
   background: #f5f5f6;
   color: #14181f;
   animation: none;
