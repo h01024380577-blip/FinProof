@@ -384,7 +384,11 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
           {status ? <p className="form-status">{status}</p> : null}
         </form>
 
-        <div className="knowledge-list" aria-label="등록된 지식문서">
+        <section
+          className={`knowledge-list${documents.length >= 8 ? " knowledge-list--bounded" : ""}`}
+          aria-label="등록된 지식문서"
+          tabIndex={documents.length >= 8 ? 0 : undefined}
+        >
           <div className="knowledge-panel__header knowledge-panel__header--list">
             <div>
               <span>Registered Sources</span>
@@ -490,22 +494,27 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
                       type="button"
                       disabled={!!pendingAction}
                       onClick={() => void deleteDocument(document)}
-                      aria-label="삭제"
+                      aria-label={pendingAction === "delete" ? "삭제중" : "삭제"}
                       title="삭제"
                     >
                       {pendingAction === "delete" ? (
-                        <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
+                        <>
+                          <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
+                          삭제중
+                        </>
                       ) : (
-                        <Trash2 size={16} aria-hidden="true" />
+                        <>
+                          <Trash2 size={16} aria-hidden="true" />
+                          삭제
+                        </>
                       )}
-                      삭제
                     </button>
                   </div>
                 </article>
               );
             })
           )}
-        </div>
+        </section>
       </section>
     </main>
   );

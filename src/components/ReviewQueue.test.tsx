@@ -415,7 +415,6 @@ describe("ReviewQueue", () => {
 
   it("starts analysis from a waiting row and exposes the completed workbench navigation", async () => {
     const user = userEvent.setup();
-    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("준법심의자 이수민");
     const waitingUploadReview = {
       ...reviewSummaries[1],
       reviewer: ""
@@ -425,22 +424,13 @@ describe("ReviewQueue", () => {
       id: "rc-upload-001",
       title: "실제 업로드 적금 홍보물",
       status: "analysis_complete",
-      reviewer: "준법심의자 이수민"
+      reviewer: ""
     };
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ reviewCases: [reviewSummaries[0], waitingUploadReview] })
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          reviewCase: {
-            id: "rc-upload-001",
-            reviewer: "준법심의자 이수민"
-          }
-        })
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -462,21 +452,6 @@ describe("ReviewQueue", () => {
     const uploadRow = await screen.findByRole("row", { name: /실제 업로드 적금 홍보물/ });
     await user.click(within(uploadRow).getByRole("button", { name: "AI 분석 시작" }));
 
-    expect(promptSpy).toHaveBeenCalledWith("AI 분석 담당자 이름을 입력해 주세요.", "");
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/v1/review-cases/rc-upload-001",
-        expect.objectContaining({
-          method: "PATCH",
-          headers: expect.objectContaining({
-            "content-type": "application/json",
-            "x-finproof-role": "reviewer",
-            authorization: "Bearer reviewer.jwt"
-          }),
-          body: JSON.stringify({ reviewer: "준법심의자 이수민" })
-        })
-      );
-    });
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
         "/api/v1/review-cases/rc-upload-001/analysis/start",

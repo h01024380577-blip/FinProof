@@ -369,7 +369,7 @@ describe("KnowledgeDocumentRegistry", () => {
 
     expect(await screen.findByText("삭제 완료")).toBeInTheDocument();
     expect(screen.queryByText("예금 광고 심의 지침")).not.toBeInTheDocument();
-    expect(screen.getByText("등록된 지식문서가 없습니다.")).toBeInTheDocument();
+    expect(screen.getByText("아직 등록된 지식문서가 없습니다.")).toBeInTheDocument();
   });
 
   it("renders the registered document list as a bounded scroll region", async () => {
