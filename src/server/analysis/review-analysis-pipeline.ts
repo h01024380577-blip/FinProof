@@ -598,8 +598,82 @@ function agentTypeForIssue(issue: ReviewIssue): AgentType {
   return "main";
 }
 
-function issueToFinding(issue: ReviewIssue): AgentFindingCandidate {
+function sourceFindingForIssue(
+  issue: ReviewIssue,
+  sourceAgentFindings: AgentFinding[] | undefined,
+  reviewId: string
+) {
+  if (!sourceAgentFindings || sourceAgentFindings.length === 0) {
+    return undefined;
+  }
+
+  return (
+    sourceAgentFindings.find((finding) => issue.id === `issue-${reviewId}-${finding.id}`) ??
+    sourceAgentFindings.find(
+      (finding) =>
+        issue.issueType === finding.issueType &&
+        issue.targetText === finding.targetText &&
+        issue.sourceAgents.includes(finding.agent)
+    )
+  );
+}
+
+function multilingualSnapshotsFromIssueContext(issue: ReviewIssue) {
   const multilingualContext = issue.multilingualContext;
+
+  if (!multilingualContext) {
+    return {};
+  }
+
+  return {
+    localizedRiskFinding: {
+      segmentId: multilingualContext.segmentId,
+      language: multilingualContext.language,
+      originalText: multilingualContext.originalText,
+      literalTranslation: multilingualContext.literalTranslation,
+      complianceMeaning: multilingualContext.complianceMeaning,
+      riskCategory: multilingualContext.riskCategory,
+      riskSignals: multilingualContext.riskSignals,
+      riskLevelHint: issue.riskLevel,
+      suggestedCopyOriginalLanguage: multilingualContext.suggestedCopyOriginalLanguage,
+      suggestedCopyKoreanMeaning: multilingualContext.suggestedCopyKoreanMeaning,
+      confidence: issue.confidence ?? 0.72
+    },
+    koreanComplianceMapping: {
+      localizedFindingId: multilingualContext.segmentId,
+      issueType: issue.issueType,
+      koreanComplianceCategory: multilingualContext.koreanComplianceCategory,
+      koreanComplianceReason: multilingualContext.koreanComplianceReason,
+      evidenceQuery: multilingualContext.evidenceQuery,
+      suggestedAction: issue.suggestedAction
+    }
+  };
+}
+
+function multilingualSnapshotsFromSourceFinding(finding: AgentFinding | undefined) {
+  if (!finding?.localizedRiskFinding && !finding?.koreanComplianceMapping) {
+    return {};
+  }
+
+  return {
+    ...(finding.localizedRiskFinding ? { localizedRiskFinding: finding.localizedRiskFinding } : {}),
+    ...(finding.koreanComplianceMapping
+      ? { koreanComplianceMapping: finding.koreanComplianceMapping }
+      : {})
+  };
+}
+
+function issueToFinding(
+  issue: ReviewIssue,
+  sourceAgentFindings: AgentFinding[] | undefined,
+  reviewId: string
+): AgentFindingCandidate {
+  const sourceFinding = sourceFindingForIssue(issue, sourceAgentFindings, reviewId);
+  const sourceSnapshots = multilingualSnapshotsFromSourceFinding(sourceFinding);
+  const multilingualSnapshots =
+    Object.keys(sourceSnapshots).length > 0
+      ? sourceSnapshots
+      : multilingualSnapshotsFromIssueContext(issue);
 
   return {
     agentType: agentTypeForIssue(issue),
@@ -613,31 +687,7 @@ function issueToFinding(issue: ReviewIssue): AgentFindingCandidate {
     suggestedCopy: issue.suggestedCopy,
     confidence: issue.confidence ?? 0.86,
     evidence: issue.evidence,
-    ...(multilingualContext
-      ? {
-          localizedRiskFinding: {
-            segmentId: multilingualContext.segmentId,
-            language: multilingualContext.language,
-            originalText: multilingualContext.originalText,
-            literalTranslation: multilingualContext.literalTranslation,
-            complianceMeaning: multilingualContext.complianceMeaning,
-            riskCategory: multilingualContext.riskCategory,
-            riskSignals: multilingualContext.riskSignals,
-            riskLevelHint: issue.riskLevel,
-            suggestedCopyOriginalLanguage: multilingualContext.suggestedCopyOriginalLanguage,
-            suggestedCopyKoreanMeaning: multilingualContext.suggestedCopyKoreanMeaning,
-            confidence: issue.confidence ?? 0.72
-          },
-          koreanComplianceMapping: {
-            localizedFindingId: multilingualContext.segmentId,
-            issueType: issue.issueType,
-            koreanComplianceCategory: multilingualContext.koreanComplianceCategory,
-            koreanComplianceReason: multilingualContext.koreanComplianceReason,
-            evidenceQuery: multilingualContext.evidenceQuery,
-            suggestedAction: issue.suggestedAction
-          }
-        }
-      : {})
+    ...multilingualSnapshots
   };
 }
 
@@ -704,7 +754,9 @@ export function createReviewAnalysisPipeline({
           ? { multilingualAgentErrors: multilingualResult.errors }
           : {})
       };
-      const findings = buildAnalysisIssues(review, artifacts).map(issueToFinding);
+      const findings = buildAnalysisIssues(review, artifacts).map((issue) =>
+        issueToFinding(issue, agentFindings, review.id)
+      );
 
       return {
         ...artifacts,

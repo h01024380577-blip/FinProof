@@ -857,23 +857,10 @@ describe("review analysis pipeline", () => {
   });
 
   it("preserves multilingual source agent context when issues convert to finding candidates", async () => {
-    vi.resetModules();
-    vi.doMock("./issue-generation", () => ({
-      buildAnalysisIssues: vi.fn(() => [
-        {
-          id: "issue-rc-upload-001-multilingual",
-          issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
-          riskLevel: "high",
-          title: "대출 승인 보장 표현",
-          targetText: "Guaranteed approval in 3 minutes",
-          targetBbox: [0, 0, 0, 0],
-          sourceAgents: ["korean_compliance_mapping"],
-          suggestedAction: "change_request",
-          status: "open",
-          description: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
-          suggestedCopy: "Approval may vary after review.",
-          confidence: 0.81,
-          multilingualContext: {
+    const provider = multilingualProviderReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
             segmentId: "seg-en-001",
             language: "en",
             originalText: "Guaranteed approval in 3 minutes",
@@ -881,55 +868,44 @@ describe("review analysis pipeline", () => {
             complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
             riskCategory: "both",
             riskSignals: ["guaranteed approval"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.81
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
             koreanComplianceCategory: "대출 승인 보장 표현",
             koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
             evidenceQuery: "대출 승인 보장 금융광고",
-            suggestedCopyOriginalLanguage: "Approval may vary after review.",
-            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다."
-          },
-          evidence: []
-        }
-      ])
-    }));
-    const { createReviewAnalysisPipeline: createPipelineWithMockedIssues } =
-      await import("./review-analysis-pipeline");
-    const pipeline = createPipelineWithMockedIssues({
-      subAgentOrchestrator: emptySubAgentOrchestrator(),
-      ocrProvider: fixedOcrProvider("최고 연 5.0% 우대금리"),
-      ragRetriever: {
-        async retrieve() {
-          return [];
-        }
-      },
-      reranker: {
-        provider: "fixture-reranker",
-        async rerank({ candidates }) {
-          return candidates;
-        }
-      }
+            suggestedAction: "change_request"
+          }
+        ]
+      })
+    });
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator: passthroughPriorFindingOrchestrator(),
+      ocrProvider: fixedOcrProvider("Guaranteed approval in 3 minutes")
     });
 
     const artifacts = await pipeline.run({ review });
 
     expect(artifacts.findings?.[0]).toMatchObject({
       agentType: "korean_compliance_mapping",
+      targetText: "Guaranteed approval in 3 minutes",
       localizedRiskFinding: {
-        segmentId: "seg-en-001",
-        language: "en",
-        originalText: "Guaranteed approval in 3 minutes",
-        riskLevelHint: "high",
-        confidence: 0.81
+        originalText: "Guaranteed approval in 3 minutes"
       },
       koreanComplianceMapping: {
-        localizedFindingId: "seg-en-001",
-        issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
-        koreanComplianceCategory: "대출 승인 보장 표현",
-        koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
-        evidenceQuery: "대출 승인 보장 금융광고",
-        suggestedAction: "change_request"
+        issueType: "MULTILINGUAL_APPROVAL_GUARANTEE"
       }
     });
-    vi.doUnmock("./issue-generation");
   });
 });
 
@@ -951,6 +927,12 @@ function fixedOcrProvider(text: string) {
 function emptySubAgentOrchestrator(): ReviewSubAgentOrchestrator {
   return {
     run: vi.fn(async () => [])
+  };
+}
+
+function passthroughPriorFindingOrchestrator(): ReviewSubAgentOrchestrator {
+  return {
+    run: vi.fn(async ({ priorFindings = [] }) => priorFindings)
   };
 }
 
