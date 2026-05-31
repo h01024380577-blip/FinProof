@@ -14,6 +14,10 @@ export type ModelRouteTask =
   | "regulation_agent"
   | "internal_policy_agent"
   | "case_search"
+  | "english_translator_risk"
+  | "japanese_translator_risk"
+  | "chinese_translator_risk"
+  | "korean_compliance_mapping"
   | "retrieval_query"
   | "evidence_verification"
   | "rag_chat"
@@ -225,6 +229,10 @@ export function selectModelRoute(
     return context.sensitiveOutput
       ? textRoute(task, "highest_precision_text", config, "sensitive_output")
       : textRoute(task, "escalation_text", config, "lead_agent_final_judgment");
+  }
+
+  if (task === "korean_compliance_mapping") {
+    return textRoute(task, "escalation_text", config, "korean_compliance_mapping");
   }
 
   if (task === "draft_quality_review") {

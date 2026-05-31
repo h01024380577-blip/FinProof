@@ -78,4 +78,37 @@ describe("model router", () => {
       escalationReason: "high_recall_required"
     });
   });
+
+  it("routes language translator risk agents to default text unless confidence is low", () => {
+    for (const task of [
+      "english_translator_risk",
+      "japanese_translator_risk",
+      "chinese_translator_risk"
+    ] as const) {
+      expect(selectModelRoute(task, {})).toEqual({
+        task,
+        provider: "openai",
+        model: "gpt-5-mini",
+        modelTier: "default_text"
+      });
+    }
+
+    expect(selectModelRoute("japanese_translator_risk", { lowOcrConfidence: true })).toEqual({
+      task: "japanese_translator_risk",
+      provider: "openai",
+      model: "gpt-5.4",
+      modelTier: "escalation_text",
+      escalationReason: "low_ocr_confidence"
+    });
+  });
+
+  it("routes Korean compliance mapping to escalation text by default", () => {
+    expect(selectModelRoute("korean_compliance_mapping", {})).toEqual({
+      task: "korean_compliance_mapping",
+      provider: "openai",
+      model: "gpt-5.4",
+      modelTier: "escalation_text",
+      escalationReason: "korean_compliance_mapping"
+    });
+  });
 });

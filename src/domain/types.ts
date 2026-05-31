@@ -56,6 +56,21 @@ export type Evidence = {
   relevanceScore: number;
 };
 
+export type MultilingualIssueContext = {
+  segmentId: string;
+  language: "en" | "ja" | "zh";
+  originalText: string;
+  literalTranslation: string;
+  complianceMeaning: string;
+  riskCategory: "expression_risk" | "compliance_risk" | "both";
+  riskSignals: string[];
+  koreanComplianceCategory: string;
+  koreanComplianceReason: string;
+  evidenceQuery: string;
+  suggestedCopyOriginalLanguage: string;
+  suggestedCopyKoreanMeaning: string;
+};
+
 export type ReviewIssue = {
   id: string;
   issueType: string;
@@ -75,6 +90,7 @@ export type ReviewIssue = {
   status: "open" | "reviewed" | "resolved" | "dismissed";
   description: string;
   suggestedCopy: string;
+  multilingualContext?: MultilingualIssueContext;
   evidence: Evidence[];
 };
 
@@ -166,7 +182,11 @@ export type AgentType =
   | "product_terms"
   | "regulation"
   | "internal_policy"
-  | "case_search";
+  | "case_search"
+  | "english_translator_risk"
+  | "japanese_translator_risk"
+  | "chinese_translator_risk"
+  | "korean_compliance_mapping";
 
 export type AgentRun = {
   id: string;

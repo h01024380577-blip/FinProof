@@ -166,7 +166,11 @@ export const AgentType = {
   product_terms: 'product_terms',
   regulation: 'regulation',
   internal_policy: 'internal_policy',
-  case_search: 'case_search'
+  case_search: 'case_search',
+  english_translator_risk: 'english_translator_risk',
+  japanese_translator_risk: 'japanese_translator_risk',
+  chinese_translator_risk: 'chinese_translator_risk',
+  korean_compliance_mapping: 'korean_compliance_mapping'
 } as const
 
 export type AgentType = (typeof AgentType)[keyof typeof AgentType]
