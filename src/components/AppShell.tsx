@@ -123,7 +123,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </span>
           <span>
             <strong>FinProof</strong>
-            <small>검토는 빠르게, 판단은 정확하게</small>
           </span>
         </Link>
         <nav className="sidebar__nav" aria-label="Primary navigation">
@@ -160,7 +159,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="topbar__slogan" aria-hidden="true">
             <ShieldCheck size={15} />
-            <span>검토는 빠르게, 판단은 정확하게</span>
           </div>
           <div className="topbar__actions">
             <button className="topbar__icon-button" type="button" aria-label="알림" title="알림">

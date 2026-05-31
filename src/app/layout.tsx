@@ -7,7 +7,7 @@ import "./landing-refresh.css";
 
 export const metadata: Metadata = {
   title: "FinProof Agent",
-  description: "검토는 빠르게, 판단은 정확하게. Review Faster. Decide Smarter."
+  description: "AI 기반 금융 광고 심의 플랫폼"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
