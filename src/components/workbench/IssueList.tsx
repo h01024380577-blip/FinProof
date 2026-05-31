@@ -15,7 +15,7 @@ function displayLength(value: string): number {
 function issueCardStyle(issue: ReviewIssue): CSSProperties {
   const titleLines = Math.max(1, Math.ceil(displayLength(issue.title) / 23));
   const excerptLines = Math.max(1, Math.ceil(displayLength(issue.targetText) / 28));
-  const minHeight = Math.min(188, Math.max(108, 50 + titleLines * 20 + excerptLines * 18));
+  const minHeight = Math.min(160, Math.max(108, 50 + titleLines * 20 + excerptLines * 18));
 
   return {
     "--issue-card-min-height": `${minHeight}px`

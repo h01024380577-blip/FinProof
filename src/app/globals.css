@@ -4714,6 +4714,7 @@ a.review-table__row:hover {
   min-width: 0;
   height: auto;
   min-height: var(--issue-card-min-height, 132px);
+  max-height: 220px;
   padding: 12px 14px 14px;
   border: 1px solid var(--line);
   border-radius: 2px;
@@ -4722,7 +4723,8 @@ a.review-table__row:hover {
   text-align: left;
   white-space: normal;
   cursor: pointer;
-  overflow: visible;
+  overflow: hidden;
+  overflow-y: auto;
 }
 
 .issue-card__content {
@@ -11208,9 +11210,11 @@ body:has(.landing-page) {
   display: block;
   min-width: 0;
   max-width: 100%;
+  font-size: 0.82rem;
+  font-weight: 760;
   overflow-wrap: anywhere;
   word-break: break-word;
-  line-height: 1.28;
+  line-height: 1.34;
 }
 
 .material-row {
