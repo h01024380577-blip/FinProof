@@ -209,4 +209,64 @@ describe("runMultilingualRiskTeam", () => {
       suggestedAction: "hold"
     });
   });
+
+  it("omits evidence ids when candidates are below relevance threshold", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify([
+        {
+          segmentId: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes",
+          literalTranslation: "3분 내 승인 보장",
+          complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+          riskCategory: "both",
+          riskSignals: ["guaranteed approval"],
+          riskLevelHint: "high",
+          suggestedCopyOriginalLanguage: "Approval may vary after review.",
+          suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+          confidence: 0.88
+        }
+      ]),
+      korean_compliance_mapping: JSON.stringify([
+        {
+          localizedFindingId: "seg-en-001",
+          issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+          koreanComplianceCategory: "대출 승인 보장 표현",
+          koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+          evidenceQuery: "대출 승인 보장 금융광고",
+          suggestedAction: "reject"
+        }
+      ])
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes"
+        })
+      ],
+      evidenceCandidates: [
+        {
+          id: "ev-low-001",
+          sourceType: "law",
+          title: "낮은 관련도 근거",
+          quoteSummary: "직접 관련성이 낮은 근거입니다.",
+          relevanceScore: 0.71
+        },
+        {
+          id: "ev-low-002",
+          sourceType: "internal_policy",
+          title: "낮은 관련도 내부 기준",
+          quoteSummary: "직접 관련성이 낮은 내부 기준입니다.",
+          relevanceScore: 0.42
+        }
+      ],
+      provider
+    });
+
+    expect(result.agentFindings[0]?.evidenceCandidateIds).toEqual([]);
+  });
 });

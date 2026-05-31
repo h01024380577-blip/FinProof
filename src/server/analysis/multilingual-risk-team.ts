@@ -279,10 +279,8 @@ function normalizeMapping(
 }
 
 function topEvidenceIds(evidenceCandidates: RagEvidenceCandidate[]) {
-  const preferred = evidenceCandidates.filter((candidate) => candidate.relevanceScore >= 0.72);
-  const candidates = preferred.length > 0 ? preferred : evidenceCandidates;
-
-  return candidates
+  return evidenceCandidates
+    .filter((candidate) => candidate.relevanceScore >= 0.72)
     .slice()
     .sort((left, right) => right.relevanceScore - left.relevanceScore)
     .slice(0, 3)
