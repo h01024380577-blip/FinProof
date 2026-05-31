@@ -1,0 +1,212 @@
+import type { ReviewCase } from "@/domain/types";
+import type { ModelProvider } from "@/server/ai/model-provider";
+import { runMultilingualRiskTeam } from "./multilingual-risk-team";
+import type { MultilingualSegment } from "./multilingual";
+import type { RagEvidenceCandidate } from "./review-analysis-pipeline";
+
+const review: ReviewCase = {
+  id: "rc-multilingual-001",
+  title: "다국어 대출 광고",
+  affiliate: "광주은행",
+  productType: "loan",
+  channelType: ["poster"],
+  plannedPublishDate: "2026-06-20",
+  status: "analysis_waiting",
+  highestRiskLevel: "info",
+  requester: "업로드 요청자",
+  reviewer: "준법심의자",
+  promotionalCopy: "Guaranteed approval in 3 minutes",
+  disclosure: "심사 결과에 따라 달라질 수 있음",
+  productDescription: "대출은 내부 심사 기준에 따라 승인됩니다.",
+  missingMaterials: [],
+  files: [],
+  issues: [],
+  expectedDraft: "검토 필요"
+};
+
+const evidenceCandidates: RagEvidenceCandidate[] = [
+  {
+    id: "ev-law-001",
+    sourceType: "law",
+    documentId: "law-001",
+    title: "금융광고 심사 기준",
+    quoteSummary: "대출 승인 확정 표현은 소비자를 오인시킬 수 있습니다.",
+    relevanceScore: 0.91
+  }
+];
+
+function segment(
+  input: Partial<MultilingualSegment> &
+    Pick<MultilingualSegment, "id" | "language" | "originalText">
+): MultilingualSegment {
+  return {
+    normalizedText: input.originalText,
+    confidence: 0.94,
+    ...input
+  };
+}
+
+function providerReturning(
+  outputs: Record<string, string | Error>
+): ModelProvider & { calls: string[] } {
+  const calls: string[] = [];
+
+  return {
+    calls,
+    generateText: vi.fn(async ({ task }) => {
+      calls.push(String(task));
+      const output = outputs[String(task)] ?? "[]";
+
+      if (output instanceof Error) {
+        throw output;
+      }
+
+      return {
+        provider: "deterministic",
+        model: "fixture",
+        text: output
+      };
+    })
+  };
+}
+
+describe("runMultilingualRiskTeam", () => {
+  it("calls only detected language agents and maps localized findings", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "model should not override this",
+            literalTranslation: "3분 내 승인 보장",
+            complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["guaranteed approval"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage: "Approval may vary after review.",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.88
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "대출 승인 보장 표현",
+            koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+            evidenceQuery: "대출 승인 보장 금융광고",
+            suggestedAction: "reject"
+          }
+        ]
+      })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes"
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(provider.calls).toEqual(["english_translator_risk", "korean_compliance_mapping"]);
+    expect(result.localizedRiskFindings).toHaveLength(1);
+    expect(result.koreanComplianceMappings).toHaveLength(1);
+    expect(result.agentFindings[0]).toMatchObject({
+      agent: "korean_compliance_mapping",
+      issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+      targetText: "Guaranteed approval in 3 minutes",
+      suggestedCopy: "Approval may vary after review."
+    });
+  });
+
+  it("continues when one language agent fails", async () => {
+    const provider = providerReturning({
+      japanese_translator_risk: new Error("model timeout"),
+      chinese_translator_risk: JSON.stringify({ findings: [] })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-ja-001",
+          language: "ja",
+          originalText: "最短3分で審査完了"
+        }),
+        segment({
+          id: "seg-zh-001",
+          language: "zh",
+          originalText: "最低利率 无需审核"
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(result.errors).toEqual([
+      {
+        agentType: "japanese_translator_risk",
+        language: "ja",
+        message: "model timeout"
+      }
+    ]);
+  });
+
+  it("turns low confidence localized risk into a caution review-needed finding", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify([
+        {
+          segmentId: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes",
+          literalTranslation: "3분 내 승인 보장",
+          complianceMeaning: "대출 승인 여부가 확정된 것처럼 표현합니다.",
+          riskCategory: "both",
+          riskSignals: ["guaranteed approval"],
+          riskLevelHint: "reject_recommended",
+          suggestedCopyOriginalLanguage: "Approval may vary after review.",
+          suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+          confidence: 0.58
+        }
+      ]),
+      korean_compliance_mapping: JSON.stringify([
+        {
+          localizedFindingId: "seg-en-001",
+          issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+          koreanComplianceCategory: "대출 승인 보장 표현",
+          koreanComplianceReason: "심사 전 승인 확정 표현은 오인 가능성이 큽니다.",
+          evidenceQuery: "대출 승인 보장 금융광고",
+          suggestedAction: "hold"
+        }
+      ])
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes"
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(result.agentFindings[0]).toMatchObject({
+      riskLevel: "caution",
+      title: "원문 검토 필요",
+      suggestedAction: "hold"
+    });
+  });
+});

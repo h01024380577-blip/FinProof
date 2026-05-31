@@ -1,6 +1,7 @@
 import type { RiskLevel, ReviewCase, ReviewIssue } from "@/domain/types";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
 import type { ModelRouteContext, ModelRouteTask } from "@/server/ai/model-router";
+import type { KoreanComplianceMapping, LocalizedRiskFinding } from "./multilingual";
 import type { ExtractedDocument, RagEvidenceCandidate } from "./review-analysis-pipeline";
 
 export type ReviewSubAgentId =
@@ -10,7 +11,11 @@ export type ReviewSubAgentId =
   | "regulation"
   | "internal_policy"
   | "evidence_verification"
-  | "case_search";
+  | "case_search"
+  | "english_translator_risk"
+  | "japanese_translator_risk"
+  | "chinese_translator_risk"
+  | "korean_compliance_mapping";
 
 export type AgentFinding = {
   id: string;
@@ -25,6 +30,8 @@ export type AgentFinding = {
   evidenceCandidateIds: string[];
   confidence: number;
   rawModelOutput?: string;
+  localizedRiskFinding?: LocalizedRiskFinding;
+  koreanComplianceMapping?: KoreanComplianceMapping;
 };
 
 type ReviewSubAgentDefinition = {
@@ -312,7 +319,9 @@ function compactPriorFindings(findings: AgentFinding[]) {
     suggestedAction: finding.suggestedAction,
     suggestedCopy: finding.suggestedCopy,
     evidenceCandidateIds: finding.evidenceCandidateIds,
-    confidence: finding.confidence
+    confidence: finding.confidence,
+    localizedRiskFinding: finding.localizedRiskFinding,
+    koreanComplianceMapping: finding.koreanComplianceMapping
   }));
 }
 
