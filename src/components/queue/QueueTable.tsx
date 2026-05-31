@@ -187,16 +187,7 @@ export function QueueTable({
             key={review.id}
             className="review-table__row"
             role="row"
-            tabIndex={openable ? 0 : -1}
             aria-label={`${review.title}`}
-            data-clickable={openable}
-            onClick={() => openable && onOpenReview(review.id)}
-            onKeyDown={(event) => {
-              if (openable && (event.key === "Enter" || event.key === " ")) {
-                event.preventDefault();
-                onOpenReview(review.id);
-              }
-            }}
           >
             <span className="queue-id" role="cell">
               {review.id}
@@ -260,7 +251,22 @@ export function QueueTable({
                 </button>
               ) : null}
               {!waiting && review.status === "analysis_complete" ? (
-                <span className="queue-row-note">분석 완료</span>
+                <button
+                  className="button button--small button--primary"
+                  type="button"
+                  onClick={() => onOpenReview(review.id)}
+                >
+                  검토하기
+                </button>
+              ) : null}
+              {!waiting && canViewAudit && review.status !== "analysis_complete" ? (
+                <button
+                  className="button button--small"
+                  type="button"
+                  onClick={() => onOpenReview(review.id)}
+                >
+                  상세보기
+                </button>
               ) : null}
               {!waiting && !openable ? (
                 <span className="queue-row-note">{statusLabels[review.status]}</span>
