@@ -1,0 +1,19 @@
+심의 패키지 구성 안내
+
+패키지명: 미래론 모바일 신용대출 홍보물 심의 패키지
+광고주: Mirae Loan
+상품유형: loan
+광고채널: 모바일 앱 배너, 온라인 포스터, SNS 이미지
+게시예정일: 2026-06-18
+
+포함 파일:
+1. poster_mirae_loan.png
+2. copy_draft_mirae_loan.txt
+3. product_description_mirae_loan.txt
+4. rate_table_mirae_loan.csv
+5. terms_mirae_loan.txt
+6. internal_checklist_mirae_loan.txt
+
+요청 메모:
+첨부 포스터는 신규 대출 상품 홍보 시안입니다.
+모바일 앱 첫 화면, SNS 카드, 랜딩페이지 상단 배너에 동일한 핵심 문구를 사용할 예정입니다.

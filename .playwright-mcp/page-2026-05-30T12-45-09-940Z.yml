@@ -1,0 +1,175 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - link "FinProof home" [ref=e4] [cursor=pointer]:
+        - /url: /reviews
+        - img [ref=e6]
+        - strong [ref=e10]: FinProof
+      - navigation "Primary navigation" [ref=e11]:
+        - link "심의 대기 목록" [ref=e12] [cursor=pointer]:
+          - /url: /reviews
+          - img [ref=e13]
+          - generic [ref=e16]: 심의 대기 목록
+        - link "심의 이력" [ref=e17] [cursor=pointer]:
+          - /url: /reviews?scope=history
+          - img [ref=e18]
+          - generic [ref=e22]: 심의 이력
+        - link "지식문서 등록" [ref=e23] [cursor=pointer]:
+          - /url: /knowledge-documents
+          - img [ref=e24]
+          - generic [ref=e27]: 지식문서 등록
+    - generic [ref=e28]:
+      - banner [ref=e29]:
+        - navigation "Breadcrumb" [ref=e30]:
+          - generic [ref=e32]: 심의 대기 목록
+          - generic [ref=e33]:
+            - img [ref=e34]
+            - generic [ref=e36]: rc-demo-loan-001
+        - generic [ref=e37]:
+          - button "알림" [ref=e38] [cursor=pointer]:
+            - img [ref=e39]
+          - button "설정" [ref=e42] [cursor=pointer]:
+            - img [ref=e43]
+          - button "사용자 메뉴" [ref=e46] [cursor=pointer]:
+            - img [ref=e47]
+          - generic "Mock user role" [ref=e52]:
+            - paragraph [ref=e53]:
+              - generic [ref=e54]: "현재 역할: 심의자"
+            - generic [ref=e55]:
+              - button "심의자" [pressed] [ref=e56] [cursor=pointer]
+              - button "요청자" [ref=e57] [cursor=pointer]
+      - generic [ref=e63]:
+        - generic [ref=e64]:
+          - generic [ref=e65]:
+            - paragraph [ref=e66]: rc-demo-loan-001
+            - heading "최저금리 대출 홍보물 심의" [level=2] [ref=e67]
+            - paragraph [ref=e68]:
+              - text: 반려
+              - generic [ref=e70]: "|"
+              - text: 대출
+              - generic [ref=e71]: "|"
+              - generic [ref=e72]:
+                - img [ref=e73]
+                - text: "최고 위험도: 반려 권고"
+              - generic [ref=e75]: "|"
+              - text: "담당: 허지원"
+              - generic [ref=e76]: "|"
+              - text: "마감: 2026-06-12"
+          - group "최종 심의 결정" [ref=e77]:
+            - generic [ref=e78]: 최종 심의 결정
+            - button "승인" [disabled] [ref=e79]:
+              - img [ref=e80]
+              - text: 승인
+            - button "반려" [disabled] [ref=e83]:
+              - img [ref=e84]
+              - text: 반려
+        - generic [ref=e88]:
+          - complementary [ref=e89]:
+            - heading "이슈 목록 (3)" [level=3] [ref=e91]
+            - generic "Risk filters" [ref=e92]:
+              - button "전체" [ref=e93] [cursor=pointer]
+              - button "반려 권고" [ref=e94] [cursor=pointer]
+              - button "위험" [ref=e95] [cursor=pointer]
+              - button "주의" [ref=e96] [cursor=pointer]
+              - button "참고" [ref=e97] [cursor=pointer]
+            - generic "이슈 목록 스크롤 영역" [ref=e98]:
+              - button "#1 승인 보장 오인 표현 누구나 빠르게 승인" [ref=e99] [cursor=pointer]:
+                - generic [ref=e100]:
+                  - generic [ref=e102]: "#1"
+                  - strong [ref=e103]: 승인 보장 오인 표현
+                  - generic [ref=e104]: 누구나 빠르게 승인
+              - button "#2 심사 조건 고지 필요 오늘 바로 한도 확인" [ref=e105] [cursor=pointer]:
+                - generic [ref=e106]:
+                  - generic [ref=e108]: "#2"
+                  - strong [ref=e109]: 심사 조건 고지 필요
+                  - generic [ref=e110]: 오늘 바로 한도 확인
+              - button "#3 최저금리 조건 미표시 최저금리" [ref=e111] [cursor=pointer]:
+                - generic [ref=e112]:
+                  - generic [ref=e114]: "#3"
+                  - strong [ref=e115]: 최저금리 조건 미표시
+                  - generic [ref=e116]: 최저금리
+          - generic [ref=e117]:
+            - generic "문서 보기 도구" [ref=e118]:
+              - button "축소" [ref=e119] [cursor=pointer]:
+                - img [ref=e120]
+              - generic [ref=e121]: 100%
+              - button "확대" [ref=e122] [cursor=pointer]:
+                - img [ref=e123]
+              - generic [ref=e124]: 1 / 1
+              - button "전체 화면" [ref=e125] [cursor=pointer]:
+                - img [ref=e126]
+            - generic [ref=e131]:
+              - strong [ref=e132]: FinProof Bank
+              - generic [ref=e133]: 누구나 빠르게 승인 가능한 최저금리 대출 모바일로 3분 신청, 오늘 바로 한도 확인!
+              - paragraph [ref=e134]: 대출 가능 여부와 적용 금리는 개인 신용평가 및 은행 내부 심사 기준에 따라 달라질 수 있습니다.
+              - button "1" [ref=e135] [cursor=pointer]:
+                - generic [ref=e136]: "1"
+              - button "2" [ref=e137] [cursor=pointer]:
+                - generic [ref=e138]: "2"
+              - button "3" [ref=e139] [cursor=pointer]:
+                - generic [ref=e140]: "3"
+          - complementary [ref=e141]:
+            - generic [ref=e142]:
+              - tablist "이슈 상세 탭" [ref=e143]:
+                - tab "체크리스트" [selected] [ref=e144] [cursor=pointer]
+                - tab "근거 자료" [ref=e145] [cursor=pointer]
+                - tab "의견서" [ref=e146] [cursor=pointer]
+              - tabpanel "체크리스트" [ref=e147]:
+                - generic [ref=e148]:
+                  - generic [ref=e149]: 반려 권고
+                  - heading "승인 보장 오인 표현" [level=4] [ref=e150]
+                  - paragraph [ref=e151]: 대출 승인이 보장되는 것처럼 오인될 수 있습니다.
+                  - generic [ref=e152]:
+                    - generic [ref=e153]: 수정 제안
+                    - paragraph [ref=e154]: 심사 기준 충족 시 대출 신청 가능
+        - region "Workbench bottom drawer" [ref=e155]:
+          - button "드로어 접기" [ref=e157] [cursor=pointer]:
+            - img [ref=e158]
+          - generic [ref=e160]:
+            - tablist "Workbench drawer tabs" [ref=e161]:
+              - tab "의견 초안" [selected] [ref=e162] [cursor=pointer]
+              - tab "파일" [ref=e163] [cursor=pointer]
+            - tabpanel "의견 초안" [ref=e164]:
+              - generic [ref=e165]:
+                - generic [ref=e166]:
+                  - generic [ref=e167]:
+                    - paragraph [ref=e168]: Decision Draft
+                    - heading "수정 요청 의견 초안" [level=3] [ref=e169]
+                  - generic [ref=e170]:
+                    - button "의견 초안 저장" [ref=e171] [cursor=pointer]:
+                      - img [ref=e172]
+                    - button "리포트 다운로드" [ref=e176] [cursor=pointer]:
+                      - img [ref=e177]
+                    - button "초안 생성" [ref=e180] [cursor=pointer]:
+                      - img [ref=e181]
+                      - text: 초안 생성
+                - textbox "Opinion draft" [ref=e185]: "\"누구나 승인\" 표현은 심사 결과와 무관하게 대출 승인이 보장되는 것처럼 오인될 수 있어 수정이 필요합니다. 또한 \"최저금리\" 표현은 적용 조건과 산정 기준을 함께 표시해야 하므로, 심사 조건 및 금리 적용 조건을 명확히 고지하는 방향으로 수정 요청합니다."
+        - generic:
+          - dialog "근거 채팅" [ref=e190]:
+            - banner [ref=e191]:
+              - img [ref=e193]
+              - generic [ref=e195]:
+                - paragraph [ref=e196]: FinProof Agent
+                - heading "근거 채팅" [level=2] [ref=e197]
+            - generic [ref=e198]:
+              - img [ref=e200]
+              - generic [ref=e202]:
+                - strong [ref=e203]: 안녕하세요, FinProof Agent입니다.
+                - paragraph [ref=e204]: 선택한 이슈와 승인 지식문서를 기준으로 답변합니다.
+            - generic [ref=e206]:
+              - generic "채팅 대화" [ref=e207]:
+                - generic [ref=e208]:
+                  - strong [ref=e209]: 선택된 이슈의 근거를 기준으로 답변합니다.
+                  - generic [ref=e210]: 입력창의 회색 예시처럼 질문을 작성하면 근거 문서와 이슈 내용을 함께 참조합니다.
+              - form "채팅 입력" [ref=e211]:
+                - generic [ref=e212]: RAG question
+                - textbox "RAG question" [ref=e213]:
+                  - /placeholder: "예: 최고금리 조건을 승인 가능하게 표시하려면?"
+                - button "질문 보내기" [disabled] [ref=e214]:
+                  - img [ref=e215]
+            - paragraph [ref=e218]:
+              - img [ref=e219]
+              - text: 평일 오전 10:00부터 운영해요
+          - button "근거 채팅 닫기" [active] [ref=e222] [cursor=pointer]:
+            - img [ref=e223]
+  - alert [ref=e62]

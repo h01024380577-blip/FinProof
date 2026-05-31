@@ -12,7 +12,7 @@ import { LandingServiceFlow } from "@/components/LandingServiceFlow";
 const capabilityCards = [
   {
     title: "근거 문서 연결",
-    label: "Evidence workspace",
+    label: "근거 연결",
     description: "법령, 사내 기준, 상품자료, 과거 심의 사례를 심의 이슈와 같은 화면에서 연결합니다.",
     helper: "지식문서 관리하기",
     href: "/knowledge-documents",
@@ -20,7 +20,7 @@ const capabilityCards = [
   },
   {
     title: "내부 정책 추적",
-    label: "Policy control",
+    label: "정책 관리",
     description: "최신 내부 정책과 체크리스트를 기준으로 검토 맥락을 유지하고 판단 누락을 줄입니다.",
     helper: "대시보드 보기",
     href: "/dashboard",
@@ -28,7 +28,7 @@ const capabilityCards = [
   },
   {
     title: "심의 이슈 관리",
-    label: "Issue review",
+    label: "이슈 검토",
     description: "과장, 오인, 필수 고지 누락 가능성이 있는 표현을 분류하고 후속 조치까지 관리합니다.",
     helper: "심의 콘솔 열기",
     href: "/reviews",
@@ -83,9 +83,6 @@ export default function HomePage() {
             <span>금융 광고 심의를</span>
             <span>한 화면에서 끝까지</span>
           </h1>
-          <p className="landing-english animate-fade-up" style={{ animationDelay: "260ms" }}>
-            Review Faster. Decide Smarter.
-          </p>
           <p className="landing-subtitle animate-fade-up" style={{ animationDelay: "380ms" }}>
             심의 요청, AI 이슈 분석, 근거 문서 연결, 보고서 정리를 하나의 워크스페이스에서 이어서
             처리하세요.
@@ -149,7 +146,6 @@ export default function HomePage() {
         <span className="landing-final-cta__glow landing-final-cta__glow--blue" aria-hidden="true" />
         <span className="landing-final-cta__glow landing-final-cta__glow--cyan" aria-hidden="true" />
         <div className="landing-final-cta__content">
-          <span className="landing-final-cta__eyebrow">Start FinProof</span>
           <h2 id="landing-final-title">스마트한 심의 업무를 위한 AI 컴플라이언스 어시스턴트.</h2>
           <p>
             근거 문서와 내부 정책, 심의 이슈를 한 흐름으로 연결해 검토자는 더 빠르게 확인하고

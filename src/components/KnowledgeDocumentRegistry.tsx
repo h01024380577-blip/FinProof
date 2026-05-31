@@ -260,14 +260,13 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
         <div className="knowledge-page__heading">
           <span className="section-eyebrow">
             <BookOpenCheck size={16} aria-hidden="true" />
-            Knowledge Registry
+            지식문서 관리
           </span>
           <h1>컴플라이언스 지식문서 관리</h1>
           <p>
             법령, 내부 정책, 체크리스트를 한곳에 정리해 금융 광고 심의의 기준 근거로
             사용할 수 있습니다.
           </p>
-          <p className="knowledge-page__slogan">Review Faster. Decide Smarter.</p>
         </div>
         <div className="knowledge-page__metrics" aria-label="지식문서 등록 현황">
           <div>
@@ -280,17 +279,14 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
 
       <section className="knowledge-console-grid" aria-label="지식문서 운영 카테고리">
         <article>
-          <span>Policy</span>
           <strong>내부 정책</strong>
           <small>상품 광고 심의 기준과 내부 체크 기준을 관리합니다.</small>
         </article>
         <article>
-          <span>Law</span>
           <strong>법령 근거</strong>
           <small>규정 변경과 시행일을 기준으로 검색 가능한 근거를 축적합니다.</small>
         </article>
         <article>
-          <span>Checklist</span>
           <strong>검토 체크리스트</strong>
           <small>심의자가 반복 확인하는 항목을 구조화된 지식으로 유지합니다.</small>
         </article>
@@ -300,7 +296,6 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
         <form className="knowledge-form" onSubmit={handleSubmit}>
           <div className="knowledge-panel__header">
             <div>
-              <span>Document Upload</span>
               <h2>새 기준 문서 등록</h2>
               <p>문서 유형과 적용 상품군을 함께 지정해 심의 기준 라이브러리에 추가합니다.</p>
             </div>
@@ -391,7 +386,6 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
         >
           <div className="knowledge-panel__header knowledge-panel__header--list">
             <div>
-              <span>Registered Sources</span>
               <h2>등록된 지식문서</h2>
               <p>승인된 기준 문서는 심의 근거 검색에 우선 활용됩니다.</p>
             </div>

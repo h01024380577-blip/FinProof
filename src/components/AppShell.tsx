@@ -126,12 +126,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <small>검토는 빠르게, 판단은 정확하게</small>
           </span>
         </Link>
-        <div className="sidebar__slogan" aria-label="FinProof slogan">
-          <span>AI Compliance Review</span>
-          <strong>Review Faster. Decide Smarter.</strong>
-        </div>
-
-        <span className="sidebar__section-label">Console</span>
         <nav className="sidebar__nav" aria-label="Primary navigation">
           {visibleNavigation.map((item) => {
             const Icon = item.icon;
