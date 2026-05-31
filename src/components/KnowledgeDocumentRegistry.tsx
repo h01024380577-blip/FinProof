@@ -5,6 +5,7 @@ import {
   BookOpenCheck,
   CheckCircle2,
   Database,
+  FileText,
   LoaderCircle,
   RotateCcw,
   Send,
@@ -58,6 +59,18 @@ function statusLabel(status: KnowledgeDocument["approvalStatus"]): string {
   }
 
   return "초안";
+}
+
+function documentTypeLabel(value: KnowledgeDocumentType): string {
+  return documentTypes.find((item) => item.value === value)?.label ?? value;
+}
+
+function productTypeLabel(value?: ProductType): string {
+  if (!value) {
+    return "전체 상품";
+  }
+
+  return productTypes.find((item) => item.value === value)?.label ?? value;
 }
 
 export function KnowledgeDocumentRegistry(): JSX.Element {
@@ -244,12 +257,17 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
   return (
     <main className="knowledge-page">
       <section className="knowledge-page__header">
-        <div>
+        <div className="knowledge-page__heading">
           <span className="section-eyebrow">
             <BookOpenCheck size={16} aria-hidden="true" />
             Knowledge Registry
           </span>
-          <h1>지식문서 등록</h1>
+          <h1>컴플라이언스 지식문서 관리</h1>
+          <p>
+            법령, 내부 정책, 체크리스트를 한곳에 정리해 금융 광고 심의의 기준 근거로
+            사용할 수 있습니다.
+          </p>
+          <p className="knowledge-page__slogan">Review Faster. Decide Smarter.</p>
         </div>
         <div className="knowledge-page__metrics" aria-label="지식문서 등록 현황">
           <div>
@@ -260,8 +278,35 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
         </div>
       </section>
 
+      <section className="knowledge-console-grid" aria-label="지식문서 운영 카테고리">
+        <article>
+          <span>Policy</span>
+          <strong>내부 정책</strong>
+          <small>상품 광고 심의 기준과 내부 체크 기준을 관리합니다.</small>
+        </article>
+        <article>
+          <span>Law</span>
+          <strong>법령 근거</strong>
+          <small>규정 변경과 시행일을 기준으로 검색 가능한 근거를 축적합니다.</small>
+        </article>
+        <article>
+          <span>Checklist</span>
+          <strong>검토 체크리스트</strong>
+          <small>심의자가 반복 확인하는 항목을 구조화된 지식으로 유지합니다.</small>
+        </article>
+      </section>
+
       <section className="knowledge-layout">
         <form className="knowledge-form" onSubmit={handleSubmit}>
+          <div className="knowledge-panel__header">
+            <div>
+              <span>Document Upload</span>
+              <h2>새 기준 문서 등록</h2>
+              <p>문서 유형과 적용 상품군을 함께 지정해 심의 기준 라이브러리에 추가합니다.</p>
+            </div>
+            <ShieldCheck size={22} aria-hidden="true" />
+          </div>
+
           <div className="form-grid form-grid--two">
             <label>
               <span>문서 제목</span>
@@ -339,16 +384,20 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
           {status ? <p className="form-status">{status}</p> : null}
         </form>
 
-        <div
-          className="knowledge-list knowledge-list--bounded"
-          role="region"
-          tabIndex={0}
-          aria-label="등록된 지식문서"
-        >
+        <div className="knowledge-list" aria-label="등록된 지식문서">
+          <div className="knowledge-panel__header knowledge-panel__header--list">
+            <div>
+              <span>Registered Sources</span>
+              <h2>등록된 지식문서</h2>
+              <p>승인된 기준 문서는 심의 근거 검색에 우선 활용됩니다.</p>
+            </div>
+            <strong>{registeredCount}건</strong>
+          </div>
+
           {documents.length === 0 ? (
             <div className="knowledge-empty">
               <ShieldCheck size={22} aria-hidden="true" />
-              <span>등록된 지식문서가 없습니다.</span>
+              <span>아직 등록된 지식문서가 없습니다.</span>
             </div>
           ) : (
             documents.map((document) => {
@@ -359,11 +408,29 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
 
               return (
                 <article className="knowledge-list__item" key={document.id}>
-                  <div>
-                    <h2>{document.title}</h2>
-                    <p>
-                      {document.version} · {document.effectiveFrom}
-                    </p>
+                  <div className="knowledge-list__content">
+                    <div className="knowledge-list__title-row">
+                      <FileText size={18} aria-hidden="true" />
+                      <h3>{document.title}</h3>
+                    </div>
+                    <dl className="knowledge-list__meta">
+                      <div>
+                        <dt>유형</dt>
+                        <dd>{documentTypeLabel(document.documentType)}</dd>
+                      </div>
+                      <div>
+                        <dt>상품군</dt>
+                        <dd>{productTypeLabel(document.productType)}</dd>
+                      </div>
+                      <div>
+                        <dt>버전</dt>
+                        <dd>{document.version}</dd>
+                      </div>
+                      <div>
+                        <dt>시행일</dt>
+                        <dd>{document.effectiveFrom}</dd>
+                      </div>
+                    </dl>
                   </div>
                   <div className="knowledge-list__actions">
                     {document.approvalStatus !== "draft" ? (
@@ -375,7 +442,7 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
                       <button
                         className="secondary-action"
                         type="button"
-                        disabled={pendingAction === "approve" || pendingAction === "delete"}
+                        disabled={pendingAction === "approve"}
                         onClick={() => void approveDocument(document.id)}
                       >
                         {pendingAction === "approve" ? (
@@ -398,7 +465,7 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
                       <button
                         className="secondary-action"
                         type="button"
-                        disabled={pendingAction === "unapprove" || pendingAction === "delete"}
+                        disabled={pendingAction === "unapprove"}
                         onClick={() => void unapproveDocument(document.id)}
                       >
                         {pendingAction === "unapprove" ? (
@@ -421,24 +488,17 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
                     <button
                       className="secondary-action secondary-action--danger"
                       type="button"
-                      disabled={pendingAction !== null}
+                      disabled={!!pendingAction}
                       onClick={() => void deleteDocument(document)}
+                      aria-label="삭제"
+                      title="삭제"
                     >
                       {pendingAction === "delete" ? (
-                        <>
-                          <LoaderCircle
-                            className="action-spinner"
-                            size={16}
-                            aria-hidden="true"
-                          />
-                          삭제중
-                        </>
+                        <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
                       ) : (
-                        <>
-                          <Trash2 size={16} aria-hidden="true" />
-                          삭제
-                        </>
+                        <Trash2 size={16} aria-hidden="true" />
                       )}
+                      삭제
                     </button>
                   </div>
                 </article>
