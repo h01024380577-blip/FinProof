@@ -27,31 +27,32 @@ function HighlightBoxes({
   selectedIssueId,
   onSelectIssue
 }: Pick<CreativeViewerProps, "issues" | "selectedIssueId" | "onSelectIssue">): JSX.Element {
+  const selectedIssueIndex = issues.findIndex((issue) => issue.id === selectedIssueId);
+  const selectedIssue = selectedIssueIndex >= 0 ? issues[selectedIssueIndex] : undefined;
+
+  if (!selectedIssue) {
+    return <></>;
+  }
+
+  const [left, top, width, height] = selectedIssue.targetBbox;
+
   return (
-    <>
-      {issues.map((issue, index) => {
-        const [left, top, width, height] = issue.targetBbox;
-        return (
-          <button
-            key={issue.id}
-            className="highlight-box"
-            data-risk={issue.riskLevel}
-            data-active={selectedIssueId === issue.id}
-            style={{
-              left: `${left}%`,
-              top: `${top}%`,
-              width: `${width}%`,
-              height: `${height}%`
-            }}
-            type="button"
-            title={issue.title}
-            onClick={() => onSelectIssue(issue.id)}
-          >
-            <span>{index + 1}</span>
-          </button>
-        );
-      })}
-    </>
+    <button
+      className="highlight-box"
+      data-risk={selectedIssue.riskLevel}
+      data-active="true"
+      style={{
+        left: `${left}%`,
+        top: `${top}%`,
+        width: `${width}%`,
+        height: `${height}%`
+      }}
+      type="button"
+      title={selectedIssue.title}
+      onClick={() => onSelectIssue(selectedIssue.id)}
+    >
+      <span>{selectedIssueIndex + 1}</span>
+    </button>
   );
 }
 

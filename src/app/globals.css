@@ -1436,10 +1436,12 @@ a.review-table__row:hover {
 
 .highlight-box {
   position: absolute;
-  border: 0;
-  border-bottom: 2px solid currentColor;
-  border-radius: 0;
-  background: transparent;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  background: color-mix(in srgb, currentColor 18%, transparent);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.72),
+    0 10px 24px rgba(21, 25, 35, 0.16);
   color: var(--risk-high);
   cursor: pointer;
 }
@@ -1457,8 +1459,8 @@ a.review-table__row:hover {
 }
 
 .highlight-box[data-active="true"] {
-  outline: 3px solid rgba(34, 81, 181, 0.22);
-  outline-offset: 2px;
+  outline: 3px solid color-mix(in srgb, currentColor 34%, transparent);
+  outline-offset: 3px;
 }
 
 .highlight-box span {

@@ -35,6 +35,30 @@ describe("CreativeViewer", () => {
     expect(onSelect).toHaveBeenCalledWith("issue-1");
   });
 
+  it("only highlights the selected issue target on the creative", () => {
+    render(
+      <CreativeViewer
+        copy="카피"
+        disclosure="공시"
+        issues={[
+          { ...issue, id: "issue-1", title: "첫 번째 위험 문구" },
+          {
+            ...issue,
+            id: "issue-2",
+            title: "선택된 위험 문구",
+            targetText: "누구나 빠르게 승인",
+            targetBbox: [30, 24, 36, 10]
+          }
+        ]}
+        selectedIssueId="issue-2"
+        onSelectIssue={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTitle("첫 번째 위험 문구")).not.toBeInTheDocument();
+    expect(screen.getByTitle("선택된 위험 문구")).toHaveAttribute("data-active", "true");
+  });
+
   it("renders an uploaded promotional creative image instead of the mock poster", () => {
     render(
       <CreativeViewer
