@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
 import Image from "next/image";
 import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import type { ReviewIssue } from "@/domain/types";
@@ -9,6 +9,7 @@ const MIN_ZOOM = 50;
 const MAX_ZOOM = 200;
 const ZOOM_STEP = 25;
 const POSTER_BASE_HEIGHT = 642;
+const POSTER_BASE_WIDTH = 480;
 
 export type CreativeViewerProps = {
   copy: string;
@@ -66,13 +67,34 @@ export function CreativeViewer({
 }: CreativeViewerProps): JSX.Element {
   const [zoom, setZoom] = useState(100);
   const [isFrameFit, setIsFrameFit] = useState(false);
-  const zoomScale = zoom / 100;
+  const [fitZoom, setFitZoom] = useState(100);
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const calcFitZoom = useCallback((): number => {
+    const el = viewportRef.current;
+    if (!el) return 100;
+    const availH = el.clientHeight - 32;
+    const availW = el.clientWidth - 32;
+    const scale = Math.min(availH / POSTER_BASE_HEIGHT, availW / POSTER_BASE_WIDTH);
+    return Math.round(Math.min(1, scale) * 100);
+  }, []);
+
+  useEffect(() => {
+    if (!isFrameFit) return;
+    const el = viewportRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setFitZoom(calcFitZoom()));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isFrameFit, calcFitZoom]);
+
+  const activeZoom = isFrameFit ? fitZoom : zoom;
   const zoomStageStyle = {
-    "--viewer-zoom": `${isFrameFit ? 1 : zoomScale}`,
-    "--viewer-zoom-height": isFrameFit ? "100%" : `${POSTER_BASE_HEIGHT * zoomScale}px`
+    "--viewer-zoom": `${activeZoom / 100}`
   } as CSSProperties;
 
   const adjustZoom = (direction: "in" | "out"): void => {
+    setIsFrameFit(false);
     setZoom((currentZoom) => {
       const nextZoom =
         direction === "in" ? currentZoom + ZOOM_STEP : currentZoom - ZOOM_STEP;
@@ -81,7 +103,7 @@ export function CreativeViewer({
   };
 
   const toggleFrameFit = (): void => {
-    setIsFrameFit((currentValue) => !currentValue);
+    setIsFrameFit((v) => !v);
   };
 
   return (
@@ -95,17 +117,17 @@ export function CreativeViewer({
           className="icon-button icon-button--small"
           type="button"
           aria-label="축소"
-          disabled={zoom <= MIN_ZOOM}
+          disabled={isFrameFit || zoom <= MIN_ZOOM}
           onClick={() => adjustZoom("out")}
         >
           <Minus size={15} aria-hidden="true" />
         </button>
-        <span>{zoom}%</span>
+        <span>{isFrameFit ? "맞춤" : `${zoom}%`}</span>
         <button
           className="icon-button icon-button--small"
           type="button"
           aria-label="확대"
-          disabled={zoom >= MAX_ZOOM}
+          disabled={isFrameFit || zoom >= MAX_ZOOM}
           onClick={() => adjustZoom("in")}
         >
           <Plus size={15} aria-hidden="true" />
@@ -114,7 +136,7 @@ export function CreativeViewer({
         <button
           className="icon-button icon-button--small"
           type="button"
-          aria-label={isFrameFit ? "전체 화면 종료" : "전체 화면"}
+          aria-label={isFrameFit ? "페이지 맞추기 해제" : "페이지 맞추기"}
           onClick={toggleFrameFit}
         >
           {isFrameFit ? (
@@ -124,7 +146,7 @@ export function CreativeViewer({
           )}
         </button>
       </div>
-      <div className="viewer-viewport">
+      <div className="viewer-viewport" ref={viewportRef}>
         <div
           className="poster-zoom-stage"
           data-testid="creative-viewer-zoom-stage"

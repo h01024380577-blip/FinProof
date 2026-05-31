@@ -68,11 +68,7 @@ function MultilingualContextBlock({ issue }: { issue: ReviewIssue }): JSX.Elemen
       <dl>
         <div>
           <dt>원문 표현</dt>
-          <dd>{context.originalText}</dd>
-        </div>
-        <div>
-          <dt>직역</dt>
-          <dd>{context.literalTranslation}</dd>
+          <dd className="multilingual-context__original-text">{context.originalText}</dd>
         </div>
         <div>
           <dt>심의상 의미</dt>
@@ -98,10 +94,6 @@ function MultilingualContextBlock({ issue }: { issue: ReviewIssue }): JSX.Elemen
         <div>
           <dt>원문 수정안</dt>
           <dd>{context.suggestedCopyOriginalLanguage}</dd>
-        </div>
-        <div>
-          <dt>수정안 의미</dt>
-          <dd>{context.suggestedCopyKoreanMeaning}</dd>
         </div>
       </dl>
     </section>

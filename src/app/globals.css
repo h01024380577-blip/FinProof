@@ -4620,6 +4620,29 @@ a.review-table__row:hover {
   padding: 16px 18px;
 }
 
+.creative-viewer {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.viewer-viewport {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 16px;
+  min-height: 0;
+  background: #e5e5e5;
+}
+
+.poster-zoom-stage {
+  zoom: var(--viewer-zoom, 1);
+  flex-shrink: 0;
+}
+
 .issue-panel {
   display: flex;
   flex-direction: column;
@@ -4864,10 +4887,12 @@ a.review-table__row:hover {
 }
 
 .viewer-toolbar {
+  flex-shrink: 0;
   justify-content: center;
   min-height: 46px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--line);
-  background: #e5e5e5;
+  background: var(--surface);
   color: var(--text);
   font-size: 0.86rem;
   font-weight: 800;
@@ -5096,6 +5121,15 @@ a.review-table__row:hover {
   font-size: 0.78rem;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.multilingual-context__original-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 .suggested-copy {
