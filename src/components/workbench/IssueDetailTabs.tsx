@@ -47,11 +47,64 @@ function ChecklistPanel({ issue }: { issue: ReviewIssue }): JSX.Element {
       <RiskBadge level={issue.riskLevel} />
       <h4>{issue.title}</h4>
       <p>{issue.description}</p>
+      <MultilingualContextBlock issue={issue} />
       <div className="suggested-copy">
         <span>수정 제안</span>
         <p>{issue.suggestedCopy}</p>
       </div>
     </div>
+  );
+}
+
+function MultilingualContextBlock({ issue }: { issue: ReviewIssue }): JSX.Element | null {
+  const context = issue.multilingualContext;
+
+  if (!context) {
+    return null;
+  }
+
+  return (
+    <section className="multilingual-context" aria-label="다국어 심의 맥락">
+      <dl>
+        <div>
+          <dt>원문 표현</dt>
+          <dd>{context.originalText}</dd>
+        </div>
+        <div>
+          <dt>직역</dt>
+          <dd>{context.literalTranslation}</dd>
+        </div>
+        <div>
+          <dt>심의상 의미</dt>
+          <dd>{context.complianceMeaning}</dd>
+        </div>
+        <div>
+          <dt>리스크 신호</dt>
+          <dd>
+            <ul>
+              {context.riskSignals.map((riskSignal) => (
+                <li key={riskSignal}>{riskSignal}</li>
+              ))}
+            </ul>
+          </dd>
+        </div>
+        <div>
+          <dt>국내 기준 매핑</dt>
+          <dd>
+            <strong>{context.koreanComplianceCategory}</strong>
+            <span>{context.koreanComplianceReason}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>원문 수정안</dt>
+          <dd>{context.suggestedCopyOriginalLanguage}</dd>
+        </div>
+        <div>
+          <dt>수정안 의미</dt>
+          <dd>{context.suggestedCopyKoreanMeaning}</dd>
+        </div>
+      </dl>
+    </section>
   );
 }
 

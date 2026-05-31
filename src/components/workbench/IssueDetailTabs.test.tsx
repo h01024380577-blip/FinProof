@@ -104,6 +104,51 @@ describe("IssueDetailTabs", () => {
     expect(screen.getByText(/JB 슈퍼씨드 적금 홍보 시안/)).toHaveClass("evidence-card__quote");
   });
 
+  it("renders multilingual review context in the checklist panel", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          multilingualContext: {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 안에 승인 보장",
+            complianceMeaning: "심사와 무관하게 승인 확정처럼 해석될 수 있음",
+            riskCategory: "both",
+            riskSignals: ["approval_guarantee", "instant_approval"],
+            koreanComplianceCategory: "승인 보장 오인 표현",
+            koreanComplianceReason: "대출 승인 가능성을 확정적으로 고지하는 표현으로 볼 수 있음",
+            evidenceQuery: "대출 광고 승인 보장 금지 표현",
+            suggestedCopyOriginalLanguage:
+              "Apply in 3 minutes. Approval is subject to credit review.",
+            suggestedCopyKoreanMeaning:
+              "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음."
+          }
+        }}
+        activeTab="checklist"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("원문 표현")).toBeInTheDocument();
+    expect(screen.getByText("Guaranteed approval in 3 minutes")).toBeInTheDocument();
+    expect(screen.getByText("3분 안에 승인 보장")).toBeInTheDocument();
+    expect(screen.getByText("approval_guarantee")).toBeInTheDocument();
+    expect(screen.getByText("승인 보장 오인 표현")).toBeInTheDocument();
+    expect(
+      screen.getByText("Apply in 3 minutes. Approval is subject to credit review.")
+    ).toBeInTheDocument();
+  });
+
   it("formats evidence metadata in Korean and hides missing location fields", () => {
     render(
       <IssueDetailTabs
