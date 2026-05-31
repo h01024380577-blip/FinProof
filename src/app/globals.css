@@ -4444,13 +4444,17 @@ a.review-table__row:hover {
 .queue-row-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 7px;
 }
 
 .queue-row-actions--delete {
   justify-content: flex-start;
   padding-left: 2px;
+}
+
+.queue-row-actions .button {
+  border-radius: 4px;
 }
 
 .reviewer-editor {
@@ -7172,9 +7176,12 @@ a.review-table__row:hover {
 
 .risk-badge,
 .status-badge,
-.queue-row-note,
 .status-pill {
   border-radius: 999px;
+}
+
+.queue-row-note {
+  border-radius: 4px;
 }
 
 .reviewer-editor__input {
