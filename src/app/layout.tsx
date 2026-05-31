@@ -7,18 +7,12 @@ import "./landing-refresh.css";
 
 export const metadata: Metadata = {
   title: "FinProof Agent",
-  description: "AI 기반 금융 광고 심의 플랫폼"
+  description: "검토는 빠르게, 판단은 정확하게. Review Faster. Decide Smarter."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
-        />
-      </head>
       <body>
         <RoleProvider>
           <Suspense fallback={null}>
