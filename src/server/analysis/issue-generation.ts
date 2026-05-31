@@ -78,6 +78,32 @@ function issueEvidence(
   ];
 }
 
+function multilingualContextFromFinding(
+  finding: NonNullable<AnalysisArtifacts["agentFindings"]>[number]
+): ReviewIssue["multilingualContext"] {
+  const localized = finding.localizedRiskFinding;
+  const mapping = finding.koreanComplianceMapping;
+
+  if (!localized || !mapping) {
+    return undefined;
+  }
+
+  return {
+    segmentId: localized.segmentId,
+    language: localized.language,
+    originalText: localized.originalText,
+    literalTranslation: localized.literalTranslation,
+    complianceMeaning: localized.complianceMeaning,
+    riskCategory: localized.riskCategory,
+    riskSignals: localized.riskSignals,
+    koreanComplianceCategory: mapping.koreanComplianceCategory,
+    koreanComplianceReason: mapping.koreanComplianceReason,
+    evidenceQuery: mapping.evidenceQuery,
+    suggestedCopyOriginalLanguage: localized.suggestedCopyOriginalLanguage,
+    suggestedCopyKoreanMeaning: localized.suggestedCopyKoreanMeaning
+  };
+}
+
 function baseIssue({
   review,
   artifacts,
@@ -138,6 +164,7 @@ function issuesFromAgentFindings(review: ReviewCase, artifacts: AnalysisArtifact
       status: "open",
       description: finding.description,
       suggestedCopy: finding.suggestedCopy,
+      multilingualContext: multilingualContextFromFinding(finding),
       evidence:
         matchedEvidence.length > 0
           ? matchedEvidence

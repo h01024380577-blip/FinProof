@@ -135,6 +135,15 @@ function affiliateIdForReview(review: ReviewCase): string | undefined {
 function agentTypeFromSourceAgents(sourceAgents: string[]): AgentFindingCandidate["agentType"] {
   const [sourceAgent] = sourceAgents;
 
+  if (
+    sourceAgent === "english_translator_risk" ||
+    sourceAgent === "japanese_translator_risk" ||
+    sourceAgent === "chinese_translator_risk" ||
+    sourceAgent === "korean_compliance_mapping"
+  ) {
+    return sourceAgent;
+  }
+
   if (sourceAgent === "creative_review") {
     return "creative";
   }
@@ -153,6 +162,38 @@ function agentTypeFromSourceAgents(sourceAgents: string[]): AgentFindingCandidat
   return "main";
 }
 
+function multilingualSnapshotsFromIssue(issue: ReviewIssue) {
+  const context = issue.multilingualContext;
+
+  if (!context) {
+    return {};
+  }
+
+  return {
+    localizedRiskFinding: {
+      segmentId: context.segmentId,
+      language: context.language,
+      originalText: context.originalText,
+      literalTranslation: context.literalTranslation,
+      complianceMeaning: context.complianceMeaning,
+      riskCategory: context.riskCategory,
+      riskSignals: context.riskSignals,
+      riskLevelHint: issue.riskLevel,
+      suggestedCopyOriginalLanguage: context.suggestedCopyOriginalLanguage,
+      suggestedCopyKoreanMeaning: context.suggestedCopyKoreanMeaning,
+      confidence: issue.confidence ?? 0.72
+    },
+    koreanComplianceMapping: {
+      localizedFindingId: context.segmentId,
+      issueType: issue.issueType,
+      koreanComplianceCategory: context.koreanComplianceCategory,
+      koreanComplianceReason: context.koreanComplianceReason,
+      evidenceQuery: context.evidenceQuery,
+      suggestedAction: issue.suggestedAction
+    }
+  };
+}
+
 function findingFromIssue(issue: ReviewIssue): AgentFindingCandidate {
   return {
     agentType: agentTypeFromSourceAgents(issue.sourceAgents),
@@ -165,7 +206,8 @@ function findingFromIssue(issue: ReviewIssue): AgentFindingCandidate {
     suggestedAction: issue.suggestedAction,
     suggestedCopy: issue.suggestedCopy,
     confidence: issue.confidence ?? 0.86,
-    evidence: issue.evidence
+    evidence: issue.evidence,
+    ...multilingualSnapshotsFromIssue(issue)
   };
 }
 
@@ -406,6 +448,24 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     const issueId = `issue-${reviewCaseId}-${String(index + 1).padStart(3, "0")}`;
     const sourceFileId = finding.evidence[0]?.sourceFileId;
     const targetFileId = sourceFileId && reviewFileIds.has(sourceFileId) ? sourceFileId : undefined;
+    const multilingualContext =
+      finding.localizedRiskFinding && finding.koreanComplianceMapping
+        ? {
+            segmentId: finding.localizedRiskFinding.segmentId,
+            language: finding.localizedRiskFinding.language,
+            originalText: finding.localizedRiskFinding.originalText,
+            literalTranslation: finding.localizedRiskFinding.literalTranslation,
+            complianceMeaning: finding.localizedRiskFinding.complianceMeaning,
+            riskCategory: finding.localizedRiskFinding.riskCategory,
+            riskSignals: finding.localizedRiskFinding.riskSignals,
+            koreanComplianceCategory: finding.koreanComplianceMapping.koreanComplianceCategory,
+            koreanComplianceReason: finding.koreanComplianceMapping.koreanComplianceReason,
+            evidenceQuery: finding.koreanComplianceMapping.evidenceQuery,
+            suggestedCopyOriginalLanguage:
+              finding.localizedRiskFinding.suggestedCopyOriginalLanguage,
+            suggestedCopyKoreanMeaning: finding.localizedRiskFinding.suggestedCopyKoreanMeaning
+          }
+        : undefined;
     const evidence = finding.evidence.map((candidate, evidenceIndex) => {
       const candidateSourceFileId =
         candidate.sourceFileId && reviewFileIds.has(candidate.sourceFileId)
@@ -456,6 +516,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       status: "open",
       description: finding.description,
       suggestedCopy: finding.suggestedCopy,
+      multilingualContext,
       evidence: clone(evidence)
     };
   }

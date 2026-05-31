@@ -45,6 +45,33 @@ const row = {
       targetPage: null,
       confidence: null,
       agentFindingId: null,
+      agentFinding: {
+        outputSnapshot: {
+          localizedRiskFinding: {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 안에 승인 보장",
+            complianceMeaning: "심사와 무관하게 승인 확정처럼 해석될 수 있음",
+            riskCategory: "both",
+            riskSignals: ["approval_guarantee"],
+            riskLevelHint: "reject_recommended",
+            suggestedCopyOriginalLanguage:
+              "Apply in 3 minutes. Approval is subject to credit review.",
+            suggestedCopyKoreanMeaning:
+              "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음.",
+            confidence: 0.91
+          },
+          koreanComplianceMapping: {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "승인 보장 오인 표현",
+            koreanComplianceReason: "대출 승인 가능성을 확정적으로 고지하는 표현으로 볼 수 있음",
+            evidenceQuery: "대출 광고 승인 보장 금지 표현",
+            suggestedAction: "change_request"
+          }
+        }
+      },
       sourceAgents: ["product_terms_agent"],
       suggestedAction: "change_request" as const,
       finalAction: null,
@@ -89,6 +116,22 @@ describe("prisma review mappers", () => {
       issues: [
         {
           id: "issue-deposit-rate",
+          multilingualContext: {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 안에 승인 보장",
+            complianceMeaning: "심사와 무관하게 승인 확정처럼 해석될 수 있음",
+            riskCategory: "both",
+            riskSignals: ["approval_guarantee"],
+            koreanComplianceCategory: "승인 보장 오인 표현",
+            koreanComplianceReason: "대출 승인 가능성을 확정적으로 고지하는 표현으로 볼 수 있음",
+            evidenceQuery: "대출 광고 승인 보장 금지 표현",
+            suggestedCopyOriginalLanguage:
+              "Apply in 3 minutes. Approval is subject to credit review.",
+            suggestedCopyKoreanMeaning:
+              "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음."
+          },
           evidence: [{ id: "ev-deposit-product" }]
         }
       ]

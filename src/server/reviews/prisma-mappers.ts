@@ -1,4 +1,11 @@
-import type { Evidence, ReviewCase, ReviewFile, ReviewIssue, ReviewSummary } from "@/domain/types";
+import type {
+  Evidence,
+  MultilingualIssueContext,
+  ReviewCase,
+  ReviewFile,
+  ReviewIssue,
+  ReviewSummary
+} from "@/domain/types";
 
 type PrismaFileRow = {
   id: string;
@@ -45,6 +52,7 @@ type PrismaIssueRow = Omit<
   targetPage: number | null;
   confidence: number | null;
   agentFindingId: string | null;
+  agentFinding: { outputSnapshot: unknown } | null;
   sourceAgents: unknown;
   evidence: PrismaEvidenceRow[];
 };
@@ -73,9 +81,95 @@ export type PrismaReviewCaseRow = {
 };
 
 function stringArray(value: unknown): string[] {
+  if (typeof value === "string") {
+    try {
+      return stringArray(JSON.parse(value));
+    } catch {
+      return [];
+    }
+  }
+
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function objectValue(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value === "string") {
+    try {
+      return objectValue(JSON.parse(value));
+    } catch {
+      return undefined;
+    }
+  }
+
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function supportedLanguage(value: unknown): MultilingualIssueContext["language"] | undefined {
+  return value === "en" || value === "ja" || value === "zh" ? value : undefined;
+}
+
+function riskCategory(value: unknown): MultilingualIssueContext["riskCategory"] | undefined {
+  return value === "expression_risk" || value === "compliance_risk" || value === "both"
+    ? value
+    : undefined;
+}
+
+function multilingualContextFromSnapshot(
+  snapshot: unknown
+): MultilingualIssueContext | undefined {
+  const outputSnapshot = objectValue(snapshot);
+  const localized = objectValue(outputSnapshot?.localizedRiskFinding);
+  const mapping = objectValue(outputSnapshot?.koreanComplianceMapping);
+  const segmentId = stringValue(localized?.segmentId);
+  const language = supportedLanguage(localized?.language);
+  const originalText = stringValue(localized?.originalText);
+  const literalTranslation = stringValue(localized?.literalTranslation);
+  const complianceMeaning = stringValue(localized?.complianceMeaning);
+  const localizedRiskCategory = riskCategory(localized?.riskCategory);
+  const koreanComplianceCategory = stringValue(mapping?.koreanComplianceCategory);
+  const koreanComplianceReason = stringValue(mapping?.koreanComplianceReason);
+  const evidenceQuery = stringValue(mapping?.evidenceQuery);
+  const suggestedCopyOriginalLanguage = stringValue(localized?.suggestedCopyOriginalLanguage);
+  const suggestedCopyKoreanMeaning = stringValue(localized?.suggestedCopyKoreanMeaning);
+
+  if (
+    !segmentId ||
+    !language ||
+    !originalText ||
+    !literalTranslation ||
+    !complianceMeaning ||
+    !localizedRiskCategory ||
+    !koreanComplianceCategory ||
+    !koreanComplianceReason ||
+    !evidenceQuery ||
+    !suggestedCopyOriginalLanguage ||
+    !suggestedCopyKoreanMeaning
+  ) {
+    return undefined;
+  }
+
+  return {
+    segmentId,
+    language,
+    originalText,
+    literalTranslation,
+    complianceMeaning,
+    riskCategory: localizedRiskCategory,
+    riskSignals: stringArray(localized?.riskSignals),
+    koreanComplianceCategory,
+    koreanComplianceReason,
+    evidenceQuery,
+    suggestedCopyOriginalLanguage,
+    suggestedCopyKoreanMeaning
+  };
 }
 
 function bbox(value: unknown): [number, number, number, number] {
@@ -145,6 +239,7 @@ function toIssue(row: PrismaIssueRow): ReviewIssue {
     status: row.status,
     description: row.description,
     suggestedCopy: row.suggestedCopy,
+    multilingualContext: multilingualContextFromSnapshot(row.agentFinding?.outputSnapshot),
     evidence: row.evidence.map(toEvidence)
   };
 

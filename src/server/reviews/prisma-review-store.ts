@@ -55,6 +55,7 @@ const reviewInclude = {
   issues: {
     orderBy: { id: "asc" },
     include: {
+      agentFinding: { select: { outputSnapshot: true } },
       evidence: { orderBy: { id: "asc" } }
     }
   }
@@ -441,6 +442,15 @@ function highestRiskLevelFrom(riskLevels: RiskLevel[], fallback: RiskLevel): Ris
 function agentTypeFromSourceAgents(sourceAgents: string[]): AgentFindingCandidate["agentType"] {
   const [sourceAgent] = sourceAgents;
 
+  if (
+    sourceAgent === "english_translator_risk" ||
+    sourceAgent === "japanese_translator_risk" ||
+    sourceAgent === "chinese_translator_risk" ||
+    sourceAgent === "korean_compliance_mapping"
+  ) {
+    return sourceAgent;
+  }
+
   if (sourceAgent === "creative_review") {
     return "creative";
   }
@@ -459,6 +469,38 @@ function agentTypeFromSourceAgents(sourceAgents: string[]): AgentFindingCandidat
   return "main";
 }
 
+function multilingualSnapshotsFromIssue(issue: ReviewIssue) {
+  const context = issue.multilingualContext;
+
+  if (!context) {
+    return {};
+  }
+
+  return {
+    localizedRiskFinding: {
+      segmentId: context.segmentId,
+      language: context.language,
+      originalText: context.originalText,
+      literalTranslation: context.literalTranslation,
+      complianceMeaning: context.complianceMeaning,
+      riskCategory: context.riskCategory,
+      riskSignals: context.riskSignals,
+      riskLevelHint: issue.riskLevel,
+      suggestedCopyOriginalLanguage: context.suggestedCopyOriginalLanguage,
+      suggestedCopyKoreanMeaning: context.suggestedCopyKoreanMeaning,
+      confidence: issue.confidence ?? 0.72
+    },
+    koreanComplianceMapping: {
+      localizedFindingId: context.segmentId,
+      issueType: issue.issueType,
+      koreanComplianceCategory: context.koreanComplianceCategory,
+      koreanComplianceReason: context.koreanComplianceReason,
+      evidenceQuery: context.evidenceQuery,
+      suggestedAction: issue.suggestedAction
+    }
+  };
+}
+
 function findingFromIssue(issue: ReviewIssue): AgentFindingCandidate {
   return {
     agentType: agentTypeFromSourceAgents(issue.sourceAgents),
@@ -471,7 +513,8 @@ function findingFromIssue(issue: ReviewIssue): AgentFindingCandidate {
     suggestedAction: issue.suggestedAction,
     suggestedCopy: issue.suggestedCopy,
     confidence: issue.confidence ?? 0.86,
-    evidence: issue.evidence
+    evidence: issue.evidence,
+    ...multilingualSnapshotsFromIssue(issue)
   };
 }
 
