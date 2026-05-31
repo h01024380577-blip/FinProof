@@ -141,7 +141,9 @@ describe("prisma review mappers", () => {
   it.each([
     ["missing", undefined],
     ["not an array", "approval_guarantee"],
-    ["empty after filtering", [123]]
+    ["empty after filtering", [123]],
+    ["empty string", [""]],
+    ["whitespace string", ["   "]]
   ])(
     "does not map multilingual context when riskSignals is %s",
     (_caseName, riskSignals) => {

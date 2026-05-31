@@ -117,7 +117,10 @@ function requiredStringArray(value: unknown): string[] | undefined {
     return undefined;
   }
 
-  const strings = value.filter((item): item is string => typeof item === "string");
+  const strings = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 
   return strings.length > 0 ? strings : undefined;
 }
