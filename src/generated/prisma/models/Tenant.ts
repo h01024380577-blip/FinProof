@@ -188,6 +188,9 @@ export type TenantWhereInput = {
   auditLogs?: Prisma.AuditLogListRelationFilter
   knowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
   evidenceChunks?: Prisma.EvidenceChunkListRelationFilter
+  regulatorySources?: Prisma.RegulatorySourceListRelationFilter
+  regulatorySnapshots?: Prisma.RegulatorySnapshotListRelationFilter
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetListRelationFilter
 }
 
 export type TenantOrderByWithRelationInput = {
@@ -202,6 +205,9 @@ export type TenantOrderByWithRelationInput = {
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentOrderByRelationAggregateInput
   evidenceChunks?: Prisma.EvidenceChunkOrderByRelationAggregateInput
+  regulatorySources?: Prisma.RegulatorySourceOrderByRelationAggregateInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotOrderByRelationAggregateInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetOrderByRelationAggregateInput
 }
 
 export type TenantWhereUniqueInput = Prisma.AtLeast<{
@@ -219,6 +225,9 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   auditLogs?: Prisma.AuditLogListRelationFilter
   knowledgeDocuments?: Prisma.KnowledgeDocumentListRelationFilter
   evidenceChunks?: Prisma.EvidenceChunkListRelationFilter
+  regulatorySources?: Prisma.RegulatorySourceListRelationFilter
+  regulatorySnapshots?: Prisma.RegulatorySnapshotListRelationFilter
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetListRelationFilter
 }, "id">
 
 export type TenantOrderByWithAggregationInput = {
@@ -255,6 +264,9 @@ export type TenantCreateInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateInput = {
@@ -269,6 +281,9 @@ export type TenantUncheckedCreateInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUpdateInput = {
@@ -283,6 +298,9 @@ export type TenantUpdateInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateInput = {
@@ -297,6 +315,9 @@ export type TenantUncheckedUpdateInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateManyInput = {
@@ -430,6 +451,48 @@ export type TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutEvidenceChunksInput, Prisma.TenantUpdateWithoutEvidenceChunksInput>, Prisma.TenantUncheckedUpdateWithoutEvidenceChunksInput>
 }
 
+export type TenantCreateNestedOneWithoutRegulatorySourcesInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySourcesInput, Prisma.TenantUncheckedCreateWithoutRegulatorySourcesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutRegulatorySourcesInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutRegulatorySourcesNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySourcesInput, Prisma.TenantUncheckedCreateWithoutRegulatorySourcesInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutRegulatorySourcesInput
+  upsert?: Prisma.TenantUpsertWithoutRegulatorySourcesInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutRegulatorySourcesInput, Prisma.TenantUpdateWithoutRegulatorySourcesInput>, Prisma.TenantUncheckedUpdateWithoutRegulatorySourcesInput>
+}
+
+export type TenantCreateNestedOneWithoutRegulatorySnapshotsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySnapshotsInput, Prisma.TenantUncheckedCreateWithoutRegulatorySnapshotsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutRegulatorySnapshotsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutRegulatorySnapshotsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySnapshotsInput, Prisma.TenantUncheckedCreateWithoutRegulatorySnapshotsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutRegulatorySnapshotsInput
+  upsert?: Prisma.TenantUpsertWithoutRegulatorySnapshotsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutRegulatorySnapshotsInput, Prisma.TenantUpdateWithoutRegulatorySnapshotsInput>, Prisma.TenantUncheckedUpdateWithoutRegulatorySnapshotsInput>
+}
+
+export type TenantCreateNestedOneWithoutRegulatoryChangeSetsInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutRegulatoryChangeSetsInput, Prisma.TenantUncheckedCreateWithoutRegulatoryChangeSetsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutRegulatoryChangeSetsInput
+  connect?: Prisma.TenantWhereUniqueInput
+}
+
+export type TenantUpdateOneRequiredWithoutRegulatoryChangeSetsNestedInput = {
+  create?: Prisma.XOR<Prisma.TenantCreateWithoutRegulatoryChangeSetsInput, Prisma.TenantUncheckedCreateWithoutRegulatoryChangeSetsInput>
+  connectOrCreate?: Prisma.TenantCreateOrConnectWithoutRegulatoryChangeSetsInput
+  upsert?: Prisma.TenantUpsertWithoutRegulatoryChangeSetsInput
+  connect?: Prisma.TenantWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.TenantUpdateToOneWithWhereWithoutRegulatoryChangeSetsInput, Prisma.TenantUpdateWithoutRegulatoryChangeSetsInput>, Prisma.TenantUncheckedUpdateWithoutRegulatoryChangeSetsInput>
+}
+
 export type TenantCreateNestedOneWithoutAuditLogsInput = {
   create?: Prisma.XOR<Prisma.TenantCreateWithoutAuditLogsInput, Prisma.TenantUncheckedCreateWithoutAuditLogsInput>
   connectOrCreate?: Prisma.TenantCreateOrConnectWithoutAuditLogsInput
@@ -455,6 +518,9 @@ export type TenantCreateWithoutAffiliatesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAffiliatesInput = {
@@ -468,6 +534,9 @@ export type TenantUncheckedCreateWithoutAffiliatesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAffiliatesInput = {
@@ -497,6 +566,9 @@ export type TenantUpdateWithoutAffiliatesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAffiliatesInput = {
@@ -510,6 +582,9 @@ export type TenantUncheckedUpdateWithoutAffiliatesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutUsersInput = {
@@ -523,6 +598,9 @@ export type TenantCreateWithoutUsersInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutUsersInput = {
@@ -536,6 +614,9 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutUsersInput = {
@@ -565,6 +646,9 @@ export type TenantUpdateWithoutUsersInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutUsersInput = {
@@ -578,6 +662,9 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutCasesInput = {
@@ -591,6 +678,9 @@ export type TenantCreateWithoutCasesInput = {
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutCasesInput = {
@@ -604,6 +694,9 @@ export type TenantUncheckedCreateWithoutCasesInput = {
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutCasesInput = {
@@ -633,6 +726,9 @@ export type TenantUpdateWithoutCasesInput = {
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutCasesInput = {
@@ -646,6 +742,9 @@ export type TenantUncheckedUpdateWithoutCasesInput = {
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutKnowledgeDocumentsInput = {
@@ -659,6 +758,9 @@ export type TenantCreateWithoutKnowledgeDocumentsInput = {
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutKnowledgeDocumentsInput = {
@@ -672,6 +774,9 @@ export type TenantUncheckedCreateWithoutKnowledgeDocumentsInput = {
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutKnowledgeDocumentsInput = {
@@ -701,6 +806,9 @@ export type TenantUpdateWithoutKnowledgeDocumentsInput = {
   cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutKnowledgeDocumentsInput = {
@@ -714,6 +822,9 @@ export type TenantUncheckedUpdateWithoutKnowledgeDocumentsInput = {
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutEvidenceChunksInput = {
@@ -727,6 +838,9 @@ export type TenantCreateWithoutEvidenceChunksInput = {
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutEvidenceChunksInput = {
@@ -740,6 +854,9 @@ export type TenantUncheckedCreateWithoutEvidenceChunksInput = {
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutEvidenceChunksInput = {
@@ -769,6 +886,9 @@ export type TenantUpdateWithoutEvidenceChunksInput = {
   cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutEvidenceChunksInput = {
@@ -782,6 +902,249 @@ export type TenantUncheckedUpdateWithoutEvidenceChunksInput = {
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutRegulatorySourcesInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutRegulatorySourcesInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutRegulatorySourcesInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySourcesInput, Prisma.TenantUncheckedCreateWithoutRegulatorySourcesInput>
+}
+
+export type TenantUpsertWithoutRegulatorySourcesInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutRegulatorySourcesInput, Prisma.TenantUncheckedUpdateWithoutRegulatorySourcesInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySourcesInput, Prisma.TenantUncheckedCreateWithoutRegulatorySourcesInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutRegulatorySourcesInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutRegulatorySourcesInput, Prisma.TenantUncheckedUpdateWithoutRegulatorySourcesInput>
+}
+
+export type TenantUpdateWithoutRegulatorySourcesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutRegulatorySourcesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutRegulatorySnapshotsInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutRegulatorySnapshotsInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutRegulatorySnapshotsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySnapshotsInput, Prisma.TenantUncheckedCreateWithoutRegulatorySnapshotsInput>
+}
+
+export type TenantUpsertWithoutRegulatorySnapshotsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutRegulatorySnapshotsInput, Prisma.TenantUncheckedUpdateWithoutRegulatorySnapshotsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutRegulatorySnapshotsInput, Prisma.TenantUncheckedCreateWithoutRegulatorySnapshotsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutRegulatorySnapshotsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutRegulatorySnapshotsInput, Prisma.TenantUncheckedUpdateWithoutRegulatorySnapshotsInput>
+}
+
+export type TenantUpdateWithoutRegulatorySnapshotsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutRegulatorySnapshotsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantCreateWithoutRegulatoryChangeSetsInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+}
+
+export type TenantUncheckedCreateWithoutRegulatoryChangeSetsInput = {
+  id: string
+  name: string
+  status?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  affiliates?: Prisma.AffiliateUncheckedCreateNestedManyWithoutTenantInput
+  users?: Prisma.UserUncheckedCreateNestedManyWithoutTenantInput
+  cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutTenantInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+}
+
+export type TenantCreateOrConnectWithoutRegulatoryChangeSetsInput = {
+  where: Prisma.TenantWhereUniqueInput
+  create: Prisma.XOR<Prisma.TenantCreateWithoutRegulatoryChangeSetsInput, Prisma.TenantUncheckedCreateWithoutRegulatoryChangeSetsInput>
+}
+
+export type TenantUpsertWithoutRegulatoryChangeSetsInput = {
+  update: Prisma.XOR<Prisma.TenantUpdateWithoutRegulatoryChangeSetsInput, Prisma.TenantUncheckedUpdateWithoutRegulatoryChangeSetsInput>
+  create: Prisma.XOR<Prisma.TenantCreateWithoutRegulatoryChangeSetsInput, Prisma.TenantUncheckedCreateWithoutRegulatoryChangeSetsInput>
+  where?: Prisma.TenantWhereInput
+}
+
+export type TenantUpdateToOneWithWhereWithoutRegulatoryChangeSetsInput = {
+  where?: Prisma.TenantWhereInput
+  data: Prisma.XOR<Prisma.TenantUpdateWithoutRegulatoryChangeSetsInput, Prisma.TenantUncheckedUpdateWithoutRegulatoryChangeSetsInput>
+}
+
+export type TenantUpdateWithoutRegulatoryChangeSetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+}
+
+export type TenantUncheckedUpdateWithoutRegulatoryChangeSetsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  affiliates?: Prisma.AffiliateUncheckedUpdateManyWithoutTenantNestedInput
+  users?: Prisma.UserUncheckedUpdateManyWithoutTenantNestedInput
+  cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutTenantNestedInput
+  knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
+  evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantCreateWithoutAuditLogsInput = {
@@ -795,6 +1158,9 @@ export type TenantCreateWithoutAuditLogsInput = {
   cases?: Prisma.ReviewCaseCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetCreateNestedManyWithoutTenantInput
 }
 
 export type TenantUncheckedCreateWithoutAuditLogsInput = {
@@ -808,6 +1174,9 @@ export type TenantUncheckedCreateWithoutAuditLogsInput = {
   cases?: Prisma.ReviewCaseUncheckedCreateNestedManyWithoutTenantInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutTenantInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedCreateNestedManyWithoutTenantInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedCreateNestedManyWithoutTenantInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedCreateNestedManyWithoutTenantInput
 }
 
 export type TenantCreateOrConnectWithoutAuditLogsInput = {
@@ -837,6 +1206,9 @@ export type TenantUpdateWithoutAuditLogsInput = {
   cases?: Prisma.ReviewCaseUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUpdateManyWithoutTenantNestedInput
 }
 
 export type TenantUncheckedUpdateWithoutAuditLogsInput = {
@@ -850,6 +1222,9 @@ export type TenantUncheckedUpdateWithoutAuditLogsInput = {
   cases?: Prisma.ReviewCaseUncheckedUpdateManyWithoutTenantNestedInput
   knowledgeDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutTenantNestedInput
   evidenceChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySources?: Prisma.RegulatorySourceUncheckedUpdateManyWithoutTenantNestedInput
+  regulatorySnapshots?: Prisma.RegulatorySnapshotUncheckedUpdateManyWithoutTenantNestedInput
+  regulatoryChangeSets?: Prisma.RegulatoryChangeSetUncheckedUpdateManyWithoutTenantNestedInput
 }
 
 
@@ -864,6 +1239,9 @@ export type TenantCountOutputType = {
   auditLogs: number
   knowledgeDocuments: number
   evidenceChunks: number
+  regulatorySources: number
+  regulatorySnapshots: number
+  regulatoryChangeSets: number
 }
 
 export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -873,6 +1251,9 @@ export type TenantCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   auditLogs?: boolean | TenantCountOutputTypeCountAuditLogsArgs
   knowledgeDocuments?: boolean | TenantCountOutputTypeCountKnowledgeDocumentsArgs
   evidenceChunks?: boolean | TenantCountOutputTypeCountEvidenceChunksArgs
+  regulatorySources?: boolean | TenantCountOutputTypeCountRegulatorySourcesArgs
+  regulatorySnapshots?: boolean | TenantCountOutputTypeCountRegulatorySnapshotsArgs
+  regulatoryChangeSets?: boolean | TenantCountOutputTypeCountRegulatoryChangeSetsArgs
 }
 
 /**
@@ -927,6 +1308,27 @@ export type TenantCountOutputTypeCountEvidenceChunksArgs<ExtArgs extends runtime
   where?: Prisma.EvidenceChunkWhereInput
 }
 
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountRegulatorySourcesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RegulatorySourceWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountRegulatorySnapshotsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RegulatorySnapshotWhereInput
+}
+
+/**
+ * TenantCountOutputType without action
+ */
+export type TenantCountOutputTypeCountRegulatoryChangeSetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RegulatoryChangeSetWhereInput
+}
+
 
 export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -940,6 +1342,9 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
   knowledgeDocuments?: boolean | Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs>
   evidenceChunks?: boolean | Prisma.Tenant$evidenceChunksArgs<ExtArgs>
+  regulatorySources?: boolean | Prisma.Tenant$regulatorySourcesArgs<ExtArgs>
+  regulatorySnapshots?: boolean | Prisma.Tenant$regulatorySnapshotsArgs<ExtArgs>
+  regulatoryChangeSets?: boolean | Prisma.Tenant$regulatoryChangeSetsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["tenant"]>
 
@@ -975,6 +1380,9 @@ export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   auditLogs?: boolean | Prisma.Tenant$auditLogsArgs<ExtArgs>
   knowledgeDocuments?: boolean | Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs>
   evidenceChunks?: boolean | Prisma.Tenant$evidenceChunksArgs<ExtArgs>
+  regulatorySources?: boolean | Prisma.Tenant$regulatorySourcesArgs<ExtArgs>
+  regulatorySnapshots?: boolean | Prisma.Tenant$regulatorySnapshotsArgs<ExtArgs>
+  regulatoryChangeSets?: boolean | Prisma.Tenant$regulatoryChangeSetsArgs<ExtArgs>
   _count?: boolean | Prisma.TenantCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type TenantIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -989,6 +1397,9 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     knowledgeDocuments: Prisma.$KnowledgeDocumentPayload<ExtArgs>[]
     evidenceChunks: Prisma.$EvidenceChunkPayload<ExtArgs>[]
+    regulatorySources: Prisma.$RegulatorySourcePayload<ExtArgs>[]
+    regulatorySnapshots: Prisma.$RegulatorySnapshotPayload<ExtArgs>[]
+    regulatoryChangeSets: Prisma.$RegulatoryChangeSetPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1396,6 +1807,9 @@ export interface Prisma__TenantClient<T, Null = never, ExtArgs extends runtime.T
   auditLogs<T extends Prisma.Tenant$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   knowledgeDocuments<T extends Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$knowledgeDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   evidenceChunks<T extends Prisma.Tenant$evidenceChunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$evidenceChunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvidenceChunkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  regulatorySources<T extends Prisma.Tenant$regulatorySourcesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$regulatorySourcesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RegulatorySourcePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  regulatorySnapshots<T extends Prisma.Tenant$regulatorySnapshotsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$regulatorySnapshotsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RegulatorySnapshotPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  regulatoryChangeSets<T extends Prisma.Tenant$regulatoryChangeSetsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Tenant$regulatoryChangeSetsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RegulatoryChangeSetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1964,6 +2378,78 @@ export type Tenant$evidenceChunksArgs<ExtArgs extends runtime.Types.Extensions.I
   take?: number
   skip?: number
   distinct?: Prisma.EvidenceChunkScalarFieldEnum | Prisma.EvidenceChunkScalarFieldEnum[]
+}
+
+/**
+ * Tenant.regulatorySources
+ */
+export type Tenant$regulatorySourcesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RegulatorySource
+   */
+  select?: Prisma.RegulatorySourceSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RegulatorySource
+   */
+  omit?: Prisma.RegulatorySourceOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RegulatorySourceInclude<ExtArgs> | null
+  where?: Prisma.RegulatorySourceWhereInput
+  orderBy?: Prisma.RegulatorySourceOrderByWithRelationInput | Prisma.RegulatorySourceOrderByWithRelationInput[]
+  cursor?: Prisma.RegulatorySourceWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RegulatorySourceScalarFieldEnum | Prisma.RegulatorySourceScalarFieldEnum[]
+}
+
+/**
+ * Tenant.regulatorySnapshots
+ */
+export type Tenant$regulatorySnapshotsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RegulatorySnapshot
+   */
+  select?: Prisma.RegulatorySnapshotSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RegulatorySnapshot
+   */
+  omit?: Prisma.RegulatorySnapshotOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RegulatorySnapshotInclude<ExtArgs> | null
+  where?: Prisma.RegulatorySnapshotWhereInput
+  orderBy?: Prisma.RegulatorySnapshotOrderByWithRelationInput | Prisma.RegulatorySnapshotOrderByWithRelationInput[]
+  cursor?: Prisma.RegulatorySnapshotWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RegulatorySnapshotScalarFieldEnum | Prisma.RegulatorySnapshotScalarFieldEnum[]
+}
+
+/**
+ * Tenant.regulatoryChangeSets
+ */
+export type Tenant$regulatoryChangeSetsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RegulatoryChangeSet
+   */
+  select?: Prisma.RegulatoryChangeSetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RegulatoryChangeSet
+   */
+  omit?: Prisma.RegulatoryChangeSetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RegulatoryChangeSetInclude<ExtArgs> | null
+  where?: Prisma.RegulatoryChangeSetWhereInput
+  orderBy?: Prisma.RegulatoryChangeSetOrderByWithRelationInput | Prisma.RegulatoryChangeSetOrderByWithRelationInput[]
+  cursor?: Prisma.RegulatoryChangeSetWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RegulatoryChangeSetScalarFieldEnum | Prisma.RegulatoryChangeSetScalarFieldEnum[]
 }
 
 /**

@@ -38,6 +38,14 @@ export type KnowledgeDocumentMinAggregateOutputType = {
   storageKey: string | null
   createdById: string | null
   approvedById: string | null
+  canonicalKey: string | null
+  sourceSnapshotId: string | null
+  changeSetId: string | null
+  supersedesDocumentId: string | null
+  lifecycleStatus: $Enums.KnowledgeLifecycleStatus | null
+  autoIngested: boolean | null
+  sourcePublishedAt: Date | null
+  interpretationSummary: string | null
   createdAt: Date | null
   approvedAt: Date | null
 }
@@ -56,6 +64,14 @@ export type KnowledgeDocumentMaxAggregateOutputType = {
   storageKey: string | null
   createdById: string | null
   approvedById: string | null
+  canonicalKey: string | null
+  sourceSnapshotId: string | null
+  changeSetId: string | null
+  supersedesDocumentId: string | null
+  lifecycleStatus: $Enums.KnowledgeLifecycleStatus | null
+  autoIngested: boolean | null
+  sourcePublishedAt: Date | null
+  interpretationSummary: string | null
   createdAt: Date | null
   approvedAt: Date | null
 }
@@ -74,6 +90,14 @@ export type KnowledgeDocumentCountAggregateOutputType = {
   storageKey: number
   createdById: number
   approvedById: number
+  canonicalKey: number
+  sourceSnapshotId: number
+  changeSetId: number
+  supersedesDocumentId: number
+  lifecycleStatus: number
+  autoIngested: number
+  sourcePublishedAt: number
+  interpretationSummary: number
   createdAt: number
   approvedAt: number
   _all: number
@@ -94,6 +118,14 @@ export type KnowledgeDocumentMinAggregateInputType = {
   storageKey?: true
   createdById?: true
   approvedById?: true
+  canonicalKey?: true
+  sourceSnapshotId?: true
+  changeSetId?: true
+  supersedesDocumentId?: true
+  lifecycleStatus?: true
+  autoIngested?: true
+  sourcePublishedAt?: true
+  interpretationSummary?: true
   createdAt?: true
   approvedAt?: true
 }
@@ -112,6 +144,14 @@ export type KnowledgeDocumentMaxAggregateInputType = {
   storageKey?: true
   createdById?: true
   approvedById?: true
+  canonicalKey?: true
+  sourceSnapshotId?: true
+  changeSetId?: true
+  supersedesDocumentId?: true
+  lifecycleStatus?: true
+  autoIngested?: true
+  sourcePublishedAt?: true
+  interpretationSummary?: true
   createdAt?: true
   approvedAt?: true
 }
@@ -130,6 +170,14 @@ export type KnowledgeDocumentCountAggregateInputType = {
   storageKey?: true
   createdById?: true
   approvedById?: true
+  canonicalKey?: true
+  sourceSnapshotId?: true
+  changeSetId?: true
+  supersedesDocumentId?: true
+  lifecycleStatus?: true
+  autoIngested?: true
+  sourcePublishedAt?: true
+  interpretationSummary?: true
   createdAt?: true
   approvedAt?: true
   _all?: true
@@ -221,6 +269,14 @@ export type KnowledgeDocumentGroupByOutputType = {
   storageKey: string
   createdById: string
   approvedById: string | null
+  canonicalKey: string | null
+  sourceSnapshotId: string | null
+  changeSetId: string | null
+  supersedesDocumentId: string | null
+  lifecycleStatus: $Enums.KnowledgeLifecycleStatus
+  autoIngested: boolean
+  sourcePublishedAt: Date | null
+  interpretationSummary: string | null
   createdAt: Date
   approvedAt: Date | null
   _count: KnowledgeDocumentCountAggregateOutputType | null
@@ -260,12 +316,24 @@ export type KnowledgeDocumentWhereInput = {
   storageKey?: Prisma.StringFilter<"KnowledgeDocument"> | string
   createdById?: Prisma.StringFilter<"KnowledgeDocument"> | string
   approvedById?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  canonicalKey?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  sourceSnapshotId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  changeSetId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  supersedesDocumentId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFilter<"KnowledgeDocument"> | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFilter<"KnowledgeDocument"> | boolean
+  sourcePublishedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocument"> | Date | string | null
+  interpretationSummary?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
   createdAt?: Prisma.DateTimeFilter<"KnowledgeDocument"> | Date | string
   approvedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocument"> | Date | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   affiliate?: Prisma.XOR<Prisma.AffiliateNullableScalarRelationFilter, Prisma.AffiliateWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   approvedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  sourceSnapshot?: Prisma.XOR<Prisma.RegulatorySnapshotNullableScalarRelationFilter, Prisma.RegulatorySnapshotWhereInput> | null
+  changeSet?: Prisma.XOR<Prisma.RegulatoryChangeSetNullableScalarRelationFilter, Prisma.RegulatoryChangeSetWhereInput> | null
+  supersedesDocument?: Prisma.XOR<Prisma.KnowledgeDocumentNullableScalarRelationFilter, Prisma.KnowledgeDocumentWhereInput> | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentListRelationFilter
   chunks?: Prisma.EvidenceChunkListRelationFilter
 }
 
@@ -283,12 +351,24 @@ export type KnowledgeDocumentOrderByWithRelationInput = {
   storageKey?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   approvedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  canonicalKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceSnapshotId?: Prisma.SortOrderInput | Prisma.SortOrder
+  changeSetId?: Prisma.SortOrderInput | Prisma.SortOrder
+  supersedesDocumentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  lifecycleStatus?: Prisma.SortOrder
+  autoIngested?: Prisma.SortOrder
+  sourcePublishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  interpretationSummary?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   approvedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   affiliate?: Prisma.AffiliateOrderByWithRelationInput
   createdBy?: Prisma.UserOrderByWithRelationInput
   approvedBy?: Prisma.UserOrderByWithRelationInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotOrderByWithRelationInput
+  changeSet?: Prisma.RegulatoryChangeSetOrderByWithRelationInput
+  supersedesDocument?: Prisma.KnowledgeDocumentOrderByWithRelationInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentOrderByRelationAggregateInput
   chunks?: Prisma.EvidenceChunkOrderByRelationAggregateInput
 }
 
@@ -309,12 +389,24 @@ export type KnowledgeDocumentWhereUniqueInput = Prisma.AtLeast<{
   storageKey?: Prisma.StringFilter<"KnowledgeDocument"> | string
   createdById?: Prisma.StringFilter<"KnowledgeDocument"> | string
   approvedById?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  canonicalKey?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  sourceSnapshotId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  changeSetId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  supersedesDocumentId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFilter<"KnowledgeDocument"> | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFilter<"KnowledgeDocument"> | boolean
+  sourcePublishedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocument"> | Date | string | null
+  interpretationSummary?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
   createdAt?: Prisma.DateTimeFilter<"KnowledgeDocument"> | Date | string
   approvedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocument"> | Date | string | null
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   affiliate?: Prisma.XOR<Prisma.AffiliateNullableScalarRelationFilter, Prisma.AffiliateWhereInput> | null
   createdBy?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   approvedBy?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
+  sourceSnapshot?: Prisma.XOR<Prisma.RegulatorySnapshotNullableScalarRelationFilter, Prisma.RegulatorySnapshotWhereInput> | null
+  changeSet?: Prisma.XOR<Prisma.RegulatoryChangeSetNullableScalarRelationFilter, Prisma.RegulatoryChangeSetWhereInput> | null
+  supersedesDocument?: Prisma.XOR<Prisma.KnowledgeDocumentNullableScalarRelationFilter, Prisma.KnowledgeDocumentWhereInput> | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentListRelationFilter
   chunks?: Prisma.EvidenceChunkListRelationFilter
 }, "id">
 
@@ -332,6 +424,14 @@ export type KnowledgeDocumentOrderByWithAggregationInput = {
   storageKey?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   approvedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  canonicalKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceSnapshotId?: Prisma.SortOrderInput | Prisma.SortOrder
+  changeSetId?: Prisma.SortOrderInput | Prisma.SortOrder
+  supersedesDocumentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  lifecycleStatus?: Prisma.SortOrder
+  autoIngested?: Prisma.SortOrder
+  sourcePublishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  interpretationSummary?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   approvedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.KnowledgeDocumentCountOrderByAggregateInput
@@ -356,6 +456,14 @@ export type KnowledgeDocumentScalarWhereWithAggregatesInput = {
   storageKey?: Prisma.StringWithAggregatesFilter<"KnowledgeDocument"> | string
   createdById?: Prisma.StringWithAggregatesFilter<"KnowledgeDocument"> | string
   approvedById?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocument"> | string | null
+  canonicalKey?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocument"> | string | null
+  sourceSnapshotId?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocument"> | string | null
+  changeSetId?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocument"> | string | null
+  supersedesDocumentId?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocument"> | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusWithAggregatesFilter<"KnowledgeDocument"> | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolWithAggregatesFilter<"KnowledgeDocument"> | boolean
+  sourcePublishedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"KnowledgeDocument"> | Date | string | null
+  interpretationSummary?: Prisma.StringNullableWithAggregatesFilter<"KnowledgeDocument"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"KnowledgeDocument"> | Date | string
   approvedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"KnowledgeDocument"> | Date | string | null
 }
@@ -370,12 +478,21 @@ export type KnowledgeDocumentCreateInput = {
   effectiveTo?: Date | string | null
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
   affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
   approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -393,8 +510,17 @@ export type KnowledgeDocumentUncheckedCreateInput = {
   storageKey: string
   createdById: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -408,12 +534,21 @@ export type KnowledgeDocumentUpdateInput = {
   effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
   affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
   approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -431,8 +566,17 @@ export type KnowledgeDocumentUncheckedUpdateInput = {
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -450,6 +594,14 @@ export type KnowledgeDocumentCreateManyInput = {
   storageKey: string
   createdById: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
 }
@@ -464,6 +616,11 @@ export type KnowledgeDocumentUpdateManyMutationInput = {
   effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -482,6 +639,14 @@ export type KnowledgeDocumentUncheckedUpdateManyInput = {
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -494,6 +659,11 @@ export type KnowledgeDocumentListRelationFilter = {
 
 export type KnowledgeDocumentOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type KnowledgeDocumentNullableScalarRelationFilter = {
+  is?: Prisma.KnowledgeDocumentWhereInput | null
+  isNot?: Prisma.KnowledgeDocumentWhereInput | null
 }
 
 export type KnowledgeDocumentCountOrderByAggregateInput = {
@@ -510,6 +680,14 @@ export type KnowledgeDocumentCountOrderByAggregateInput = {
   storageKey?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   approvedById?: Prisma.SortOrder
+  canonicalKey?: Prisma.SortOrder
+  sourceSnapshotId?: Prisma.SortOrder
+  changeSetId?: Prisma.SortOrder
+  supersedesDocumentId?: Prisma.SortOrder
+  lifecycleStatus?: Prisma.SortOrder
+  autoIngested?: Prisma.SortOrder
+  sourcePublishedAt?: Prisma.SortOrder
+  interpretationSummary?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   approvedAt?: Prisma.SortOrder
 }
@@ -528,6 +706,14 @@ export type KnowledgeDocumentMaxOrderByAggregateInput = {
   storageKey?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   approvedById?: Prisma.SortOrder
+  canonicalKey?: Prisma.SortOrder
+  sourceSnapshotId?: Prisma.SortOrder
+  changeSetId?: Prisma.SortOrder
+  supersedesDocumentId?: Prisma.SortOrder
+  lifecycleStatus?: Prisma.SortOrder
+  autoIngested?: Prisma.SortOrder
+  sourcePublishedAt?: Prisma.SortOrder
+  interpretationSummary?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   approvedAt?: Prisma.SortOrder
 }
@@ -546,13 +732,16 @@ export type KnowledgeDocumentMinOrderByAggregateInput = {
   storageKey?: Prisma.SortOrder
   createdById?: Prisma.SortOrder
   approvedById?: Prisma.SortOrder
+  canonicalKey?: Prisma.SortOrder
+  sourceSnapshotId?: Prisma.SortOrder
+  changeSetId?: Prisma.SortOrder
+  supersedesDocumentId?: Prisma.SortOrder
+  lifecycleStatus?: Prisma.SortOrder
+  autoIngested?: Prisma.SortOrder
+  sourcePublishedAt?: Prisma.SortOrder
+  interpretationSummary?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   approvedAt?: Prisma.SortOrder
-}
-
-export type KnowledgeDocumentNullableScalarRelationFilter = {
-  is?: Prisma.KnowledgeDocumentWhereInput | null
-  isNot?: Prisma.KnowledgeDocumentWhereInput | null
 }
 
 export type KnowledgeDocumentCreateNestedManyWithoutTenantInput = {
@@ -723,6 +912,26 @@ export type KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByNestedInput = {
   deleteMany?: Prisma.KnowledgeDocumentScalarWhereInput | Prisma.KnowledgeDocumentScalarWhereInput[]
 }
 
+export type KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersededByDocumentsInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersededByDocumentsInput>
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersededByDocumentsInput
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput
+}
+
+export type KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput> | Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySupersedesDocumentInputEnvelope
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+}
+
+export type KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput> | Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySupersedesDocumentInputEnvelope
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+}
+
 export type EnumKnowledgeDocumentTypeFieldUpdateOperationsInput = {
   set?: $Enums.KnowledgeDocumentType
 }
@@ -733,6 +942,52 @@ export type NullableEnumProductTypeFieldUpdateOperationsInput = {
 
 export type EnumKnowledgeApprovalStatusFieldUpdateOperationsInput = {
   set?: $Enums.KnowledgeApprovalStatus
+}
+
+export type EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput = {
+  set?: $Enums.KnowledgeLifecycleStatus
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersededByDocumentsInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersededByDocumentsInput>
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersededByDocumentsInput
+  upsert?: Prisma.KnowledgeDocumentUpsertWithoutSupersededByDocumentsInput
+  disconnect?: Prisma.KnowledgeDocumentWhereInput | boolean
+  delete?: Prisma.KnowledgeDocumentWhereInput | boolean
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.KnowledgeDocumentUpdateToOneWithWhereWithoutSupersededByDocumentsInput, Prisma.KnowledgeDocumentUpdateWithoutSupersededByDocumentsInput>, Prisma.KnowledgeDocumentUncheckedUpdateWithoutSupersededByDocumentsInput>
+}
+
+export type KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput> | Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput[]
+  upsert?: Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSupersedesDocumentInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySupersedesDocumentInputEnvelope
+  set?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  disconnect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  delete?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  update?: Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSupersedesDocumentInput[]
+  updateMany?: Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSupersedesDocumentInput[]
+  deleteMany?: Prisma.KnowledgeDocumentScalarWhereInput | Prisma.KnowledgeDocumentScalarWhereInput[]
+}
+
+export type KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput> | Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput[]
+  upsert?: Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSupersedesDocumentInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySupersedesDocumentInputEnvelope
+  set?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  disconnect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  delete?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  update?: Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSupersedesDocumentInput[]
+  updateMany?: Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSupersedesDocumentInput | Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSupersedesDocumentInput[]
+  deleteMany?: Prisma.KnowledgeDocumentScalarWhereInput | Prisma.KnowledgeDocumentScalarWhereInput[]
 }
 
 export type KnowledgeDocumentCreateNestedOneWithoutChunksInput = {
@@ -751,6 +1006,90 @@ export type KnowledgeDocumentUpdateOneWithoutChunksNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.KnowledgeDocumentUpdateToOneWithWhereWithoutChunksInput, Prisma.KnowledgeDocumentUpdateWithoutChunksInput>, Prisma.KnowledgeDocumentUncheckedUpdateWithoutChunksInput>
 }
 
+export type KnowledgeDocumentCreateNestedManyWithoutSourceSnapshotInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput> | Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySourceSnapshotInputEnvelope
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+}
+
+export type KnowledgeDocumentUncheckedCreateNestedManyWithoutSourceSnapshotInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput> | Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySourceSnapshotInputEnvelope
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+}
+
+export type KnowledgeDocumentUpdateManyWithoutSourceSnapshotNestedInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput> | Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput[]
+  upsert?: Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSourceSnapshotInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySourceSnapshotInputEnvelope
+  set?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  disconnect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  delete?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  update?: Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSourceSnapshotInput[]
+  updateMany?: Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSourceSnapshotInput[]
+  deleteMany?: Prisma.KnowledgeDocumentScalarWhereInput | Prisma.KnowledgeDocumentScalarWhereInput[]
+}
+
+export type KnowledgeDocumentUncheckedUpdateManyWithoutSourceSnapshotNestedInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput> | Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput[]
+  upsert?: Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutSourceSnapshotInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManySourceSnapshotInputEnvelope
+  set?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  disconnect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  delete?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  update?: Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutSourceSnapshotInput[]
+  updateMany?: Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSourceSnapshotInput | Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutSourceSnapshotInput[]
+  deleteMany?: Prisma.KnowledgeDocumentScalarWhereInput | Prisma.KnowledgeDocumentScalarWhereInput[]
+}
+
+export type KnowledgeDocumentCreateNestedManyWithoutChangeSetInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput> | Prisma.KnowledgeDocumentCreateWithoutChangeSetInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManyChangeSetInputEnvelope
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+}
+
+export type KnowledgeDocumentUncheckedCreateNestedManyWithoutChangeSetInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput> | Prisma.KnowledgeDocumentCreateWithoutChangeSetInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManyChangeSetInputEnvelope
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+}
+
+export type KnowledgeDocumentUpdateManyWithoutChangeSetNestedInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput> | Prisma.KnowledgeDocumentCreateWithoutChangeSetInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput[]
+  upsert?: Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutChangeSetInput | Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutChangeSetInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManyChangeSetInputEnvelope
+  set?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  disconnect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  delete?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  update?: Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutChangeSetInput | Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutChangeSetInput[]
+  updateMany?: Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutChangeSetInput | Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutChangeSetInput[]
+  deleteMany?: Prisma.KnowledgeDocumentScalarWhereInput | Prisma.KnowledgeDocumentScalarWhereInput[]
+}
+
+export type KnowledgeDocumentUncheckedUpdateManyWithoutChangeSetNestedInput = {
+  create?: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput> | Prisma.KnowledgeDocumentCreateWithoutChangeSetInput[] | Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput | Prisma.KnowledgeDocumentCreateOrConnectWithoutChangeSetInput[]
+  upsert?: Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutChangeSetInput | Prisma.KnowledgeDocumentUpsertWithWhereUniqueWithoutChangeSetInput[]
+  createMany?: Prisma.KnowledgeDocumentCreateManyChangeSetInputEnvelope
+  set?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  disconnect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  delete?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  connect?: Prisma.KnowledgeDocumentWhereUniqueInput | Prisma.KnowledgeDocumentWhereUniqueInput[]
+  update?: Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutChangeSetInput | Prisma.KnowledgeDocumentUpdateWithWhereUniqueWithoutChangeSetInput[]
+  updateMany?: Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutChangeSetInput | Prisma.KnowledgeDocumentUpdateManyWithWhereWithoutChangeSetInput[]
+  deleteMany?: Prisma.KnowledgeDocumentScalarWhereInput | Prisma.KnowledgeDocumentScalarWhereInput[]
+}
+
 export type KnowledgeDocumentCreateWithoutTenantInput = {
   id: string
   documentType: $Enums.KnowledgeDocumentType
@@ -761,11 +1100,20 @@ export type KnowledgeDocumentCreateWithoutTenantInput = {
   effectiveTo?: Date | string | null
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
   affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
   approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -782,8 +1130,17 @@ export type KnowledgeDocumentUncheckedCreateWithoutTenantInput = {
   storageKey: string
   createdById: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -830,6 +1187,14 @@ export type KnowledgeDocumentScalarWhereInput = {
   storageKey?: Prisma.StringFilter<"KnowledgeDocument"> | string
   createdById?: Prisma.StringFilter<"KnowledgeDocument"> | string
   approvedById?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  canonicalKey?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  sourceSnapshotId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  changeSetId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  supersedesDocumentId?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFilter<"KnowledgeDocument"> | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFilter<"KnowledgeDocument"> | boolean
+  sourcePublishedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocument"> | Date | string | null
+  interpretationSummary?: Prisma.StringNullableFilter<"KnowledgeDocument"> | string | null
   createdAt?: Prisma.DateTimeFilter<"KnowledgeDocument"> | Date | string
   approvedAt?: Prisma.DateTimeNullableFilter<"KnowledgeDocument"> | Date | string | null
 }
@@ -844,11 +1209,20 @@ export type KnowledgeDocumentCreateWithoutAffiliateInput = {
   effectiveTo?: Date | string | null
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
   approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -865,8 +1239,17 @@ export type KnowledgeDocumentUncheckedCreateWithoutAffiliateInput = {
   storageKey: string
   createdById: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -906,11 +1289,20 @@ export type KnowledgeDocumentCreateWithoutCreatedByInput = {
   effectiveTo?: Date | string | null
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
   affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
   approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -927,8 +1319,17 @@ export type KnowledgeDocumentUncheckedCreateWithoutCreatedByInput = {
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -952,11 +1353,20 @@ export type KnowledgeDocumentCreateWithoutApprovedByInput = {
   effectiveTo?: Date | string | null
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
   affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -973,8 +1383,17 @@ export type KnowledgeDocumentUncheckedCreateWithoutApprovedByInput = {
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
   createdById: string
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
   chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
 }
 
@@ -1020,6 +1439,210 @@ export type KnowledgeDocumentUpdateManyWithWhereWithoutApprovedByInput = {
   data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateManyMutationInput, Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByInput>
 }
 
+export type KnowledgeDocumentCreateWithoutSupersededByDocumentsInput = {
+  id: string
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
+  approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentUncheckedCreateWithoutSupersededByDocumentsInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  createdById: string
+  approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentCreateOrConnectWithoutSupersededByDocumentsInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersededByDocumentsInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersededByDocumentsInput>
+}
+
+export type KnowledgeDocumentCreateWithoutSupersedesDocumentInput = {
+  id: string
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
+  approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
+  chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  createdById: string
+  approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
+  chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentCreateOrConnectWithoutSupersedesDocumentInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput>
+}
+
+export type KnowledgeDocumentCreateManySupersedesDocumentInputEnvelope = {
+  data: Prisma.KnowledgeDocumentCreateManySupersedesDocumentInput | Prisma.KnowledgeDocumentCreateManySupersedesDocumentInput[]
+  skipDuplicates?: boolean
+}
+
+export type KnowledgeDocumentUpsertWithoutSupersededByDocumentsInput = {
+  update: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutSupersededByDocumentsInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutSupersededByDocumentsInput>
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersededByDocumentsInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersededByDocumentsInput>
+  where?: Prisma.KnowledgeDocumentWhereInput
+}
+
+export type KnowledgeDocumentUpdateToOneWithWhereWithoutSupersededByDocumentsInput = {
+  where?: Prisma.KnowledgeDocumentWhereInput
+  data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutSupersededByDocumentsInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutSupersededByDocumentsInput>
+}
+
+export type KnowledgeDocumentUpdateWithoutSupersededByDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
+  approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUncheckedUpdateWithoutSupersededByDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUpsertWithWhereUniqueWithoutSupersedesDocumentInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  update: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutSupersedesDocumentInput>
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSupersedesDocumentInput>
+}
+
+export type KnowledgeDocumentUpdateWithWhereUniqueWithoutSupersedesDocumentInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutSupersedesDocumentInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutSupersedesDocumentInput>
+}
+
+export type KnowledgeDocumentUpdateManyWithWhereWithoutSupersedesDocumentInput = {
+  where: Prisma.KnowledgeDocumentScalarWhereInput
+  data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateManyMutationInput, Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentInput>
+}
+
 export type KnowledgeDocumentCreateWithoutChunksInput = {
   id: string
   documentType: $Enums.KnowledgeDocumentType
@@ -1030,12 +1653,21 @@ export type KnowledgeDocumentCreateWithoutChunksInput = {
   effectiveTo?: Date | string | null
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
   tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
   affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
   createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
   approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
 }
 
 export type KnowledgeDocumentUncheckedCreateWithoutChunksInput = {
@@ -1052,8 +1684,17 @@ export type KnowledgeDocumentUncheckedCreateWithoutChunksInput = {
   storageKey: string
   createdById: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
 }
 
 export type KnowledgeDocumentCreateOrConnectWithoutChunksInput = {
@@ -1082,12 +1723,21 @@ export type KnowledgeDocumentUpdateWithoutChunksInput = {
   effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
   affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
   approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
 }
 
 export type KnowledgeDocumentUncheckedUpdateWithoutChunksInput = {
@@ -1104,8 +1754,177 @@ export type KnowledgeDocumentUncheckedUpdateWithoutChunksInput = {
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
+}
+
+export type KnowledgeDocumentCreateWithoutSourceSnapshotInput = {
+  id: string
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
+  approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
+  chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  createdById: string
+  approvedById?: string | null
+  canonicalKey?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
+  chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentCreateOrConnectWithoutSourceSnapshotInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput>
+}
+
+export type KnowledgeDocumentCreateManySourceSnapshotInputEnvelope = {
+  data: Prisma.KnowledgeDocumentCreateManySourceSnapshotInput | Prisma.KnowledgeDocumentCreateManySourceSnapshotInput[]
+  skipDuplicates?: boolean
+}
+
+export type KnowledgeDocumentUpsertWithWhereUniqueWithoutSourceSnapshotInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  update: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutSourceSnapshotInput>
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutSourceSnapshotInput>
+}
+
+export type KnowledgeDocumentUpdateWithWhereUniqueWithoutSourceSnapshotInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutSourceSnapshotInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutSourceSnapshotInput>
+}
+
+export type KnowledgeDocumentUpdateManyWithWhereWithoutSourceSnapshotInput = {
+  where: Prisma.KnowledgeDocumentScalarWhereInput
+  data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateManyMutationInput, Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSourceSnapshotInput>
+}
+
+export type KnowledgeDocumentCreateWithoutChangeSetInput = {
+  id: string
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  canonicalKey?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  tenant: Prisma.TenantCreateNestedOneWithoutKnowledgeDocumentsInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutKnowledgeDocumentsInput
+  createdBy: Prisma.UserCreateNestedOneWithoutCreatedKnowledgeDocumentsInput
+  approvedBy?: Prisma.UserCreateNestedOneWithoutApprovedKnowledgeDocumentsInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotCreateNestedOneWithoutKnowledgeDocumentsInput
+  supersedesDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutSupersededByDocumentsInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentCreateNestedManyWithoutSupersedesDocumentInput
+  chunks?: Prisma.EvidenceChunkCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentUncheckedCreateWithoutChangeSetInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  createdById: string
+  approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedCreateNestedManyWithoutSupersedesDocumentInput
+  chunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutKnowledgeDocumentInput
+}
+
+export type KnowledgeDocumentCreateOrConnectWithoutChangeSetInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput>
+}
+
+export type KnowledgeDocumentCreateManyChangeSetInputEnvelope = {
+  data: Prisma.KnowledgeDocumentCreateManyChangeSetInput | Prisma.KnowledgeDocumentCreateManyChangeSetInput[]
+  skipDuplicates?: boolean
+}
+
+export type KnowledgeDocumentUpsertWithWhereUniqueWithoutChangeSetInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  update: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutChangeSetInput>
+  create: Prisma.XOR<Prisma.KnowledgeDocumentCreateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedCreateWithoutChangeSetInput>
+}
+
+export type KnowledgeDocumentUpdateWithWhereUniqueWithoutChangeSetInput = {
+  where: Prisma.KnowledgeDocumentWhereUniqueInput
+  data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateWithoutChangeSetInput, Prisma.KnowledgeDocumentUncheckedUpdateWithoutChangeSetInput>
+}
+
+export type KnowledgeDocumentUpdateManyWithWhereWithoutChangeSetInput = {
+  where: Prisma.KnowledgeDocumentScalarWhereInput
+  data: Prisma.XOR<Prisma.KnowledgeDocumentUpdateManyMutationInput, Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutChangeSetInput>
 }
 
 export type KnowledgeDocumentCreateManyTenantInput = {
@@ -1121,6 +1940,14 @@ export type KnowledgeDocumentCreateManyTenantInput = {
   storageKey: string
   createdById: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
 }
@@ -1135,11 +1962,20 @@ export type KnowledgeDocumentUpdateWithoutTenantInput = {
   effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
   approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1156,8 +1992,17 @@ export type KnowledgeDocumentUncheckedUpdateWithoutTenantInput = {
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1174,6 +2019,14 @@ export type KnowledgeDocumentUncheckedUpdateManyWithoutTenantInput = {
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -1191,6 +2044,14 @@ export type KnowledgeDocumentCreateManyAffiliateInput = {
   storageKey: string
   createdById: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
 }
@@ -1205,11 +2066,20 @@ export type KnowledgeDocumentUpdateWithoutAffiliateInput = {
   effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
   approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1226,8 +2096,17 @@ export type KnowledgeDocumentUncheckedUpdateWithoutAffiliateInput = {
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1244,6 +2123,14 @@ export type KnowledgeDocumentUncheckedUpdateManyWithoutAffiliateInput = {
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -1261,6 +2148,14 @@ export type KnowledgeDocumentCreateManyCreatedByInput = {
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
   approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
 }
@@ -1278,6 +2173,14 @@ export type KnowledgeDocumentCreateManyApprovedByInput = {
   approvalStatus?: $Enums.KnowledgeApprovalStatus
   storageKey: string
   createdById: string
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
   createdAt?: Date | string
   approvedAt?: Date | string | null
 }
@@ -1292,11 +2195,20 @@ export type KnowledgeDocumentUpdateWithoutCreatedByInput = {
   effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
   affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
   approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1313,8 +2225,17 @@ export type KnowledgeDocumentUncheckedUpdateWithoutCreatedByInput = {
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1331,6 +2252,14 @@ export type KnowledgeDocumentUncheckedUpdateManyWithoutCreatedByInput = {
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -1345,11 +2274,20 @@ export type KnowledgeDocumentUpdateWithoutApprovedByInput = {
   effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
   affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
   createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1366,8 +2304,17 @@ export type KnowledgeDocumentUncheckedUpdateWithoutApprovedByInput = {
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
   chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
 }
 
@@ -1384,6 +2331,326 @@ export type KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByInput = {
   approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
   storageKey?: Prisma.StringFieldUpdateOperationsInput | string
   createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type KnowledgeDocumentCreateManySupersedesDocumentInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  createdById: string
+  approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  changeSetId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+}
+
+export type KnowledgeDocumentUpdateWithoutSupersedesDocumentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
+  approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
+  chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUncheckedUpdateWithoutSupersedesDocumentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
+  chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type KnowledgeDocumentCreateManySourceSnapshotInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  createdById: string
+  approvedById?: string | null
+  canonicalKey?: string | null
+  changeSetId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+}
+
+export type KnowledgeDocumentUpdateWithoutSourceSnapshotInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
+  approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
+  chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUncheckedUpdateWithoutSourceSnapshotInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
+  chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUncheckedUpdateManyWithoutSourceSnapshotInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type KnowledgeDocumentCreateManyChangeSetInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  documentType: $Enums.KnowledgeDocumentType
+  productType?: $Enums.ProductType | null
+  title: string
+  version: string
+  effectiveFrom: Date | string
+  effectiveTo?: Date | string | null
+  approvalStatus?: $Enums.KnowledgeApprovalStatus
+  storageKey: string
+  createdById: string
+  approvedById?: string | null
+  canonicalKey?: string | null
+  sourceSnapshotId?: string | null
+  supersedesDocumentId?: string | null
+  lifecycleStatus?: $Enums.KnowledgeLifecycleStatus
+  autoIngested?: boolean
+  sourcePublishedAt?: Date | string | null
+  interpretationSummary?: string | null
+  createdAt?: Date | string
+  approvedAt?: Date | string | null
+}
+
+export type KnowledgeDocumentUpdateWithoutChangeSetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutKnowledgeDocumentsNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutKnowledgeDocumentsNestedInput
+  createdBy?: Prisma.UserUpdateOneRequiredWithoutCreatedKnowledgeDocumentsNestedInput
+  approvedBy?: Prisma.UserUpdateOneWithoutApprovedKnowledgeDocumentsNestedInput
+  sourceSnapshot?: Prisma.RegulatorySnapshotUpdateOneWithoutKnowledgeDocumentsNestedInput
+  supersedesDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutSupersededByDocumentsNestedInput
+  supersededByDocuments?: Prisma.KnowledgeDocumentUpdateManyWithoutSupersedesDocumentNestedInput
+  chunks?: Prisma.EvidenceChunkUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUncheckedUpdateWithoutChangeSetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  supersededByDocuments?: Prisma.KnowledgeDocumentUncheckedUpdateManyWithoutSupersedesDocumentNestedInput
+  chunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput
+}
+
+export type KnowledgeDocumentUncheckedUpdateManyWithoutChangeSetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  documentType?: Prisma.EnumKnowledgeDocumentTypeFieldUpdateOperationsInput | $Enums.KnowledgeDocumentType
+  productType?: Prisma.NullableEnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType | null
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  version?: Prisma.StringFieldUpdateOperationsInput | string
+  effectiveFrom?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  approvalStatus?: Prisma.EnumKnowledgeApprovalStatusFieldUpdateOperationsInput | $Enums.KnowledgeApprovalStatus
+  storageKey?: Prisma.StringFieldUpdateOperationsInput | string
+  createdById?: Prisma.StringFieldUpdateOperationsInput | string
+  approvedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sourceSnapshotId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  lifecycleStatus?: Prisma.EnumKnowledgeLifecycleStatusFieldUpdateOperationsInput | $Enums.KnowledgeLifecycleStatus
+  autoIngested?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  sourcePublishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  interpretationSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   approvedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
 }
@@ -1394,10 +2661,12 @@ export type KnowledgeDocumentUncheckedUpdateManyWithoutApprovedByInput = {
  */
 
 export type KnowledgeDocumentCountOutputType = {
+  supersededByDocuments: number
   chunks: number
 }
 
 export type KnowledgeDocumentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  supersededByDocuments?: boolean | KnowledgeDocumentCountOutputTypeCountSupersededByDocumentsArgs
   chunks?: boolean | KnowledgeDocumentCountOutputTypeCountChunksArgs
 }
 
@@ -1409,6 +2678,13 @@ export type KnowledgeDocumentCountOutputTypeDefaultArgs<ExtArgs extends runtime.
    * Select specific fields to fetch from the KnowledgeDocumentCountOutputType
    */
   select?: Prisma.KnowledgeDocumentCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * KnowledgeDocumentCountOutputType without action
+ */
+export type KnowledgeDocumentCountOutputTypeCountSupersededByDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.KnowledgeDocumentWhereInput
 }
 
 /**
@@ -1433,12 +2709,24 @@ export type KnowledgeDocumentSelect<ExtArgs extends runtime.Types.Extensions.Int
   storageKey?: boolean
   createdById?: boolean
   approvedById?: boolean
+  canonicalKey?: boolean
+  sourceSnapshotId?: boolean
+  changeSetId?: boolean
+  supersedesDocumentId?: boolean
+  lifecycleStatus?: boolean
+  autoIngested?: boolean
+  sourcePublishedAt?: boolean
+  interpretationSummary?: boolean
   createdAt?: boolean
   approvedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   affiliate?: boolean | Prisma.KnowledgeDocument$affiliateArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   approvedBy?: boolean | Prisma.KnowledgeDocument$approvedByArgs<ExtArgs>
+  sourceSnapshot?: boolean | Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs>
+  changeSet?: boolean | Prisma.KnowledgeDocument$changeSetArgs<ExtArgs>
+  supersedesDocument?: boolean | Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs>
+  supersededByDocuments?: boolean | Prisma.KnowledgeDocument$supersededByDocumentsArgs<ExtArgs>
   chunks?: boolean | Prisma.KnowledgeDocument$chunksArgs<ExtArgs>
   _count?: boolean | Prisma.KnowledgeDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["knowledgeDocument"]>
@@ -1457,12 +2745,23 @@ export type KnowledgeDocumentSelectCreateManyAndReturn<ExtArgs extends runtime.T
   storageKey?: boolean
   createdById?: boolean
   approvedById?: boolean
+  canonicalKey?: boolean
+  sourceSnapshotId?: boolean
+  changeSetId?: boolean
+  supersedesDocumentId?: boolean
+  lifecycleStatus?: boolean
+  autoIngested?: boolean
+  sourcePublishedAt?: boolean
+  interpretationSummary?: boolean
   createdAt?: boolean
   approvedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   affiliate?: boolean | Prisma.KnowledgeDocument$affiliateArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   approvedBy?: boolean | Prisma.KnowledgeDocument$approvedByArgs<ExtArgs>
+  sourceSnapshot?: boolean | Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs>
+  changeSet?: boolean | Prisma.KnowledgeDocument$changeSetArgs<ExtArgs>
+  supersedesDocument?: boolean | Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs>
 }, ExtArgs["result"]["knowledgeDocument"]>
 
 export type KnowledgeDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1479,12 +2778,23 @@ export type KnowledgeDocumentSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   storageKey?: boolean
   createdById?: boolean
   approvedById?: boolean
+  canonicalKey?: boolean
+  sourceSnapshotId?: boolean
+  changeSetId?: boolean
+  supersedesDocumentId?: boolean
+  lifecycleStatus?: boolean
+  autoIngested?: boolean
+  sourcePublishedAt?: boolean
+  interpretationSummary?: boolean
   createdAt?: boolean
   approvedAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   affiliate?: boolean | Prisma.KnowledgeDocument$affiliateArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   approvedBy?: boolean | Prisma.KnowledgeDocument$approvedByArgs<ExtArgs>
+  sourceSnapshot?: boolean | Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs>
+  changeSet?: boolean | Prisma.KnowledgeDocument$changeSetArgs<ExtArgs>
+  supersedesDocument?: boolean | Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs>
 }, ExtArgs["result"]["knowledgeDocument"]>
 
 export type KnowledgeDocumentSelectScalar = {
@@ -1501,16 +2811,28 @@ export type KnowledgeDocumentSelectScalar = {
   storageKey?: boolean
   createdById?: boolean
   approvedById?: boolean
+  canonicalKey?: boolean
+  sourceSnapshotId?: boolean
+  changeSetId?: boolean
+  supersedesDocumentId?: boolean
+  lifecycleStatus?: boolean
+  autoIngested?: boolean
+  sourcePublishedAt?: boolean
+  interpretationSummary?: boolean
   createdAt?: boolean
   approvedAt?: boolean
 }
 
-export type KnowledgeDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "affiliateId" | "documentType" | "productType" | "title" | "version" | "effectiveFrom" | "effectiveTo" | "approvalStatus" | "storageKey" | "createdById" | "approvedById" | "createdAt" | "approvedAt", ExtArgs["result"]["knowledgeDocument"]>
+export type KnowledgeDocumentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "affiliateId" | "documentType" | "productType" | "title" | "version" | "effectiveFrom" | "effectiveTo" | "approvalStatus" | "storageKey" | "createdById" | "approvedById" | "canonicalKey" | "sourceSnapshotId" | "changeSetId" | "supersedesDocumentId" | "lifecycleStatus" | "autoIngested" | "sourcePublishedAt" | "interpretationSummary" | "createdAt" | "approvedAt", ExtArgs["result"]["knowledgeDocument"]>
 export type KnowledgeDocumentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   affiliate?: boolean | Prisma.KnowledgeDocument$affiliateArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   approvedBy?: boolean | Prisma.KnowledgeDocument$approvedByArgs<ExtArgs>
+  sourceSnapshot?: boolean | Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs>
+  changeSet?: boolean | Prisma.KnowledgeDocument$changeSetArgs<ExtArgs>
+  supersedesDocument?: boolean | Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs>
+  supersededByDocuments?: boolean | Prisma.KnowledgeDocument$supersededByDocumentsArgs<ExtArgs>
   chunks?: boolean | Prisma.KnowledgeDocument$chunksArgs<ExtArgs>
   _count?: boolean | Prisma.KnowledgeDocumentCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1519,12 +2841,18 @@ export type KnowledgeDocumentIncludeCreateManyAndReturn<ExtArgs extends runtime.
   affiliate?: boolean | Prisma.KnowledgeDocument$affiliateArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   approvedBy?: boolean | Prisma.KnowledgeDocument$approvedByArgs<ExtArgs>
+  sourceSnapshot?: boolean | Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs>
+  changeSet?: boolean | Prisma.KnowledgeDocument$changeSetArgs<ExtArgs>
+  supersedesDocument?: boolean | Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs>
 }
 export type KnowledgeDocumentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   affiliate?: boolean | Prisma.KnowledgeDocument$affiliateArgs<ExtArgs>
   createdBy?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   approvedBy?: boolean | Prisma.KnowledgeDocument$approvedByArgs<ExtArgs>
+  sourceSnapshot?: boolean | Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs>
+  changeSet?: boolean | Prisma.KnowledgeDocument$changeSetArgs<ExtArgs>
+  supersedesDocument?: boolean | Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs>
 }
 
 export type $KnowledgeDocumentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1534,6 +2862,10 @@ export type $KnowledgeDocumentPayload<ExtArgs extends runtime.Types.Extensions.I
     affiliate: Prisma.$AffiliatePayload<ExtArgs> | null
     createdBy: Prisma.$UserPayload<ExtArgs>
     approvedBy: Prisma.$UserPayload<ExtArgs> | null
+    sourceSnapshot: Prisma.$RegulatorySnapshotPayload<ExtArgs> | null
+    changeSet: Prisma.$RegulatoryChangeSetPayload<ExtArgs> | null
+    supersedesDocument: Prisma.$KnowledgeDocumentPayload<ExtArgs> | null
+    supersededByDocuments: Prisma.$KnowledgeDocumentPayload<ExtArgs>[]
     chunks: Prisma.$EvidenceChunkPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1550,6 +2882,14 @@ export type $KnowledgeDocumentPayload<ExtArgs extends runtime.Types.Extensions.I
     storageKey: string
     createdById: string
     approvedById: string | null
+    canonicalKey: string | null
+    sourceSnapshotId: string | null
+    changeSetId: string | null
+    supersedesDocumentId: string | null
+    lifecycleStatus: $Enums.KnowledgeLifecycleStatus
+    autoIngested: boolean
+    sourcePublishedAt: Date | null
+    interpretationSummary: string | null
     createdAt: Date
     approvedAt: Date | null
   }, ExtArgs["result"]["knowledgeDocument"]>
@@ -1950,6 +3290,10 @@ export interface Prisma__KnowledgeDocumentClient<T, Null = never, ExtArgs extend
   affiliate<T extends Prisma.KnowledgeDocument$affiliateArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.KnowledgeDocument$affiliateArgs<ExtArgs>>): Prisma.Prisma__AffiliateClient<runtime.Types.Result.GetResult<Prisma.$AffiliatePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   createdBy<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   approvedBy<T extends Prisma.KnowledgeDocument$approvedByArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.KnowledgeDocument$approvedByArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  sourceSnapshot<T extends Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.KnowledgeDocument$sourceSnapshotArgs<ExtArgs>>): Prisma.Prisma__RegulatorySnapshotClient<runtime.Types.Result.GetResult<Prisma.$RegulatorySnapshotPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  changeSet<T extends Prisma.KnowledgeDocument$changeSetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.KnowledgeDocument$changeSetArgs<ExtArgs>>): Prisma.Prisma__RegulatoryChangeSetClient<runtime.Types.Result.GetResult<Prisma.$RegulatoryChangeSetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  supersedesDocument<T extends Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.KnowledgeDocument$supersedesDocumentArgs<ExtArgs>>): Prisma.Prisma__KnowledgeDocumentClient<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  supersededByDocuments<T extends Prisma.KnowledgeDocument$supersededByDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.KnowledgeDocument$supersededByDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   chunks<T extends Prisma.KnowledgeDocument$chunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.KnowledgeDocument$chunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvidenceChunkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1993,6 +3337,14 @@ export interface KnowledgeDocumentFieldRefs {
   readonly storageKey: Prisma.FieldRef<"KnowledgeDocument", 'String'>
   readonly createdById: Prisma.FieldRef<"KnowledgeDocument", 'String'>
   readonly approvedById: Prisma.FieldRef<"KnowledgeDocument", 'String'>
+  readonly canonicalKey: Prisma.FieldRef<"KnowledgeDocument", 'String'>
+  readonly sourceSnapshotId: Prisma.FieldRef<"KnowledgeDocument", 'String'>
+  readonly changeSetId: Prisma.FieldRef<"KnowledgeDocument", 'String'>
+  readonly supersedesDocumentId: Prisma.FieldRef<"KnowledgeDocument", 'String'>
+  readonly lifecycleStatus: Prisma.FieldRef<"KnowledgeDocument", 'KnowledgeLifecycleStatus'>
+  readonly autoIngested: Prisma.FieldRef<"KnowledgeDocument", 'Boolean'>
+  readonly sourcePublishedAt: Prisma.FieldRef<"KnowledgeDocument", 'DateTime'>
+  readonly interpretationSummary: Prisma.FieldRef<"KnowledgeDocument", 'String'>
   readonly createdAt: Prisma.FieldRef<"KnowledgeDocument", 'DateTime'>
   readonly approvedAt: Prisma.FieldRef<"KnowledgeDocument", 'DateTime'>
 }
@@ -2431,6 +3783,87 @@ export type KnowledgeDocument$approvedByArgs<ExtArgs extends runtime.Types.Exten
    */
   include?: Prisma.UserInclude<ExtArgs> | null
   where?: Prisma.UserWhereInput
+}
+
+/**
+ * KnowledgeDocument.sourceSnapshot
+ */
+export type KnowledgeDocument$sourceSnapshotArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RegulatorySnapshot
+   */
+  select?: Prisma.RegulatorySnapshotSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RegulatorySnapshot
+   */
+  omit?: Prisma.RegulatorySnapshotOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RegulatorySnapshotInclude<ExtArgs> | null
+  where?: Prisma.RegulatorySnapshotWhereInput
+}
+
+/**
+ * KnowledgeDocument.changeSet
+ */
+export type KnowledgeDocument$changeSetArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RegulatoryChangeSet
+   */
+  select?: Prisma.RegulatoryChangeSetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RegulatoryChangeSet
+   */
+  omit?: Prisma.RegulatoryChangeSetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RegulatoryChangeSetInclude<ExtArgs> | null
+  where?: Prisma.RegulatoryChangeSetWhereInput
+}
+
+/**
+ * KnowledgeDocument.supersedesDocument
+ */
+export type KnowledgeDocument$supersedesDocumentArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the KnowledgeDocument
+   */
+  select?: Prisma.KnowledgeDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the KnowledgeDocument
+   */
+  omit?: Prisma.KnowledgeDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KnowledgeDocumentInclude<ExtArgs> | null
+  where?: Prisma.KnowledgeDocumentWhereInput
+}
+
+/**
+ * KnowledgeDocument.supersededByDocuments
+ */
+export type KnowledgeDocument$supersededByDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the KnowledgeDocument
+   */
+  select?: Prisma.KnowledgeDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the KnowledgeDocument
+   */
+  omit?: Prisma.KnowledgeDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.KnowledgeDocumentInclude<ExtArgs> | null
+  where?: Prisma.KnowledgeDocumentWhereInput
+  orderBy?: Prisma.KnowledgeDocumentOrderByWithRelationInput | Prisma.KnowledgeDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.KnowledgeDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.KnowledgeDocumentScalarFieldEnum | Prisma.KnowledgeDocumentScalarFieldEnum[]
 }
 
 /**

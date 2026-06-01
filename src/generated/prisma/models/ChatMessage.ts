@@ -401,10 +401,6 @@ export type EnumChatRoleFieldUpdateOperationsInput = {
   set?: $Enums.ChatRole
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type ChatMessageCreateWithoutChatSessionInput = {
   id: string
   role: $Enums.ChatRole

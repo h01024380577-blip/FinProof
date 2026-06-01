@@ -98,6 +98,26 @@ export type DraftVersion = Prisma.DraftVersionModel
  */
 export type ReviewReport = Prisma.ReviewReportModel
 /**
+ * Model RegulatorySource
+ * 
+ */
+export type RegulatorySource = Prisma.RegulatorySourceModel
+/**
+ * Model RegulatorySnapshot
+ * 
+ */
+export type RegulatorySnapshot = Prisma.RegulatorySnapshotModel
+/**
+ * Model RegulatoryChangeSet
+ * 
+ */
+export type RegulatoryChangeSet = Prisma.RegulatoryChangeSetModel
+/**
+ * Model QualityGateResult
+ * 
+ */
+export type QualityGateResult = Prisma.QualityGateResultModel
+/**
  * Model AuditLog
  * 
  */

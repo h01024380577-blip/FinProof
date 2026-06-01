@@ -67,6 +67,10 @@ export const ModelName = {
   ChatMessage: 'ChatMessage',
   DraftVersion: 'DraftVersion',
   ReviewReport: 'ReviewReport',
+  RegulatorySource: 'RegulatorySource',
+  RegulatorySnapshot: 'RegulatorySnapshot',
+  RegulatoryChangeSet: 'RegulatoryChangeSet',
+  QualityGateResult: 'QualityGateResult',
   AuditLog: 'AuditLog'
 } as const
 
@@ -251,6 +255,14 @@ export const KnowledgeDocumentScalarFieldEnum = {
   storageKey: 'storageKey',
   createdById: 'createdById',
   approvedById: 'approvedById',
+  canonicalKey: 'canonicalKey',
+  sourceSnapshotId: 'sourceSnapshotId',
+  changeSetId: 'changeSetId',
+  supersedesDocumentId: 'supersedesDocumentId',
+  lifecycleStatus: 'lifecycleStatus',
+  autoIngested: 'autoIngested',
+  sourcePublishedAt: 'sourcePublishedAt',
+  interpretationSummary: 'interpretationSummary',
   createdAt: 'createdAt',
   approvedAt: 'approvedAt'
 } as const
@@ -269,6 +281,15 @@ export const EvidenceChunkScalarFieldEnum = {
   embeddingId: 'embeddingId',
   page: 'page',
   section: 'section',
+  canonicalSectionKey: 'canonicalSectionKey',
+  sectionNumber: 'sectionNumber',
+  changeSetId: 'changeSetId',
+  supersedesChunkId: 'supersedesChunkId',
+  chunkStatus: 'chunkStatus',
+  impactTags: 'impactTags',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  sourceReliability: 'sourceReliability',
   metadata: 'metadata',
   createdAt: 'createdAt'
 } as const
@@ -364,6 +385,81 @@ export const ReviewReportScalarFieldEnum = {
 } as const
 
 export type ReviewReportScalarFieldEnum = (typeof ReviewReportScalarFieldEnum)[keyof typeof ReviewReportScalarFieldEnum]
+
+
+export const RegulatorySourceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  sourceType: 'sourceType',
+  name: 'name',
+  url: 'url',
+  repositoryPath: 'repositoryPath',
+  pollingSchedule: 'pollingSchedule',
+  trustLevel: 'trustLevel',
+  lastCheckedAt: 'lastCheckedAt',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RegulatorySourceScalarFieldEnum = (typeof RegulatorySourceScalarFieldEnum)[keyof typeof RegulatorySourceScalarFieldEnum]
+
+
+export const RegulatorySnapshotScalarFieldEnum = {
+  id: 'id',
+  sourceId: 'sourceId',
+  tenantId: 'tenantId',
+  sourceUrl: 'sourceUrl',
+  title: 'title',
+  publishedAt: 'publishedAt',
+  effectiveFrom: 'effectiveFrom',
+  contentHash: 'contentHash',
+  rawStorageKey: 'rawStorageKey',
+  normalizedStorageKey: 'normalizedStorageKey',
+  detectedDocumentType: 'detectedDocumentType',
+  fetchStatus: 'fetchStatus',
+  normalizationConfidence: 'normalizationConfidence',
+  createdAt: 'createdAt'
+} as const
+
+export type RegulatorySnapshotScalarFieldEnum = (typeof RegulatorySnapshotScalarFieldEnum)[keyof typeof RegulatorySnapshotScalarFieldEnum]
+
+
+export const RegulatoryChangeSetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  sourceId: 'sourceId',
+  previousSnapshotId: 'previousSnapshotId',
+  newSnapshotId: 'newSnapshotId',
+  changeType: 'changeType',
+  changeSummary: 'changeSummary',
+  changedSections: 'changedSections',
+  effectiveFrom: 'effectiveFrom',
+  riskImpactLevel: 'riskImpactLevel',
+  interpretationSummary: 'interpretationSummary',
+  mappedProductTypes: 'mappedProductTypes',
+  mappedChannels: 'mappedChannels',
+  mappedReviewCategories: 'mappedReviewCategories',
+  qualityGateStatus: 'qualityGateStatus',
+  confidence: 'confidence',
+  createdKnowledgeDocumentId: 'createdKnowledgeDocumentId',
+  createdAt: 'createdAt'
+} as const
+
+export type RegulatoryChangeSetScalarFieldEnum = (typeof RegulatoryChangeSetScalarFieldEnum)[keyof typeof RegulatoryChangeSetScalarFieldEnum]
+
+
+export const QualityGateResultScalarFieldEnum = {
+  id: 'id',
+  changeSetId: 'changeSetId',
+  gateType: 'gateType',
+  status: 'status',
+  summary: 'summary',
+  evidence: 'evidence',
+  createdAt: 'createdAt'
+} as const
+
+export type QualityGateResultScalarFieldEnum = (typeof QualityGateResultScalarFieldEnum)[keyof typeof QualityGateResultScalarFieldEnum]
 
 
 export const AuditLogScalarFieldEnum = {

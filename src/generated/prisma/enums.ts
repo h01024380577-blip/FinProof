@@ -150,6 +150,97 @@ export const KnowledgeApprovalStatus = {
 export type KnowledgeApprovalStatus = (typeof KnowledgeApprovalStatus)[keyof typeof KnowledgeApprovalStatus]
 
 
+export const KnowledgeLifecycleStatus = {
+  active: 'active',
+  superseded: 'superseded',
+  inactive: 'inactive'
+} as const
+
+export type KnowledgeLifecycleStatus = (typeof KnowledgeLifecycleStatus)[keyof typeof KnowledgeLifecycleStatus]
+
+
+export const EvidenceChunkStatus = {
+  active: 'active',
+  superseded: 'superseded',
+  inactive: 'inactive'
+} as const
+
+export type EvidenceChunkStatus = (typeof EvidenceChunkStatus)[keyof typeof EvidenceChunkStatus]
+
+
+export const RegulatorySourceType = {
+  regulator: 'regulator',
+  law_portal: 'law_portal',
+  association: 'association',
+  internal_policy_repo: 'internal_policy_repo',
+  case_knowledge: 'case_knowledge'
+} as const
+
+export type RegulatorySourceType = (typeof RegulatorySourceType)[keyof typeof RegulatorySourceType]
+
+
+export const RegulatorySourceStatus = {
+  active: 'active',
+  paused: 'paused',
+  failing: 'failing'
+} as const
+
+export type RegulatorySourceStatus = (typeof RegulatorySourceStatus)[keyof typeof RegulatorySourceStatus]
+
+
+export const RegulatorySnapshotFetchStatus = {
+  fetched: 'fetched',
+  unchanged: 'unchanged',
+  failed: 'failed'
+} as const
+
+export type RegulatorySnapshotFetchStatus = (typeof RegulatorySnapshotFetchStatus)[keyof typeof RegulatorySnapshotFetchStatus]
+
+
+export const RegulatoryChangeType = {
+  created: 'created',
+  amended: 'amended',
+  deleted: 'deleted',
+  wording_changed: 'wording_changed',
+  effective_date_changed: 'effective_date_changed',
+  scope_changed: 'scope_changed',
+  interpretation_changed: 'interpretation_changed'
+} as const
+
+export type RegulatoryChangeType = (typeof RegulatoryChangeType)[keyof typeof RegulatoryChangeType]
+
+
+export const RegulatoryRiskImpactLevel = {
+  info: 'info',
+  caution: 'caution',
+  high: 'high',
+  critical: 'critical'
+} as const
+
+export type RegulatoryRiskImpactLevel = (typeof RegulatoryRiskImpactLevel)[keyof typeof RegulatoryRiskImpactLevel]
+
+
+export const QualityGateType = {
+  citation_coverage: 'citation_coverage',
+  schema_validation: 'schema_validation',
+  contradiction_check: 'contradiction_check',
+  retrieval_regression: 'retrieval_regression',
+  effective_date: 'effective_date',
+  rollback_ready: 'rollback_ready'
+} as const
+
+export type QualityGateType = (typeof QualityGateType)[keyof typeof QualityGateType]
+
+
+export const QualityGateStatus = {
+  passed: 'passed',
+  failed: 'failed',
+  flagged: 'flagged'
+} as const
+
+export type QualityGateStatus = (typeof QualityGateStatus)[keyof typeof QualityGateStatus]
+
+
 export const AgentRunStatus = {
   queued: 'queued',
   running: 'running',

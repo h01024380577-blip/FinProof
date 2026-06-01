@@ -3747,6 +3747,199 @@ a.review-table__row:hover {
   background: var(--surface);
   box-shadow: var(--shadow-card);
 }
+
+.regulatory-page__metrics {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.regulatory-layout {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.regulatory-panel,
+.regulatory-detail {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.regulatory-table {
+  display: grid;
+  overflow-x: auto;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+}
+
+.regulatory-table__row {
+  display: grid;
+  min-width: 760px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.regulatory-table__row:last-child {
+  border-bottom: 0;
+}
+
+.regulatory-table--sources .regulatory-table__row {
+  grid-template-columns: minmax(240px, 1.4fr) minmax(120px, 0.8fr) minmax(120px, 0.7fr) minmax(
+      140px,
+      0.8fr
+    );
+}
+
+.regulatory-table--changes .regulatory-table__row {
+  grid-template-columns: minmax(280px, 1.6fr) minmax(120px, 0.7fr) minmax(160px, 0.9fr) minmax(
+      120px,
+      0.7fr
+    );
+}
+
+.regulatory-table--gates .regulatory-table__row {
+  min-width: 680px;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(100px, 0.5fr) minmax(260px, 1.6fr);
+}
+
+.regulatory-table__row > * {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: var(--space-3);
+  color: var(--text-soft);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  overflow-wrap: anywhere;
+}
+
+.regulatory-table__row > strong {
+  color: var(--text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.regulatory-table__row--head {
+  background: var(--surface-subtle);
+}
+
+.regulatory-table__row--head > * {
+  min-height: 40px;
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+}
+
+.regulatory-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  color: var(--muted);
+  font-size: var(--font-size-sm);
+}
+
+.regulatory-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.regulatory-detail__meta span {
+  min-height: 28px;
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+  color: var(--text-soft);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.regulatory-detail__sections,
+.regulatory-gates {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.regulatory-gates h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--font-size-lg);
+}
+
+.regulatory-diff {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.regulatory-diff header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.regulatory-diff header span {
+  color: var(--primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.regulatory-diff h3,
+.regulatory-diff p {
+  margin: 0;
+}
+
+.regulatory-diff h3 {
+  color: var(--text);
+  font-size: var(--font-size-base);
+}
+
+.regulatory-diff p {
+  color: var(--text-soft);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+}
+
+.regulatory-diff__columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.regulatory-diff__columns div {
+  display: grid;
+  gap: var(--space-2);
+  min-height: 128px;
+  padding: var(--space-4);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.regulatory-diff__columns strong {
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .regulatory-page__metrics {
+    justify-content: flex-start;
+  }
+
+  .regulatory-diff__columns {
+    grid-template-columns: 1fr;
+  }
+}
 .error-boundary strong {
   display: block;
   font-size: var(--font-size-lg);

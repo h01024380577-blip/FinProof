@@ -400,6 +400,10 @@ export const ModelName = {
   ChatMessage: 'ChatMessage',
   DraftVersion: 'DraftVersion',
   ReviewReport: 'ReviewReport',
+  RegulatorySource: 'RegulatorySource',
+  RegulatorySnapshot: 'RegulatorySnapshot',
+  RegulatoryChangeSet: 'RegulatoryChangeSet',
+  QualityGateResult: 'QualityGateResult',
   AuditLog: 'AuditLog'
 } as const
 
@@ -416,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "affiliate" | "user" | "reviewCase" | "reviewFile" | "reviewIssue" | "evidence" | "analysisJob" | "knowledgeDocument" | "evidenceChunk" | "agentRun" | "agentFinding" | "chatSession" | "chatMessage" | "draftVersion" | "reviewReport" | "auditLog"
+    modelProps: "tenant" | "affiliate" | "user" | "reviewCase" | "reviewFile" | "reviewIssue" | "evidence" | "analysisJob" | "knowledgeDocument" | "evidenceChunk" | "agentRun" | "agentFinding" | "chatSession" | "chatMessage" | "draftVersion" | "reviewReport" | "regulatorySource" | "regulatorySnapshot" | "regulatoryChangeSet" | "qualityGateResult" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1604,6 +1608,302 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RegulatorySource: {
+      payload: Prisma.$RegulatorySourcePayload<ExtArgs>
+      fields: Prisma.RegulatorySourceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RegulatorySourceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RegulatorySourceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>
+        }
+        findFirst: {
+          args: Prisma.RegulatorySourceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RegulatorySourceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>
+        }
+        findMany: {
+          args: Prisma.RegulatorySourceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>[]
+        }
+        create: {
+          args: Prisma.RegulatorySourceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>
+        }
+        createMany: {
+          args: Prisma.RegulatorySourceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RegulatorySourceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>[]
+        }
+        delete: {
+          args: Prisma.RegulatorySourceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>
+        }
+        update: {
+          args: Prisma.RegulatorySourceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>
+        }
+        deleteMany: {
+          args: Prisma.RegulatorySourceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RegulatorySourceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RegulatorySourceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>[]
+        }
+        upsert: {
+          args: Prisma.RegulatorySourceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySourcePayload>
+        }
+        aggregate: {
+          args: Prisma.RegulatorySourceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRegulatorySource>
+        }
+        groupBy: {
+          args: Prisma.RegulatorySourceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RegulatorySourceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RegulatorySourceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RegulatorySourceCountAggregateOutputType> | number
+        }
+      }
+    }
+    RegulatorySnapshot: {
+      payload: Prisma.$RegulatorySnapshotPayload<ExtArgs>
+      fields: Prisma.RegulatorySnapshotFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RegulatorySnapshotFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RegulatorySnapshotFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>
+        }
+        findFirst: {
+          args: Prisma.RegulatorySnapshotFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RegulatorySnapshotFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>
+        }
+        findMany: {
+          args: Prisma.RegulatorySnapshotFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>[]
+        }
+        create: {
+          args: Prisma.RegulatorySnapshotCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>
+        }
+        createMany: {
+          args: Prisma.RegulatorySnapshotCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RegulatorySnapshotCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>[]
+        }
+        delete: {
+          args: Prisma.RegulatorySnapshotDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>
+        }
+        update: {
+          args: Prisma.RegulatorySnapshotUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>
+        }
+        deleteMany: {
+          args: Prisma.RegulatorySnapshotDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RegulatorySnapshotUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RegulatorySnapshotUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>[]
+        }
+        upsert: {
+          args: Prisma.RegulatorySnapshotUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatorySnapshotPayload>
+        }
+        aggregate: {
+          args: Prisma.RegulatorySnapshotAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRegulatorySnapshot>
+        }
+        groupBy: {
+          args: Prisma.RegulatorySnapshotGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RegulatorySnapshotGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RegulatorySnapshotCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RegulatorySnapshotCountAggregateOutputType> | number
+        }
+      }
+    }
+    RegulatoryChangeSet: {
+      payload: Prisma.$RegulatoryChangeSetPayload<ExtArgs>
+      fields: Prisma.RegulatoryChangeSetFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RegulatoryChangeSetFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RegulatoryChangeSetFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>
+        }
+        findFirst: {
+          args: Prisma.RegulatoryChangeSetFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RegulatoryChangeSetFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>
+        }
+        findMany: {
+          args: Prisma.RegulatoryChangeSetFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>[]
+        }
+        create: {
+          args: Prisma.RegulatoryChangeSetCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>
+        }
+        createMany: {
+          args: Prisma.RegulatoryChangeSetCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RegulatoryChangeSetCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>[]
+        }
+        delete: {
+          args: Prisma.RegulatoryChangeSetDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>
+        }
+        update: {
+          args: Prisma.RegulatoryChangeSetUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>
+        }
+        deleteMany: {
+          args: Prisma.RegulatoryChangeSetDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RegulatoryChangeSetUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RegulatoryChangeSetUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>[]
+        }
+        upsert: {
+          args: Prisma.RegulatoryChangeSetUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RegulatoryChangeSetPayload>
+        }
+        aggregate: {
+          args: Prisma.RegulatoryChangeSetAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRegulatoryChangeSet>
+        }
+        groupBy: {
+          args: Prisma.RegulatoryChangeSetGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RegulatoryChangeSetGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RegulatoryChangeSetCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RegulatoryChangeSetCountAggregateOutputType> | number
+        }
+      }
+    }
+    QualityGateResult: {
+      payload: Prisma.$QualityGateResultPayload<ExtArgs>
+      fields: Prisma.QualityGateResultFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QualityGateResultFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QualityGateResultFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>
+        }
+        findFirst: {
+          args: Prisma.QualityGateResultFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QualityGateResultFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>
+        }
+        findMany: {
+          args: Prisma.QualityGateResultFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>[]
+        }
+        create: {
+          args: Prisma.QualityGateResultCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>
+        }
+        createMany: {
+          args: Prisma.QualityGateResultCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QualityGateResultCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>[]
+        }
+        delete: {
+          args: Prisma.QualityGateResultDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>
+        }
+        update: {
+          args: Prisma.QualityGateResultUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>
+        }
+        deleteMany: {
+          args: Prisma.QualityGateResultDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QualityGateResultUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QualityGateResultUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>[]
+        }
+        upsert: {
+          args: Prisma.QualityGateResultUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QualityGateResultPayload>
+        }
+        aggregate: {
+          args: Prisma.QualityGateResultAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQualityGateResult>
+        }
+        groupBy: {
+          args: Prisma.QualityGateResultGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QualityGateResultGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QualityGateResultCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QualityGateResultCountAggregateOutputType> | number
+        }
+      }
+    }
     AuditLog: {
       payload: Prisma.$AuditLogPayload<ExtArgs>
       fields: Prisma.AuditLogFieldRefs
@@ -1882,6 +2182,14 @@ export const KnowledgeDocumentScalarFieldEnum = {
   storageKey: 'storageKey',
   createdById: 'createdById',
   approvedById: 'approvedById',
+  canonicalKey: 'canonicalKey',
+  sourceSnapshotId: 'sourceSnapshotId',
+  changeSetId: 'changeSetId',
+  supersedesDocumentId: 'supersedesDocumentId',
+  lifecycleStatus: 'lifecycleStatus',
+  autoIngested: 'autoIngested',
+  sourcePublishedAt: 'sourcePublishedAt',
+  interpretationSummary: 'interpretationSummary',
   createdAt: 'createdAt',
   approvedAt: 'approvedAt'
 } as const
@@ -1900,6 +2208,15 @@ export const EvidenceChunkScalarFieldEnum = {
   embeddingId: 'embeddingId',
   page: 'page',
   section: 'section',
+  canonicalSectionKey: 'canonicalSectionKey',
+  sectionNumber: 'sectionNumber',
+  changeSetId: 'changeSetId',
+  supersedesChunkId: 'supersedesChunkId',
+  chunkStatus: 'chunkStatus',
+  impactTags: 'impactTags',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  sourceReliability: 'sourceReliability',
   metadata: 'metadata',
   createdAt: 'createdAt'
 } as const
@@ -1995,6 +2312,81 @@ export const ReviewReportScalarFieldEnum = {
 } as const
 
 export type ReviewReportScalarFieldEnum = (typeof ReviewReportScalarFieldEnum)[keyof typeof ReviewReportScalarFieldEnum]
+
+
+export const RegulatorySourceScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  sourceType: 'sourceType',
+  name: 'name',
+  url: 'url',
+  repositoryPath: 'repositoryPath',
+  pollingSchedule: 'pollingSchedule',
+  trustLevel: 'trustLevel',
+  lastCheckedAt: 'lastCheckedAt',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RegulatorySourceScalarFieldEnum = (typeof RegulatorySourceScalarFieldEnum)[keyof typeof RegulatorySourceScalarFieldEnum]
+
+
+export const RegulatorySnapshotScalarFieldEnum = {
+  id: 'id',
+  sourceId: 'sourceId',
+  tenantId: 'tenantId',
+  sourceUrl: 'sourceUrl',
+  title: 'title',
+  publishedAt: 'publishedAt',
+  effectiveFrom: 'effectiveFrom',
+  contentHash: 'contentHash',
+  rawStorageKey: 'rawStorageKey',
+  normalizedStorageKey: 'normalizedStorageKey',
+  detectedDocumentType: 'detectedDocumentType',
+  fetchStatus: 'fetchStatus',
+  normalizationConfidence: 'normalizationConfidence',
+  createdAt: 'createdAt'
+} as const
+
+export type RegulatorySnapshotScalarFieldEnum = (typeof RegulatorySnapshotScalarFieldEnum)[keyof typeof RegulatorySnapshotScalarFieldEnum]
+
+
+export const RegulatoryChangeSetScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  sourceId: 'sourceId',
+  previousSnapshotId: 'previousSnapshotId',
+  newSnapshotId: 'newSnapshotId',
+  changeType: 'changeType',
+  changeSummary: 'changeSummary',
+  changedSections: 'changedSections',
+  effectiveFrom: 'effectiveFrom',
+  riskImpactLevel: 'riskImpactLevel',
+  interpretationSummary: 'interpretationSummary',
+  mappedProductTypes: 'mappedProductTypes',
+  mappedChannels: 'mappedChannels',
+  mappedReviewCategories: 'mappedReviewCategories',
+  qualityGateStatus: 'qualityGateStatus',
+  confidence: 'confidence',
+  createdKnowledgeDocumentId: 'createdKnowledgeDocumentId',
+  createdAt: 'createdAt'
+} as const
+
+export type RegulatoryChangeSetScalarFieldEnum = (typeof RegulatoryChangeSetScalarFieldEnum)[keyof typeof RegulatoryChangeSetScalarFieldEnum]
+
+
+export const QualityGateResultScalarFieldEnum = {
+  id: 'id',
+  changeSetId: 'changeSetId',
+  gateType: 'gateType',
+  status: 'status',
+  summary: 'summary',
+  evidence: 'evidence',
+  createdAt: 'createdAt'
+} as const
+
+export type QualityGateResultScalarFieldEnum = (typeof QualityGateResultScalarFieldEnum)[keyof typeof QualityGateResultScalarFieldEnum]
 
 
 export const AuditLogScalarFieldEnum = {
@@ -2334,6 +2726,41 @@ export type ListEnumKnowledgeApprovalStatusFieldRefInput<$PrismaModel> = FieldRe
 
 
 /**
+ * Reference to a field of type 'KnowledgeLifecycleStatus'
+ */
+export type EnumKnowledgeLifecycleStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'KnowledgeLifecycleStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'KnowledgeLifecycleStatus[]'
+ */
+export type ListEnumKnowledgeLifecycleStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'KnowledgeLifecycleStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'EvidenceChunkStatus'
+ */
+export type EnumEvidenceChunkStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EvidenceChunkStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'EvidenceChunkStatus[]'
+ */
+export type ListEnumEvidenceChunkStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EvidenceChunkStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'AgentType'
  */
 export type EnumAgentTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AgentType'>
@@ -2390,13 +2817,6 @@ export type ListEnumChatRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$Pri
 
 
 /**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
-    
-
-
-/**
  * Reference to a field of type 'DraftSource'
  */
 export type EnumDraftSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DraftSource'>
@@ -2407,6 +2827,104 @@ export type EnumDraftSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'DraftSource[]'
  */
 export type ListEnumDraftSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DraftSource[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatorySourceType'
+ */
+export type EnumRegulatorySourceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatorySourceType'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatorySourceType[]'
+ */
+export type ListEnumRegulatorySourceTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatorySourceType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatorySourceStatus'
+ */
+export type EnumRegulatorySourceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatorySourceStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatorySourceStatus[]'
+ */
+export type ListEnumRegulatorySourceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatorySourceStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatorySnapshotFetchStatus'
+ */
+export type EnumRegulatorySnapshotFetchStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatorySnapshotFetchStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatorySnapshotFetchStatus[]'
+ */
+export type ListEnumRegulatorySnapshotFetchStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatorySnapshotFetchStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatoryChangeType'
+ */
+export type EnumRegulatoryChangeTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatoryChangeType'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatoryChangeType[]'
+ */
+export type ListEnumRegulatoryChangeTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatoryChangeType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatoryRiskImpactLevel'
+ */
+export type EnumRegulatoryRiskImpactLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatoryRiskImpactLevel'>
+    
+
+
+/**
+ * Reference to a field of type 'RegulatoryRiskImpactLevel[]'
+ */
+export type ListEnumRegulatoryRiskImpactLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RegulatoryRiskImpactLevel[]'>
+    
+
+
+/**
+ * Reference to a field of type 'QualityGateStatus'
+ */
+export type EnumQualityGateStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QualityGateStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'QualityGateStatus[]'
+ */
+export type ListEnumQualityGateStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QualityGateStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'QualityGateType'
+ */
+export type EnumQualityGateTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QualityGateType'>
+    
+
+
+/**
+ * Reference to a field of type 'QualityGateType[]'
+ */
+export type ListEnumQualityGateTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QualityGateType[]'>
     
 
 /**
@@ -2535,6 +3053,10 @@ export type GlobalOmitConfig = {
   chatMessage?: Prisma.ChatMessageOmit
   draftVersion?: Prisma.DraftVersionOmit
   reviewReport?: Prisma.ReviewReportOmit
+  regulatorySource?: Prisma.RegulatorySourceOmit
+  regulatorySnapshot?: Prisma.RegulatorySnapshotOmit
+  regulatoryChangeSet?: Prisma.RegulatoryChangeSetOmit
+  qualityGateResult?: Prisma.QualityGateResultOmit
   auditLog?: Prisma.AuditLogOmit
 }
 

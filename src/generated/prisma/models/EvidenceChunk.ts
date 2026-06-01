@@ -28,10 +28,12 @@ export type AggregateEvidenceChunk = {
 
 export type EvidenceChunkAvgAggregateOutputType = {
   page: number | null
+  sourceReliability: number | null
 }
 
 export type EvidenceChunkSumAggregateOutputType = {
   page: number | null
+  sourceReliability: number | null
 }
 
 export type EvidenceChunkMinAggregateOutputType = {
@@ -45,6 +47,14 @@ export type EvidenceChunkMinAggregateOutputType = {
   embeddingId: string | null
   page: number | null
   section: string | null
+  canonicalSectionKey: string | null
+  sectionNumber: string | null
+  changeSetId: string | null
+  supersedesChunkId: string | null
+  chunkStatus: $Enums.EvidenceChunkStatus | null
+  effectiveFrom: Date | null
+  effectiveTo: Date | null
+  sourceReliability: number | null
   createdAt: Date | null
 }
 
@@ -59,6 +69,14 @@ export type EvidenceChunkMaxAggregateOutputType = {
   embeddingId: string | null
   page: number | null
   section: string | null
+  canonicalSectionKey: string | null
+  sectionNumber: string | null
+  changeSetId: string | null
+  supersedesChunkId: string | null
+  chunkStatus: $Enums.EvidenceChunkStatus | null
+  effectiveFrom: Date | null
+  effectiveTo: Date | null
+  sourceReliability: number | null
   createdAt: Date | null
 }
 
@@ -73,6 +91,15 @@ export type EvidenceChunkCountAggregateOutputType = {
   embeddingId: number
   page: number
   section: number
+  canonicalSectionKey: number
+  sectionNumber: number
+  changeSetId: number
+  supersedesChunkId: number
+  chunkStatus: number
+  impactTags: number
+  effectiveFrom: number
+  effectiveTo: number
+  sourceReliability: number
   metadata: number
   createdAt: number
   _all: number
@@ -81,10 +108,12 @@ export type EvidenceChunkCountAggregateOutputType = {
 
 export type EvidenceChunkAvgAggregateInputType = {
   page?: true
+  sourceReliability?: true
 }
 
 export type EvidenceChunkSumAggregateInputType = {
   page?: true
+  sourceReliability?: true
 }
 
 export type EvidenceChunkMinAggregateInputType = {
@@ -98,6 +127,14 @@ export type EvidenceChunkMinAggregateInputType = {
   embeddingId?: true
   page?: true
   section?: true
+  canonicalSectionKey?: true
+  sectionNumber?: true
+  changeSetId?: true
+  supersedesChunkId?: true
+  chunkStatus?: true
+  effectiveFrom?: true
+  effectiveTo?: true
+  sourceReliability?: true
   createdAt?: true
 }
 
@@ -112,6 +149,14 @@ export type EvidenceChunkMaxAggregateInputType = {
   embeddingId?: true
   page?: true
   section?: true
+  canonicalSectionKey?: true
+  sectionNumber?: true
+  changeSetId?: true
+  supersedesChunkId?: true
+  chunkStatus?: true
+  effectiveFrom?: true
+  effectiveTo?: true
+  sourceReliability?: true
   createdAt?: true
 }
 
@@ -126,6 +171,15 @@ export type EvidenceChunkCountAggregateInputType = {
   embeddingId?: true
   page?: true
   section?: true
+  canonicalSectionKey?: true
+  sectionNumber?: true
+  changeSetId?: true
+  supersedesChunkId?: true
+  chunkStatus?: true
+  impactTags?: true
+  effectiveFrom?: true
+  effectiveTo?: true
+  sourceReliability?: true
   metadata?: true
   createdAt?: true
   _all?: true
@@ -228,6 +282,15 @@ export type EvidenceChunkGroupByOutputType = {
   embeddingId: string
   page: number | null
   section: string | null
+  canonicalSectionKey: string | null
+  sectionNumber: string | null
+  changeSetId: string | null
+  supersedesChunkId: string | null
+  chunkStatus: $Enums.EvidenceChunkStatus
+  impactTags: runtime.JsonValue
+  effectiveFrom: Date | null
+  effectiveTo: Date | null
+  sourceReliability: number | null
   metadata: runtime.JsonValue
   createdAt: Date
   _count: EvidenceChunkCountAggregateOutputType | null
@@ -266,11 +329,23 @@ export type EvidenceChunkWhereInput = {
   embeddingId?: Prisma.StringFilter<"EvidenceChunk"> | string
   page?: Prisma.IntNullableFilter<"EvidenceChunk"> | number | null
   section?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  canonicalSectionKey?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  changeSetId?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  supersedesChunkId?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFilter<"EvidenceChunk"> | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonFilter<"EvidenceChunk">
+  effectiveFrom?: Prisma.DateTimeNullableFilter<"EvidenceChunk"> | Date | string | null
+  effectiveTo?: Prisma.DateTimeNullableFilter<"EvidenceChunk"> | Date | string | null
+  sourceReliability?: Prisma.FloatNullableFilter<"EvidenceChunk"> | number | null
   metadata?: Prisma.JsonFilter<"EvidenceChunk">
   createdAt?: Prisma.DateTimeFilter<"EvidenceChunk"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   knowledgeDocument?: Prisma.XOR<Prisma.KnowledgeDocumentNullableScalarRelationFilter, Prisma.KnowledgeDocumentWhereInput> | null
   reviewFile?: Prisma.XOR<Prisma.ReviewFileNullableScalarRelationFilter, Prisma.ReviewFileWhereInput> | null
+  changeSet?: Prisma.XOR<Prisma.RegulatoryChangeSetNullableScalarRelationFilter, Prisma.RegulatoryChangeSetWhereInput> | null
+  supersedesChunk?: Prisma.XOR<Prisma.EvidenceChunkNullableScalarRelationFilter, Prisma.EvidenceChunkWhereInput> | null
+  supersededByChunks?: Prisma.EvidenceChunkListRelationFilter
   evidence?: Prisma.EvidenceListRelationFilter
 }
 
@@ -285,11 +360,23 @@ export type EvidenceChunkOrderByWithRelationInput = {
   embeddingId?: Prisma.SortOrder
   page?: Prisma.SortOrderInput | Prisma.SortOrder
   section?: Prisma.SortOrderInput | Prisma.SortOrder
+  canonicalSectionKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  changeSetId?: Prisma.SortOrderInput | Prisma.SortOrder
+  supersedesChunkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkStatus?: Prisma.SortOrder
+  impactTags?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveTo?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceReliability?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   tenant?: Prisma.TenantOrderByWithRelationInput
   knowledgeDocument?: Prisma.KnowledgeDocumentOrderByWithRelationInput
   reviewFile?: Prisma.ReviewFileOrderByWithRelationInput
+  changeSet?: Prisma.RegulatoryChangeSetOrderByWithRelationInput
+  supersedesChunk?: Prisma.EvidenceChunkOrderByWithRelationInput
+  supersededByChunks?: Prisma.EvidenceChunkOrderByRelationAggregateInput
   evidence?: Prisma.EvidenceOrderByRelationAggregateInput
 }
 
@@ -307,11 +394,23 @@ export type EvidenceChunkWhereUniqueInput = Prisma.AtLeast<{
   embeddingId?: Prisma.StringFilter<"EvidenceChunk"> | string
   page?: Prisma.IntNullableFilter<"EvidenceChunk"> | number | null
   section?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  canonicalSectionKey?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  changeSetId?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  supersedesChunkId?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFilter<"EvidenceChunk"> | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonFilter<"EvidenceChunk">
+  effectiveFrom?: Prisma.DateTimeNullableFilter<"EvidenceChunk"> | Date | string | null
+  effectiveTo?: Prisma.DateTimeNullableFilter<"EvidenceChunk"> | Date | string | null
+  sourceReliability?: Prisma.FloatNullableFilter<"EvidenceChunk"> | number | null
   metadata?: Prisma.JsonFilter<"EvidenceChunk">
   createdAt?: Prisma.DateTimeFilter<"EvidenceChunk"> | Date | string
   tenant?: Prisma.XOR<Prisma.TenantScalarRelationFilter, Prisma.TenantWhereInput>
   knowledgeDocument?: Prisma.XOR<Prisma.KnowledgeDocumentNullableScalarRelationFilter, Prisma.KnowledgeDocumentWhereInput> | null
   reviewFile?: Prisma.XOR<Prisma.ReviewFileNullableScalarRelationFilter, Prisma.ReviewFileWhereInput> | null
+  changeSet?: Prisma.XOR<Prisma.RegulatoryChangeSetNullableScalarRelationFilter, Prisma.RegulatoryChangeSetWhereInput> | null
+  supersedesChunk?: Prisma.XOR<Prisma.EvidenceChunkNullableScalarRelationFilter, Prisma.EvidenceChunkWhereInput> | null
+  supersededByChunks?: Prisma.EvidenceChunkListRelationFilter
   evidence?: Prisma.EvidenceListRelationFilter
 }, "id">
 
@@ -326,6 +425,15 @@ export type EvidenceChunkOrderByWithAggregationInput = {
   embeddingId?: Prisma.SortOrder
   page?: Prisma.SortOrderInput | Prisma.SortOrder
   section?: Prisma.SortOrderInput | Prisma.SortOrder
+  canonicalSectionKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrderInput | Prisma.SortOrder
+  changeSetId?: Prisma.SortOrderInput | Prisma.SortOrder
+  supersedesChunkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  chunkStatus?: Prisma.SortOrder
+  impactTags?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrderInput | Prisma.SortOrder
+  effectiveTo?: Prisma.SortOrderInput | Prisma.SortOrder
+  sourceReliability?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.EvidenceChunkCountOrderByAggregateInput
@@ -349,6 +457,15 @@ export type EvidenceChunkScalarWhereWithAggregatesInput = {
   embeddingId?: Prisma.StringWithAggregatesFilter<"EvidenceChunk"> | string
   page?: Prisma.IntNullableWithAggregatesFilter<"EvidenceChunk"> | number | null
   section?: Prisma.StringNullableWithAggregatesFilter<"EvidenceChunk"> | string | null
+  canonicalSectionKey?: Prisma.StringNullableWithAggregatesFilter<"EvidenceChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableWithAggregatesFilter<"EvidenceChunk"> | string | null
+  changeSetId?: Prisma.StringNullableWithAggregatesFilter<"EvidenceChunk"> | string | null
+  supersedesChunkId?: Prisma.StringNullableWithAggregatesFilter<"EvidenceChunk"> | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusWithAggregatesFilter<"EvidenceChunk"> | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonWithAggregatesFilter<"EvidenceChunk">
+  effectiveFrom?: Prisma.DateTimeNullableWithAggregatesFilter<"EvidenceChunk"> | Date | string | null
+  effectiveTo?: Prisma.DateTimeNullableWithAggregatesFilter<"EvidenceChunk"> | Date | string | null
+  sourceReliability?: Prisma.FloatNullableWithAggregatesFilter<"EvidenceChunk"> | number | null
   metadata?: Prisma.JsonWithAggregatesFilter<"EvidenceChunk">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"EvidenceChunk"> | Date | string
 }
@@ -361,11 +478,21 @@ export type EvidenceChunkCreateInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutEvidenceChunksInput
   knowledgeDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutChunksInput
   reviewFile?: Prisma.ReviewFileCreateNestedOneWithoutEvidenceChunksInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutEvidenceChunksInput
+  supersedesChunk?: Prisma.EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput
+  supersededByChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceCreateNestedManyWithoutChunkInput
 }
 
@@ -380,8 +507,18 @@ export type EvidenceChunkUncheckedCreateInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutChunkInput
 }
 
@@ -393,11 +530,21 @@ export type EvidenceChunkUpdateInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput
   knowledgeDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutChunksNestedInput
   reviewFile?: Prisma.ReviewFileUpdateOneWithoutEvidenceChunksNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutEvidenceChunksNestedInput
+  supersedesChunk?: Prisma.EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput
+  supersededByChunks?: Prisma.EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUpdateManyWithoutChunkNestedInput
 }
 
@@ -412,8 +559,18 @@ export type EvidenceChunkUncheckedUpdateInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutChunkNestedInput
 }
 
@@ -428,6 +585,15 @@ export type EvidenceChunkCreateManyInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -440,6 +606,13 @@ export type EvidenceChunkUpdateManyMutationInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -455,6 +628,15 @@ export type EvidenceChunkUncheckedUpdateManyInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -485,12 +667,22 @@ export type EvidenceChunkCountOrderByAggregateInput = {
   embeddingId?: Prisma.SortOrder
   page?: Prisma.SortOrder
   section?: Prisma.SortOrder
+  canonicalSectionKey?: Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrder
+  changeSetId?: Prisma.SortOrder
+  supersedesChunkId?: Prisma.SortOrder
+  chunkStatus?: Prisma.SortOrder
+  impactTags?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
+  effectiveTo?: Prisma.SortOrder
+  sourceReliability?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type EvidenceChunkAvgOrderByAggregateInput = {
   page?: Prisma.SortOrder
+  sourceReliability?: Prisma.SortOrder
 }
 
 export type EvidenceChunkMaxOrderByAggregateInput = {
@@ -504,6 +696,14 @@ export type EvidenceChunkMaxOrderByAggregateInput = {
   embeddingId?: Prisma.SortOrder
   page?: Prisma.SortOrder
   section?: Prisma.SortOrder
+  canonicalSectionKey?: Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrder
+  changeSetId?: Prisma.SortOrder
+  supersedesChunkId?: Prisma.SortOrder
+  chunkStatus?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
+  effectiveTo?: Prisma.SortOrder
+  sourceReliability?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -518,11 +718,20 @@ export type EvidenceChunkMinOrderByAggregateInput = {
   embeddingId?: Prisma.SortOrder
   page?: Prisma.SortOrder
   section?: Prisma.SortOrder
+  canonicalSectionKey?: Prisma.SortOrder
+  sectionNumber?: Prisma.SortOrder
+  changeSetId?: Prisma.SortOrder
+  supersedesChunkId?: Prisma.SortOrder
+  chunkStatus?: Prisma.SortOrder
+  effectiveFrom?: Prisma.SortOrder
+  effectiveTo?: Prisma.SortOrder
+  sourceReliability?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
 export type EvidenceChunkSumOrderByAggregateInput = {
   page?: Prisma.SortOrder
+  sourceReliability?: Prisma.SortOrder
 }
 
 export type EvidenceChunkCreateNestedManyWithoutTenantInput = {
@@ -667,6 +876,110 @@ export type EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentNestedInput 
   deleteMany?: Prisma.EvidenceChunkScalarWhereInput | Prisma.EvidenceChunkScalarWhereInput[]
 }
 
+export type EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersededByChunksInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersededByChunksInput>
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutSupersededByChunksInput
+  connect?: Prisma.EvidenceChunkWhereUniqueInput
+}
+
+export type EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput> | Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput | Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput[]
+  createMany?: Prisma.EvidenceChunkCreateManySupersedesChunkInputEnvelope
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+}
+
+export type EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput> | Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput | Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput[]
+  createMany?: Prisma.EvidenceChunkCreateManySupersedesChunkInputEnvelope
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+}
+
+export type EnumEvidenceChunkStatusFieldUpdateOperationsInput = {
+  set?: $Enums.EvidenceChunkStatus
+}
+
+export type EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersededByChunksInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersededByChunksInput>
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutSupersededByChunksInput
+  upsert?: Prisma.EvidenceChunkUpsertWithoutSupersededByChunksInput
+  disconnect?: Prisma.EvidenceChunkWhereInput | boolean
+  delete?: Prisma.EvidenceChunkWhereInput | boolean
+  connect?: Prisma.EvidenceChunkWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EvidenceChunkUpdateToOneWithWhereWithoutSupersededByChunksInput, Prisma.EvidenceChunkUpdateWithoutSupersededByChunksInput>, Prisma.EvidenceChunkUncheckedUpdateWithoutSupersededByChunksInput>
+}
+
+export type EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput> | Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput | Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput[]
+  upsert?: Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutSupersedesChunkInput | Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutSupersedesChunkInput[]
+  createMany?: Prisma.EvidenceChunkCreateManySupersedesChunkInputEnvelope
+  set?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  disconnect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  delete?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  update?: Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutSupersedesChunkInput | Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutSupersedesChunkInput[]
+  updateMany?: Prisma.EvidenceChunkUpdateManyWithWhereWithoutSupersedesChunkInput | Prisma.EvidenceChunkUpdateManyWithWhereWithoutSupersedesChunkInput[]
+  deleteMany?: Prisma.EvidenceChunkScalarWhereInput | Prisma.EvidenceChunkScalarWhereInput[]
+}
+
+export type EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput> | Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput | Prisma.EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput[]
+  upsert?: Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutSupersedesChunkInput | Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutSupersedesChunkInput[]
+  createMany?: Prisma.EvidenceChunkCreateManySupersedesChunkInputEnvelope
+  set?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  disconnect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  delete?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  update?: Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutSupersedesChunkInput | Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutSupersedesChunkInput[]
+  updateMany?: Prisma.EvidenceChunkUpdateManyWithWhereWithoutSupersedesChunkInput | Prisma.EvidenceChunkUpdateManyWithWhereWithoutSupersedesChunkInput[]
+  deleteMany?: Prisma.EvidenceChunkScalarWhereInput | Prisma.EvidenceChunkScalarWhereInput[]
+}
+
+export type EvidenceChunkCreateNestedManyWithoutChangeSetInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput> | Prisma.EvidenceChunkCreateWithoutChangeSetInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput | Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput[]
+  createMany?: Prisma.EvidenceChunkCreateManyChangeSetInputEnvelope
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+}
+
+export type EvidenceChunkUncheckedCreateNestedManyWithoutChangeSetInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput> | Prisma.EvidenceChunkCreateWithoutChangeSetInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput | Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput[]
+  createMany?: Prisma.EvidenceChunkCreateManyChangeSetInputEnvelope
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+}
+
+export type EvidenceChunkUpdateManyWithoutChangeSetNestedInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput> | Prisma.EvidenceChunkCreateWithoutChangeSetInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput | Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput[]
+  upsert?: Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutChangeSetInput | Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutChangeSetInput[]
+  createMany?: Prisma.EvidenceChunkCreateManyChangeSetInputEnvelope
+  set?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  disconnect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  delete?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  update?: Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutChangeSetInput | Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutChangeSetInput[]
+  updateMany?: Prisma.EvidenceChunkUpdateManyWithWhereWithoutChangeSetInput | Prisma.EvidenceChunkUpdateManyWithWhereWithoutChangeSetInput[]
+  deleteMany?: Prisma.EvidenceChunkScalarWhereInput | Prisma.EvidenceChunkScalarWhereInput[]
+}
+
+export type EvidenceChunkUncheckedUpdateManyWithoutChangeSetNestedInput = {
+  create?: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput> | Prisma.EvidenceChunkCreateWithoutChangeSetInput[] | Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput[]
+  connectOrCreate?: Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput | Prisma.EvidenceChunkCreateOrConnectWithoutChangeSetInput[]
+  upsert?: Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutChangeSetInput | Prisma.EvidenceChunkUpsertWithWhereUniqueWithoutChangeSetInput[]
+  createMany?: Prisma.EvidenceChunkCreateManyChangeSetInputEnvelope
+  set?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  disconnect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  delete?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  connect?: Prisma.EvidenceChunkWhereUniqueInput | Prisma.EvidenceChunkWhereUniqueInput[]
+  update?: Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutChangeSetInput | Prisma.EvidenceChunkUpdateWithWhereUniqueWithoutChangeSetInput[]
+  updateMany?: Prisma.EvidenceChunkUpdateManyWithWhereWithoutChangeSetInput | Prisma.EvidenceChunkUpdateManyWithWhereWithoutChangeSetInput[]
+  deleteMany?: Prisma.EvidenceChunkScalarWhereInput | Prisma.EvidenceChunkScalarWhereInput[]
+}
+
 export type EvidenceChunkCreateWithoutTenantInput = {
   id: string
   chunkText: string
@@ -675,10 +988,20 @@ export type EvidenceChunkCreateWithoutTenantInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   knowledgeDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutChunksInput
   reviewFile?: Prisma.ReviewFileCreateNestedOneWithoutEvidenceChunksInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutEvidenceChunksInput
+  supersedesChunk?: Prisma.EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput
+  supersededByChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceCreateNestedManyWithoutChunkInput
 }
 
@@ -692,8 +1015,18 @@ export type EvidenceChunkUncheckedCreateWithoutTenantInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutChunkInput
 }
 
@@ -737,6 +1070,15 @@ export type EvidenceChunkScalarWhereInput = {
   embeddingId?: Prisma.StringFilter<"EvidenceChunk"> | string
   page?: Prisma.IntNullableFilter<"EvidenceChunk"> | number | null
   section?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  canonicalSectionKey?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  sectionNumber?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  changeSetId?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  supersedesChunkId?: Prisma.StringNullableFilter<"EvidenceChunk"> | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFilter<"EvidenceChunk"> | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonFilter<"EvidenceChunk">
+  effectiveFrom?: Prisma.DateTimeNullableFilter<"EvidenceChunk"> | Date | string | null
+  effectiveTo?: Prisma.DateTimeNullableFilter<"EvidenceChunk"> | Date | string | null
+  sourceReliability?: Prisma.FloatNullableFilter<"EvidenceChunk"> | number | null
   metadata?: Prisma.JsonFilter<"EvidenceChunk">
   createdAt?: Prisma.DateTimeFilter<"EvidenceChunk"> | Date | string
 }
@@ -749,10 +1091,20 @@ export type EvidenceChunkCreateWithoutReviewFileInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutEvidenceChunksInput
   knowledgeDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutChunksInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutEvidenceChunksInput
+  supersedesChunk?: Prisma.EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput
+  supersededByChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceCreateNestedManyWithoutChunkInput
 }
 
@@ -766,8 +1118,18 @@ export type EvidenceChunkUncheckedCreateWithoutReviewFileInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutChunkInput
 }
 
@@ -805,11 +1167,21 @@ export type EvidenceChunkCreateWithoutEvidenceInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutEvidenceChunksInput
   knowledgeDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutChunksInput
   reviewFile?: Prisma.ReviewFileCreateNestedOneWithoutEvidenceChunksInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutEvidenceChunksInput
+  supersedesChunk?: Prisma.EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput
+  supersededByChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput
 }
 
 export type EvidenceChunkUncheckedCreateWithoutEvidenceInput = {
@@ -823,8 +1195,18 @@ export type EvidenceChunkUncheckedCreateWithoutEvidenceInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput
 }
 
 export type EvidenceChunkCreateOrConnectWithoutEvidenceInput = {
@@ -851,11 +1233,21 @@ export type EvidenceChunkUpdateWithoutEvidenceInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput
   knowledgeDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutChunksNestedInput
   reviewFile?: Prisma.ReviewFileUpdateOneWithoutEvidenceChunksNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutEvidenceChunksNestedInput
+  supersedesChunk?: Prisma.EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput
+  supersededByChunks?: Prisma.EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput
 }
 
 export type EvidenceChunkUncheckedUpdateWithoutEvidenceInput = {
@@ -869,8 +1261,18 @@ export type EvidenceChunkUncheckedUpdateWithoutEvidenceInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput
 }
 
 export type EvidenceChunkCreateWithoutKnowledgeDocumentInput = {
@@ -881,10 +1283,20 @@ export type EvidenceChunkCreateWithoutKnowledgeDocumentInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   tenant: Prisma.TenantCreateNestedOneWithoutEvidenceChunksInput
   reviewFile?: Prisma.ReviewFileCreateNestedOneWithoutEvidenceChunksInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutEvidenceChunksInput
+  supersedesChunk?: Prisma.EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput
+  supersededByChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceCreateNestedManyWithoutChunkInput
 }
 
@@ -898,8 +1310,18 @@ export type EvidenceChunkUncheckedCreateWithoutKnowledgeDocumentInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput
   evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutChunkInput
 }
 
@@ -929,6 +1351,274 @@ export type EvidenceChunkUpdateManyWithWhereWithoutKnowledgeDocumentInput = {
   data: Prisma.XOR<Prisma.EvidenceChunkUpdateManyMutationInput, Prisma.EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentInput>
 }
 
+export type EvidenceChunkCreateWithoutSupersededByChunksInput = {
+  id: string
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutEvidenceChunksInput
+  knowledgeDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutChunksInput
+  reviewFile?: Prisma.ReviewFileCreateNestedOneWithoutEvidenceChunksInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutEvidenceChunksInput
+  supersedesChunk?: Prisma.EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutChunkInput
+}
+
+export type EvidenceChunkUncheckedCreateWithoutSupersededByChunksInput = {
+  id: string
+  tenantId: string
+  knowledgeDocumentId?: string | null
+  reviewFileId?: string | null
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutChunkInput
+}
+
+export type EvidenceChunkCreateOrConnectWithoutSupersededByChunksInput = {
+  where: Prisma.EvidenceChunkWhereUniqueInput
+  create: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersededByChunksInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersededByChunksInput>
+}
+
+export type EvidenceChunkCreateWithoutSupersedesChunkInput = {
+  id: string
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutEvidenceChunksInput
+  knowledgeDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutChunksInput
+  reviewFile?: Prisma.ReviewFileCreateNestedOneWithoutEvidenceChunksInput
+  changeSet?: Prisma.RegulatoryChangeSetCreateNestedOneWithoutEvidenceChunksInput
+  supersededByChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutChunkInput
+}
+
+export type EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput = {
+  id: string
+  tenantId: string
+  knowledgeDocumentId?: string | null
+  reviewFileId?: string | null
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutChunkInput
+}
+
+export type EvidenceChunkCreateOrConnectWithoutSupersedesChunkInput = {
+  where: Prisma.EvidenceChunkWhereUniqueInput
+  create: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput>
+}
+
+export type EvidenceChunkCreateManySupersedesChunkInputEnvelope = {
+  data: Prisma.EvidenceChunkCreateManySupersedesChunkInput | Prisma.EvidenceChunkCreateManySupersedesChunkInput[]
+  skipDuplicates?: boolean
+}
+
+export type EvidenceChunkUpsertWithoutSupersededByChunksInput = {
+  update: Prisma.XOR<Prisma.EvidenceChunkUpdateWithoutSupersededByChunksInput, Prisma.EvidenceChunkUncheckedUpdateWithoutSupersededByChunksInput>
+  create: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersededByChunksInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersededByChunksInput>
+  where?: Prisma.EvidenceChunkWhereInput
+}
+
+export type EvidenceChunkUpdateToOneWithWhereWithoutSupersededByChunksInput = {
+  where?: Prisma.EvidenceChunkWhereInput
+  data: Prisma.XOR<Prisma.EvidenceChunkUpdateWithoutSupersededByChunksInput, Prisma.EvidenceChunkUncheckedUpdateWithoutSupersededByChunksInput>
+}
+
+export type EvidenceChunkUpdateWithoutSupersededByChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput
+  knowledgeDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutChunksNestedInput
+  reviewFile?: Prisma.ReviewFileUpdateOneWithoutEvidenceChunksNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutEvidenceChunksNestedInput
+  supersedesChunk?: Prisma.EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutChunkNestedInput
+}
+
+export type EvidenceChunkUncheckedUpdateWithoutSupersededByChunksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  knowledgeDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutChunkNestedInput
+}
+
+export type EvidenceChunkUpsertWithWhereUniqueWithoutSupersedesChunkInput = {
+  where: Prisma.EvidenceChunkWhereUniqueInput
+  update: Prisma.XOR<Prisma.EvidenceChunkUpdateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedUpdateWithoutSupersedesChunkInput>
+  create: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedCreateWithoutSupersedesChunkInput>
+}
+
+export type EvidenceChunkUpdateWithWhereUniqueWithoutSupersedesChunkInput = {
+  where: Prisma.EvidenceChunkWhereUniqueInput
+  data: Prisma.XOR<Prisma.EvidenceChunkUpdateWithoutSupersedesChunkInput, Prisma.EvidenceChunkUncheckedUpdateWithoutSupersedesChunkInput>
+}
+
+export type EvidenceChunkUpdateManyWithWhereWithoutSupersedesChunkInput = {
+  where: Prisma.EvidenceChunkScalarWhereInput
+  data: Prisma.XOR<Prisma.EvidenceChunkUpdateManyMutationInput, Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkInput>
+}
+
+export type EvidenceChunkCreateWithoutChangeSetInput = {
+  id: string
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutEvidenceChunksInput
+  knowledgeDocument?: Prisma.KnowledgeDocumentCreateNestedOneWithoutChunksInput
+  reviewFile?: Prisma.ReviewFileCreateNestedOneWithoutEvidenceChunksInput
+  supersedesChunk?: Prisma.EvidenceChunkCreateNestedOneWithoutSupersededByChunksInput
+  supersededByChunks?: Prisma.EvidenceChunkCreateNestedManyWithoutSupersedesChunkInput
+  evidence?: Prisma.EvidenceCreateNestedManyWithoutChunkInput
+}
+
+export type EvidenceChunkUncheckedCreateWithoutChangeSetInput = {
+  id: string
+  tenantId: string
+  knowledgeDocumentId?: string | null
+  reviewFileId?: string | null
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedCreateNestedManyWithoutSupersedesChunkInput
+  evidence?: Prisma.EvidenceUncheckedCreateNestedManyWithoutChunkInput
+}
+
+export type EvidenceChunkCreateOrConnectWithoutChangeSetInput = {
+  where: Prisma.EvidenceChunkWhereUniqueInput
+  create: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput>
+}
+
+export type EvidenceChunkCreateManyChangeSetInputEnvelope = {
+  data: Prisma.EvidenceChunkCreateManyChangeSetInput | Prisma.EvidenceChunkCreateManyChangeSetInput[]
+  skipDuplicates?: boolean
+}
+
+export type EvidenceChunkUpsertWithWhereUniqueWithoutChangeSetInput = {
+  where: Prisma.EvidenceChunkWhereUniqueInput
+  update: Prisma.XOR<Prisma.EvidenceChunkUpdateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedUpdateWithoutChangeSetInput>
+  create: Prisma.XOR<Prisma.EvidenceChunkCreateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedCreateWithoutChangeSetInput>
+}
+
+export type EvidenceChunkUpdateWithWhereUniqueWithoutChangeSetInput = {
+  where: Prisma.EvidenceChunkWhereUniqueInput
+  data: Prisma.XOR<Prisma.EvidenceChunkUpdateWithoutChangeSetInput, Prisma.EvidenceChunkUncheckedUpdateWithoutChangeSetInput>
+}
+
+export type EvidenceChunkUpdateManyWithWhereWithoutChangeSetInput = {
+  where: Prisma.EvidenceChunkScalarWhereInput
+  data: Prisma.XOR<Prisma.EvidenceChunkUpdateManyMutationInput, Prisma.EvidenceChunkUncheckedUpdateManyWithoutChangeSetInput>
+}
+
 export type EvidenceChunkCreateManyTenantInput = {
   id: string
   knowledgeDocumentId?: string | null
@@ -939,6 +1629,15 @@ export type EvidenceChunkCreateManyTenantInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -951,10 +1650,20 @@ export type EvidenceChunkUpdateWithoutTenantInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   knowledgeDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutChunksNestedInput
   reviewFile?: Prisma.ReviewFileUpdateOneWithoutEvidenceChunksNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutEvidenceChunksNestedInput
+  supersedesChunk?: Prisma.EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput
+  supersededByChunks?: Prisma.EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUpdateManyWithoutChunkNestedInput
 }
 
@@ -968,8 +1677,18 @@ export type EvidenceChunkUncheckedUpdateWithoutTenantInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutChunkNestedInput
 }
 
@@ -983,6 +1702,15 @@ export type EvidenceChunkUncheckedUpdateManyWithoutTenantInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -997,6 +1725,15 @@ export type EvidenceChunkCreateManyReviewFileInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -1009,10 +1746,20 @@ export type EvidenceChunkUpdateWithoutReviewFileInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput
   knowledgeDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutChunksNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutEvidenceChunksNestedInput
+  supersedesChunk?: Prisma.EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput
+  supersededByChunks?: Prisma.EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUpdateManyWithoutChunkNestedInput
 }
 
@@ -1026,8 +1773,18 @@ export type EvidenceChunkUncheckedUpdateWithoutReviewFileInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutChunkNestedInput
 }
 
@@ -1041,6 +1798,15 @@ export type EvidenceChunkUncheckedUpdateManyWithoutReviewFileInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1055,6 +1821,15 @@ export type EvidenceChunkCreateManyKnowledgeDocumentInput = {
   embeddingId: string
   page?: number | null
   section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
 }
@@ -1067,10 +1842,20 @@ export type EvidenceChunkUpdateWithoutKnowledgeDocumentInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tenant?: Prisma.TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput
   reviewFile?: Prisma.ReviewFileUpdateOneWithoutEvidenceChunksNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutEvidenceChunksNestedInput
+  supersedesChunk?: Prisma.EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput
+  supersededByChunks?: Prisma.EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUpdateManyWithoutChunkNestedInput
 }
 
@@ -1084,8 +1869,18 @@ export type EvidenceChunkUncheckedUpdateWithoutKnowledgeDocumentInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput
   evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutChunkNestedInput
 }
 
@@ -1099,6 +1894,207 @@ export type EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentInput = {
   embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
   page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type EvidenceChunkCreateManySupersedesChunkInput = {
+  id: string
+  tenantId: string
+  knowledgeDocumentId?: string | null
+  reviewFileId?: string | null
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  changeSetId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+}
+
+export type EvidenceChunkUpdateWithoutSupersedesChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput
+  knowledgeDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutChunksNestedInput
+  reviewFile?: Prisma.ReviewFileUpdateOneWithoutEvidenceChunksNestedInput
+  changeSet?: Prisma.RegulatoryChangeSetUpdateOneWithoutEvidenceChunksNestedInput
+  supersededByChunks?: Prisma.EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutChunkNestedInput
+}
+
+export type EvidenceChunkUncheckedUpdateWithoutSupersedesChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  knowledgeDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutChunkNestedInput
+}
+
+export type EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  knowledgeDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  changeSetId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type EvidenceChunkCreateManyChangeSetInput = {
+  id: string
+  tenantId: string
+  knowledgeDocumentId?: string | null
+  reviewFileId?: string | null
+  chunkText: string
+  chunkSummary?: string | null
+  embeddingModel: string
+  embeddingId: string
+  page?: number | null
+  section?: string | null
+  canonicalSectionKey?: string | null
+  sectionNumber?: string | null
+  supersedesChunkId?: string | null
+  chunkStatus?: $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Date | string | null
+  effectiveTo?: Date | string | null
+  sourceReliability?: number | null
+  metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+}
+
+export type EvidenceChunkUpdateWithoutChangeSetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutEvidenceChunksNestedInput
+  knowledgeDocument?: Prisma.KnowledgeDocumentUpdateOneWithoutChunksNestedInput
+  reviewFile?: Prisma.ReviewFileUpdateOneWithoutEvidenceChunksNestedInput
+  supersedesChunk?: Prisma.EvidenceChunkUpdateOneWithoutSupersededByChunksNestedInput
+  supersededByChunks?: Prisma.EvidenceChunkUpdateManyWithoutSupersedesChunkNestedInput
+  evidence?: Prisma.EvidenceUpdateManyWithoutChunkNestedInput
+}
+
+export type EvidenceChunkUncheckedUpdateWithoutChangeSetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  knowledgeDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
+  metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  supersededByChunks?: Prisma.EvidenceChunkUncheckedUpdateManyWithoutSupersedesChunkNestedInput
+  evidence?: Prisma.EvidenceUncheckedUpdateManyWithoutChunkNestedInput
+}
+
+export type EvidenceChunkUncheckedUpdateManyWithoutChangeSetInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  knowledgeDocumentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  reviewFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkText?: Prisma.StringFieldUpdateOperationsInput | string
+  chunkSummary?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  embeddingModel?: Prisma.StringFieldUpdateOperationsInput | string
+  embeddingId?: Prisma.StringFieldUpdateOperationsInput | string
+  page?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  section?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  canonicalSectionKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  sectionNumber?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  supersedesChunkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  chunkStatus?: Prisma.EnumEvidenceChunkStatusFieldUpdateOperationsInput | $Enums.EvidenceChunkStatus
+  impactTags?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  effectiveFrom?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  effectiveTo?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sourceReliability?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1109,10 +2105,12 @@ export type EvidenceChunkUncheckedUpdateManyWithoutKnowledgeDocumentInput = {
  */
 
 export type EvidenceChunkCountOutputType = {
+  supersededByChunks: number
   evidence: number
 }
 
 export type EvidenceChunkCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  supersededByChunks?: boolean | EvidenceChunkCountOutputTypeCountSupersededByChunksArgs
   evidence?: boolean | EvidenceChunkCountOutputTypeCountEvidenceArgs
 }
 
@@ -1124,6 +2122,13 @@ export type EvidenceChunkCountOutputTypeDefaultArgs<ExtArgs extends runtime.Type
    * Select specific fields to fetch from the EvidenceChunkCountOutputType
    */
   select?: Prisma.EvidenceChunkCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * EvidenceChunkCountOutputType without action
+ */
+export type EvidenceChunkCountOutputTypeCountSupersededByChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EvidenceChunkWhereInput
 }
 
 /**
@@ -1145,11 +2150,23 @@ export type EvidenceChunkSelect<ExtArgs extends runtime.Types.Extensions.Interna
   embeddingId?: boolean
   page?: boolean
   section?: boolean
+  canonicalSectionKey?: boolean
+  sectionNumber?: boolean
+  changeSetId?: boolean
+  supersedesChunkId?: boolean
+  chunkStatus?: boolean
+  impactTags?: boolean
+  effectiveFrom?: boolean
+  effectiveTo?: boolean
+  sourceReliability?: boolean
   metadata?: boolean
   createdAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   knowledgeDocument?: boolean | Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs>
   reviewFile?: boolean | Prisma.EvidenceChunk$reviewFileArgs<ExtArgs>
+  changeSet?: boolean | Prisma.EvidenceChunk$changeSetArgs<ExtArgs>
+  supersedesChunk?: boolean | Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs>
+  supersededByChunks?: boolean | Prisma.EvidenceChunk$supersededByChunksArgs<ExtArgs>
   evidence?: boolean | Prisma.EvidenceChunk$evidenceArgs<ExtArgs>
   _count?: boolean | Prisma.EvidenceChunkCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evidenceChunk"]>
@@ -1165,11 +2182,22 @@ export type EvidenceChunkSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   embeddingId?: boolean
   page?: boolean
   section?: boolean
+  canonicalSectionKey?: boolean
+  sectionNumber?: boolean
+  changeSetId?: boolean
+  supersedesChunkId?: boolean
+  chunkStatus?: boolean
+  impactTags?: boolean
+  effectiveFrom?: boolean
+  effectiveTo?: boolean
+  sourceReliability?: boolean
   metadata?: boolean
   createdAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   knowledgeDocument?: boolean | Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs>
   reviewFile?: boolean | Prisma.EvidenceChunk$reviewFileArgs<ExtArgs>
+  changeSet?: boolean | Prisma.EvidenceChunk$changeSetArgs<ExtArgs>
+  supersedesChunk?: boolean | Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs>
 }, ExtArgs["result"]["evidenceChunk"]>
 
 export type EvidenceChunkSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1183,11 +2211,22 @@ export type EvidenceChunkSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   embeddingId?: boolean
   page?: boolean
   section?: boolean
+  canonicalSectionKey?: boolean
+  sectionNumber?: boolean
+  changeSetId?: boolean
+  supersedesChunkId?: boolean
+  chunkStatus?: boolean
+  impactTags?: boolean
+  effectiveFrom?: boolean
+  effectiveTo?: boolean
+  sourceReliability?: boolean
   metadata?: boolean
   createdAt?: boolean
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   knowledgeDocument?: boolean | Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs>
   reviewFile?: boolean | Prisma.EvidenceChunk$reviewFileArgs<ExtArgs>
+  changeSet?: boolean | Prisma.EvidenceChunk$changeSetArgs<ExtArgs>
+  supersedesChunk?: boolean | Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs>
 }, ExtArgs["result"]["evidenceChunk"]>
 
 export type EvidenceChunkSelectScalar = {
@@ -1201,15 +2240,27 @@ export type EvidenceChunkSelectScalar = {
   embeddingId?: boolean
   page?: boolean
   section?: boolean
+  canonicalSectionKey?: boolean
+  sectionNumber?: boolean
+  changeSetId?: boolean
+  supersedesChunkId?: boolean
+  chunkStatus?: boolean
+  impactTags?: boolean
+  effectiveFrom?: boolean
+  effectiveTo?: boolean
+  sourceReliability?: boolean
   metadata?: boolean
   createdAt?: boolean
 }
 
-export type EvidenceChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "knowledgeDocumentId" | "reviewFileId" | "chunkText" | "chunkSummary" | "embeddingModel" | "embeddingId" | "page" | "section" | "metadata" | "createdAt", ExtArgs["result"]["evidenceChunk"]>
+export type EvidenceChunkOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "knowledgeDocumentId" | "reviewFileId" | "chunkText" | "chunkSummary" | "embeddingModel" | "embeddingId" | "page" | "section" | "canonicalSectionKey" | "sectionNumber" | "changeSetId" | "supersedesChunkId" | "chunkStatus" | "impactTags" | "effectiveFrom" | "effectiveTo" | "sourceReliability" | "metadata" | "createdAt", ExtArgs["result"]["evidenceChunk"]>
 export type EvidenceChunkInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   knowledgeDocument?: boolean | Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs>
   reviewFile?: boolean | Prisma.EvidenceChunk$reviewFileArgs<ExtArgs>
+  changeSet?: boolean | Prisma.EvidenceChunk$changeSetArgs<ExtArgs>
+  supersedesChunk?: boolean | Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs>
+  supersededByChunks?: boolean | Prisma.EvidenceChunk$supersededByChunksArgs<ExtArgs>
   evidence?: boolean | Prisma.EvidenceChunk$evidenceArgs<ExtArgs>
   _count?: boolean | Prisma.EvidenceChunkCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1217,11 +2268,15 @@ export type EvidenceChunkIncludeCreateManyAndReturn<ExtArgs extends runtime.Type
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   knowledgeDocument?: boolean | Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs>
   reviewFile?: boolean | Prisma.EvidenceChunk$reviewFileArgs<ExtArgs>
+  changeSet?: boolean | Prisma.EvidenceChunk$changeSetArgs<ExtArgs>
+  supersedesChunk?: boolean | Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs>
 }
 export type EvidenceChunkIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   knowledgeDocument?: boolean | Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs>
   reviewFile?: boolean | Prisma.EvidenceChunk$reviewFileArgs<ExtArgs>
+  changeSet?: boolean | Prisma.EvidenceChunk$changeSetArgs<ExtArgs>
+  supersedesChunk?: boolean | Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs>
 }
 
 export type $EvidenceChunkPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1230,6 +2285,9 @@ export type $EvidenceChunkPayload<ExtArgs extends runtime.Types.Extensions.Inter
     tenant: Prisma.$TenantPayload<ExtArgs>
     knowledgeDocument: Prisma.$KnowledgeDocumentPayload<ExtArgs> | null
     reviewFile: Prisma.$ReviewFilePayload<ExtArgs> | null
+    changeSet: Prisma.$RegulatoryChangeSetPayload<ExtArgs> | null
+    supersedesChunk: Prisma.$EvidenceChunkPayload<ExtArgs> | null
+    supersededByChunks: Prisma.$EvidenceChunkPayload<ExtArgs>[]
     evidence: Prisma.$EvidencePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1243,6 +2301,15 @@ export type $EvidenceChunkPayload<ExtArgs extends runtime.Types.Extensions.Inter
     embeddingId: string
     page: number | null
     section: string | null
+    canonicalSectionKey: string | null
+    sectionNumber: string | null
+    changeSetId: string | null
+    supersedesChunkId: string | null
+    chunkStatus: $Enums.EvidenceChunkStatus
+    impactTags: runtime.JsonValue
+    effectiveFrom: Date | null
+    effectiveTo: Date | null
+    sourceReliability: number | null
     metadata: runtime.JsonValue
     createdAt: Date
   }, ExtArgs["result"]["evidenceChunk"]>
@@ -1642,6 +2709,9 @@ export interface Prisma__EvidenceChunkClient<T, Null = never, ExtArgs extends ru
   tenant<T extends Prisma.TenantDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.TenantDefaultArgs<ExtArgs>>): Prisma.Prisma__TenantClient<runtime.Types.Result.GetResult<Prisma.$TenantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   knowledgeDocument<T extends Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EvidenceChunk$knowledgeDocumentArgs<ExtArgs>>): Prisma.Prisma__KnowledgeDocumentClient<runtime.Types.Result.GetResult<Prisma.$KnowledgeDocumentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   reviewFile<T extends Prisma.EvidenceChunk$reviewFileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EvidenceChunk$reviewFileArgs<ExtArgs>>): Prisma.Prisma__ReviewFileClient<runtime.Types.Result.GetResult<Prisma.$ReviewFilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  changeSet<T extends Prisma.EvidenceChunk$changeSetArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EvidenceChunk$changeSetArgs<ExtArgs>>): Prisma.Prisma__RegulatoryChangeSetClient<runtime.Types.Result.GetResult<Prisma.$RegulatoryChangeSetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  supersedesChunk<T extends Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EvidenceChunk$supersedesChunkArgs<ExtArgs>>): Prisma.Prisma__EvidenceChunkClient<runtime.Types.Result.GetResult<Prisma.$EvidenceChunkPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  supersededByChunks<T extends Prisma.EvidenceChunk$supersededByChunksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EvidenceChunk$supersededByChunksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvidenceChunkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   evidence<T extends Prisma.EvidenceChunk$evidenceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EvidenceChunk$evidenceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvidencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1682,6 +2752,15 @@ export interface EvidenceChunkFieldRefs {
   readonly embeddingId: Prisma.FieldRef<"EvidenceChunk", 'String'>
   readonly page: Prisma.FieldRef<"EvidenceChunk", 'Int'>
   readonly section: Prisma.FieldRef<"EvidenceChunk", 'String'>
+  readonly canonicalSectionKey: Prisma.FieldRef<"EvidenceChunk", 'String'>
+  readonly sectionNumber: Prisma.FieldRef<"EvidenceChunk", 'String'>
+  readonly changeSetId: Prisma.FieldRef<"EvidenceChunk", 'String'>
+  readonly supersedesChunkId: Prisma.FieldRef<"EvidenceChunk", 'String'>
+  readonly chunkStatus: Prisma.FieldRef<"EvidenceChunk", 'EvidenceChunkStatus'>
+  readonly impactTags: Prisma.FieldRef<"EvidenceChunk", 'Json'>
+  readonly effectiveFrom: Prisma.FieldRef<"EvidenceChunk", 'DateTime'>
+  readonly effectiveTo: Prisma.FieldRef<"EvidenceChunk", 'DateTime'>
+  readonly sourceReliability: Prisma.FieldRef<"EvidenceChunk", 'Float'>
   readonly metadata: Prisma.FieldRef<"EvidenceChunk", 'Json'>
   readonly createdAt: Prisma.FieldRef<"EvidenceChunk", 'DateTime'>
 }
@@ -2120,6 +3199,68 @@ export type EvidenceChunk$reviewFileArgs<ExtArgs extends runtime.Types.Extension
    */
   include?: Prisma.ReviewFileInclude<ExtArgs> | null
   where?: Prisma.ReviewFileWhereInput
+}
+
+/**
+ * EvidenceChunk.changeSet
+ */
+export type EvidenceChunk$changeSetArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RegulatoryChangeSet
+   */
+  select?: Prisma.RegulatoryChangeSetSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RegulatoryChangeSet
+   */
+  omit?: Prisma.RegulatoryChangeSetOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RegulatoryChangeSetInclude<ExtArgs> | null
+  where?: Prisma.RegulatoryChangeSetWhereInput
+}
+
+/**
+ * EvidenceChunk.supersedesChunk
+ */
+export type EvidenceChunk$supersedesChunkArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EvidenceChunk
+   */
+  select?: Prisma.EvidenceChunkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EvidenceChunk
+   */
+  omit?: Prisma.EvidenceChunkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EvidenceChunkInclude<ExtArgs> | null
+  where?: Prisma.EvidenceChunkWhereInput
+}
+
+/**
+ * EvidenceChunk.supersededByChunks
+ */
+export type EvidenceChunk$supersededByChunksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EvidenceChunk
+   */
+  select?: Prisma.EvidenceChunkSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EvidenceChunk
+   */
+  omit?: Prisma.EvidenceChunkOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EvidenceChunkInclude<ExtArgs> | null
+  where?: Prisma.EvidenceChunkWhereInput
+  orderBy?: Prisma.EvidenceChunkOrderByWithRelationInput | Prisma.EvidenceChunkOrderByWithRelationInput[]
+  cursor?: Prisma.EvidenceChunkWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EvidenceChunkScalarFieldEnum | Prisma.EvidenceChunkScalarFieldEnum[]
 }
 
 /**
