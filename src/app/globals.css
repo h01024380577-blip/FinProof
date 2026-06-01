@@ -1901,29 +1901,6 @@ a.review-table__row:hover {
   min-width: 0;
 }
 
-.reviewer-editor__input {
-  width: 100%;
-  min-height: 32px;
-  border: 1px solid transparent;
-  border-radius: 2px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-weight: 700;
-}
-
-.reviewer-editor__input:hover,
-.reviewer-editor__input:focus {
-  border-color: var(--line-strong);
-  background: #ffffff;
-  outline: none;
-}
-
-.reviewer-editor__input:disabled {
-  color: var(--muted);
-  cursor: progress;
-}
-
 .queue-empty-state,
 .queue-waiting-state {
   display: flex;
@@ -5213,10 +5190,6 @@ a.review-table__row:hover {
 
 .queue-row-note {
   border-radius: 4px;
-}
-
-.reviewer-editor__input {
-  border-radius: 8px;
 }
 
 .queue-empty-state,

@@ -369,49 +369,23 @@ describe("ReviewQueue", () => {
     );
   });
 
-  it("lets reviewers update the assigned reviewer from the active queue", async () => {
-    const user = userEvent.setup();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ reviewCases: reviewSummaries })
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          reviewCase: {
-            id: "rc-demo-deposit-001",
-            reviewer: "준법심의자 이수민"
-          }
-        })
-      });
+  it("does not let reviewers update the assigned reviewer directly from the active queue", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ reviewCases: reviewSummaries })
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     renderQueue("reviewer", "reviewer.jwt");
 
-    const reviewerInput = await screen.findByLabelText(
-      "담당자: 최고 연 5.0% 적금 홍보물 심의"
-    );
-    await user.clear(reviewerInput);
-    await user.type(reviewerInput, "준법심의자 이수민");
-    await user.tab();
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/v1/review-cases/rc-demo-deposit-001",
-        expect.objectContaining({
-          method: "PATCH",
-          headers: expect.objectContaining({
-            "content-type": "application/json",
-            "x-finproof-role": "reviewer",
-            authorization: "Bearer reviewer.jwt"
-          }),
-          body: JSON.stringify({ reviewer: "준법심의자 이수민" })
-        })
-      );
+    const completedRow = await screen.findByRole("row", {
+      name: /최고 연 5.0% 적금 홍보물 심의/
     });
-    expect(await screen.findByDisplayValue("준법심의자 이수민")).toBeInTheDocument();
+    expect(within(completedRow).getByText("준법심의자 박민준")).toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")
+    ).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("starts analysis from a waiting row and exposes the completed workbench navigation", async () => {

@@ -91,7 +91,6 @@ export function ReviewQueue(): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const pollingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-  const [savingReviewerIds, setSavingReviewerIds] = useState<string[]>([]);
   const [deletingHistoryIds, setDeletingHistoryIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
   const [page, setPage] = useState(1);
@@ -102,8 +101,6 @@ export function ReviewQueue(): JSX.Element {
   });
   const listLabel = scope === "history" ? "심의 이력" : "심의 대기 목록";
   const loadingMessage = `${listLabel}을 불러오는 중입니다.`;
-  const canEditReviewer =
-    scope === "active" && (activeRole === "reviewer" || activeRole === "compliance_admin");
   const canDeleteReviewHistory =
     scope === "history" && (activeRole === "reviewer" || activeRole === "compliance_admin");
 
@@ -313,9 +310,6 @@ export function ReviewQueue(): JSX.Element {
   }
 
   async function saveReviewer(review: ReviewSummary, reviewer: string): Promise<void> {
-    setSavingReviewerIds((current) =>
-      current.includes(review.id) ? current : [...current, review.id]
-    );
     setLoadError(null);
 
     try {
@@ -341,8 +335,6 @@ export function ReviewQueue(): JSX.Element {
       setLoadError(
         error instanceof Error ? error.message : "담당자 저장 요청을 처리하지 못했습니다."
       );
-    } finally {
-      setSavingReviewerIds((current) => current.filter((id) => id !== review.id));
     }
   }
 
@@ -467,8 +459,6 @@ export function ReviewQueue(): JSX.Element {
           activeAnalysisId={activeAnalysisId}
           isLoading={isLoading}
           loadingMessage={loadingMessage}
-          canEditReviewer={canEditReviewer}
-          savingReviewerIds={savingReviewerIds}
           canDeleteReviewHistory={canDeleteReviewHistory}
           deletingReviewHistoryIds={deletingHistoryIds}
           emptyMessage={

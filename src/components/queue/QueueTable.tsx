@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import { Loader2, PlayCircle, Trash2, UserCheck } from "lucide-react";
 import { RiskBadge, StatusBadge } from "@/components/Badges";
 import { statusLabels } from "@/domain/reviews";
@@ -62,8 +62,6 @@ export type QueueTableProps = {
   isLoading?: boolean;
   loadingMessage?: string;
   emptyMessage?: string;
-  canEditReviewer?: boolean;
-  savingReviewerIds?: string[];
   canDeleteReviewHistory?: boolean;
   deletingReviewHistoryIds?: string[];
   onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
@@ -71,62 +69,6 @@ export type QueueTableProps = {
   onStartAnalysis: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
-
-function ReviewerEditor({
-  review,
-  isSaving,
-  onSaveReviewer
-}: {
-  review: ReviewSummary;
-  isSaving: boolean;
-  onSaveReviewer: (review: ReviewSummary, reviewer: string) => void;
-}): JSX.Element {
-  const [draft, setDraft] = useState(review.reviewer);
-
-  function commitDraft(): void {
-    const nextReviewer = draft.trim();
-
-    if (!nextReviewer) {
-      setDraft(review.reviewer);
-      return;
-    }
-
-    if (nextReviewer !== review.reviewer) {
-      onSaveReviewer(review, nextReviewer);
-    } else {
-      setDraft(nextReviewer);
-    }
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
-    event.stopPropagation();
-
-    if (event.key === "Enter") {
-      event.preventDefault();
-      event.currentTarget.blur();
-    }
-
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setDraft(review.reviewer);
-      event.currentTarget.blur();
-    }
-  }
-
-  return (
-    <input
-      className="reviewer-editor__input"
-      aria-label={`담당자: ${review.title}`}
-      value={draft}
-      placeholder="미배정"
-      disabled={isSaving}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commitDraft}
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={handleKeyDown}
-    />
-  );
-}
 
 type PendingOpen = {
   review: ReviewSummary;
@@ -205,8 +147,6 @@ export function QueueTable({
   isLoading = false,
   loadingMessage = "심의 대기 목록을 불러오는 중입니다.",
   emptyMessage,
-  canEditReviewer = false,
-  savingReviewerIds = [],
   canDeleteReviewHistory = false,
   deletingReviewHistoryIds = [],
   onSaveReviewer,
@@ -306,16 +246,7 @@ export function QueueTable({
               onClick={(event) => event.stopPropagation()}
               onKeyDown={(event) => event.stopPropagation()}
             >
-              {canEditReviewer && onSaveReviewer ? (
-                <ReviewerEditor
-                  key={`${review.id}:${review.reviewer}`}
-                  review={review}
-                  isSaving={savingReviewerIds.includes(review.id)}
-                  onSaveReviewer={onSaveReviewer}
-                />
-              ) : (
-                review.reviewer || "미배정"
-              )}
+              {review.reviewer || "미배정"}
             </span>
             <span
               className={`queue-row-actions queue-row-actions--left${

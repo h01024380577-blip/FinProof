@@ -31,8 +31,7 @@ describe("QueueTable", () => {
     expect(screen.getByText("RC-2026-001")).toBeInTheDocument();
   });
 
-  it("lets reviewers edit and save the assigned reviewer without opening the row", async () => {
-    const user = userEvent.setup();
+  it("does not expose a direct reviewer editor from the queue row", () => {
     const onOpen = vi.fn();
     const onSaveReviewer = vi.fn();
 
@@ -41,22 +40,15 @@ describe("QueueTable", () => {
         rows={[{ ...baseRow, status: "analysis_complete" }]}
         activeRole="reviewer"
         activeAnalysisId={null}
-        canEditReviewer
         onSaveReviewer={onSaveReviewer}
         onStartAnalysis={() => undefined}
         onOpenReview={onOpen}
       />
     );
 
-    const reviewerInput = screen.getByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의");
-    await user.clear(reviewerInput);
-    await user.type(reviewerInput, "준법심의자 이수민");
-    await user.tab();
-
-    expect(onSaveReviewer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "RC-2026-001" }),
-      "준법심의자 이수민"
-    );
+    expect(screen.queryByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
+    expect(screen.getByText("박심의")).toBeInTheDocument();
+    expect(onSaveReviewer).not.toHaveBeenCalled();
     expect(onOpen).not.toHaveBeenCalled();
   });
 
@@ -153,23 +145,20 @@ describe("QueueTable", () => {
     expect(completedBadge).toHaveAttribute("data-status", "analysis_complete");
   });
 
-  it("shows unassigned reviewer rows without a hardcoded default name", () => {
+  it("shows unassigned reviewer rows as text without a hardcoded default name", () => {
     render(
       <QueueTable
         rows={[{ ...baseRow, reviewer: "" }]}
         activeRole="reviewer"
         activeAnalysisId={null}
-        canEditReviewer
         onSaveReviewer={() => undefined}
         onStartAnalysis={() => undefined}
         onOpenReview={() => undefined}
       />
     );
 
-    expect(screen.getByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")).toHaveAttribute(
-      "placeholder",
-      "미배정"
-    );
+    expect(screen.queryByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
+    expect(screen.getByText("미배정")).toBeInTheDocument();
     expect(screen.queryByText("준법심의자 박민준")).not.toBeInTheDocument();
   });
 
