@@ -3778,6 +3778,13 @@ a.review-table__row:hover {
   gap: var(--space-2);
 }
 
+.regulatory-page__header-side {
+  display: grid;
+  justify-items: end;
+  gap: var(--space-4);
+  margin-left: auto;
+}
+
 .regulatory-page__metrics div {
   min-height: 44px;
   padding: 0 var(--space-4);
@@ -3791,6 +3798,7 @@ a.review-table__row:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-3);
 }
 
@@ -3978,6 +3986,13 @@ a.review-table__row:hover {
 @media (max-width: 760px) {
   .regulatory-page__metrics {
     justify-content: flex-start;
+  }
+
+  .regulatory-page__header-side,
+  .regulatory-actions {
+    justify-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .regulatory-diff__columns {

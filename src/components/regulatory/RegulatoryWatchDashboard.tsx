@@ -178,34 +178,35 @@ export function RegulatoryWatchDashboard(): JSX.Element {
             반영합니다.
           </p>
         </div>
-        <div className="knowledge-page__metrics regulatory-page__metrics" aria-label="규제 추적 현황">
-          {metrics.map((metric) => {
-            const Icon = metric.icon;
+        <div className="regulatory-page__header-side">
+          <div className="knowledge-page__metrics regulatory-page__metrics" aria-label="규제 추적 현황">
+            {metrics.map((metric) => {
+              const Icon = metric.icon;
 
-            return (
-              <div key={metric.label}>
-                <Icon size={18} aria-hidden="true" />
-                <strong>{metric.value}</strong>
-                <span>{metric.label}</span>
-              </div>
-            );
-          })}
+              return (
+                <div key={metric.label}>
+                  <Icon size={18} aria-hidden="true" />
+                  <strong>{metric.value}</strong>
+                  <span>{metric.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <section className="regulatory-actions" aria-label="규제 변경 작업">
+            <button
+              className="button button--primary"
+              type="button"
+              onClick={handleTrackKnowledgeDocuments}
+              disabled={isTracking}
+            >
+              {isTracking ? (
+                <LoaderCircle className="action-spinner" size={17} aria-hidden="true" />
+              ) : null}
+              변경 추적
+            </button>
+            {trackStatus ? <p className="form-status">{trackStatus}</p> : null}
+          </section>
         </div>
-      </section>
-
-      <section className="regulatory-actions" aria-label="규제 변경 작업">
-        <button
-          className="button button--primary"
-          type="button"
-          onClick={handleTrackKnowledgeDocuments}
-          disabled={isTracking}
-        >
-          {isTracking ? (
-            <LoaderCircle className="action-spinner" size={17} aria-hidden="true" />
-          ) : null}
-          변경 추적
-        </button>
-        {trackStatus ? <p className="form-status">{trackStatus}</p> : null}
       </section>
 
       {status ? <p className="form-status">{status}</p> : null}
