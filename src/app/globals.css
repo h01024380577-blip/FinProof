@@ -3148,6 +3148,14 @@ a.review-table__row:hover {
   border-bottom: 1px solid var(--line);
 }
 
+.intake-title-row > :first-child {
+  align-self: center;
+}
+
+.intake-title-row > :last-child {
+  padding-left: 24px;
+}
+
 .intake-title-row h2 {
   margin: 0;
   font-size: 1.7rem;
@@ -3767,6 +3775,26 @@ a.review-table__row:hover {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
+}
+
+.regulatory-page__metrics div {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+}
+
+.regulatory-page__metrics strong {
+  font-size: var(--font-size-lg);
+}
+
+.regulatory-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.regulatory-actions .form-status {
+  margin: 0;
 }
 
 .regulatory-layout {
