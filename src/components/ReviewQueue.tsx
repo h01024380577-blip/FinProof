@@ -26,7 +26,7 @@ type ReviewerUpdateResponse = {
 };
 
 function isAnalysisWaiting(status: ReviewCase["status"]): boolean {
-  return status === "submitted" || status === "analysis_waiting";
+  return status === "submitted" || status === "analysis_waiting" || status === "analysis_queued";
 }
 
 function fallbackActionsFor(

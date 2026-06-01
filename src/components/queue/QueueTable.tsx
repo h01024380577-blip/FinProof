@@ -16,7 +16,7 @@ const productLabels: Record<ProductType, string> = {
 };
 
 function isAnalysisWaiting(status: ReviewCase["status"]): boolean {
-  return status === "submitted" || status === "analysis_waiting";
+  return status === "submitted" || status === "analysis_waiting" || status === "analysis_queued";
 }
 
 function canOpenWorkbench(status: ReviewCase["status"]): boolean {
@@ -331,7 +331,7 @@ export function QueueTable({
                   disabled={!canStart || activeAnalysisId === review.id}
                   onClick={() => onStartAnalysis(review)}
                 >
-                  {activeAnalysisId === review.id ? (
+                  {activeAnalysisId === review.id || review.status === "analysis_queued" ? (
                     <>
                       <Loader2 className="action-spinner" size={15} aria-hidden="true" />
                       분석중
