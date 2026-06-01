@@ -84,7 +84,7 @@ describe("AppShell", () => {
       within(primaryNav)
         .getAllByRole("link")
         .map((link) => link.textContent)
-    ).toEqual(["심의 대기 목록", "심의 이력", "지식문서 등록"]);
+    ).toEqual(["심의 대기 목록", "심의 이력", "지식문서 등록", "규제 변경"]);
   });
 
   it("shows only the new request navigation for requesters and redirects review pages", async () => {

@@ -234,17 +234,13 @@ describe("QueueTable", () => {
     ).toBeInTheDocument();
     expect(queuedCells).toHaveLength(9);
     expect(queuedCells[8]).toHaveClass("queue-row-actions--left");
-    expect(queuedCells[8]).toHaveTextContent("분석 대기 중");
+    expect(queuedCells[8]).toHaveTextContent("분석중");
     expect(completedCells).toHaveLength(9);
     expect(completedCells[8]).toHaveClass("queue-row-actions--left");
-    expect(completedCells[8]).toHaveTextContent("분석 완료");
-    expect(within(completedCells[8]).queryByRole("button")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "담당자 확인 후 AI 분석" })
-    ).not.toBeInTheDocument();
+    expect(within(completedCells[8]).getByRole("button", { name: "검토하기" })).toBeInTheDocument();
   });
 
-  it("navigates via row click when case is openable", async () => {
+  it("opens the workbench via the 검토하기 action and reviewer confirmation", async () => {
     const onOpen = vi.fn();
     render(
       <QueueTable
@@ -255,7 +251,8 @@ describe("QueueTable", () => {
         onOpenReview={onOpen}
       />
     );
-    await userEvent.click(screen.getByRole("row", { name: /최고 연 5.0%/ }));
+    await userEvent.click(screen.getByRole("button", { name: "검토하기" }));
+    await userEvent.click(screen.getByRole("button", { name: "검토 시작" }));
     expect(onOpen).toHaveBeenCalledWith("RC-2026-001");
   });
 

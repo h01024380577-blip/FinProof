@@ -119,6 +119,19 @@ function stringValue(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+function requiredStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const strings = value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return strings.length > 0 ? strings : undefined;
+}
+
 function supportedLanguage(value: unknown): MultilingualIssueContext["language"] | undefined {
   return value === "en" || value === "ja" || value === "zh" ? value : undefined;
 }
@@ -139,6 +152,7 @@ function multilingualContextFromSnapshot(snapshot: unknown): MultilingualIssueCo
   const literalTranslation = stringValue(localized?.literalTranslation);
   const complianceMeaning = stringValue(localized?.complianceMeaning);
   const localizedRiskCategory = riskCategory(localized?.riskCategory);
+  const riskSignals = requiredStringArray(localized?.riskSignals);
   const koreanComplianceCategory = stringValue(mapping?.koreanComplianceCategory);
   const koreanComplianceReason = stringValue(mapping?.koreanComplianceReason);
   const evidenceQuery = stringValue(mapping?.evidenceQuery);
@@ -152,6 +166,7 @@ function multilingualContextFromSnapshot(snapshot: unknown): MultilingualIssueCo
     !literalTranslation ||
     !complianceMeaning ||
     !localizedRiskCategory ||
+    !riskSignals ||
     !koreanComplianceCategory ||
     !koreanComplianceReason ||
     !evidenceQuery ||
@@ -168,7 +183,7 @@ function multilingualContextFromSnapshot(snapshot: unknown): MultilingualIssueCo
     literalTranslation,
     complianceMeaning,
     riskCategory: localizedRiskCategory,
-    riskSignals: stringArray(localized?.riskSignals),
+    riskSignals,
     koreanComplianceCategory,
     koreanComplianceReason,
     evidenceQuery,

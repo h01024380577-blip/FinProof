@@ -165,7 +165,8 @@ describe("ReviewQueue", () => {
     expect(screen.queryByRole("link", { name: "새 심의 요청" })).not.toBeInTheDocument();
 
     const completedRow = await screen.findByRole("row", { name: /최고 연 5.0%/ });
-    await user.click(completedRow);
+    await user.click(within(completedRow).getByRole("button", { name: "검토하기" }));
+    await user.click(screen.getByRole("button", { name: "검토 시작" }));
     expect(pushMock).toHaveBeenCalledWith("/reviews/rc-demo-deposit-001");
   });
 
@@ -444,6 +445,12 @@ describe("ReviewQueue", () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ reviewCase: analyzedUploadReview })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCase: { ...analyzedUploadReview, reviewer: "준법심의자 박민준" }
+        })
       });
     vi.stubGlobal("fetch", fetchMock);
 
@@ -466,7 +473,9 @@ describe("ReviewQueue", () => {
     });
 
     const updatedRow = await screen.findByRole("row", { name: /실제 업로드 적금 홍보물/ });
-    await user.click(updatedRow);
+    await user.click(within(updatedRow).getByRole("button", { name: "검토하기" }));
+    await user.type(screen.getByLabelText("담당자 이름"), "준법심의자 박민준");
+    await user.click(screen.getByRole("button", { name: "검토 시작" }));
     expect(pushMock).toHaveBeenCalledWith("/reviews/rc-upload-001");
   });
 
