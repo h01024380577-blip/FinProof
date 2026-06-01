@@ -10,6 +10,7 @@ import {
   ClipboardList,
   History,
   PlusSquare,
+  Radar,
   Settings,
   UserCircle,
   type LucideIcon
@@ -51,6 +52,12 @@ const navigation: NavigationItem[] = [
     label: "지식문서 등록",
     icon: BookOpenCheck,
     roles: ["reviewer", "compliance_admin"]
+  },
+  {
+    href: "/regulatory-sources",
+    label: "규제 변경",
+    icon: Radar,
+    roles: ["reviewer", "compliance_admin"]
   }
 ];
 
@@ -71,7 +78,11 @@ function canAccessPath(pathname: string, role: RoleId): boolean {
     return false;
   }
 
-  return pathname.startsWith("/reviews") || pathname.startsWith("/knowledge-documents");
+  return (
+    pathname.startsWith("/reviews") ||
+    pathname.startsWith("/knowledge-documents") ||
+    pathname.startsWith("/regulatory-sources")
+  );
 }
 
 function getBreadcrumb(pathname: string): string[] {
@@ -81,6 +92,10 @@ function getBreadcrumb(pathname: string): string[] {
 
   if (pathname.startsWith("/knowledge-documents")) {
     return ["기준 관리", "지식문서 등록"];
+  }
+
+  if (pathname.startsWith("/regulatory-sources")) {
+    return ["기준 관리", "규제 변경"];
   }
 
   if (pathname.startsWith("/reviews/")) {
@@ -118,7 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="sidebar">
         <Link className="brand brand--wordmark" href={defaultHref} aria-label="FinProof home">
           <span className="brand__mark" aria-hidden="true">
-            <FinProofMark size={38} />
+            <FinProofMark size={52} />
           </span>
           <span>
             <strong>FinProof</strong>

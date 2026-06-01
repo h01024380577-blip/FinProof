@@ -22,6 +22,7 @@ import type {
   CreateChatSessionInput,
   CreateDraftVersionInput,
   CreateKnowledgeDocumentInput,
+  CreateRegulatorySourceInput,
   CreateReviewReportInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseFromUploadedFilesInput,
@@ -29,6 +30,7 @@ import type {
   KnowledgeEvidenceSearchInput,
   ListIssuesOptions,
   ListReviewSummariesOptions,
+  RegulatoryChangeSetListOptions,
   ReviewStore,
   ReviewStoreScope,
   SaveIssueDecisionInput,
@@ -686,6 +688,49 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       }
 
       return document;
+    },
+
+    async createRegulatorySource(context: RequestContext, input: CreateRegulatorySourceInput) {
+      requireRole(context, ["reviewer", "compliance_admin"], "create regulatory source");
+
+      const scope = scopeFromContext(context);
+      const source = await store.createRegulatorySource(scope, input);
+
+      await store.recordAuditEvent(scope, {
+        action: "regulatory_source.create",
+        targetType: "regulatory_source",
+        targetId: source.id,
+        afterValue: { sourceType: source.sourceType, name: source.name }
+      });
+
+      return source;
+    },
+
+    async listRegulatorySources(context: RequestContext) {
+      requireRole(context, ["reviewer", "compliance_admin"], "list regulatory sources");
+
+      return store.listRegulatorySources(scopeFromContext(context));
+    },
+
+    async listRegulatoryChangeSets(
+      context: RequestContext,
+      options: RegulatoryChangeSetListOptions = {}
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "list regulatory change sets");
+
+      return store.listRegulatoryChangeSets(scopeFromContext(context), options);
+    },
+
+    async getRegulatoryChangeSet(context: RequestContext, changeSetId: string) {
+      requireRole(context, ["reviewer", "compliance_admin"], "get regulatory change set");
+
+      return store.getRegulatoryChangeSet(scopeFromContext(context), changeSetId);
+    },
+
+    async listQualityGateResults(context: RequestContext, changeSetId: string) {
+      requireRole(context, ["reviewer", "compliance_admin"], "list quality gate results");
+
+      return store.listQualityGateResults(scopeFromContext(context), changeSetId);
     },
 
     async createChatSession(context: RequestContext, input: CreateChatSessionInput) {

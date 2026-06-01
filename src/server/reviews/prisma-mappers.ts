@@ -1,6 +1,13 @@
 import type {
   Evidence,
+  EvidenceChunk,
+  KnowledgeDocument,
   MultilingualIssueContext,
+  QualityGateResult,
+  RegulatoryChangeSet,
+  RegulatoryChangedSection,
+  RegulatorySnapshot,
+  RegulatorySource,
   ReviewCase,
   ReviewFile,
   ReviewIssue,
@@ -112,19 +119,6 @@ function stringValue(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-function requiredStringArray(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) {
-    return undefined;
-  }
-
-  const strings = value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-
-  return strings.length > 0 ? strings : undefined;
-}
-
 function supportedLanguage(value: unknown): MultilingualIssueContext["language"] | undefined {
   return value === "en" || value === "ja" || value === "zh" ? value : undefined;
 }
@@ -135,9 +129,7 @@ function riskCategory(value: unknown): MultilingualIssueContext["riskCategory"] 
     : undefined;
 }
 
-function multilingualContextFromSnapshot(
-  snapshot: unknown
-): MultilingualIssueContext | undefined {
+function multilingualContextFromSnapshot(snapshot: unknown): MultilingualIssueContext | undefined {
   const outputSnapshot = objectValue(snapshot);
   const localized = objectValue(outputSnapshot?.localizedRiskFinding);
   const mapping = objectValue(outputSnapshot?.koreanComplianceMapping);
@@ -147,7 +139,6 @@ function multilingualContextFromSnapshot(
   const literalTranslation = stringValue(localized?.literalTranslation);
   const complianceMeaning = stringValue(localized?.complianceMeaning);
   const localizedRiskCategory = riskCategory(localized?.riskCategory);
-  const riskSignals = requiredStringArray(localized?.riskSignals);
   const koreanComplianceCategory = stringValue(mapping?.koreanComplianceCategory);
   const koreanComplianceReason = stringValue(mapping?.koreanComplianceReason);
   const evidenceQuery = stringValue(mapping?.evidenceQuery);
@@ -161,7 +152,6 @@ function multilingualContextFromSnapshot(
     !literalTranslation ||
     !complianceMeaning ||
     !localizedRiskCategory ||
-    !riskSignals ||
     !koreanComplianceCategory ||
     !koreanComplianceReason ||
     !evidenceQuery ||
@@ -178,7 +168,7 @@ function multilingualContextFromSnapshot(
     literalTranslation,
     complianceMeaning,
     riskCategory: localizedRiskCategory,
-    riskSignals,
+    riskSignals: stringArray(localized?.riskSignals),
     koreanComplianceCategory,
     koreanComplianceReason,
     evidenceQuery,
@@ -200,6 +190,37 @@ function bbox(value: unknown): [number, number, number, number] {
 
 function dateString(value: Date | null): string {
   return value ? value.toISOString().slice(0, 10) : "";
+}
+
+function dateOnlyString(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
+function jsonObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function changedSections(value: unknown): RegulatoryChangedSection[] {
+  return Array.isArray(value)
+    ? value.filter((section): section is RegulatoryChangedSection => {
+        if (!section || typeof section !== "object") {
+          return false;
+        }
+
+        const candidate = section as RegulatoryChangedSection;
+
+        return (
+          typeof candidate.sectionId === "string" &&
+          typeof candidate.title === "string" &&
+          typeof candidate.diffSummary === "string" &&
+          !!candidate.citation &&
+          typeof candidate.citation.snapshotId === "string" &&
+          typeof candidate.citation.sectionId === "string"
+        );
+      })
+    : [];
 }
 
 function toFile(row: PrismaFileRow): ReviewFile {
@@ -297,5 +318,233 @@ export function toReviewSummary(row: PrismaReviewCaseRow): ReviewSummary {
     highestRiskLevel: row.highestRiskLevel,
     requester: row.requesterName,
     reviewer: row.reviewerName
+  };
+}
+
+export function toKnowledgeDocument(row: {
+  id: string;
+  tenantId: string;
+  affiliateId: string | null;
+  documentType: KnowledgeDocument["documentType"];
+  productType: KnowledgeDocument["productType"] | null;
+  title: string;
+  version: string;
+  effectiveFrom: Date;
+  effectiveTo: Date | null;
+  approvalStatus: KnowledgeDocument["approvalStatus"];
+  storageKey: string;
+  createdById: string;
+  approvedById: string | null;
+  canonicalKey: string | null;
+  sourceSnapshotId: string | null;
+  changeSetId: string | null;
+  supersedesDocumentId: string | null;
+  lifecycleStatus: NonNullable<KnowledgeDocument["lifecycleStatus"]>;
+  autoIngested: boolean;
+  sourcePublishedAt: Date | null;
+  interpretationSummary: string | null;
+  createdAt: Date;
+  approvedAt: Date | null;
+}): KnowledgeDocument {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    affiliateId: row.affiliateId ?? undefined,
+    canonicalKey: row.canonicalKey ?? undefined,
+    sourceSnapshotId: row.sourceSnapshotId ?? undefined,
+    changeSetId: row.changeSetId ?? undefined,
+    supersedesDocumentId: row.supersedesDocumentId ?? undefined,
+    documentType: row.documentType,
+    productType: row.productType ?? undefined,
+    title: row.title,
+    version: row.version,
+    effectiveFrom: dateOnlyString(row.effectiveFrom),
+    effectiveTo: row.effectiveTo ? dateOnlyString(row.effectiveTo) : undefined,
+    lifecycleStatus: row.lifecycleStatus,
+    approvalStatus: row.approvalStatus,
+    autoIngested: row.autoIngested,
+    sourcePublishedAt: row.sourcePublishedAt ? dateOnlyString(row.sourcePublishedAt) : undefined,
+    interpretationSummary: row.interpretationSummary ?? undefined,
+    storageKey: row.storageKey,
+    createdBy: row.createdById,
+    approvedBy: row.approvedById ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+    approvedAt: row.approvedAt?.toISOString()
+  };
+}
+
+export function toEvidenceChunk(row: {
+  id: string;
+  tenantId: string;
+  knowledgeDocumentId: string | null;
+  reviewFileId: string | null;
+  canonicalSectionKey: string | null;
+  sectionNumber: string | null;
+  changeSetId: string | null;
+  supersedesChunkId: string | null;
+  chunkText: string;
+  chunkSummary: string | null;
+  chunkStatus: NonNullable<EvidenceChunk["chunkStatus"]>;
+  impactTags: unknown;
+  effectiveFrom: Date | null;
+  effectiveTo: Date | null;
+  sourceReliability: number | null;
+  embeddingModel: string;
+  embeddingId: string;
+  page: number | null;
+  section: string | null;
+  metadata: unknown;
+  createdAt: Date;
+}): EvidenceChunk {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    knowledgeDocumentId: row.knowledgeDocumentId ?? undefined,
+    reviewFileId: row.reviewFileId ?? undefined,
+    canonicalSectionKey: row.canonicalSectionKey ?? undefined,
+    sectionNumber: row.sectionNumber ?? undefined,
+    changeSetId: row.changeSetId ?? undefined,
+    supersedesChunkId: row.supersedesChunkId ?? undefined,
+    chunkText: row.chunkText,
+    chunkSummary: row.chunkSummary ?? undefined,
+    chunkStatus: row.chunkStatus,
+    impactTags: stringArray(row.impactTags),
+    effectiveFrom: row.effectiveFrom ? dateOnlyString(row.effectiveFrom) : undefined,
+    effectiveTo: row.effectiveTo ? dateOnlyString(row.effectiveTo) : undefined,
+    sourceReliability: row.sourceReliability ?? undefined,
+    embeddingModel: row.embeddingModel,
+    embeddingId: row.embeddingId,
+    page: row.page ?? undefined,
+    section: row.section ?? undefined,
+    metadata: jsonObject(row.metadata),
+    createdAt: row.createdAt.toISOString()
+  };
+}
+
+export function toRegulatorySource(row: {
+  id: string;
+  tenantId: string;
+  sourceType: RegulatorySource["sourceType"];
+  name: string;
+  url: string | null;
+  repositoryPath: string | null;
+  pollingSchedule: string;
+  trustLevel: string;
+  lastCheckedAt: Date | null;
+  status: RegulatorySource["status"];
+  createdAt: Date;
+  updatedAt: Date;
+}): RegulatorySource {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    sourceType: row.sourceType,
+    name: row.name,
+    url: row.url ?? undefined,
+    repositoryPath: row.repositoryPath ?? undefined,
+    pollingSchedule: row.pollingSchedule,
+    trustLevel: row.trustLevel as RegulatorySource["trustLevel"],
+    lastCheckedAt: row.lastCheckedAt?.toISOString(),
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString()
+  };
+}
+
+export function toRegulatorySnapshot(row: {
+  id: string;
+  sourceId: string;
+  tenantId: string;
+  sourceUrl: string | null;
+  title: string;
+  publishedAt: Date | null;
+  effectiveFrom: Date | null;
+  contentHash: string;
+  rawStorageKey: string;
+  normalizedStorageKey: string;
+  detectedDocumentType: RegulatorySnapshot["detectedDocumentType"];
+  fetchStatus: RegulatorySnapshot["fetchStatus"];
+  normalizationConfidence: number;
+  createdAt: Date;
+}): RegulatorySnapshot {
+  return {
+    id: row.id,
+    sourceId: row.sourceId,
+    tenantId: row.tenantId,
+    sourceUrl: row.sourceUrl ?? undefined,
+    title: row.title,
+    publishedAt: row.publishedAt ? dateOnlyString(row.publishedAt) : undefined,
+    effectiveFrom: row.effectiveFrom ? dateOnlyString(row.effectiveFrom) : undefined,
+    contentHash: row.contentHash,
+    rawStorageKey: row.rawStorageKey,
+    normalizedStorageKey: row.normalizedStorageKey,
+    detectedDocumentType: row.detectedDocumentType,
+    fetchStatus: row.fetchStatus,
+    normalizationConfidence: row.normalizationConfidence,
+    createdAt: row.createdAt.toISOString()
+  };
+}
+
+export function toRegulatoryChangeSet(row: {
+  id: string;
+  tenantId: string;
+  sourceId: string;
+  previousSnapshotId: string | null;
+  newSnapshotId: string;
+  changeType: RegulatoryChangeSet["changeType"];
+  changeSummary: string;
+  changedSections: unknown;
+  effectiveFrom: Date | null;
+  riskImpactLevel: RegulatoryChangeSet["riskImpactLevel"];
+  interpretationSummary: string;
+  mappedProductTypes: unknown;
+  mappedChannels: unknown;
+  mappedReviewCategories: unknown;
+  qualityGateStatus: RegulatoryChangeSet["qualityGateStatus"];
+  confidence: number;
+  createdKnowledgeDocumentId: string | null;
+  createdAt: Date;
+}): RegulatoryChangeSet {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    sourceId: row.sourceId,
+    previousSnapshotId: row.previousSnapshotId ?? undefined,
+    newSnapshotId: row.newSnapshotId,
+    changeType: row.changeType,
+    changeSummary: row.changeSummary,
+    changedSections: changedSections(row.changedSections),
+    effectiveFrom: row.effectiveFrom ? dateOnlyString(row.effectiveFrom) : undefined,
+    riskImpactLevel: row.riskImpactLevel,
+    interpretationSummary: row.interpretationSummary,
+    mappedProductTypes: stringArray(
+      row.mappedProductTypes
+    ) as RegulatoryChangeSet["mappedProductTypes"],
+    mappedChannels: stringArray(row.mappedChannels),
+    mappedReviewCategories: stringArray(row.mappedReviewCategories),
+    qualityGateStatus: row.qualityGateStatus,
+    confidence: row.confidence,
+    createdKnowledgeDocumentId: row.createdKnowledgeDocumentId ?? undefined,
+    createdAt: row.createdAt.toISOString()
+  };
+}
+
+export function toQualityGateResult(row: {
+  id: string;
+  changeSetId: string;
+  gateType: QualityGateResult["gateType"];
+  status: QualityGateResult["status"];
+  summary: string;
+  evidence: unknown;
+  createdAt: Date;
+}): QualityGateResult {
+  return {
+    id: row.id,
+    changeSetId: row.changeSetId,
+    gateType: row.gateType,
+    status: row.status,
+    summary: row.summary,
+    evidence: jsonObject(row.evidence),
+    createdAt: row.createdAt.toISOString()
   };
 }

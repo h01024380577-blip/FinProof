@@ -9,6 +9,11 @@ import type {
   PaginatedResult,
   PersistedReviewReport,
   ProductType,
+  QualityGateResult,
+  QualityGateStatus,
+  RegulatoryChangeSet,
+  RegulatorySnapshot,
+  RegulatorySource,
   RoleId,
   ReviewCase,
   ReviewFile,
@@ -169,12 +174,89 @@ export type CreateKnowledgeDocumentChunkInput = Pick<
   | "page"
   | "section"
   | "metadata"
->;
+> &
+  Partial<
+    Pick<
+      EvidenceChunk,
+      | "canonicalSectionKey"
+      | "sectionNumber"
+      | "changeSetId"
+      | "supersedesChunkId"
+      | "chunkStatus"
+      | "impactTags"
+      | "effectiveFrom"
+      | "effectiveTo"
+      | "sourceReliability"
+    >
+  >;
+
+export type CreateRegulatorySourceInput = Omit<
+  RegulatorySource,
+  "id" | "tenantId" | "createdAt" | "updatedAt" | "lastCheckedAt" | "status"
+> & {
+  id?: string;
+  status?: RegulatorySource["status"];
+};
+
+export type CreateRegulatorySnapshotInput = Omit<
+  RegulatorySnapshot,
+  "id" | "tenantId" | "createdAt"
+> & {
+  id?: string;
+};
+
+export type CreateRegulatoryChangeSetInput = Omit<
+  RegulatoryChangeSet,
+  "id" | "tenantId" | "createdAt" | "createdKnowledgeDocumentId"
+> & {
+  id?: string;
+};
+
+export type ActivateRegulatoryChangeSetInput = {
+  changeSetId: string;
+  qualityGateStatus?: QualityGateStatus;
+  document: CreateKnowledgeDocumentInput &
+    Partial<
+      Pick<
+        KnowledgeDocument,
+        | "canonicalKey"
+        | "sourceSnapshotId"
+        | "changeSetId"
+        | "supersedesDocumentId"
+        | "autoIngested"
+        | "sourcePublishedAt"
+        | "interpretationSummary"
+      >
+    >;
+  chunks: Array<
+    CreateKnowledgeDocumentChunkInput &
+      Partial<
+        Pick<
+          EvidenceChunk,
+          | "canonicalSectionKey"
+          | "sectionNumber"
+          | "changeSetId"
+          | "supersedesChunkId"
+          | "chunkStatus"
+          | "impactTags"
+          | "effectiveFrom"
+          | "effectiveTo"
+          | "sourceReliability"
+        >
+      >
+  >;
+};
+
+export type RegulatoryChangeSetListOptions = {
+  sourceId?: string;
+  qualityGateStatus?: QualityGateStatus;
+};
 
 export type KnowledgeEvidenceSearchInput = {
   query: string;
   productType?: ProductType;
   affiliateId?: string;
+  effectiveOn?: string;
   topK?: number;
   minScore?: number;
   queryEmbedding?: number[];
@@ -323,6 +405,55 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     input: KnowledgeEvidenceSearchInput
   ): Promise<Evidence[]>;
+  createRegulatorySource(
+    scope: ReviewStoreScope,
+    input: CreateRegulatorySourceInput
+  ): Promise<RegulatorySource>;
+  listRegulatorySources(scope: ReviewStoreScope): Promise<RegulatorySource[]>;
+  getRegulatorySource(
+    scope: ReviewStoreScope,
+    sourceId: string
+  ): Promise<RegulatorySource | undefined>;
+  createRegulatorySnapshot(
+    scope: ReviewStoreScope,
+    input: CreateRegulatorySnapshotInput
+  ): Promise<RegulatorySnapshot>;
+  getLatestRegulatorySnapshot(
+    scope: ReviewStoreScope,
+    sourceId: string
+  ): Promise<RegulatorySnapshot | undefined>;
+  createRegulatoryChangeSet(
+    scope: ReviewStoreScope,
+    input: CreateRegulatoryChangeSetInput
+  ): Promise<RegulatoryChangeSet>;
+  listRegulatoryChangeSets(
+    scope: ReviewStoreScope,
+    options?: RegulatoryChangeSetListOptions
+  ): Promise<RegulatoryChangeSet[]>;
+  getRegulatoryChangeSet(
+    scope: ReviewStoreScope,
+    changeSetId: string
+  ): Promise<RegulatoryChangeSet | undefined>;
+  replaceQualityGateResults(
+    scope: ReviewStoreScope,
+    changeSetId: string,
+    results: QualityGateResult[]
+  ): Promise<QualityGateResult[] | undefined>;
+  listQualityGateResults(
+    scope: ReviewStoreScope,
+    changeSetId: string
+  ): Promise<QualityGateResult[] | undefined>;
+  activateRegulatoryChangeSet(
+    scope: ReviewStoreScope,
+    input: ActivateRegulatoryChangeSetInput
+  ): Promise<
+    | {
+        changeSet: RegulatoryChangeSet;
+        document: KnowledgeDocument;
+        chunks: EvidenceChunk[];
+      }
+    | undefined
+  >;
   searchCaseHistoryEvidence(
     scope: ReviewStoreScope,
     input: CaseHistoryEvidenceSearchInput

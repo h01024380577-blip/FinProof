@@ -13,6 +13,10 @@ import type {
   KnowledgeDocument,
   PersistedReviewReport,
   ProductType,
+  QualityGateResult,
+  RegulatoryChangeSet,
+  RegulatorySnapshot,
+  RegulatorySource,
   ReviewCase,
   ReviewFile,
   ReviewIssue,
@@ -26,16 +30,21 @@ import type {
 import type {
   AnalysisJob,
   AnalysisResult,
+  ActivateRegulatoryChangeSetInput,
   AuditEvent,
   CreateChatMessageInput,
   CreateDraftVersionInput,
   CreateKnowledgeDocumentChunkInput,
   CreateKnowledgeDocumentInput,
+  CreateRegulatoryChangeSetInput,
+  CreateRegulatorySnapshotInput,
+  CreateRegulatorySourceInput,
   CreateReviewReportInput,
   CreateReviewCaseFromUploadedFilesInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseResult,
   ListReviewSummariesOptions,
+  RegulatoryChangeSetListOptions,
   ListAuditEventsOptions,
   ListIssuesOptions,
   CaseHistoryEvidenceSearchInput,
@@ -171,7 +180,6 @@ function multilingualSnapshotsFromIssue(issue: ReviewIssue) {
 
   return {
     localizedRiskFinding: {
-      id: context.segmentId,
       segmentId: context.segmentId,
       language: context.language,
       originalText: context.originalText,
@@ -295,10 +303,17 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   let knowledgeSequence = 1;
   let chatSessionSequence = 1;
   let chatMessageSequence = 1;
+  let regulatorySourceSequence = 1;
+  let regulatorySnapshotSequence = 1;
+  let regulatoryChangeSetSequence = 1;
   const analysisJobs = new Map<string, AnalysisJob[]>();
   const auditEvents: AuditEvent[] = [];
   const knowledgeDocuments = new Map<string, KnowledgeDocument>();
   const evidenceChunks = new Map<string, EvidenceChunk>();
+  const regulatorySources = new Map<string, RegulatorySource>();
+  const regulatorySnapshots = new Map<string, RegulatorySnapshot>();
+  const regulatoryChangeSets = new Map<string, RegulatoryChangeSet>();
+  const qualityGateResults = new Map<string, QualityGateResult[]>();
   const chatSessions = new Map<string, ChatSession>();
   const chatSessionTenants = new Map<string, string>();
   const chatMessages = new Map<string, ChatMessage[]>();
@@ -390,9 +405,99 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   ) {
     return (
       document.approvalStatus === "approved" &&
+      searchableLifecycleStatus(document, input) &&
+      activeWindowForSearch(
+        { effectiveFrom: document.effectiveFrom, effectiveTo: document.effectiveTo },
+        input
+      ) &&
       (!input.productType || !document.productType || document.productType === input.productType) &&
       (!input.affiliateId || !document.affiliateId || document.affiliateId === input.affiliateId)
     );
+  }
+
+  function dayBeforeDateOnly(value: string): string {
+    const date = new Date(`${value}T00:00:00.000Z`);
+
+    date.setUTCDate(date.getUTCDate() - 1);
+
+    return date.toISOString().slice(0, 10);
+  }
+
+  function earlierEffectiveTo(existing: string | undefined, cutoff: string): string {
+    return existing && existing < cutoff ? existing : cutoff;
+  }
+
+  function searchableLifecycleStatus(
+    document: KnowledgeDocument,
+    input: KnowledgeEvidenceSearchInput
+  ): boolean {
+    if (!document.lifecycleStatus || document.lifecycleStatus === "active") {
+      return true;
+    }
+
+    return document.lifecycleStatus === "superseded" && Boolean(input.effectiveOn && document.effectiveTo);
+  }
+
+  function searchableChunkStatus(
+    chunk: EvidenceChunk,
+    input: KnowledgeEvidenceSearchInput
+  ): boolean {
+    if (!chunk.chunkStatus || chunk.chunkStatus === "active") {
+      return true;
+    }
+
+    return chunk.chunkStatus === "superseded" && Boolean(input.effectiveOn && chunk.effectiveTo);
+  }
+
+  function canAccessRegulatorySource(scope: ReviewStoreScope, sourceId: string): boolean {
+    return regulatorySources.get(sourceId)?.tenantId === scope.tenantId;
+  }
+
+  function validRegulatorySnapshot(
+    scope: ReviewStoreScope,
+    sourceId: string,
+    snapshotId: string | undefined
+  ): boolean {
+    if (!snapshotId) {
+      return true;
+    }
+
+    const snapshot = regulatorySnapshots.get(snapshotId);
+
+    return (
+      snapshot?.tenantId === scope.tenantId &&
+      snapshot.sourceId === sourceId &&
+      canAccessRegulatorySource(scope, sourceId)
+    );
+  }
+
+  function sortedQualityGateResults(results: QualityGateResult[]): QualityGateResult[] {
+    return [...results].sort(
+      (left, right) =>
+        left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id)
+    );
+  }
+
+  function activeWindowForSearch(
+    window: Pick<EvidenceChunk, "effectiveFrom" | "effectiveTo">,
+    input: KnowledgeEvidenceSearchInput
+  ): boolean {
+    if (!input.effectiveOn) {
+      return true;
+    }
+
+    if (window.effectiveFrom && input.effectiveOn < window.effectiveFrom) {
+      return false;
+    }
+
+    return !(window.effectiveTo && input.effectiveOn > window.effectiveTo);
+  }
+
+  function activeChunkForSearch(
+    chunk: EvidenceChunk,
+    input: KnowledgeEvidenceSearchInput
+  ): boolean {
+    return searchableChunkStatus(chunk, input) && activeWindowForSearch(chunk, input);
   }
 
   function canAccessCase(scope: ReviewStoreScope, reviewCaseId: string): boolean {
@@ -1352,6 +1457,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         ...chunk,
         tenantId: scope.tenantId,
         knowledgeDocumentId: documentId,
+        impactTags: chunk.impactTags ? [...chunk.impactTags] : undefined,
         metadata: clone(chunk.metadata),
         createdAt: now
       }));
@@ -1375,7 +1481,8 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
           if (
             !document ||
             document.tenantId !== scope.tenantId ||
-            !matchesKnowledgeSearch(document, input)
+            !matchesKnowledgeSearch(document, input) ||
+            !activeChunkForSearch(chunk, input)
           ) {
             return [];
           }
@@ -1408,6 +1515,323 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         })
         .sort((left, right) => right.relevanceScore - left.relevanceScore)
         .slice(0, topK);
+    },
+
+    async createRegulatorySource(scope: ReviewStoreScope, input: CreateRegulatorySourceInput) {
+      const now = nowIso();
+      const id = input.id ?? `reg-source-${String(regulatorySourceSequence).padStart(3, "0")}`;
+
+      if (regulatorySources.has(id)) {
+        throw new Error("Regulatory source id already exists");
+      }
+
+      regulatorySourceSequence += input.id ? 0 : 1;
+      const source: RegulatorySource = {
+        id,
+        tenantId: scope.tenantId,
+        sourceType: input.sourceType,
+        name: input.name,
+        url: input.url,
+        repositoryPath: input.repositoryPath,
+        pollingSchedule: input.pollingSchedule,
+        trustLevel: input.trustLevel,
+        status: input.status ?? "active",
+        createdAt: now,
+        updatedAt: now
+      };
+
+      regulatorySources.set(id, source);
+
+      return clone(source);
+    },
+
+    async listRegulatorySources(scope: ReviewStoreScope) {
+      return clone(
+        Array.from(regulatorySources.values()).filter(
+          (source) => source.tenantId === scope.tenantId
+        )
+      );
+    },
+
+    async getRegulatorySource(scope: ReviewStoreScope, sourceId) {
+      const source = regulatorySources.get(sourceId);
+
+      return source && source.tenantId === scope.tenantId ? clone(source) : undefined;
+    },
+
+    async createRegulatorySnapshot(scope: ReviewStoreScope, input: CreateRegulatorySnapshotInput) {
+      if (!canAccessRegulatorySource(scope, input.sourceId)) {
+        throw new Error("Regulatory source not found");
+      }
+
+      const id = input.id ?? `reg-snapshot-${String(regulatorySnapshotSequence).padStart(3, "0")}`;
+
+      if (regulatorySnapshots.has(id)) {
+        throw new Error("Regulatory snapshot id already exists");
+      }
+
+      regulatorySnapshotSequence += input.id ? 0 : 1;
+      const snapshot: RegulatorySnapshot = {
+        ...input,
+        id,
+        tenantId: scope.tenantId,
+        createdAt: nowIso()
+      };
+
+      regulatorySnapshots.set(id, clone(snapshot));
+      const source = regulatorySources.get(input.sourceId);
+
+      if (source) {
+        regulatorySources.set(source.id, {
+          ...source,
+          lastCheckedAt: snapshot.createdAt,
+          status: input.fetchStatus === "failed" ? "failing" : source.status,
+          updatedAt: snapshot.createdAt
+        });
+      }
+
+      return clone(snapshot);
+    },
+
+    async getLatestRegulatorySnapshot(scope: ReviewStoreScope, sourceId) {
+      if (!canAccessRegulatorySource(scope, sourceId)) {
+        return undefined;
+      }
+
+      const latestSnapshot = Array.from(regulatorySnapshots.values())
+        .filter(
+          (snapshot) => snapshot.tenantId === scope.tenantId && snapshot.sourceId === sourceId
+        )
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id))[0];
+
+      return latestSnapshot ? clone(latestSnapshot) : undefined;
+    },
+
+    async createRegulatoryChangeSet(
+      scope: ReviewStoreScope,
+      input: CreateRegulatoryChangeSetInput
+    ) {
+      if (!canAccessRegulatorySource(scope, input.sourceId)) {
+        throw new Error("Regulatory source not found");
+      }
+
+      if (
+        !validRegulatorySnapshot(scope, input.sourceId, input.newSnapshotId) ||
+        !validRegulatorySnapshot(scope, input.sourceId, input.previousSnapshotId)
+      ) {
+        throw new Error("Regulatory source or snapshot not found");
+      }
+
+      const id = input.id ?? `reg-change-${String(regulatoryChangeSetSequence).padStart(3, "0")}`;
+
+      if (regulatoryChangeSets.has(id)) {
+        throw new Error("Regulatory change set id already exists");
+      }
+
+      regulatoryChangeSetSequence += input.id ? 0 : 1;
+      const changeSet: RegulatoryChangeSet = {
+        ...clone(input),
+        id,
+        tenantId: scope.tenantId,
+        createdAt: nowIso()
+      };
+
+      regulatoryChangeSets.set(id, changeSet);
+
+      return clone(changeSet);
+    },
+
+    async listRegulatoryChangeSets(
+      scope: ReviewStoreScope,
+      options: RegulatoryChangeSetListOptions = {}
+    ) {
+      return clone(
+        Array.from(regulatoryChangeSets.values())
+          .filter((changeSet) => changeSet.tenantId === scope.tenantId)
+          .filter((changeSet) => !options.sourceId || changeSet.sourceId === options.sourceId)
+          .filter(
+            (changeSet) =>
+              !options.qualityGateStatus ||
+              changeSet.qualityGateStatus === options.qualityGateStatus
+          )
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id))
+      );
+    },
+
+    async getRegulatoryChangeSet(scope: ReviewStoreScope, changeSetId) {
+      const changeSet = regulatoryChangeSets.get(changeSetId);
+
+      return changeSet && changeSet.tenantId === scope.tenantId ? clone(changeSet) : undefined;
+    },
+
+    async replaceQualityGateResults(
+      scope: ReviewStoreScope,
+      changeSetId,
+      results: QualityGateResult[]
+    ) {
+      const changeSet = regulatoryChangeSets.get(changeSetId);
+
+      if (!changeSet || changeSet.tenantId !== scope.tenantId) {
+        return undefined;
+      }
+
+      const sortedResults = sortedQualityGateResults(clone(results));
+
+      qualityGateResults.set(changeSetId, sortedResults);
+
+      return clone(sortedResults);
+    },
+
+    async listQualityGateResults(scope: ReviewStoreScope, changeSetId) {
+      const changeSet = regulatoryChangeSets.get(changeSetId);
+
+      if (!changeSet || changeSet.tenantId !== scope.tenantId) {
+        return undefined;
+      }
+
+      return clone(sortedQualityGateResults(qualityGateResults.get(changeSetId) ?? []));
+    },
+
+    async activateRegulatoryChangeSet(
+      scope: ReviewStoreScope,
+      input: ActivateRegulatoryChangeSetInput
+    ) {
+      const changeSet = regulatoryChangeSets.get(input.changeSetId);
+
+      if (!changeSet || changeSet.tenantId !== scope.tenantId) {
+        return undefined;
+      }
+
+      const documentChangeSetId = input.document.changeSetId ?? changeSet.id;
+      const sourceSnapshotId = input.document.sourceSnapshotId ?? changeSet.newSnapshotId;
+      const sourceSnapshot = regulatorySnapshots.get(sourceSnapshotId);
+
+      if (documentChangeSetId !== changeSet.id) {
+        throw new Error("Activation document change set must match the activated change set");
+      }
+
+      if (
+        sourceSnapshotId !== changeSet.newSnapshotId ||
+        !sourceSnapshot ||
+        sourceSnapshot.tenantId !== scope.tenantId ||
+        sourceSnapshot.sourceId !== changeSet.sourceId
+      ) {
+        throw new Error("Activation source snapshot not found");
+      }
+
+      if (input.document.supersedesDocumentId) {
+        const supersededDocument = knowledgeDocuments.get(input.document.supersedesDocumentId);
+
+        if (!supersededDocument || supersededDocument.tenantId !== scope.tenantId) {
+          throw new Error("Superseded knowledge document not found");
+        }
+      }
+
+      const invalidChunkChangeSet = input.chunks.find(
+        (chunk) => chunk.changeSetId && chunk.changeSetId !== changeSet.id
+      );
+
+      if (invalidChunkChangeSet) {
+        throw new Error("Activation chunk change set must match the activated change set");
+      }
+
+      for (const chunk of input.chunks) {
+        if (!chunk.supersedesChunkId) {
+          continue;
+        }
+
+        const supersededChunk = evidenceChunks.get(chunk.supersedesChunkId);
+
+        if (!supersededChunk || supersededChunk.tenantId !== scope.tenantId) {
+          throw new Error("Superseded evidence chunk not found");
+        }
+      }
+
+      if (input.document.canonicalKey) {
+        const supersededEffectiveTo = dayBeforeDateOnly(input.document.effectiveFrom);
+
+        for (const [documentId, document] of knowledgeDocuments) {
+          if (
+            document.tenantId === scope.tenantId &&
+            document.canonicalKey === input.document.canonicalKey &&
+            (!document.lifecycleStatus || document.lifecycleStatus === "active")
+          ) {
+            knowledgeDocuments.set(documentId, {
+              ...document,
+              lifecycleStatus: "superseded",
+              effectiveTo: earlierEffectiveTo(document.effectiveTo, supersededEffectiveTo)
+            });
+
+            for (const [chunkId, chunk] of evidenceChunks) {
+              if (chunk.knowledgeDocumentId === documentId && chunk.tenantId === scope.tenantId) {
+                evidenceChunks.set(chunkId, {
+                  ...chunk,
+                  chunkStatus: "superseded",
+                  effectiveTo: earlierEffectiveTo(chunk.effectiveTo, supersededEffectiveTo)
+                });
+              }
+            }
+          }
+        }
+      }
+
+      const now = nowIso();
+      const document: KnowledgeDocument = {
+        id: input.document.id ?? `knowledge-${String(knowledgeSequence).padStart(3, "0")}`,
+        tenantId: scope.tenantId,
+        affiliateId: validAffiliateId(scope, input.document.affiliateId),
+        documentType: input.document.documentType,
+        productType: input.document.productType,
+        title: input.document.title,
+        version: input.document.version,
+        effectiveFrom: input.document.effectiveFrom,
+        approvalStatus: "approved",
+        storageKey: input.document.storageKey,
+        createdBy: scope.actorUserId,
+        approvedBy: scope.actorUserId,
+        createdAt: now,
+        approvedAt: now,
+        canonicalKey: input.document.canonicalKey,
+        sourceSnapshotId,
+        changeSetId: documentChangeSetId,
+        supersedesDocumentId: input.document.supersedesDocumentId,
+        lifecycleStatus: "active",
+        autoIngested: input.document.autoIngested ?? true,
+        sourcePublishedAt: input.document.sourcePublishedAt,
+        interpretationSummary: input.document.interpretationSummary
+      };
+
+      knowledgeSequence += input.document.id ? 0 : 1;
+      knowledgeDocuments.set(document.id, document);
+
+      const persistedChunks = input.chunks.map<EvidenceChunk>((chunk) => ({
+        ...chunk,
+        tenantId: scope.tenantId,
+        knowledgeDocumentId: document.id,
+        changeSetId: chunk.changeSetId ?? changeSet.id,
+        chunkStatus: chunk.chunkStatus ?? "active",
+        impactTags: chunk.impactTags ? [...chunk.impactTags] : undefined,
+        metadata: clone(chunk.metadata),
+        createdAt: nowIso()
+      }));
+
+      for (const chunk of persistedChunks) {
+        evidenceChunks.set(chunk.id, chunk);
+      }
+
+      const updatedChangeSet: RegulatoryChangeSet = {
+        ...clone(changeSet),
+        qualityGateStatus: input.qualityGateStatus ?? "passed",
+        createdKnowledgeDocumentId: document.id
+      };
+
+      regulatoryChangeSets.set(changeSet.id, updatedChangeSet);
+
+      return {
+        changeSet: clone(updatedChangeSet),
+        document: clone(document),
+        chunks: clone(persistedChunks)
+      };
     },
 
     async searchCaseHistoryEvidence(

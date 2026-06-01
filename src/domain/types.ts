@@ -141,18 +141,58 @@ export type PaginatedResult<T> = {
 
 export type KnowledgeDocumentType = "law" | "internal_policy" | "checklist" | "guide";
 export type KnowledgeApprovalStatus = "draft" | "approved" | "inactive";
+export type KnowledgeLifecycleStatus = "active" | "superseded" | "inactive";
+export type EvidenceChunkStatus = "active" | "superseded" | "inactive";
+
+export type RegulatorySourceType =
+  | "regulator"
+  | "law_portal"
+  | "association"
+  | "internal_policy_repo"
+  | "case_knowledge";
+
+export type RegulatorySourceStatus = "active" | "paused" | "failing";
+
+export type RegulatoryChangeType =
+  | "created"
+  | "amended"
+  | "deleted"
+  | "wording_changed"
+  | "effective_date_changed"
+  | "scope_changed"
+  | "interpretation_changed";
+
+export type RegulatoryRiskImpactLevel = "info" | "caution" | "high" | "critical";
+
+export type QualityGateType =
+  | "citation_coverage"
+  | "schema_validation"
+  | "contradiction_check"
+  | "retrieval_regression"
+  | "effective_date"
+  | "rollback_ready";
+
+export type QualityGateStatus = "passed" | "failed" | "flagged";
 
 export type KnowledgeDocument = {
   id: string;
   tenantId: string;
   affiliateId?: string;
+  canonicalKey?: string;
+  sourceSnapshotId?: string;
+  changeSetId?: string;
+  supersedesDocumentId?: string;
   documentType: KnowledgeDocumentType;
   productType?: ProductType;
   title: string;
   version: string;
   effectiveFrom: string;
   effectiveTo?: string;
+  lifecycleStatus?: KnowledgeLifecycleStatus;
   approvalStatus: KnowledgeApprovalStatus;
+  autoIngested?: boolean;
+  sourcePublishedAt?: string;
+  interpretationSummary?: string;
   storageKey: string;
   createdBy: string;
   approvedBy?: string;
@@ -165,13 +205,98 @@ export type EvidenceChunk = {
   tenantId: string;
   knowledgeDocumentId?: string;
   reviewFileId?: string;
+  canonicalSectionKey?: string;
+  sectionNumber?: string;
+  changeSetId?: string;
+  supersedesChunkId?: string;
   chunkText: string;
   chunkSummary?: string;
+  chunkStatus?: EvidenceChunkStatus;
+  impactTags?: string[];
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  sourceReliability?: number;
   embeddingModel: string;
   embeddingId: string;
   page?: number;
   section?: string;
   metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type RegulatorySource = {
+  id: string;
+  tenantId: string;
+  sourceType: RegulatorySourceType;
+  name: string;
+  url?: string;
+  repositoryPath?: string;
+  pollingSchedule: string;
+  trustLevel: "official" | "industry" | "internal" | "reference";
+  lastCheckedAt?: string;
+  status: RegulatorySourceStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RegulatorySnapshot = {
+  id: string;
+  sourceId: string;
+  tenantId: string;
+  sourceUrl?: string;
+  title: string;
+  publishedAt?: string;
+  effectiveFrom?: string;
+  contentHash: string;
+  rawStorageKey: string;
+  normalizedStorageKey: string;
+  detectedDocumentType: KnowledgeDocumentType;
+  fetchStatus: "fetched" | "unchanged" | "failed";
+  normalizationConfidence: number;
+  createdAt: string;
+};
+
+export type RegulatoryChangedSection = {
+  sectionId: string;
+  sectionNumber?: string;
+  title: string;
+  previousText?: string;
+  newText?: string;
+  diffSummary: string;
+  citation: {
+    snapshotId: string;
+    sectionId: string;
+  };
+};
+
+export type RegulatoryChangeSet = {
+  id: string;
+  tenantId: string;
+  sourceId: string;
+  previousSnapshotId?: string;
+  newSnapshotId: string;
+  changeType: RegulatoryChangeType;
+  changeSummary: string;
+  changedSections: RegulatoryChangedSection[];
+  effectiveFrom?: string;
+  riskImpactLevel: RegulatoryRiskImpactLevel;
+  interpretationSummary: string;
+  mappedProductTypes: ProductType[];
+  mappedChannels: string[];
+  mappedReviewCategories: string[];
+  qualityGateStatus: QualityGateStatus;
+  confidence: number;
+  createdKnowledgeDocumentId?: string;
+  createdAt: string;
+};
+
+export type QualityGateResult = {
+  id: string;
+  changeSetId: string;
+  gateType: QualityGateType;
+  status: QualityGateStatus;
+  summary: string;
+  evidence: Record<string, unknown>;
   createdAt: string;
 };
 

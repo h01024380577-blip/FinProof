@@ -109,6 +109,70 @@ enum KnowledgeApprovalStatus {
   inactive
 }
 
+enum KnowledgeLifecycleStatus {
+  active
+  superseded
+  inactive
+}
+
+enum EvidenceChunkStatus {
+  active
+  superseded
+  inactive
+}
+
+enum RegulatorySourceType {
+  regulator
+  law_portal
+  association
+  internal_policy_repo
+  case_knowledge
+}
+
+enum RegulatorySourceStatus {
+  active
+  paused
+  failing
+}
+
+enum RegulatorySnapshotFetchStatus {
+  fetched
+  unchanged
+  failed
+}
+
+enum RegulatoryChangeType {
+  created
+  amended
+  deleted
+  wording_changed
+  effective_date_changed
+  scope_changed
+  interpretation_changed
+}
+
+enum RegulatoryRiskImpactLevel {
+  info
+  caution
+  high
+  critical
+}
+
+enum QualityGateType {
+  citation_coverage
+  schema_validation
+  contradiction_check
+  retrieval_regression
+  effective_date
+  rollback_ready
+}
+
+enum QualityGateStatus {
+  passed
+  failed
+  flagged
+}
+
 enum AgentRunStatus {
   queued
   running
@@ -149,17 +213,20 @@ enum DraftSource {
 }
 
 model Tenant {
-  id                 String              @id
-  name               String
-  status             String              @default("active")
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
-  affiliates         Affiliate[]
-  users              User[]
-  cases              ReviewCase[]
-  auditLogs          AuditLog[]
-  knowledgeDocuments KnowledgeDocument[]
-  evidenceChunks     EvidenceChunk[]
+  id                   String                @id
+  name                 String
+  status               String                @default("active")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  affiliates           Affiliate[]
+  users                User[]
+  cases                ReviewCase[]
+  auditLogs            AuditLog[]
+  knowledgeDocuments   KnowledgeDocument[]
+  evidenceChunks       EvidenceChunk[]
+  regulatorySources    RegulatorySource[]
+  regulatorySnapshots  RegulatorySnapshot[]
+  regulatoryChangeSets RegulatoryChangeSet[]
 
   @@map("tenants")
 }
@@ -344,29 +411,43 @@ model AnalysisJob {
 }
 
 model KnowledgeDocument {
-  id             String                  @id
-  tenantId       String                  @map("tenant_id")
-  affiliateId    String?                 @map("affiliate_id")
-  documentType   KnowledgeDocumentType   @map("document_type")
-  productType    ProductType?            @map("product_type")
-  title          String
-  version        String
-  effectiveFrom  DateTime                @map("effective_from") @db.Date
-  effectiveTo    DateTime?               @map("effective_to") @db.Date
-  approvalStatus KnowledgeApprovalStatus @default(draft) @map("approval_status")
-  storageKey     String                  @map("storage_key")
-  createdById    String                  @map("created_by_id")
-  approvedById   String?                 @map("approved_by_id")
-  createdAt      DateTime                @default(now()) @map("created_at")
-  approvedAt     DateTime?               @map("approved_at")
-  tenant         Tenant                  @relation(fields: [tenantId], references: [id])
-  affiliate      Affiliate?              @relation(fields: [affiliateId], references: [id])
-  createdBy      User                    @relation("KnowledgeDocumentCreator", fields: [createdById], references: [id])
-  approvedBy     User?                   @relation("KnowledgeDocumentApprover", fields: [approvedById], references: [id], onDelete: SetNull)
-  chunks         EvidenceChunk[]
+  id                    String                   @id
+  tenantId              String                   @map("tenant_id")
+  affiliateId           String?                  @map("affiliate_id")
+  documentType          KnowledgeDocumentType    @map("document_type")
+  productType           ProductType?             @map("product_type")
+  title                 String
+  version               String
+  effectiveFrom         DateTime                 @map("effective_from") @db.Date
+  effectiveTo           DateTime?                @map("effective_to") @db.Date
+  approvalStatus        KnowledgeApprovalStatus  @default(draft) @map("approval_status")
+  storageKey            String                   @map("storage_key")
+  createdById           String                   @map("created_by_id")
+  approvedById          String?                  @map("approved_by_id")
+  canonicalKey          String?                  @map("canonical_key")
+  sourceSnapshotId      String?                  @map("source_snapshot_id")
+  changeSetId           String?                  @map("change_set_id")
+  supersedesDocumentId  String?                  @map("supersedes_document_id")
+  lifecycleStatus       KnowledgeLifecycleStatus @default(active) @map("lifecycle_status")
+  autoIngested          Boolean                  @default(false) @map("auto_ingested")
+  sourcePublishedAt     DateTime?                @map("source_published_at") @db.Date
+  interpretationSummary String?                  @map("interpretation_summary")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  approvedAt            DateTime?                @map("approved_at")
+  tenant                Tenant                   @relation(fields: [tenantId], references: [id])
+  affiliate             Affiliate?               @relation(fields: [affiliateId], references: [id])
+  createdBy             User                     @relation("KnowledgeDocumentCreator", fields: [createdById], references: [id])
+  approvedBy            User?                    @relation("KnowledgeDocumentApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  sourceSnapshot        RegulatorySnapshot?      @relation(fields: [sourceSnapshotId], references: [id], onDelete: SetNull)
+  changeSet             RegulatoryChangeSet?     @relation(fields: [changeSetId], references: [id], onDelete: SetNull)
+  supersedesDocument    KnowledgeDocument?       @relation("KnowledgeDocumentSupersession", fields: [supersedesDocumentId], references: [id], onDelete: SetNull)
+  supersededByDocuments KnowledgeDocument[]      @relation("KnowledgeDocumentSupersession")
+  chunks                EvidenceChunk[]
 
   @@index([tenantId, documentType, productType, approvalStatus], map: "knowledge_documents_tenant_doc_product_status_idx")
   @@index([tenantId, affiliateId, approvalStatus], map: "knowledge_documents_tenant_affiliate_status_idx")
+  @@index([tenantId, canonicalKey, lifecycleStatus], map: "knowledge_documents_tenant_canonical_lifecycle_idx")
+  @@index([changeSetId], map: "knowledge_documents_change_set_idx")
   @@map("knowledge_documents")
 }
 
@@ -382,15 +463,29 @@ model EvidenceChunk {
   embeddingVector     Unsupported("vector")? @map("embedding_vector")
   page                Int?
   section             String?
+  canonicalSectionKey String?                @map("canonical_section_key")
+  sectionNumber       String?                @map("section_number")
+  changeSetId         String?                @map("change_set_id")
+  supersedesChunkId   String?                @map("supersedes_chunk_id")
+  chunkStatus         EvidenceChunkStatus    @default(active) @map("chunk_status")
+  impactTags          Json                   @default("[]") @map("impact_tags")
+  effectiveFrom       DateTime?              @map("effective_from") @db.Date
+  effectiveTo         DateTime?              @map("effective_to") @db.Date
+  sourceReliability   Float?                 @map("source_reliability")
   metadata            Json
   createdAt           DateTime               @default(now()) @map("created_at")
   tenant              Tenant                 @relation(fields: [tenantId], references: [id])
   knowledgeDocument   KnowledgeDocument?     @relation(fields: [knowledgeDocumentId], references: [id], onDelete: Cascade)
   reviewFile          ReviewFile?            @relation(fields: [reviewFileId], references: [id], onDelete: Cascade)
+  changeSet           RegulatoryChangeSet?   @relation(fields: [changeSetId], references: [id], onDelete: SetNull)
+  supersedesChunk     EvidenceChunk?         @relation("EvidenceChunkSupersession", fields: [supersedesChunkId], references: [id], onDelete: SetNull)
+  supersededByChunks  EvidenceChunk[]        @relation("EvidenceChunkSupersession")
   evidence            Evidence[]
 
   @@index([tenantId, knowledgeDocumentId], map: "evidence_chunks_tenant_knowledge_document_idx")
   @@index([tenantId, reviewFileId], map: "evidence_chunks_tenant_review_file_idx")
+  @@index([tenantId, changeSetId], map: "evidence_chunks_tenant_change_set_idx")
+  @@index([tenantId, chunkStatus, effectiveFrom], map: "evidence_chunks_tenant_status_effective_idx")
   @@map("evidence_chunks")
 }
 
@@ -500,6 +595,98 @@ model ReviewReport {
   @@unique([reviewCaseId, version])
   @@index([reviewCaseId, createdAt], map: "review_reports_review_case_created_at_idx")
   @@map("review_reports")
+}
+
+model RegulatorySource {
+  id              String                 @id
+  tenantId        String                 @map("tenant_id")
+  sourceType      RegulatorySourceType   @map("source_type")
+  name            String
+  url             String?
+  repositoryPath  String?                @map("repository_path")
+  pollingSchedule String                 @map("polling_schedule")
+  trustLevel      String                 @map("trust_level")
+  lastCheckedAt   DateTime?              @map("last_checked_at")
+  status          RegulatorySourceStatus @default(active)
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+  tenant          Tenant                 @relation(fields: [tenantId], references: [id])
+  snapshots       RegulatorySnapshot[]
+  changeSets      RegulatoryChangeSet[]
+
+  @@index([tenantId, sourceType, status], map: "regulatory_sources_tenant_type_status_idx")
+  @@map("regulatory_sources")
+}
+
+model RegulatorySnapshot {
+  id                      String                        @id
+  sourceId                String                        @map("source_id")
+  tenantId                String                        @map("tenant_id")
+  sourceUrl               String?                       @map("source_url")
+  title                   String
+  publishedAt             DateTime?                     @map("published_at") @db.Date
+  effectiveFrom           DateTime?                     @map("effective_from") @db.Date
+  contentHash             String                        @map("content_hash")
+  rawStorageKey           String                        @map("raw_storage_key")
+  normalizedStorageKey    String                        @map("normalized_storage_key")
+  detectedDocumentType    KnowledgeDocumentType         @map("detected_document_type")
+  fetchStatus             RegulatorySnapshotFetchStatus @map("fetch_status")
+  normalizationConfidence Float                         @map("normalization_confidence")
+  createdAt               DateTime                      @default(now()) @map("created_at")
+  tenant                  Tenant                        @relation(fields: [tenantId], references: [id])
+  source                  RegulatorySource              @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  previousChangeSets      RegulatoryChangeSet[]         @relation("PreviousRegulatorySnapshot")
+  newChangeSets           RegulatoryChangeSet[]         @relation("NewRegulatorySnapshot")
+  knowledgeDocuments      KnowledgeDocument[]
+
+  @@index([tenantId, sourceId, createdAt], map: "regulatory_snapshots_tenant_source_created_idx")
+  @@map("regulatory_snapshots")
+}
+
+model RegulatoryChangeSet {
+  id                         String                    @id
+  tenantId                   String                    @map("tenant_id")
+  sourceId                   String                    @map("source_id")
+  previousSnapshotId         String?                   @map("previous_snapshot_id")
+  newSnapshotId              String                    @map("new_snapshot_id")
+  changeType                 RegulatoryChangeType      @map("change_type")
+  changeSummary              String                    @map("change_summary")
+  changedSections            Json                      @map("changed_sections")
+  effectiveFrom              DateTime?                 @map("effective_from") @db.Date
+  riskImpactLevel            RegulatoryRiskImpactLevel @map("risk_impact_level")
+  interpretationSummary      String                    @map("interpretation_summary")
+  mappedProductTypes         Json                      @map("mapped_product_types")
+  mappedChannels             Json                      @map("mapped_channels")
+  mappedReviewCategories     Json                      @map("mapped_review_categories")
+  qualityGateStatus          QualityGateStatus         @map("quality_gate_status")
+  confidence                 Float
+  createdKnowledgeDocumentId String?                   @map("created_knowledge_document_id")
+  createdAt                  DateTime                  @default(now()) @map("created_at")
+  tenant                     Tenant                    @relation(fields: [tenantId], references: [id])
+  source                     RegulatorySource          @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  previousSnapshot           RegulatorySnapshot?       @relation("PreviousRegulatorySnapshot", fields: [previousSnapshotId], references: [id], onDelete: SetNull)
+  newSnapshot                RegulatorySnapshot        @relation("NewRegulatorySnapshot", fields: [newSnapshotId], references: [id], onDelete: Cascade)
+  qualityGateResults         QualityGateResult[]
+  knowledgeDocuments         KnowledgeDocument[]
+  evidenceChunks             EvidenceChunk[]
+
+  @@index([tenantId, sourceId, createdAt], map: "regulatory_change_sets_tenant_source_created_idx")
+  @@index([tenantId, qualityGateStatus, createdAt], map: "regulatory_change_sets_tenant_gate_created_idx")
+  @@map("regulatory_change_sets")
+}
+
+model QualityGateResult {
+  id          String              @id
+  changeSetId String              @map("change_set_id")
+  gateType    QualityGateType     @map("gate_type")
+  status      QualityGateStatus
+  summary     String
+  evidence    Json
+  createdAt   DateTime            @default(now()) @map("created_at")
+  changeSet   RegulatoryChangeSet @relation(fields: [changeSetId], references: [id], onDelete: Cascade)
+
+  @@index([changeSetId, gateType], map: "quality_gate_results_change_set_gate_idx")
+  @@map("quality_gate_results")
 }
 
 model AuditLog {

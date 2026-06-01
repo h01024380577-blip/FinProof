@@ -70,6 +70,7 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
   const knowledgeCandidates = await service.searchKnowledgeEvidence(contextValue, {
     query: knowledgeQuery,
     productType: review.productType,
+    effectiveOn: review.plannedPublishDate,
     topK: analysisConfig.rag.topK * 2,
     minScore: analysisConfig.rag.minScore,
     queryEmbedding

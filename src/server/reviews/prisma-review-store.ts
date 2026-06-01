@@ -8,9 +8,9 @@ import type {
   ChatSession,
   DraftVersion,
   Evidence,
-  EvidenceChunk,
   KnowledgeDocument,
   PersistedReviewReport,
+  QualityGateResult,
   ReviewCase,
   ReviewFile,
   ReviewIssue,
@@ -24,15 +24,29 @@ import type {
   AgentFindingCandidate,
   AnalysisArtifacts
 } from "@/server/analysis/review-analysis-pipeline";
-import { toReviewCase, toReviewSummary, type PrismaReviewCaseRow } from "./prisma-mappers";
+import {
+  toEvidenceChunk,
+  toKnowledgeDocument,
+  toQualityGateResult,
+  toRegulatoryChangeSet,
+  toRegulatorySnapshot,
+  toRegulatorySource,
+  toReviewCase,
+  toReviewSummary,
+  type PrismaReviewCaseRow
+} from "./prisma-mappers";
 import type {
   AnalysisJob,
   AuditEvent,
   AuditEventInput,
+  ActivateRegulatoryChangeSetInput,
   CreateChatMessageInput,
   CreateDraftVersionInput,
   CreateKnowledgeDocumentChunkInput,
   CreateKnowledgeDocumentInput,
+  CreateRegulatoryChangeSetInput,
+  CreateRegulatorySnapshotInput,
+  CreateRegulatorySourceInput,
   CreateReviewReportInput,
   CreateReviewCaseFromUploadedFilesInput,
   CreateReviewCaseFromSamplePackageInput,
@@ -43,6 +57,7 @@ import type {
   ListIssuesOptions,
   ListReviewSummariesOptions,
   KnowledgeEvidenceSearchInput,
+  RegulatoryChangeSetListOptions,
   ReviewStore,
   ReviewSummaryPage,
   ReviewStoreScope,
@@ -70,6 +85,14 @@ const longWriteTransactionOptions = {
 
 function plannedDate(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
+}
+
+function dayBeforeDate(value: string): Date {
+  const date = plannedDate(value);
+
+  date.setUTCDate(date.getUTCDate() - 1);
+
+  return date;
 }
 
 function confidenceFor(fileType: ReviewFile["fileType"]): number {
@@ -164,78 +187,6 @@ function jsonStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
-}
-
-function toKnowledgeDocument(row: {
-  id: string;
-  tenantId: string;
-  affiliateId: string | null;
-  documentType: KnowledgeDocument["documentType"];
-  productType: KnowledgeDocument["productType"] | null;
-  title: string;
-  version: string;
-  effectiveFrom: Date;
-  effectiveTo: Date | null;
-  approvalStatus: KnowledgeDocument["approvalStatus"];
-  storageKey: string;
-  createdById: string;
-  approvedById: string | null;
-  createdAt: Date;
-  approvedAt: Date | null;
-}): KnowledgeDocument {
-  return {
-    id: row.id,
-    tenantId: row.tenantId,
-    affiliateId: row.affiliateId ?? undefined,
-    documentType: row.documentType,
-    productType: row.productType ?? undefined,
-    title: row.title,
-    version: row.version,
-    effectiveFrom: dateOnlyString(row.effectiveFrom),
-    effectiveTo: row.effectiveTo ? dateOnlyString(row.effectiveTo) : undefined,
-    approvalStatus: row.approvalStatus,
-    storageKey: row.storageKey,
-    createdBy: row.createdById,
-    approvedBy: row.approvedById ?? undefined,
-    createdAt: row.createdAt.toISOString(),
-    approvedAt: row.approvedAt?.toISOString()
-  };
-}
-
-function jsonObject(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function toEvidenceChunk(row: {
-  id: string;
-  tenantId: string;
-  knowledgeDocumentId: string | null;
-  reviewFileId: string | null;
-  chunkText: string;
-  chunkSummary: string | null;
-  embeddingModel: string;
-  embeddingId: string;
-  page: number | null;
-  section: string | null;
-  metadata: Prisma.JsonValue;
-  createdAt: Date;
-}): EvidenceChunk {
-  return {
-    id: row.id,
-    tenantId: row.tenantId,
-    knowledgeDocumentId: row.knowledgeDocumentId ?? undefined,
-    reviewFileId: row.reviewFileId ?? undefined,
-    chunkText: row.chunkText,
-    chunkSummary: row.chunkSummary ?? undefined,
-    embeddingModel: row.embeddingModel,
-    embeddingId: row.embeddingId,
-    page: row.page ?? undefined,
-    section: row.section ?? undefined,
-    metadata: jsonObject(row.metadata),
-    createdAt: row.createdAt.toISOString()
-  };
 }
 
 function toChatSession(row: {
@@ -478,7 +429,6 @@ function multilingualSnapshotsFromIssue(issue: ReviewIssue) {
 
   return {
     localizedRiskFinding: {
-      id: context.segmentId,
       segmentId: context.segmentId,
       language: context.language,
       originalText: context.originalText,
@@ -883,6 +833,15 @@ export function createPrismaReviewStore(): ReviewStore {
               embeddingId: chunk.embeddingId,
               page: chunk.page,
               section: chunk.section,
+              canonicalSectionKey: chunk.canonicalSectionKey,
+              sectionNumber: chunk.sectionNumber,
+              changeSetId: chunk.changeSetId,
+              supersedesChunkId: chunk.supersedesChunkId,
+              chunkStatus: chunk.chunkStatus ?? "active",
+              impactTags: (chunk.impactTags ?? []) as Prisma.InputJsonValue,
+              effectiveFrom: chunk.effectiveFrom ? plannedDate(chunk.effectiveFrom) : undefined,
+              effectiveTo: chunk.effectiveTo ? plannedDate(chunk.effectiveTo) : undefined,
+              sourceReliability: chunk.sourceReliability,
               metadata: chunk.metadata as Prisma.InputJsonValue
             }))
           });
@@ -915,13 +874,20 @@ export function createPrismaReviewStore(): ReviewStore {
       const minScore = input.minScore ?? 0.72;
       const queryVector = vectorLiteral(input.queryEmbedding);
       let vectorEvidence: Evidence[] = [];
+      const effectiveOn = input.effectiveOn ? plannedDate(input.effectiveOn) : undefined;
 
       if (queryVector) {
-        const params: Array<string | number> = [scope.tenantId, queryVector];
+        const params: Array<string | number | Date> = [scope.tenantId, queryVector];
         const whereParts = [
           'ec."tenant_id" = $1',
           'kd."tenant_id" = $1',
           "kd.\"approval_status\" = 'approved'",
+          effectiveOn
+            ? "(kd.\"lifecycle_status\" = 'active' OR (kd.\"lifecycle_status\" = 'superseded' AND kd.\"effective_to\" IS NOT NULL))"
+            : "kd.\"lifecycle_status\" = 'active'",
+          effectiveOn
+            ? "(ec.\"chunk_status\" = 'active' OR (ec.\"chunk_status\" = 'superseded' AND ec.\"effective_to\" IS NOT NULL))"
+            : "ec.\"chunk_status\" = 'active'",
           'ec."embedding_vector" IS NOT NULL'
         ];
 
@@ -935,6 +901,21 @@ export function createPrismaReviewStore(): ReviewStore {
         if (input.affiliateId) {
           params.push(input.affiliateId);
           whereParts.push(`(kd."affiliate_id" = $${params.length} OR kd."affiliate_id" IS NULL)`);
+        }
+
+        if (effectiveOn) {
+          params.push(effectiveOn);
+          const effectiveOnParam = `$${params.length}::date`;
+          whereParts.push(`kd."effective_from" <= ${effectiveOnParam}`);
+          whereParts.push(
+            `(kd."effective_to" IS NULL OR kd."effective_to" >= ${effectiveOnParam})`
+          );
+          whereParts.push(
+            `(ec."effective_from" IS NULL OR ec."effective_from" <= ${effectiveOnParam})`
+          );
+          whereParts.push(
+            `(ec."effective_to" IS NULL OR ec."effective_to" >= ${effectiveOnParam})`
+          );
         }
 
         params.push(Math.max(topK * 4, topK));
@@ -975,7 +956,36 @@ export function createPrismaReviewStore(): ReviewStore {
         {
           tenantId: scope.tenantId,
           approvalStatus: "approved"
-        }
+        },
+        effectiveOn
+          ? {
+              OR: [
+                { lifecycleStatus: "active" },
+                { lifecycleStatus: "superseded", effectiveTo: { not: null } }
+              ]
+            }
+          : {
+              lifecycleStatus: "active"
+            }
+      ];
+
+      const chunkFilters: Prisma.EvidenceChunkWhereInput[] = [
+        {
+          tenantId: scope.tenantId,
+          knowledgeDocument: {
+            is: { AND: documentFilters }
+          }
+        },
+        effectiveOn
+          ? {
+              OR: [
+                { chunkStatus: "active" },
+                { chunkStatus: "superseded", effectiveTo: { not: null } }
+              ]
+            }
+          : {
+              chunkStatus: "active"
+            }
       ];
 
       if (input.productType) {
@@ -990,12 +1000,22 @@ export function createPrismaReviewStore(): ReviewStore {
         });
       }
 
+      if (effectiveOn) {
+        documentFilters.push({
+          effectiveFrom: { lte: effectiveOn },
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: effectiveOn } }]
+        });
+        chunkFilters.push({
+          OR: [{ effectiveFrom: null }, { effectiveFrom: { lte: effectiveOn } }]
+        });
+        chunkFilters.push({
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: effectiveOn } }]
+        });
+      }
+
       const rows = await prisma.evidenceChunk.findMany({
         where: {
-          tenantId: scope.tenantId,
-          knowledgeDocument: {
-            is: { AND: documentFilters }
-          }
+          AND: chunkFilters
         },
         include: {
           knowledgeDocument: true
@@ -1004,40 +1024,39 @@ export function createPrismaReviewStore(): ReviewStore {
         take: Math.max(topK * 4, topK)
       });
 
-      const lexicalEvidence = rows
-        .flatMap((chunk) => {
-          const document = chunk.knowledgeDocument;
+      const lexicalEvidence = rows.flatMap((chunk) => {
+        const document = chunk.knowledgeDocument;
 
-          if (!document) {
-            return [];
+        if (!document) {
+          return [];
+        }
+
+        const score = lexicalKnowledgeScore(
+          input.query,
+          [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
+          document.title
+        );
+
+        if (score < minScore) {
+          return [];
+        }
+
+        return [
+          {
+            id: `knowledge-evidence-${chunk.id}`,
+            sourceType: documentSourceType(document.documentType),
+            documentId: document.id,
+            chunkId: chunk.id,
+            version: document.version,
+            effectiveFrom: dateOnlyString(document.effectiveFrom),
+            title: document.title,
+            page: chunk.page ?? undefined,
+            section: chunk.section ?? undefined,
+            quoteSummary: chunk.chunkSummary ?? chunk.chunkText,
+            relevanceScore: score
           }
-
-          const score = lexicalKnowledgeScore(
-            input.query,
-            [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
-            document.title
-          );
-
-          if (score < minScore) {
-            return [];
-          }
-
-          return [
-            {
-              id: `knowledge-evidence-${chunk.id}`,
-              sourceType: documentSourceType(document.documentType),
-              documentId: document.id,
-              chunkId: chunk.id,
-              version: document.version,
-              effectiveFrom: dateOnlyString(document.effectiveFrom),
-              title: document.title,
-              page: chunk.page ?? undefined,
-              section: chunk.section ?? undefined,
-              quoteSummary: chunk.chunkSummary ?? chunk.chunkText,
-              relevanceScore: score
-            }
-          ];
-        });
+        ];
+      });
       const evidenceById = new Map<string, Evidence>();
 
       for (const evidence of [...vectorEvidence, ...lexicalEvidence]) {
@@ -1051,6 +1070,430 @@ export function createPrismaReviewStore(): ReviewStore {
       return Array.from(evidenceById.values())
         .sort((left, right) => right.relevanceScore - left.relevanceScore)
         .slice(0, topK);
+    },
+
+    async createRegulatorySource(scope, input: CreateRegulatorySourceInput) {
+      const source = await prisma.regulatorySource.create({
+        data: {
+          id: input.id ?? `reg-source-${randomUUID()}`,
+          tenantId: scope.tenantId,
+          sourceType: input.sourceType,
+          name: input.name,
+          url: input.url,
+          repositoryPath: input.repositoryPath,
+          pollingSchedule: input.pollingSchedule,
+          trustLevel: input.trustLevel,
+          status: input.status ?? "active"
+        }
+      });
+
+      return toRegulatorySource(source);
+    },
+
+    async listRegulatorySources(scope) {
+      const sources = await prisma.regulatorySource.findMany({
+        where: { tenantId: scope.tenantId },
+        orderBy: [{ status: "asc" }, { updatedAt: "desc" }, { id: "asc" }]
+      });
+
+      return sources.map(toRegulatorySource);
+    },
+
+    async getRegulatorySource(scope, sourceId) {
+      const source = await prisma.regulatorySource.findFirst({
+        where: { id: sourceId, tenantId: scope.tenantId }
+      });
+
+      return source ? toRegulatorySource(source) : undefined;
+    },
+
+    async createRegulatorySnapshot(scope, input: CreateRegulatorySnapshotInput) {
+      return prisma.$transaction(async (tx) => {
+        const source = await tx.regulatorySource.findFirst({
+          where: { id: input.sourceId, tenantId: scope.tenantId },
+          select: { id: true, status: true }
+        });
+
+        if (!source) {
+          throw new Error("Regulatory source not found");
+        }
+
+        const snapshot = await tx.regulatorySnapshot.create({
+          data: {
+            id: input.id ?? `reg-snapshot-${randomUUID()}`,
+            sourceId: input.sourceId,
+            tenantId: scope.tenantId,
+            sourceUrl: input.sourceUrl,
+            title: input.title,
+            publishedAt: input.publishedAt ? plannedDate(input.publishedAt) : undefined,
+            effectiveFrom: input.effectiveFrom ? plannedDate(input.effectiveFrom) : undefined,
+            contentHash: input.contentHash,
+            rawStorageKey: input.rawStorageKey,
+            normalizedStorageKey: input.normalizedStorageKey,
+            detectedDocumentType: input.detectedDocumentType,
+            fetchStatus: input.fetchStatus,
+            normalizationConfidence: input.normalizationConfidence
+          }
+        });
+
+        await tx.regulatorySource.update({
+          where: { id: source.id },
+          data: {
+            lastCheckedAt: snapshot.createdAt,
+            status: input.fetchStatus === "failed" ? "failing" : source.status
+          }
+        });
+
+        return toRegulatorySnapshot(snapshot);
+      }, longWriteTransactionOptions);
+    },
+
+    async getLatestRegulatorySnapshot(scope, sourceId) {
+      const source = await prisma.regulatorySource.findFirst({
+        where: { id: sourceId, tenantId: scope.tenantId },
+        select: { id: true }
+      });
+
+      if (!source) {
+        return undefined;
+      }
+
+      const snapshot = await prisma.regulatorySnapshot.findFirst({
+        where: { sourceId, tenantId: scope.tenantId },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }]
+      });
+
+      return snapshot ? toRegulatorySnapshot(snapshot) : undefined;
+    },
+
+    async createRegulatoryChangeSet(scope, input: CreateRegulatoryChangeSetInput) {
+      const source = await prisma.regulatorySource.findFirst({
+        where: { id: input.sourceId, tenantId: scope.tenantId },
+        select: { id: true }
+      });
+      const newSnapshot = await prisma.regulatorySnapshot.findFirst({
+        where: { id: input.newSnapshotId, tenantId: scope.tenantId, sourceId: input.sourceId },
+        select: { id: true }
+      });
+      const previousSnapshot = input.previousSnapshotId
+        ? await prisma.regulatorySnapshot.findFirst({
+            where: {
+              id: input.previousSnapshotId,
+              tenantId: scope.tenantId,
+              sourceId: input.sourceId
+            },
+            select: { id: true }
+          })
+        : undefined;
+
+      if (!source || !newSnapshot || (input.previousSnapshotId && !previousSnapshot)) {
+        throw new Error("Regulatory source or snapshot not found");
+      }
+
+      const changeSet = await prisma.regulatoryChangeSet.create({
+        data: {
+          id: input.id ?? `reg-change-${randomUUID()}`,
+          tenantId: scope.tenantId,
+          sourceId: input.sourceId,
+          previousSnapshotId: input.previousSnapshotId,
+          newSnapshotId: input.newSnapshotId,
+          changeType: input.changeType,
+          changeSummary: input.changeSummary,
+          changedSections: input.changedSections as Prisma.InputJsonValue,
+          effectiveFrom: input.effectiveFrom ? plannedDate(input.effectiveFrom) : undefined,
+          riskImpactLevel: input.riskImpactLevel,
+          interpretationSummary: input.interpretationSummary,
+          mappedProductTypes: input.mappedProductTypes as Prisma.InputJsonValue,
+          mappedChannels: input.mappedChannels as Prisma.InputJsonValue,
+          mappedReviewCategories: input.mappedReviewCategories as Prisma.InputJsonValue,
+          qualityGateStatus: input.qualityGateStatus,
+          confidence: input.confidence
+        }
+      });
+
+      return toRegulatoryChangeSet(changeSet);
+    },
+
+    async listRegulatoryChangeSets(scope, options: RegulatoryChangeSetListOptions = {}) {
+      const where: Prisma.RegulatoryChangeSetWhereInput = {
+        tenantId: scope.tenantId,
+        sourceId: options.sourceId,
+        qualityGateStatus: options.qualityGateStatus
+      };
+      const changeSets = await prisma.regulatoryChangeSet.findMany({
+        where,
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }]
+      });
+
+      return changeSets.map(toRegulatoryChangeSet);
+    },
+
+    async getRegulatoryChangeSet(scope, changeSetId) {
+      const changeSet = await prisma.regulatoryChangeSet.findFirst({
+        where: { id: changeSetId, tenantId: scope.tenantId }
+      });
+
+      return changeSet ? toRegulatoryChangeSet(changeSet) : undefined;
+    },
+
+    async replaceQualityGateResults(scope, changeSetId, results: QualityGateResult[]) {
+      return prisma.$transaction(async (tx) => {
+        const changeSet = await tx.regulatoryChangeSet.findFirst({
+          where: { id: changeSetId, tenantId: scope.tenantId },
+          select: { id: true }
+        });
+
+        if (!changeSet) {
+          return undefined;
+        }
+
+        await tx.qualityGateResult.deleteMany({ where: { changeSetId } });
+
+        if (results.length > 0) {
+          await tx.qualityGateResult.createMany({
+            data: results.map((result) => ({
+              id: result.id,
+              changeSetId,
+              gateType: result.gateType,
+              status: result.status,
+              summary: result.summary,
+              evidence: result.evidence as Prisma.InputJsonValue,
+              createdAt: new Date(result.createdAt)
+            }))
+          });
+        }
+
+        const rows = await tx.qualityGateResult.findMany({
+          where: { changeSetId },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }]
+        });
+
+        return rows.map(toQualityGateResult);
+      }, longWriteTransactionOptions);
+    },
+
+    async listQualityGateResults(scope, changeSetId) {
+      const changeSet = await prisma.regulatoryChangeSet.findFirst({
+        where: { id: changeSetId, tenantId: scope.tenantId },
+        select: { id: true }
+      });
+
+      if (!changeSet) {
+        return undefined;
+      }
+
+      const results = await prisma.qualityGateResult.findMany({
+        where: { changeSetId },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }]
+      });
+
+      return results.map(toQualityGateResult);
+    },
+
+    async activateRegulatoryChangeSet(scope, input: ActivateRegulatoryChangeSetInput) {
+      return prisma.$transaction(async (tx) => {
+        const changeSet = await tx.regulatoryChangeSet.findFirst({
+          where: { id: input.changeSetId, tenantId: scope.tenantId }
+        });
+
+        if (!changeSet) {
+          return undefined;
+        }
+
+        const documentChangeSetId = input.document.changeSetId ?? changeSet.id;
+        const sourceSnapshotId = input.document.sourceSnapshotId ?? changeSet.newSnapshotId;
+
+        if (documentChangeSetId !== changeSet.id) {
+          throw new Error("Activation document change set must match the activated change set");
+        }
+
+        if (sourceSnapshotId !== changeSet.newSnapshotId) {
+          throw new Error("Activation document snapshot must match the change set snapshot");
+        }
+
+        const sourceSnapshot = await tx.regulatorySnapshot.findFirst({
+          where: {
+            id: sourceSnapshotId,
+            tenantId: scope.tenantId,
+            sourceId: changeSet.sourceId
+          },
+          select: { id: true }
+        });
+
+        if (!sourceSnapshot) {
+          throw new Error("Activation source snapshot not found");
+        }
+
+        if (input.document.supersedesDocumentId) {
+          const supersededDocument = await tx.knowledgeDocument.findFirst({
+            where: { id: input.document.supersedesDocumentId, tenantId: scope.tenantId },
+            select: { id: true }
+          });
+
+          if (!supersededDocument) {
+            throw new Error("Superseded knowledge document not found");
+          }
+        }
+
+        const invalidChunkChangeSet = input.chunks.find(
+          (chunk) => chunk.changeSetId && chunk.changeSetId !== changeSet.id
+        );
+
+        if (invalidChunkChangeSet) {
+          throw new Error("Activation chunk change set must match the activated change set");
+        }
+
+        const supersedesChunkIds = unique(
+          input.chunks
+            .map((chunk) => chunk.supersedesChunkId)
+            .filter((chunkId): chunkId is string => Boolean(chunkId))
+        );
+
+        if (supersedesChunkIds.length > 0) {
+          const supersededChunkCount = await tx.evidenceChunk.count({
+            where: { id: { in: supersedesChunkIds }, tenantId: scope.tenantId }
+          });
+
+          if (supersededChunkCount !== supersedesChunkIds.length) {
+            throw new Error("Superseded evidence chunk not found");
+          }
+        }
+
+        if (input.document.canonicalKey) {
+          const supersededEffectiveTo = dayBeforeDate(input.document.effectiveFrom);
+          const previousDocuments = await tx.knowledgeDocument.findMany({
+            where: {
+              tenantId: scope.tenantId,
+              canonicalKey: input.document.canonicalKey,
+              lifecycleStatus: "active"
+            },
+            select: { id: true }
+          });
+          const previousDocumentIds = previousDocuments.map((document) => document.id);
+
+          if (previousDocumentIds.length > 0) {
+            await tx.knowledgeDocument.updateMany({
+              where: { tenantId: scope.tenantId, id: { in: previousDocumentIds } },
+              data: { lifecycleStatus: "superseded" }
+            });
+            await tx.knowledgeDocument.updateMany({
+              where: {
+                tenantId: scope.tenantId,
+                id: { in: previousDocumentIds },
+                OR: [{ effectiveTo: null }, { effectiveTo: { gt: supersededEffectiveTo } }]
+              },
+              data: { effectiveTo: supersededEffectiveTo }
+            });
+            await tx.evidenceChunk.updateMany({
+              where: {
+                tenantId: scope.tenantId,
+                knowledgeDocumentId: { in: previousDocumentIds }
+              },
+              data: { chunkStatus: "superseded" }
+            });
+            await tx.evidenceChunk.updateMany({
+              where: {
+                tenantId: scope.tenantId,
+                knowledgeDocumentId: { in: previousDocumentIds },
+                OR: [{ effectiveTo: null }, { effectiveTo: { gt: supersededEffectiveTo } }]
+              },
+              data: { effectiveTo: supersededEffectiveTo }
+            });
+          }
+        }
+
+        const affiliate = input.document.affiliateId
+          ? await tx.affiliate.findFirst({
+              where: { id: input.document.affiliateId, tenantId: scope.tenantId },
+              select: { id: true }
+            })
+          : undefined;
+        const now = new Date();
+        const document = await tx.knowledgeDocument.create({
+          data: {
+            id: input.document.id ?? `knowledge-${randomUUID()}`,
+            tenantId: scope.tenantId,
+            affiliateId: affiliate?.id,
+            documentType: input.document.documentType,
+            productType: input.document.productType,
+            title: input.document.title,
+            version: input.document.version,
+            effectiveFrom: plannedDate(input.document.effectiveFrom),
+            approvalStatus: "approved",
+            storageKey: input.document.storageKey,
+            createdById: scope.actorUserId,
+            approvedById: scope.actorUserId,
+            approvedAt: now,
+            canonicalKey: input.document.canonicalKey,
+            sourceSnapshotId,
+            changeSetId: documentChangeSetId,
+            supersedesDocumentId: input.document.supersedesDocumentId,
+            lifecycleStatus: "active",
+            autoIngested: input.document.autoIngested ?? true,
+            sourcePublishedAt: input.document.sourcePublishedAt
+              ? plannedDate(input.document.sourcePublishedAt)
+              : undefined,
+            interpretationSummary: input.document.interpretationSummary
+          }
+        });
+
+        if (input.chunks.length > 0) {
+          await tx.evidenceChunk.createMany({
+            data: input.chunks.map((chunk) => ({
+              id: chunk.id,
+              tenantId: scope.tenantId,
+              knowledgeDocumentId: document.id,
+              chunkText: chunk.chunkText,
+              chunkSummary: chunk.chunkSummary,
+              embeddingModel: chunk.embeddingModel,
+              embeddingId: chunk.embeddingId,
+              page: chunk.page,
+              section: chunk.section,
+              canonicalSectionKey: chunk.canonicalSectionKey,
+              sectionNumber: chunk.sectionNumber,
+              changeSetId: chunk.changeSetId ?? changeSet.id,
+              supersedesChunkId: chunk.supersedesChunkId,
+              chunkStatus: chunk.chunkStatus ?? "active",
+              impactTags: (chunk.impactTags ?? []) as Prisma.InputJsonValue,
+              effectiveFrom: chunk.effectiveFrom ? plannedDate(chunk.effectiveFrom) : undefined,
+              effectiveTo: chunk.effectiveTo ? plannedDate(chunk.effectiveTo) : undefined,
+              sourceReliability: chunk.sourceReliability,
+              metadata: chunk.metadata as Prisma.InputJsonValue
+            }))
+          });
+        }
+
+        for (const chunk of input.chunks) {
+          const literal = vectorLiteral(embeddingVectorFromMetadata(chunk.metadata));
+
+          if (literal) {
+            await tx.$executeRawUnsafe(
+              'UPDATE "evidence_chunks" SET "embedding_vector" = $1::vector WHERE "id" = $2 AND "tenant_id" = $3',
+              literal,
+              chunk.id,
+              scope.tenantId
+            );
+          }
+        }
+
+        const updatedChangeSet = await tx.regulatoryChangeSet.update({
+          where: { id: changeSet.id },
+          data: {
+            createdKnowledgeDocumentId: document.id,
+            qualityGateStatus: input.qualityGateStatus ?? "passed"
+          }
+        });
+        const chunks = await tx.evidenceChunk.findMany({
+          where: { tenantId: scope.tenantId, knowledgeDocumentId: document.id },
+          orderBy: { id: "asc" }
+        });
+
+        return {
+          changeSet: toRegulatoryChangeSet(updatedChangeSet),
+          document: toKnowledgeDocument(document),
+          chunks: chunks.map(toEvidenceChunk)
+        };
+      }, longWriteTransactionOptions);
     },
 
     async searchCaseHistoryEvidence(scope, input: CaseHistoryEvidenceSearchInput) {
