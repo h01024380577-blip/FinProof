@@ -8,6 +8,18 @@ describe("RegulatoryWatchDashboard", () => {
     vi.restoreAllMocks();
   });
 
+  it("shows a spinner while regulatory watch information is loading", () => {
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
+
+    render(<RegulatoryWatchDashboard />);
+
+    const loadingMessage = screen.getByText("규제 변경 정보를 불러오는 중입니다.");
+
+    expect(
+      loadingMessage.closest(".form-status")?.querySelector(".action-spinner")
+    ).toBeInTheDocument();
+  });
+
   it("shows source health and recent change sets", async () => {
     vi.stubGlobal(
       "fetch",
@@ -43,7 +55,18 @@ describe("RegulatoryWatchDashboard", () => {
                 newSnapshotId: "reg-snapshot-001",
                 changeType: "amended",
                 changeSummary: "최고금리 표시 기준이 강화되었습니다.",
-                changedSections: [],
+                changedSections: [
+                  {
+                    sectionId: "section-001",
+                    title: "금융소비자 보호에 관한 감독규정",
+                    diffSummary:
+                      '권유하는 행위 4. 금융소비자(이하 "신용카드 회원"이라 한다)의 사전 동의 없이 신용카드를 사용하도록 유도하는 행위 5. 법 제17조를 적용받지 않고 권유하는 행위 <개정 2025. 10. 1.> 제16조(광고의 주체) 금융상품판매업자는 광고가 법령에 위배되는지를 확인해야 한다.',
+                    citation: {
+                      snapshotId: "reg-snapshot-001",
+                      sectionId: "section-001"
+                    }
+                  }
+                ],
                 riskImpactLevel: "high",
                 interpretationSummary: "최고금리 조건 병기 기준 강화",
                 mappedProductTypes: ["deposit"],
@@ -64,7 +87,12 @@ describe("RegulatoryWatchDashboard", () => {
     expect(screen.getByText("예금 광고 내부 기준")).toBeInTheDocument();
     expect(screen.getByText("정상")).toBeInTheDocument();
     expect(screen.getByText("최고금리 표시 기준이 강화되었습니다.")).toBeInTheDocument();
-    expect(screen.getByText("deposit")).toBeInTheDocument();
+    expect(screen.getByText("상품 deposit")).toBeInTheDocument();
+
+    const sectionSummary = document.querySelector(".regulatory-change-card__sections p");
+    expect(sectionSummary?.textContent).toContain("\n4. 금융소비자");
+    expect(sectionSummary?.textContent).toContain("\n<개정 2025. 10. 1.>");
+    expect(sectionSummary?.textContent).toContain("\n제16조");
   });
 
   it("tracks registered knowledge document changes from the dashboard", async () => {
@@ -136,9 +164,7 @@ describe("RegulatoryWatchDashboard", () => {
 
     const click = user.click(trackButton);
 
-    await waitFor(() =>
-      expect(trackButton.querySelector(".action-spinner")).toBeInTheDocument()
-    );
+    await waitFor(() => expect(trackButton.querySelector(".action-spinner")).toBeInTheDocument());
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,

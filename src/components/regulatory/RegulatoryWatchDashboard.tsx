@@ -82,11 +82,54 @@ function sourceTypeLabel(sourceType: RegulatorySource["sourceType"]): string {
   return labels[sourceType];
 }
 
+function readableRegulatoryText(value: string, maxLength = 220): string {
+  const compacted = value.replace(/\s+/g, " ").trim();
+  const trimmed =
+    compacted.length > maxLength ? `${compacted.slice(0, maxLength).trim()}...` : compacted;
+
+  return trimmed
+    .replace(/(^|[^\d])\s+((?:[1-9]|1[0-9]|20)\.)\s+(?=[가-힣A-Za-z"“「])/g, "$1\n$2 ")
+    .replace(/\s+(?=[①②③④⑤⑥⑦⑧⑨⑩])/g, "\n")
+    .replace(/\s+(?=<개정)/g, "\n")
+    .replace(/\s+(?=제\d+조(?:의\d+)?)/g, "\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+function changeTypeLabel(changeType: RegulatoryChangeSet["changeType"]): string {
+  const labels: Record<RegulatoryChangeSet["changeType"], string> = {
+    created: "신설",
+    amended: "개정",
+    deleted: "삭제",
+    wording_changed: "문구 변경",
+    effective_date_changed: "시행일 변경",
+    scope_changed: "적용 범위 변경",
+    interpretation_changed: "해석 변경"
+  };
+
+  return labels[changeType];
+}
+
+function riskImpactLabel(riskImpactLevel: RegulatoryChangeSet["riskImpactLevel"]): string {
+  const labels: Record<RegulatoryChangeSet["riskImpactLevel"], string> = {
+    info: "낮음",
+    caution: "주의",
+    high: "높음",
+    critical: "중대"
+  };
+
+  return labels[riskImpactLevel];
+}
+
+function valueList(values: string[], fallback: string): string {
+  return values.length > 0 ? values.join(", ") : fallback;
+}
+
 export function RegulatoryWatchDashboard(): JSX.Element {
   const roleContext = useRoleContext();
   const [sources, setSources] = useState<RegulatorySource[]>([]);
   const [changeSets, setChangeSets] = useState<RegulatoryChangeSet[]>([]);
   const [status, setStatus] = useState<string | null>("규제 변경 정보를 불러오는 중입니다.");
+  const [isLoadingWatch, setIsLoadingWatch] = useState(true);
   const [trackStatus, setTrackStatus] = useState<string | null>(null);
   const [isTracking, setIsTracking] = useState(false);
 
@@ -102,10 +145,14 @@ export function RegulatoryWatchDashboard(): JSX.Element {
           setSources(result.sources);
           setChangeSets(result.changeSets);
           setStatus(null);
+          setIsLoadingWatch(false);
         }
       } catch (error) {
         if (mounted) {
-          setStatus(error instanceof Error ? error.message : "규제 변경 정보를 불러오지 못했습니다.");
+          setStatus(
+            error instanceof Error ? error.message : "규제 변경 정보를 불러오지 못했습니다."
+          );
+          setIsLoadingWatch(false);
         }
       }
     })();
@@ -179,7 +226,10 @@ export function RegulatoryWatchDashboard(): JSX.Element {
           </p>
         </div>
         <div className="regulatory-page__header-side">
-          <div className="knowledge-page__metrics regulatory-page__metrics" aria-label="규제 추적 현황">
+          <div
+            className="knowledge-page__metrics regulatory-page__metrics"
+            aria-label="규제 추적 현황"
+          >
             {metrics.map((metric) => {
               const Icon = metric.icon;
 
@@ -209,7 +259,14 @@ export function RegulatoryWatchDashboard(): JSX.Element {
         </div>
       </section>
 
-      {status ? <p className="form-status">{status}</p> : null}
+      {status ? (
+        <p className="form-status">
+          {isLoadingWatch ? (
+            <LoaderCircle className="action-spinner" size={17} aria-hidden="true" />
+          ) : null}
+          {status}
+        </p>
+      ) : null}
 
       <section className="regulatory-layout">
         <section className="regulatory-panel" aria-label="추적 중인 규제 소스">
@@ -256,30 +313,59 @@ export function RegulatoryWatchDashboard(): JSX.Element {
             <strong>{changeSets.length}건</strong>
           </div>
 
-          <div className="regulatory-table regulatory-table--changes" role="table">
-            <div className="regulatory-table__row regulatory-table__row--head" role="row">
-              <span role="columnheader">변경 요약</span>
-              <span role="columnheader">상품</span>
-              <span role="columnheader">카테고리</span>
-              <span role="columnheader">게이트</span>
-            </div>
+          <div className="regulatory-change-list">
             {changeSets.length === 0 ? (
               <div className="regulatory-empty">최근 감지된 변경이 없습니다.</div>
             ) : (
-              changeSets.map((changeSet) => (
-                <div className="regulatory-table__row" role="row" key={changeSet.id}>
-                  <strong role="cell">{changeSet.changeSummary}</strong>
-                  <span role="cell">{changeSet.mappedProductTypes.join(", ") || "전체"}</span>
-                  <span role="cell">
-                    {changeSet.mappedReviewCategories.join(", ") || "미분류"}
-                  </span>
-                  <span role="cell">
-                    <span className="status-pill" data-status={changeSet.qualityGateStatus}>
-                      {gateStatusLabel(changeSet.qualityGateStatus)}
-                    </span>
-                  </span>
-                </div>
-              ))
+              changeSets.map((changeSet) => {
+                const highlightedSections = changeSet.changedSections.slice(0, 2);
+
+                return (
+                  <article className="regulatory-change-card" key={changeSet.id}>
+                    <header className="regulatory-change-card__header">
+                      <div className="regulatory-change-card__headline">
+                        <span>{changeTypeLabel(changeSet.changeType)}</span>
+                        <h3 title={changeSet.changeSummary}>
+                          {readableRegulatoryText(changeSet.changeSummary, 140)}
+                        </h3>
+                      </div>
+                      <span className="status-pill" data-status={changeSet.qualityGateStatus}>
+                        {gateStatusLabel(changeSet.qualityGateStatus)}
+                      </span>
+                    </header>
+
+                    <p className="regulatory-change-card__summary">
+                      {readableRegulatoryText(changeSet.interpretationSummary, 180)}
+                    </p>
+
+                    {highlightedSections.length > 0 ? (
+                      <div className="regulatory-change-card__sections">
+                        {highlightedSections.map((section) => (
+                          <div key={section.sectionId}>
+                            <strong>{section.title || section.sectionNumber || "변경 섹션"}</strong>
+                            <p title={section.diffSummary}>
+                              {readableRegulatoryText(section.diffSummary, 260)}
+                            </p>
+                          </div>
+                        ))}
+                        {changeSet.changedSections.length > highlightedSections.length ? (
+                          <span>
+                            외 {changeSet.changedSections.length - highlightedSections.length}개
+                            섹션
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <div className="regulatory-change-card__meta" aria-label="변경 메타데이터">
+                      <span>상품 {valueList(changeSet.mappedProductTypes, "전체")}</span>
+                      <span>카테고리 {valueList(changeSet.mappedReviewCategories, "미분류")}</span>
+                      <span>위험도 {riskImpactLabel(changeSet.riskImpactLevel)}</span>
+                      <span>{formatDateTime(changeSet.createdAt)}</span>
+                    </div>
+                  </article>
+                );
+              })
             )}
           </div>
         </section>
