@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { JSX } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ReviewCase, ReviewSummary } from "@/domain/types";
@@ -90,6 +90,7 @@ export function ReviewQueue(): JSX.Element {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
+  const pollingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const [savingReviewerIds, setSavingReviewerIds] = useState<string[]>([]);
   const [deletingHistoryIds, setDeletingHistoryIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
@@ -209,6 +210,65 @@ export function ReviewQueue(): JSX.Element {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    const timers = pollingTimers.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
+  async function pollForCompletion(reviewId: string, attempt = 0): Promise<void> {
+    const MAX_ATTEMPTS = 90; // ~3 minutes at 2s intervals
+    if (attempt >= MAX_ATTEMPTS) {
+      setActiveAnalysisId(null);
+      pollingTimers.current.delete(reviewId);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/review-cases/${reviewId}`, {
+        headers: apiHeaders()
+      });
+      if (response.ok) {
+        const body = (await response.json()) as { reviewCase: ReviewCase };
+        const { status } = body.reviewCase;
+        const isTerminal =
+          status === "analysis_complete" ||
+          status === "under_review" ||
+          status === "approved" ||
+          status === "rejected" ||
+          status === "change_requested" ||
+          status === "on_hold";
+
+        if (isTerminal) {
+          setReviews((current) =>
+            current.map((candidate) =>
+              candidate.id === reviewId
+                ? {
+                    ...candidate,
+                    status,
+                    availableActions: fallbackActionsFor(
+                      activeRole,
+                      status
+                    ) as unknown as ReviewSummary["availableActions"]
+                  }
+                : candidate
+            )
+          );
+          setActiveAnalysisId(null);
+          pollingTimers.current.delete(reviewId);
+          return;
+        }
+      }
+    } catch {
+      // swallow and retry
+    }
+
+    const timer = setTimeout(() => void pollForCompletion(reviewId, attempt + 1), 2000);
+    pollingTimers.current.set(reviewId, timer);
+  }
+
   async function startAnalysis(review: ReviewSummary): Promise<void> {
     setActiveAnalysisId(review.id);
     setLoadError(null);
@@ -219,25 +279,35 @@ export function ReviewQueue(): JSX.Element {
       });
       if (!response.ok) throw new Error("분석 시작 권한 또는 요청을 확인해 주세요.");
       const body = (await response.json()) as AnalysisStartResponse;
-      setReviews((current) =>
-        current.map((candidate) =>
-          candidate.id === review.id
-            ? {
-                ...candidate,
-                status: body.status,
-                availableActions: fallbackActionsFor(
-                  activeRole,
-                  body.status
-                ) as unknown as ReviewSummary["availableActions"]
-              }
-            : candidate
-        )
-      );
+
+      if (body.status === "analysis_complete") {
+        setReviews((current) =>
+          current.map((candidate) =>
+            candidate.id === review.id
+              ? {
+                  ...candidate,
+                  status: body.status,
+                  availableActions: fallbackActionsFor(
+                    activeRole,
+                    body.status
+                  ) as unknown as ReviewSummary["availableActions"]
+                }
+              : candidate
+          )
+        );
+        setActiveAnalysisId(null);
+      } else {
+        setReviews((current) =>
+          current.map((candidate) =>
+            candidate.id === review.id ? { ...candidate, status: body.status } : candidate
+          )
+        );
+        void pollForCompletion(review.id);
+      }
     } catch (error) {
       setLoadError(
         error instanceof Error ? error.message : "분석 시작 요청을 처리하지 못했습니다."
       );
-    } finally {
       setActiveAnalysisId(null);
     }
   }
