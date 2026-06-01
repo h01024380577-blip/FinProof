@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { answerReviewQuestion } from "@/domain/chat";
 import { getRequiredMaterialRows } from "@/domain/intake";
 import { generateReviewReport } from "@/domain/reports";
-import { classifyUploadFile } from "@/domain/upload-policy";
+import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
 import type {
   ChatMessage,
   ChatSession,
@@ -95,21 +95,6 @@ function dayBeforeDate(value: string): Date {
   return date;
 }
 
-function confidenceFor(fileType: ReviewFile["fileType"]): number {
-  if (fileType === "misc") {
-    return 0.62;
-  }
-
-  if (fileType === "package_archive") {
-    return 0.66;
-  }
-
-  if (fileType === "promotional_creative" || fileType === "rate_table") {
-    return 0.78;
-  }
-
-  return 0.74;
-}
 
 function missingMaterialKeys(review: Pick<ReviewCase, "productType" | "files">): string[] {
   return getRequiredMaterialRows(review)
@@ -867,6 +852,24 @@ export function createPrismaReviewStore(): ReviewStore {
 
         return rows.map(toEvidenceChunk);
       }, longWriteTransactionOptions);
+    },
+
+    async listKnowledgeDocumentChunks(scope, documentId) {
+      const document = await prisma.knowledgeDocument.findFirst({
+        where: { id: documentId, tenantId: scope.tenantId },
+        select: { id: true }
+      });
+
+      if (!document) {
+        return undefined;
+      }
+
+      const rows = await prisma.evidenceChunk.findMany({
+        where: { tenantId: scope.tenantId, knowledgeDocumentId: documentId },
+        orderBy: [{ sectionNumber: "asc" }, { page: "asc" }, { id: "asc" }]
+      });
+
+      return rows.map(toEvidenceChunk);
     },
 
     async searchKnowledgeEvidence(scope, input: KnowledgeEvidenceSearchInput) {
@@ -1881,13 +1884,13 @@ export function createPrismaReviewStore(): ReviewStore {
       });
       const files = input.files.map((file) => {
         const contentType = file.type || "application/octet-stream";
-        const fileType = classifyUploadFile({ ...file, type: contentType });
+        const cls = classifyUploadFileWithConfidence({ ...file, type: contentType });
 
         return {
           id: file.id ?? `file-${randomUUID()}`,
           originalFilename: file.name,
-          fileType,
-          classificationConfidence: confidenceFor(fileType),
+          fileType: cls.fileType,
+          classificationConfidence: cls.confidence,
           parseStatus: "pending" as const,
           storageProvider: file.storageProvider ?? "local",
           storageKey: file.storageKey ?? `local/${id}/${file.name}`,

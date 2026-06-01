@@ -401,6 +401,10 @@ export interface ReviewStore {
     documentId: string,
     chunks: CreateKnowledgeDocumentChunkInput[]
   ): Promise<EvidenceChunk[] | undefined>;
+  listKnowledgeDocumentChunks(
+    scope: ReviewStoreScope,
+    documentId: string
+  ): Promise<EvidenceChunk[] | undefined>;
   searchKnowledgeEvidence(
     scope: ReviewStoreScope,
     input: KnowledgeEvidenceSearchInput

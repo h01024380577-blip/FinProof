@@ -2,7 +2,7 @@ import { getRequiredMaterialRows } from "@/domain/intake";
 import { answerReviewQuestion } from "@/domain/chat";
 import { generateReviewReport } from "@/domain/reports";
 import { reviewCases } from "@/domain/reviews";
-import { classifyUploadFile } from "@/domain/upload-policy";
+import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
 import { buildAnalysisIssues, highestRiskLevelForIssues } from "@/server/analysis/issue-generation";
 import type {
   AgentRun,
@@ -79,21 +79,6 @@ function inferContentType(fileName: string): string {
   return "application/octet-stream";
 }
 
-function confidenceFor(fileType: ReviewFile["fileType"]): number {
-  if (fileType === "misc") {
-    return 0.62;
-  }
-
-  if (fileType === "package_archive") {
-    return 0.66;
-  }
-
-  if (fileType === "promotional_creative" || fileType === "rate_table") {
-    return 0.78;
-  }
-
-  return 0.74;
-}
 
 function missingMaterialKeys(review: Pick<ReviewCase, "productType" | "files">): string[] {
   return getRequiredMaterialRows(review)
@@ -690,13 +675,13 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
 
       const files = input.files.map<ReviewFile>((file, index) => {
         const contentType = file.type || inferContentType(file.name);
-        const fileType = classifyUploadFile({ ...file, type: contentType });
+        const cls = classifyUploadFileWithConfidence({ ...file, type: contentType });
 
         return {
           id: file.id ?? `file-upload-${String(index + 1).padStart(3, "0")}`,
           name: file.name,
-          fileType,
-          classificationConfidence: confidenceFor(fileType),
+          fileType: cls.fileType,
+          classificationConfidence: cls.confidence,
           parseStatus: "pending",
           storageProvider: file.storageProvider ?? "local",
           storageKey: file.storageKey ?? `local/${id}/${file.name}`,
@@ -1467,6 +1452,23 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       }
 
       return clone(persisted);
+    },
+
+    async listKnowledgeDocumentChunks(scope: ReviewStoreScope, documentId) {
+      const document = knowledgeDocuments.get(documentId);
+
+      if (!document || document.tenantId !== scope.tenantId) {
+        return undefined;
+      }
+
+      return clone(
+        Array.from(evidenceChunks.values())
+          .filter(
+            (chunk) =>
+              chunk.tenantId === scope.tenantId && chunk.knowledgeDocumentId === documentId
+          )
+          .sort((left, right) => left.id.localeCompare(right.id))
+      );
     },
 
     async searchKnowledgeEvidence(scope: ReviewStoreScope, input: KnowledgeEvidenceSearchInput) {

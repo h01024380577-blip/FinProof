@@ -186,6 +186,46 @@ describe("review service", () => {
     });
   });
 
+  it("tracks approved registered knowledge documents through the regulatory pipeline", async () => {
+    const store = createMockReviewStore();
+    const service = createReviewService({ store });
+    const { document } = await service.createKnowledgeDocument(reviewerContext, {
+      id: "knowledge-deposit-policy",
+      documentType: "internal_policy",
+      productType: "deposit",
+      title: "예금 광고 내부 기준",
+      version: "2026.06",
+      effectiveFrom: "2026-06-01",
+      storageKey: "knowledge/deposit-policy.md"
+    });
+
+    await service.approveKnowledgeDocument(reviewerContext, document.id);
+
+    const result = await service.trackKnowledgeDocumentRegulatoryChanges(reviewerContext);
+    const sources = await service.listRegulatorySources(reviewerContext);
+    const changeSets = await service.listRegulatoryChangeSets(reviewerContext);
+
+    expect(result).toMatchObject({
+      checkedDocumentCount: 1,
+      changeSetCount: 1,
+      activated: true
+    });
+    expect(sources).toEqual([
+      expect.objectContaining({
+        name: "예금 광고 내부 기준",
+        sourceType: "internal_policy_repo",
+        trustLevel: "internal"
+      })
+    ]);
+    expect(changeSets).toEqual([
+      expect.objectContaining({
+        changeType: "created",
+        mappedProductTypes: ["deposit"],
+        qualityGateStatus: "passed"
+      })
+    ]);
+  });
+
   it("stores OCR/RAG artifacts when analysis starts", async () => {
     const store = createMockReviewStore();
     const service = createReviewService({

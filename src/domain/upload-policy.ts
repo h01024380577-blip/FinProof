@@ -116,12 +116,22 @@ export function validateUploadedFiles(files: UploadFileDescriptor[]): UploadPoli
   };
 }
 
-export function classifyUploadFile(file: UploadFileDescriptor): ReviewFile["fileType"] {
+export type FileClassification = {
+  fileType: ReviewFile["fileType"];
+  confidence: number;
+};
+
+export function classifyUploadFileWithConfidence(file: UploadFileDescriptor): FileClassification {
   const normalizedName = file.name.toLowerCase();
   const contentType = file.type;
 
   if (isArchive(file.name)) {
-    return "package_archive";
+    return { fileType: "package_archive", confidence: 0.99 };
+  }
+
+  // MIME type is a stronger signal than a keyword
+  if (contentType.startsWith("image/")) {
+    return { fileType: "promotional_creative", confidence: 0.97 };
   }
 
   if (
@@ -129,18 +139,25 @@ export function classifyUploadFile(file: UploadFileDescriptor): ReviewFile["file
     normalizedName.includes("banner") ||
     normalizedName.includes("creative") ||
     normalizedName.includes("홍보물") ||
-    normalizedName.includes("시안") ||
-    contentType.startsWith("image/")
+    normalizedName.includes("시안")
   ) {
-    return "promotional_creative";
+    return { fileType: "promotional_creative", confidence: 0.87 };
   }
 
-  if (
-    normalizedName.includes("copy") ||
-    normalizedName.includes("draft") ||
-    normalizedName.includes("카피")
-  ) {
-    return "copy_draft";
+  if (normalizedName.includes("terms") || normalizedName.includes("약관")) {
+    return { fileType: "terms", confidence: 0.92 };
+  }
+
+  if (normalizedName.includes("checklist") || normalizedName.includes("체크리스트")) {
+    return { fileType: "checklist", confidence: 0.91 };
+  }
+
+  if (normalizedName.includes("rate") || normalizedName.includes("금리")) {
+    return { fileType: "rate_table", confidence: 0.91 };
+  }
+
+  if (normalizedName.endsWith(".xlsx") || normalizedName.endsWith(".csv")) {
+    return { fileType: "rate_table", confidence: 0.78 };
   }
 
   if (
@@ -148,30 +165,26 @@ export function classifyUploadFile(file: UploadFileDescriptor): ReviewFile["file
     normalizedName.includes("description") ||
     normalizedName.includes("상품")
   ) {
-    return "product_description";
-  }
-
-  if (normalizedName.includes("terms") || normalizedName.includes("약관")) {
-    return "terms";
-  }
-
-  if (normalizedName.includes("checklist") || normalizedName.includes("체크리스트")) {
-    return "checklist";
+    return { fileType: "product_description", confidence: 0.85 };
   }
 
   if (
-    normalizedName.includes("rate") ||
-    normalizedName.includes("금리") ||
-    normalizedName.endsWith(".xlsx")
+    normalizedName.includes("copy") ||
+    normalizedName.includes("draft") ||
+    normalizedName.includes("카피")
   ) {
-    return "rate_table";
+    return { fileType: "copy_draft", confidence: 0.85 };
   }
 
   if (normalizedName.includes("url")) {
-    return "url_list";
+    return { fileType: "url_list", confidence: 0.78 };
   }
 
-  return "misc";
+  return { fileType: "misc", confidence: 0.52 };
+}
+
+export function classifyUploadFile(file: UploadFileDescriptor): ReviewFile["fileType"] {
+  return classifyUploadFileWithConfidence(file).fileType;
 }
 
 export function formatUploadPolicySummary(): string {

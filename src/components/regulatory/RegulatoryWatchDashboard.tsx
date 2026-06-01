@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type JSX } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Database } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, Database, LoaderCircle } from "lucide-react";
 import { regulatorySourceStatusLabel } from "@/domain/regulatory";
 import type { QualityGateStatus, RegulatoryChangeSet, RegulatorySource } from "@/domain/types";
 import { useRoleContext } from "@/components/RoleContext";
@@ -14,8 +14,35 @@ type RegulatoryChangeSetsResponse = {
   changeSets?: RegulatoryChangeSet[];
 };
 
+type TrackKnowledgeDocumentsResponse = {
+  result?: {
+    checkedDocumentCount?: number;
+    changeSetCount?: number;
+    activatedDocumentIds?: string[];
+  };
+};
+
 function fetchInit(headers: HeadersInit | undefined): RequestInit | undefined {
   return headers ? { headers } : undefined;
+}
+
+async function fetchRegulatoryWatch(headers: HeadersInit | undefined) {
+  const [sourceResponse, changeSetResponse] = await Promise.all([
+    fetch("/api/v1/regulatory-sources", fetchInit(headers)),
+    fetch("/api/v1/regulatory-change-sets", fetchInit(headers))
+  ]);
+
+  if (!sourceResponse.ok || !changeSetResponse.ok) {
+    throw new Error("규제 변경 정보를 불러오지 못했습니다.");
+  }
+
+  const sourceBody = (await sourceResponse.json()) as RegulatorySourcesResponse;
+  const changeSetBody = (await changeSetResponse.json()) as RegulatoryChangeSetsResponse;
+
+  return {
+    sources: sourceBody.sources ?? [],
+    changeSets: changeSetBody.changeSets ?? []
+  };
 }
 
 function formatDateTime(value?: string): string {
@@ -60,41 +87,69 @@ export function RegulatoryWatchDashboard(): JSX.Element {
   const [sources, setSources] = useState<RegulatorySource[]>([]);
   const [changeSets, setChangeSets] = useState<RegulatoryChangeSet[]>([]);
   const [status, setStatus] = useState<string | null>("규제 변경 정보를 불러오는 중입니다.");
+  const [trackStatus, setTrackStatus] = useState<string | null>(null);
+  const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     const headers = roleContext?.apiHeaders();
 
-    async function loadRegulatoryWatch() {
-      const [sourceResponse, changeSetResponse] = await Promise.all([
-        fetch("/api/v1/regulatory-sources", fetchInit(headers)),
-        fetch("/api/v1/regulatory-change-sets", fetchInit(headers))
-      ]);
+    void (async () => {
+      try {
+        const result = await fetchRegulatoryWatch(headers);
 
-      if (!sourceResponse.ok || !changeSetResponse.ok) {
-        throw new Error("규제 변경 정보를 불러오지 못했습니다.");
+        if (mounted) {
+          setSources(result.sources);
+          setChangeSets(result.changeSets);
+          setStatus(null);
+        }
+      } catch (error) {
+        if (mounted) {
+          setStatus(error instanceof Error ? error.message : "규제 변경 정보를 불러오지 못했습니다.");
+        }
       }
-
-      const sourceBody = (await sourceResponse.json()) as RegulatorySourcesResponse;
-      const changeSetBody = (await changeSetResponse.json()) as RegulatoryChangeSetsResponse;
-
-      if (mounted) {
-        setSources(sourceBody.sources ?? []);
-        setChangeSets(changeSetBody.changeSets ?? []);
-        setStatus(null);
-      }
-    }
-
-    void loadRegulatoryWatch().catch((error) => {
-      if (mounted) {
-        setStatus(error instanceof Error ? error.message : "규제 변경 정보를 불러오지 못했습니다.");
-      }
-    });
+    })();
 
     return () => {
       mounted = false;
     };
   }, [roleContext]);
+
+  async function handleTrackKnowledgeDocuments() {
+    setIsTracking(true);
+    setTrackStatus(null);
+
+    try {
+      const headers = roleContext?.apiHeaders();
+      const response = await fetch("/api/v1/regulatory-sources/track-knowledge-documents", {
+        method: "POST",
+        body: "{}",
+        ...fetchInit(headers)
+      });
+
+      if (!response.ok) {
+        throw new Error("등록 지식문서 변경 추적에 실패했습니다.");
+      }
+
+      const body = (await response.json()) as TrackKnowledgeDocumentsResponse;
+      const checkedDocumentCount = body.result?.checkedDocumentCount ?? 0;
+      const changeSetCount = body.result?.changeSetCount ?? 0;
+
+      setTrackStatus(
+        `등록 지식문서 ${checkedDocumentCount}건을 확인했고 변경 ${changeSetCount}건을 감지했습니다.`
+      );
+      const result = await fetchRegulatoryWatch(headers);
+      setSources(result.sources);
+      setChangeSets(result.changeSets);
+      setStatus(null);
+    } catch (error) {
+      setTrackStatus(
+        error instanceof Error ? error.message : "등록 지식문서 변경 추적에 실패했습니다."
+      );
+    } finally {
+      setIsTracking(false);
+    }
+  }
 
   const metrics = useMemo(() => {
     const failedSources = sources.filter((source) => source.status === "failing").length;
@@ -136,6 +191,21 @@ export function RegulatoryWatchDashboard(): JSX.Element {
             );
           })}
         </div>
+      </section>
+
+      <section className="regulatory-actions" aria-label="규제 변경 작업">
+        <button
+          className="button button--primary"
+          type="button"
+          onClick={handleTrackKnowledgeDocuments}
+          disabled={isTracking}
+        >
+          {isTracking ? (
+            <LoaderCircle className="action-spinner" size={17} aria-hidden="true" />
+          ) : null}
+          변경 추적
+        </button>
+        {trackStatus ? <p className="form-status">{trackStatus}</p> : null}
       </section>
 
       {status ? <p className="form-status">{status}</p> : null}

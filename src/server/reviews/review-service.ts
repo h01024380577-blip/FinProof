@@ -10,9 +10,10 @@ import {
   createKnowledgeDocumentChunks,
   extractKnowledgeDocumentText
 } from "@/server/knowledge/knowledge-ingestion";
+import { createRegulatoryKnowledgeService } from "@/server/regulatory/regulatory-knowledge-service";
 import { expandArchiveUploads } from "@/server/storage/archive-extraction";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
-import type { ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
+import type { KnowledgeDocument, ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
 import { getReviewStore } from ".";
 import { StateConflictError } from "./route-utils";
 import type {
@@ -79,6 +80,16 @@ export type CreateKnowledgeDocumentServiceResult = {
   };
 };
 
+export type TrackKnowledgeDocumentRegulatoryChangesResult = {
+  checkedDocumentCount: number;
+  sourceCount: number;
+  snapshotCreatedCount: number;
+  changeSetCount: number;
+  activated: boolean;
+  activatedDocumentIds: string[];
+  skippedDocumentIds: string[];
+};
+
 function scopeFromContext(context: RequestContext): ReviewStoreScope {
   return {
     tenantId: context.tenantId,
@@ -86,6 +97,58 @@ function scopeFromContext(context: RequestContext): ReviewStoreScope {
     actorRole: context.role,
     ipAddress: context.ipAddress
   };
+}
+
+function regulatorySourceTypeForDocument(
+  document: KnowledgeDocument
+): CreateRegulatorySourceInput["sourceType"] {
+  return document.documentType === "law" ? "law_portal" : "internal_policy_repo";
+}
+
+function regulatoryTrustLevelForDocument(
+  document: KnowledgeDocument
+): CreateRegulatorySourceInput["trustLevel"] {
+  return document.documentType === "law" ? "official" : "internal";
+}
+
+function stableRegulatorySourceId(document: KnowledgeDocument) {
+  const rawKey = [
+    document.canonicalKey,
+    document.documentType,
+    document.productType ?? "all",
+    document.title
+  ]
+    .filter(Boolean)
+    .join("-");
+  const normalized = rawKey
+    .toLowerCase()
+    .replace(/[^a-z0-9가-힣]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72);
+
+  return `reg-source-knowledge-${normalized || document.id}`;
+}
+
+function sortKnowledgeDocumentsForTracking(documents: KnowledgeDocument[]) {
+  return [...documents].sort((left, right) => {
+    const leftKey = [left.effectiveFrom ?? "", left.version, left.createdAt, left.id].join("\0");
+    const rightKey = [right.effectiveFrom ?? "", right.version, right.createdAt, right.id].join(
+      "\0"
+    );
+
+    return leftKey.localeCompare(rightKey);
+  });
+}
+
+function knowledgeDocumentSourceText(
+  document: KnowledgeDocument,
+  chunks: { chunkText: string }[]
+) {
+  const chunkText = chunks.map((chunk) => chunk.chunkText.trim()).filter(Boolean).join("\n\n");
+
+  return [`# ${document.title}`, `version: ${document.version}`, chunkText]
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function nextUploadReviewCaseId() {
@@ -623,6 +686,121 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
 
     async listKnowledgeDocuments(context: RequestContext) {
       return store.listKnowledgeDocuments(scopeFromContext(context));
+    },
+
+    async trackKnowledgeDocumentRegulatoryChanges(
+      context: RequestContext
+    ): Promise<TrackKnowledgeDocumentRegulatoryChangesResult> {
+      requireRole(context, ["reviewer", "compliance_admin"], "track knowledge document changes");
+
+      const scope = scopeFromContext(context);
+      const documents = (await store.listKnowledgeDocuments(scope)).filter(
+        (document) =>
+          document.approvalStatus === "approved" &&
+          document.lifecycleStatus !== "superseded" &&
+          !document.autoIngested
+      );
+      const regulatoryService = createRegulatoryKnowledgeService({ store });
+      const documentGroups = new Map<string, KnowledgeDocument[]>();
+      const activatedDocumentIds: string[] = [];
+      const skippedDocumentIds: string[] = [];
+      let sourceCount = 0;
+      let snapshotCreatedCount = 0;
+      let changeSetCount = 0;
+
+      for (const document of documents) {
+        const sourceId = stableRegulatorySourceId(document);
+        const group = documentGroups.get(sourceId) ?? [];
+
+        group.push(document);
+        documentGroups.set(sourceId, group);
+      }
+
+      for (const [sourceId, groupedDocuments] of documentGroups) {
+        const sortedDocuments = sortKnowledgeDocumentsForTracking(groupedDocuments);
+        const document = sortedDocuments[sortedDocuments.length - 1];
+        const fallbackPreviousDocument = sortedDocuments.at(-2);
+
+        if (!document) {
+          continue;
+        }
+
+        const chunks = await store.listKnowledgeDocumentChunks(scope, document.id);
+
+        if (!chunks || chunks.length === 0) {
+          skippedDocumentIds.push(document.id);
+          continue;
+        }
+
+        let source = await store.getRegulatorySource(scope, sourceId);
+
+        if (!source) {
+          source = await store.createRegulatorySource(scope, {
+            id: sourceId,
+            sourceType: regulatorySourceTypeForDocument(document),
+            name: document.title,
+            repositoryPath: document.storageKey,
+            pollingSchedule: "manual",
+            trustLevel: regulatoryTrustLevelForDocument(document)
+          });
+        }
+
+        sourceCount += 1;
+
+        const previousDocumentId = document.supersedesDocumentId ?? fallbackPreviousDocument?.id;
+        const previousDocument =
+          previousDocumentId === fallbackPreviousDocument?.id ? fallbackPreviousDocument : document;
+        let previousChunks: { chunkText: string }[] | undefined;
+
+        if (previousDocumentId && previousDocumentId !== document.id) {
+          previousChunks = await store.listKnowledgeDocumentChunks(scope, previousDocumentId);
+        }
+
+        const result = await regulatoryService.runSourceCheck(context, {
+          sourceId: source.id,
+          title: document.title,
+          version: document.version,
+          sourceText: knowledgeDocumentSourceText(document, chunks),
+          previousNormalizedText: previousChunks
+            ? knowledgeDocumentSourceText(previousDocument, previousChunks)
+            : undefined,
+          effectiveFrom: document.effectiveFrom,
+          documentType: document.documentType,
+          productType: document.productType,
+          mappedChannels: ["registered_knowledge_document"],
+          mappedReviewCategories: [document.documentType]
+        });
+
+        if (result.snapshotCreated) {
+          snapshotCreatedCount += 1;
+        }
+
+        changeSetCount += result.changeSetCount;
+        activatedDocumentIds.push(...result.activatedDocumentIds);
+      }
+
+      await store.recordAuditEvent(scope, {
+        action: "regulatory_source.track_knowledge_documents",
+        targetType: "regulatory_source",
+        afterValue: {
+          checkedDocumentCount: documents.length,
+          sourceCount,
+          snapshotCreatedCount,
+          changeSetCount,
+          activatedDocumentIds,
+          skippedDocumentIds
+        }
+      });
+
+      return {
+        checkedDocumentCount: documents.length,
+        sourceCount,
+        snapshotCreatedCount,
+        changeSetCount,
+        activated: activatedDocumentIds.length > 0,
+        activatedDocumentIds,
+        skippedDocumentIds
+      };
     },
 
     async searchKnowledgeEvidence(context: RequestContext, input: KnowledgeEvidenceSearchInput) {
