@@ -1,8 +1,10 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useState, type JSX } from "react";
+import { type FormEvent, useEffect, useState, type JSX } from "react";
 import { LoaderCircle } from "lucide-react";
+import JSZip from "jszip";
 import { getRequiredMaterialRows, type RequiredMaterialRow } from "@/domain/intake";
+import { classifyUploadFile } from "@/domain/upload-policy";
 import type { ProductType, ReviewFile } from "@/domain/types";
 import { IntakeClassificationPanel } from "./intake/IntakeClassificationPanel";
 import { IntakeMetaForm, type IntakeMetaState } from "./intake/IntakeMetaForm";
@@ -54,57 +56,83 @@ function getExtraMissingMaterials(
   return missingMaterials.filter((material) => !representedMissingKeys.has(material));
 }
 
-function inferFileType(fileName: string): ReviewFile["fileType"] {
-  const normalizedName = fileName.toLocaleLowerCase("ko-KR");
+const MIME_BY_EXT: Record<string, string> = {
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  txt: "text/plain",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  csv: "text/csv",
+  html: "text/html"
+};
 
-  if (normalizedName.includes("terms") || normalizedName.includes("약관")) {
-    return "terms";
-  }
-
-  if (
-    normalizedName.includes("rate") ||
-    normalizedName.includes("금리") ||
-    normalizedName.endsWith(".xlsx") ||
-    normalizedName.endsWith(".csv")
-  ) {
-    return "rate_table";
-  }
-
-  if (normalizedName.includes("checklist") || normalizedName.includes("체크")) {
-    return "checklist";
-  }
-
-  if (
-    normalizedName.includes("description") ||
-    normalizedName.includes("설명") ||
-    normalizedName.includes("t&c")
-  ) {
-    return "product_description";
-  }
-
-  if (normalizedName.includes("copy") || normalizedName.includes("카피")) {
-    return "copy_draft";
-  }
-
-  return "promotional_creative";
+function mimeForName(name: string): string {
+  const ext = name.toLowerCase().split(".").pop() ?? "";
+  return MIME_BY_EXT[ext] ?? "application/octet-stream";
 }
 
-function buildLocalFilePreview(files: File[]): ReviewFile[] {
-  return files.map((file, index) => ({
-    id: `local-file-${index + 1}`,
-    name: file.name,
-    fileType: inferFileType(file.name),
-    classificationConfidence: 0.82,
-    parseStatus: "pending",
-    contentType: file.type,
-    sizeBytes: file.size
-  }));
+async function buildFilePreview(files: File[]): Promise<ReviewFile[]> {
+  const result: ReviewFile[] = [];
+  let idSeq = 0;
+
+  for (const file of files) {
+    const ext = file.name.toLowerCase().split(".").pop();
+
+    if (ext === "zip") {
+      try {
+        const zip = await JSZip.loadAsync(await file.arrayBuffer());
+        for (const [entryPath, entry] of Object.entries(zip.files)) {
+          if (entry.dir || entryPath.startsWith("__MACOSX/")) continue;
+          const baseName = entryPath.split("/").filter(Boolean).pop() ?? entryPath;
+          const mime = mimeForName(baseName);
+          idSeq += 1;
+          result.push({
+            id: `local-file-${idSeq}`,
+            name: `${file.name}/${entryPath}`,
+            fileType: classifyUploadFile({ name: baseName, type: mime, size: 0 }),
+            classificationConfidence: 0.82,
+            parseStatus: "pending",
+            contentType: mime,
+            sizeBytes: 0
+          });
+        }
+      } catch {
+        idSeq += 1;
+        result.push({
+          id: `local-file-${idSeq}`,
+          name: file.name,
+          fileType: "package_archive",
+          classificationConfidence: 0.82,
+          parseStatus: "pending",
+          contentType: "application/zip",
+          sizeBytes: file.size
+        });
+      }
+    } else {
+      const mime = file.type || mimeForName(file.name);
+      idSeq += 1;
+      result.push({
+        id: `local-file-${idSeq}`,
+        name: file.name,
+        fileType: classifyUploadFile({ name: file.name, type: mime, size: file.size }),
+        classificationConfidence: 0.82,
+        parseStatus: "pending",
+        contentType: mime,
+        sizeBytes: file.size
+      });
+    }
+  }
+
+  return result;
 }
 
 export function SamplePackageSelector(): JSX.Element {
   const roleContext = useRoleContext();
   const [meta, setMeta] = useState<IntakeMetaState>(initialMeta);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [previewFiles, setPreviewFiles] = useState<ReviewFile[]>([]);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [showSubmissionNotice, setShowSubmissionNotice] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -122,8 +150,25 @@ export function SamplePackageSelector(): JSX.Element {
     return () => window.clearTimeout(timeoutId);
   }, [showSubmissionNotice]);
 
-  const localFilePreview = useMemo(() => buildLocalFilePreview(uploadFiles), [uploadFiles]);
-  const classifiedFiles = uploadResult?.files ?? localFilePreview;
+  useEffect(() => {
+    let cancelled = false;
+    const files = uploadFiles;
+
+    const promise =
+      files.length === 0 ? Promise.resolve<ReviewFile[]>([]) : buildFilePreview(files);
+
+    void promise.then((rows) => {
+      if (!cancelled) {
+        setPreviewFiles(rows);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [uploadFiles]);
+
+  const classifiedFiles = uploadResult?.files ?? previewFiles;
   const activeProductType = uploadResult?.reviewCase.productType ?? meta.productType;
   const materialRows = activeProductType
     ? getRequiredMaterialRows({
@@ -243,7 +288,10 @@ export function SamplePackageSelector(): JSX.Element {
         </section>
 
         <aside className="intake-side-column">
-          <IntakeClassificationPanel files={classifiedFiles} />
+          <IntakeClassificationPanel
+            files={classifiedFiles}
+            isLoading={!uploadResult && uploadFiles.length > 0 && previewFiles.length === 0}
+          />
           <IntakeRequiredMaterialsPanel
             rows={missingMaterialRows}
             extraMissingMaterials={extraMissingMaterials}
