@@ -3141,20 +3141,17 @@ a.review-table__row:hover {
 
 .intake-title-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(440px, 0.85fr);
-  align-items: end;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
   min-height: 88px;
   gap: 24px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
 }
 
-.intake-title-row > :first-child {
-  align-self: center;
-}
-
 .intake-title-row > :last-child {
-  padding-left: 24px;
+  justify-self: end;
+  margin-left: auto;
 }
 
 .intake-title-row h2 {
@@ -4227,9 +4224,11 @@ a.review-table__row:hover {
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
+  border: 1.5px solid transparent;
   background: var(--surface-muted);
   color: var(--muted);
   font-size: var(--font-size-sm);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 .stepper__index {
   width: 22px;
@@ -4242,10 +4241,13 @@ a.review-table__row:hover {
   color: var(--surface);
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-xs);
+  transition: background 0.2s;
 }
 .stepper li[data-status="active"] {
   background: var(--primary-soft);
   color: var(--primary-strong);
+  border-color: var(--primary);
+  font-weight: var(--font-weight-semibold);
 }
 .stepper li[data-status="active"] .stepper__index {
   background: var(--primary);
@@ -4254,6 +4256,7 @@ a.review-table__row:hover {
 .stepper li[data-status="done"] {
   background: var(--tone-verified-bg);
   color: var(--tone-verified);
+  border-color: var(--tone-verified);
 }
 .stepper li[data-status="done"] .stepper__index {
   background: var(--tone-verified);
@@ -8735,8 +8738,8 @@ body:has(.landing-page)::before {
 
 .intake-title-row {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(440px, 0.85fr);
-  align-items: end;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: center;
   gap: 24px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
