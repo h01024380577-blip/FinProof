@@ -2,6 +2,16 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SamplePackageSelector } from "./SamplePackageSelector";
 
+function depositRequiredFiles(): File[] {
+  return [
+    new File(["poster"], "real-deposit-poster.png", { type: "image/png" }),
+    new File(["copy"], "deposit-copy.txt", { type: "text/plain" }),
+    new File(["desc"], "deposit-description.txt", { type: "text/plain" }),
+    new File(["rate"], "deposit-rate.csv", { type: "text/csv" }),
+    new File(["checklist"], "deposit-checklist.txt", { type: "text/plain" })
+  ];
+}
+
 describe("SamplePackageSelector", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -35,7 +45,7 @@ describe("SamplePackageSelector", () => {
       screen.getByLabelText("심의 요청 제목")
     );
     expect(screen.getByLabelText("계열사")).toHaveValue("");
-    expect(screen.getByRole("option", { name: "계열사를 선택하세요" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("예: 하나은행")).toBe(screen.getByLabelText("계열사"));
     expect(screen.getByLabelText("요청 부서")).toHaveValue("");
     expect(screen.getByPlaceholderText("예: 디지털마케팅팀")).toBe(
       screen.getByLabelText("요청 부서")
@@ -80,7 +90,7 @@ describe("SamplePackageSelector", () => {
     render(<SamplePackageSelector />);
 
     await user.type(screen.getByLabelText("심의 요청 제목"), "실제 업로드 적금 홍보물");
-    await user.selectOptions(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("계열사"), "광주은행");
     await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
     await user.selectOptions(screen.getByLabelText("상품군"), "deposit");
     await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
@@ -90,7 +100,7 @@ describe("SamplePackageSelector", () => {
       screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
         selector: "input"
       }),
-      new File(["poster"], "real-deposit-poster.png", { type: "image/png" })
+      depositRequiredFiles()
     );
     await user.click(screen.getByRole("button", { name: "심의 요청 제출" }));
 
@@ -121,7 +131,7 @@ describe("SamplePackageSelector", () => {
     render(<SamplePackageSelector />);
 
     await user.type(screen.getByLabelText("심의 요청 제목"), "실제 업로드 적금 홍보물");
-    await user.selectOptions(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("계열사"), "광주은행");
     await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
     await user.selectOptions(screen.getByLabelText("상품군"), "deposit");
     await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
@@ -129,7 +139,7 @@ describe("SamplePackageSelector", () => {
       screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
         selector: "input"
       }),
-      new File(["poster"], "real-deposit-poster.png", { type: "image/png" })
+      depositRequiredFiles()
     );
     await user.click(screen.getByRole("button", { name: "심의 요청 제출" }));
 
@@ -159,7 +169,7 @@ describe("SamplePackageSelector", () => {
     render(<SamplePackageSelector />);
 
     await user.type(screen.getByLabelText("심의 요청 제목"), "실제 업로드 적금 홍보물");
-    await user.selectOptions(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("계열사"), "광주은행");
     await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
     await user.selectOptions(screen.getByLabelText("상품군"), "deposit");
     await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
@@ -167,7 +177,7 @@ describe("SamplePackageSelector", () => {
       screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
         selector: "input"
       }),
-      new File(["poster"], "real-deposit-poster.png", { type: "image/png" })
+      depositRequiredFiles()
     );
 
     vi.spyOn(window, "setTimeout").mockImplementation((handler) => {
@@ -222,6 +232,40 @@ describe("SamplePackageSelector", () => {
 
     expect(screen.getByText("지원하지 않는 파일 형식입니다: malware.pdf")).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks submission when required materials for the product type are missing", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SamplePackageSelector />);
+
+    await user.type(screen.getByLabelText("심의 요청 제목"), "예금 홍보물 심의");
+    await user.type(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
+    await user.selectOptions(screen.getByLabelText("상품군"), "deposit");
+    await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
+    await user.upload(
+      screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
+        selector: "input"
+      }),
+      new File(["poster"], "real-deposit-poster.png", { type: "image/png" })
+    );
+
+    expect(screen.getByRole("button", { name: "심의 요청 제출" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "심의 요청 제출" }));
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await user.upload(
+      screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
+        selector: "input"
+      }),
+      depositRequiredFiles()
+    );
+
+    expect(screen.getByRole("button", { name: "심의 요청 제출" })).toBeEnabled();
   });
 
   it("blocks too many real files before calling the API", async () => {

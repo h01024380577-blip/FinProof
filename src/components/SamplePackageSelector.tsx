@@ -159,6 +159,15 @@ export function SamplePackageSelector(): JSX.Element {
       return;
     }
 
+    if (missingMaterialRows.length > 0) {
+      setUploadError(
+        `필수 심의 자료가 누락되었습니다: ${missingMaterialRows
+          .map((row) => row.label)
+          .join(", ")}. 누락 자료를 보완한 뒤 제출해 주세요.`
+      );
+      return;
+    }
+
     setUploadError(null);
 
     const formData = new FormData();
@@ -240,7 +249,9 @@ export function SamplePackageSelector(): JSX.Element {
             extraMissingMaterials={extraMissingMaterials}
           >
             <p className="intake-gate-note">
-              Reviewer가 분석 시작 전 보완 요청 또는 제한적 분석 여부를 판단합니다.
+              {missingMaterialRows.length > 0
+                ? "필수 심의 자료가 모두 갖춰져야 심의 요청을 제출할 수 있습니다."
+                : "Reviewer가 분석 시작 전 보완 요청 또는 제한적 분석 여부를 판단합니다."}
             </p>
           </IntakeRequiredMaterialsPanel>
         </aside>
@@ -250,7 +261,7 @@ export function SamplePackageSelector(): JSX.Element {
             <button
               className="button button--primary upload-submit"
               type="submit"
-              disabled={isUploading}
+              disabled={isUploading || missingMaterialRows.length > 0}
             >
               {isUploading ? (
                 <>
