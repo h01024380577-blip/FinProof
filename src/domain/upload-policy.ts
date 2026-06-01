@@ -128,12 +128,18 @@ export function classifyUploadFile(file: UploadFileDescriptor): ReviewFile["file
     normalizedName.includes("poster") ||
     normalizedName.includes("banner") ||
     normalizedName.includes("creative") ||
+    normalizedName.includes("홍보물") ||
+    normalizedName.includes("시안") ||
     contentType.startsWith("image/")
   ) {
     return "promotional_creative";
   }
 
-  if (normalizedName.includes("copy") || normalizedName.includes("draft")) {
+  if (
+    normalizedName.includes("copy") ||
+    normalizedName.includes("draft") ||
+    normalizedName.includes("카피")
+  ) {
     return "copy_draft";
   }
 
