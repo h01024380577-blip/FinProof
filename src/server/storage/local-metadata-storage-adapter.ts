@@ -84,14 +84,18 @@ export function createLocalMetadataStorageAdapter({
 
     async getFileBody(storageKey: string): Promise<Uint8Array | undefined> {
       const targetPath = storagePath(rootDir, storageKey);
+      console.log(`[StorageAdapter] getFileBody key=${storageKey} rootDir=${rootDir} path=${targetPath}`);
 
       if (!targetPath) {
         return undefined;
       }
 
       try {
-        return Uint8Array.from(await readFile(targetPath));
+        const data = await readFile(targetPath);
+        console.log(`[StorageAdapter] read OK size=${data.length}`);
+        return Uint8Array.from(data);
       } catch (error) {
+        console.log(`[StorageAdapter] read error code=${(error as any)?.code} path=${targetPath}`);
         if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
           return undefined;
         }
