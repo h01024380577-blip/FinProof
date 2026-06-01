@@ -44,11 +44,18 @@ export function createAnalysisWorker(deps: AnalysisWorkerDeps = {}) {
 
   return {
     async runOnce(input: RunOnceInput): Promise<RunOnceResult> {
-      const claimed = await store.claimNextAnalysisJob(input.tenantId, input.workerId);
+      let claimed;
+      try {
+        claimed = await store.claimNextAnalysisJob(input.tenantId, input.workerId);
+      } catch (claimError) {
+        console.error(`[Worker] claimNextAnalysisJob threw:`, claimError);
+        return { processed: false };
+      }
 
       if (!claimed) {
         return { processed: false };
       }
+      console.log(`[Worker] claimed job=${claimed.id} case=${claimed.reviewCaseId}`);
 
       const scope = workerScope(input);
       let artifacts;

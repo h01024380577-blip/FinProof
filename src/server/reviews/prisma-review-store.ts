@@ -2130,19 +2130,25 @@ export function createPrismaReviewStore(): ReviewStore {
         return undefined;
       }
 
-      const [job, review] = await prisma.$transaction([
-        prisma.analysisJob.findUniqueOrThrow({
-          where: { id: queued.id }
-        }),
-        prisma.reviewCase.update({
-          where: { id: queued.reviewCaseId },
-          data: {
-            status: "analysis_in_progress",
-            analysisStartedAt: now
-          },
-          include: reviewInclude
-        })
-      ]);
+      let job, review;
+      try {
+        [job, review] = await prisma.$transaction([
+          prisma.analysisJob.findUniqueOrThrow({
+            where: { id: queued.id }
+          }),
+          prisma.reviewCase.update({
+            where: { id: queued.reviewCaseId },
+            data: {
+              status: "analysis_in_progress",
+              analysisStartedAt: now
+            },
+            include: reviewInclude
+          })
+        ]);
+      } catch (txError) {
+        console.error(`[claimNextAnalysisJob] $transaction failed for job=${queued.id}:`, txError);
+        throw txError;
+      }
 
       return {
         ...toAnalysisJob(job),
@@ -2421,62 +2427,55 @@ export function createPrismaReviewStore(): ReviewStore {
             });
           }
 
-          if (review.issues.length === 0) {
-            for (const [index, finding] of findings.entries()) {
-              const issueId = `issue-${input.reviewCaseId}-${String(index + 1).padStart(3, "0")}`;
-              const findingId = `finding-${input.reviewCaseId}-${input.jobId}-${String(
-                index + 1
-              ).padStart(3, "0")}`;
-              const issueData = {
-                issueType: finding.issueType,
-                riskLevel: finding.riskLevel,
-                title: finding.title,
-                targetText: finding.targetText,
-                targetBbox: finding.targetBbox,
-                targetFileId:
-                  finding.evidence[0]?.sourceFileId &&
-                  reviewFileIds.has(finding.evidence[0].sourceFileId)
-                    ? finding.evidence[0].sourceFileId
-                    : undefined,
-                confidence: finding.confidence,
-                agentFindingId: findingId,
-                sourceAgents: [finding.agentType],
-                suggestedAction: finding.suggestedAction,
-                status: "open" as const,
-                description: finding.description,
-                suggestedCopy: finding.suggestedCopy
-              };
+          await tx.evidence.deleteMany({ where: { issue: { reviewCaseId: input.reviewCaseId } } });
+          await tx.reviewIssue.deleteMany({ where: { reviewCaseId: input.reviewCaseId } });
 
-              await tx.evidence.deleteMany({ where: { issueId } });
-              await tx.reviewIssue.upsert({
-                where: { id: issueId },
-                create: {
-                  id: issueId,
-                  reviewCaseId: input.reviewCaseId,
-                  ...issueData
-                },
-                update: issueData
-              });
-              const evidenceRows = evidenceCreateInput(
-                input.reviewCaseId,
-                issueId,
-                finding,
-                allowedChunks
-              );
+          for (const [index, finding] of findings.entries()) {
+            const issueId = `issue-${input.reviewCaseId}-${String(index + 1).padStart(3, "0")}`;
+            const findingId = `finding-${input.reviewCaseId}-${input.jobId}-${String(
+              index + 1
+            ).padStart(3, "0")}`;
+            const issueData = {
+              issueType: finding.issueType,
+              riskLevel: finding.riskLevel,
+              title: finding.title,
+              targetText: finding.targetText,
+              targetBbox: finding.targetBbox,
+              targetFileId:
+                finding.evidence[0]?.sourceFileId &&
+                reviewFileIds.has(finding.evidence[0].sourceFileId)
+                  ? finding.evidence[0].sourceFileId
+                  : undefined,
+              confidence: finding.confidence,
+              agentFindingId: findingId,
+              sourceAgents: [finding.agentType],
+              suggestedAction: finding.suggestedAction,
+              status: "open" as const,
+              description: finding.description,
+              suggestedCopy: finding.suggestedCopy
+            };
 
-              for (const evidence of evidenceRows) {
-                await tx.evidence.upsert({
-                  where: { id: evidence.id },
-                  create: {
-                    issueId,
-                    ...evidence
-                  },
-                  update: {
-                    issueId,
-                    ...evidence
-                  }
-                });
+            await tx.reviewIssue.create({
+              data: {
+                id: issueId,
+                reviewCaseId: input.reviewCaseId,
+                ...issueData
               }
+            });
+            const evidenceRows = evidenceCreateInput(
+              input.reviewCaseId,
+              issueId,
+              finding,
+              allowedChunks
+            );
+
+            for (const evidence of evidenceRows) {
+              await tx.evidence.create({
+                data: {
+                  issueId,
+                  ...evidence
+                }
+              });
             }
           }
 
