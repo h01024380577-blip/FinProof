@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="sidebar">
         <Link className="brand brand--wordmark" href={defaultHref} aria-label="FinProof home">
           <span className="brand__mark" aria-hidden="true">
-            <FinProofMark size={28} />
+            <FinProofMark size={32} />
           </span>
           <span>
             <strong>FinProof</strong>
