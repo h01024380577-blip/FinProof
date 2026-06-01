@@ -93,6 +93,12 @@ describe("RegulatoryWatchDashboard", () => {
     expect(sectionSummary?.textContent).toContain("\n4. 금융소비자");
     expect(sectionSummary?.textContent).toContain("\n<개정 2025. 10. 1.>");
     expect(sectionSummary?.textContent).toContain("\n제16조");
+    expect(document.querySelector(".regulatory-table--sources")).toHaveClass(
+      "regulatory-scroll-region--sources"
+    );
+    expect(document.querySelector(".regulatory-change-list")).toHaveClass(
+      "regulatory-scroll-region--changes"
+    );
   });
 
   it("tracks registered knowledge document changes from the dashboard", async () => {

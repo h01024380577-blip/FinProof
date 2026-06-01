@@ -278,7 +278,10 @@ export function RegulatoryWatchDashboard(): JSX.Element {
             <strong>{sources.length}건</strong>
           </div>
 
-          <div className="regulatory-table regulatory-table--sources" role="table">
+          <div
+            className="regulatory-table regulatory-table--sources regulatory-scroll-region--sources"
+            role="table"
+          >
             <div className="regulatory-table__row regulatory-table__row--head" role="row">
               <span role="columnheader">소스</span>
               <span role="columnheader">유형</span>
@@ -313,7 +316,7 @@ export function RegulatoryWatchDashboard(): JSX.Element {
             <strong>{changeSets.length}건</strong>
           </div>
 
-          <div className="regulatory-change-list">
+          <div className="regulatory-change-list regulatory-scroll-region--changes">
             {changeSets.length === 0 ? (
               <div className="regulatory-empty">최근 감지된 변경이 없습니다.</div>
             ) : (

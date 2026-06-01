@@ -3829,6 +3829,19 @@ a.review-table__row:hover {
   border-radius: var(--radius-md);
 }
 
+.regulatory-scroll-region--sources {
+  max-height: min(520px, 58vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.regulatory-scroll-region--changes {
+  max-height: min(760px, 78vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
 .regulatory-table__row {
   display: grid;
   min-width: 760px;
@@ -3875,6 +3888,9 @@ a.review-table__row:hover {
 }
 
 .regulatory-table__row--head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background: var(--surface-subtle);
 }
 
