@@ -2326,6 +2326,21 @@ a.review-table__row:hover {
   padding: 88px 52px 42px;
 }
 
+.poster--uploaded {
+  width: 480px;
+  min-height: unset;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.poster__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
 .viewer-toolbar {
   flex-shrink: 0;
   justify-content: center;

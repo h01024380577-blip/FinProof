@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
-import Image from "next/image";
 import { LoaderCircle, Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import type { ReviewIssue } from "@/domain/types";
 
@@ -170,13 +169,12 @@ export function CreativeViewer({
             </div>
           ) : creativeImage ? (
             <div className="poster poster--uploaded" data-source="uploaded">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 className="poster__image"
                 src={creativeImage.src}
                 alt={`${creativeImage.alt} 실제 심의자료 포스터`}
-                fill
-                sizes="(max-width: 1200px) 100vw, 48vw"
-                unoptimized
+                draggable={false}
               />
               <HighlightBoxes
                 issues={issues}
