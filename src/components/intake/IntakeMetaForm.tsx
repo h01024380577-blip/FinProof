@@ -43,18 +43,12 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
 
       <label className="intake-field">
         <span>계열사 *</span>
-        <select
+        <input
           aria-label="계열사"
+          placeholder="예: 하나은행"
           value={state.affiliate}
           onChange={(event) => patch({ affiliate: event.target.value })}
-        >
-          <option value="" disabled>
-            계열사를 선택하세요
-          </option>
-          <option value="광주은행">광주은행</option>
-          <option value="JB금융그룹">JB금융그룹</option>
-          <option value="전북은행">전북은행</option>
-        </select>
+        />
       </label>
 
       <label className="intake-field">
