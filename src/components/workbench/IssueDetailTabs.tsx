@@ -1,6 +1,7 @@
 "use client";
 
 import type { JSX } from "react";
+import { LoaderCircle } from "lucide-react";
 import { Tabs } from "@/components/ui";
 import { RiskBadge } from "@/components/Badges";
 import { riskLabels } from "@/domain/reviews";
@@ -173,7 +174,14 @@ function OpinionPanel({
         disabled={!canMutate || isSavingDecision}
         onClick={onSaveReviewerDecision}
       >
-        {isSavingDecision ? "저장 중" : "위험도 변경"}
+        {isSavingDecision ? (
+          <>
+            <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
+            저장 중
+          </>
+        ) : (
+          "위험도 변경"
+        )}
       </button>
 
       {savedDecision ? (

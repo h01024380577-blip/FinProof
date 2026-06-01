@@ -21,6 +21,19 @@ describe("KnowledgeDocumentRegistry", () => {
     vi.restoreAllMocks();
   });
 
+  it("shows a spinner while loading registered knowledge documents", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+
+    render(<KnowledgeDocumentRegistry />);
+
+    const loadingMessage = screen.getByText("등록된 지식문서를 불러오는 중입니다.");
+    expect(loadingMessage).toBeInTheDocument();
+    expect(
+      loadingMessage.closest(".knowledge-empty")?.querySelector(".action-spinner")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("아직 등록된 지식문서가 없습니다.")).not.toBeInTheDocument();
+  });
+
   it("registers a knowledge document attachment through the backend API", async () => {
     const user = userEvent.setup();
     const fetchMock = vi

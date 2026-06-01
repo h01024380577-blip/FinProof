@@ -83,6 +83,7 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
   const [effectiveFrom, setEffectiveFrom] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingDocumentAction, setPendingDocumentAction] = useState<{
     documentId: string;
@@ -95,19 +96,25 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
     let mounted = true;
 
     async function loadDocuments() {
-      const response = await fetch("/api/v1/knowledge-documents");
-      const body = (await response.json()) as KnowledgeDocumentResponse;
+      try {
+        const response = await fetch("/api/v1/knowledge-documents");
+        const body = (await response.json()) as KnowledgeDocumentResponse;
 
-      if (mounted) {
-        setDocuments(body.documents ?? []);
+        if (mounted) {
+          setDocuments(body.documents ?? []);
+        }
+      } catch {
+        if (mounted) {
+          setStatus("지식문서 목록을 불러오지 못했습니다.");
+        }
+      } finally {
+        if (mounted) {
+          setIsLoadingDocuments(false);
+        }
       }
     }
 
-    void loadDocuments().catch(() => {
-      if (mounted) {
-        setStatus("지식문서 목록을 불러오지 못했습니다.");
-      }
-    });
+    void loadDocuments();
 
     return () => {
       mounted = false;
@@ -360,8 +367,9 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
         </form>
 
         <section
-          className="knowledge-list"
+          className={`knowledge-list${documents.length > 6 ? " knowledge-list--bounded" : ""}`}
           aria-label="등록된 지식문서"
+          tabIndex={documents.length > 6 ? 0 : undefined}
         >
           <div className="knowledge-panel__header knowledge-panel__header--list">
             <div>
@@ -371,7 +379,12 @@ export function KnowledgeDocumentRegistry(): JSX.Element {
             <strong>{registeredCount}건</strong>
           </div>
 
-          {documents.length === 0 ? (
+          {isLoadingDocuments ? (
+            <div className="knowledge-empty" role="status" aria-label="등록된 지식문서 로딩">
+              <LoaderCircle className="action-spinner" size={22} aria-hidden="true" />
+              <span>등록된 지식문서를 불러오는 중입니다.</span>
+            </div>
+          ) : documents.length === 0 ? (
             <div className="knowledge-empty">
               <ShieldCheck size={22} aria-hidden="true" />
               <span>아직 등록된 지식문서가 없습니다.</span>

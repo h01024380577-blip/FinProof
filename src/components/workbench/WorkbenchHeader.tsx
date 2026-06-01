@@ -1,7 +1,7 @@
 "use client";
 
 import type { JSX } from "react";
-import { AlertTriangle, CircleCheck, CircleX } from "lucide-react";
+import { AlertTriangle, CircleCheck, CircleX, LoaderCircle } from "lucide-react";
 import type { ReviewCase, ReviewIssue } from "@/domain/types";
 
 export type FinalDecisionAction = Extract<
@@ -71,7 +71,11 @@ export function WorkbenchHeader({
           disabled={finalDecisionDisabled}
           onClick={() => onFinalizeReviewCase("approve")}
         >
-          <CircleCheck size={16} aria-hidden="true" />
+          {isFinalizingReview ? (
+            <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
+          ) : (
+            <CircleCheck size={16} aria-hidden="true" />
+          )}
           {isFinalizingReview ? "처리 중" : "승인"}
         </button>
         <button
@@ -81,7 +85,11 @@ export function WorkbenchHeader({
           disabled={finalDecisionDisabled}
           onClick={() => onFinalizeReviewCase("reject")}
         >
-          <CircleX size={16} aria-hidden="true" />
+          {isFinalizingReview ? (
+            <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
+          ) : (
+            <CircleX size={16} aria-hidden="true" />
+          )}
           {isFinalizingReview ? "처리 중" : "반려"}
         </button>
       </div>

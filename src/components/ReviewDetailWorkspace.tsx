@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Download, FilePenLine, MessageCircle, Save, Send, X } from "lucide-react";
+import { Download, FilePenLine, LoaderCircle, MessageCircle, Save, Send, X } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { productLabels, riskLabels, statusLabels } from "@/domain/reviews";
@@ -878,7 +878,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
           aria-label="질문 보내기"
           disabled={!selectedIssue || isAskingQuestion || question.trim().length === 0}
         >
-          <Send size={17} aria-hidden="true" />
+          {isAskingQuestion ? (
+            <LoaderCircle className="action-spinner" size={17} aria-hidden="true" />
+          ) : (
+            <Send size={17} aria-hidden="true" />
+          )}
         </button>
       </form>
     </div>
@@ -903,7 +907,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             disabled={!reviewerCanMutate || isSavingDraft}
             onClick={saveDraftVersion}
           >
-            <Save size={18} aria-hidden="true" />
+            {isSavingDraft ? (
+              <LoaderCircle className="action-spinner" size={18} aria-hidden="true" />
+            ) : (
+              <Save size={18} aria-hidden="true" />
+            )}
           </button>
           <button
             className="icon-button"
@@ -913,7 +921,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             disabled={!reviewerCanMutate || isGeneratingReport}
             onClick={generateReportDownload}
           >
-            <Download size={18} aria-hidden="true" />
+            {isGeneratingReport ? (
+              <LoaderCircle className="action-spinner" size={18} aria-hidden="true" />
+            ) : (
+              <Download size={18} aria-hidden="true" />
+            )}
           </button>
           <button
             className="button button--primary"
@@ -922,7 +934,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             disabled={!reviewerCanMutate || isGeneratingDraft}
             onClick={generateDraft}
           >
-            <FilePenLine size={18} aria-hidden="true" />
+            {isGeneratingDraft ? (
+              <LoaderCircle className="action-spinner" size={18} aria-hidden="true" />
+            ) : (
+              <FilePenLine size={18} aria-hidden="true" />
+            )}
             {isGeneratingDraft ? "생성 중" : "초안 생성"}
           </button>
         </div>

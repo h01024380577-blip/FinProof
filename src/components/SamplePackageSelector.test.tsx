@@ -112,6 +112,32 @@ describe("SamplePackageSelector", () => {
     expect(screen.queryByRole("button", { name: "다른 요청 작성" })).not.toBeInTheDocument();
   });
 
+  it("shows a spinner while submitting a new review request", async () => {
+    const user = userEvent.setup();
+    const uploadRequest = new Promise(() => undefined);
+    const fetchMock = vi.fn().mockReturnValueOnce(uploadRequest);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SamplePackageSelector />);
+
+    await user.type(screen.getByLabelText("심의 요청 제목"), "실제 업로드 적금 홍보물");
+    await user.selectOptions(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
+    await user.selectOptions(screen.getByLabelText("상품군"), "deposit");
+    await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
+    await user.upload(
+      screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
+        selector: "input"
+      }),
+      new File(["poster"], "real-deposit-poster.png", { type: "image/png" })
+    );
+    await user.click(screen.getByRole("button", { name: "심의 요청 제출" }));
+
+    const pendingButton = await screen.findByRole("button", { name: "제출 중" });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton.querySelector(".action-spinner")).toBeInTheDocument();
+  });
+
   it("places the completion notice above metadata and hides it automatically", async () => {
     const user = userEvent.setup();
     let hideNotice: (() => void) | undefined;

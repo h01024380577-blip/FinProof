@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useState, type JSX } from "react";
+import { LoaderCircle } from "lucide-react";
 import { getRequiredMaterialRows, type RequiredMaterialRow } from "@/domain/intake";
 import type { ProductType, ReviewFile } from "@/domain/types";
 import { IntakeClassificationPanel } from "./intake/IntakeClassificationPanel";
@@ -251,7 +252,14 @@ export function SamplePackageSelector(): JSX.Element {
               type="submit"
               disabled={isUploading}
             >
-              {isUploading ? "제출 중" : "심의 요청 제출"}
+              {isUploading ? (
+                <>
+                  <LoaderCircle className="action-spinner" size={17} aria-hidden="true" />
+                  제출 중
+                </>
+              ) : (
+                "심의 요청 제출"
+              )}
             </button>
           </div>
         ) : null}

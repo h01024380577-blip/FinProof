@@ -91,6 +91,51 @@ Sub-agents (`review-subagents.ts`) split domain compliance checks; the complianc
 
 `src/server/knowledge/knowledge-ingestion.ts` chunks an approved document, embeds chunks via the configured embedding provider, and writes them via `replaceKnowledgeDocumentChunks` on the store. Only **approved** documents are searchable through `searchKnowledgeEvidence`; unapproving via the API drops them from retrieval. Case-history evidence (prior approved cases) is retrieved through the separate `searchCaseHistoryEvidence` path.
 
+### Multilingual analysis
+
+`src/server/analysis/multilingual.ts` adds `en | ja | zh` language detection to extracted documents. `multilingual-risk-team.ts` runs a parallel sub-agent team that produces `LocalizedRiskFinding`s — expression-level and compliance-level risks per language segment — which are then folded into `ReviewIssue`s by the main pipeline.
+
+### API surface
+
+All HTTP endpoints live under `src/app/api/v1/`. Main resource groups:
+
+| Path prefix | Purpose |
+|---|---|
+| `review-cases/` | CRUD + status transitions + analysis start/poll |
+| `knowledge-documents/` | Upload, approve/unapprove, delete corpus docs |
+| `chat/` | Streaming chat against a case |
+| `issues/` | Read/update findings on a case |
+| `case-library/` | Search past approved cases (case-history RAG) |
+| `ops/` | Readiness probe, worker health |
+| `sample-packages/` | Demo-only package seeds (needs `FINPROOF_ENABLE_SAMPLE_DATA=true`) |
+
+`src/proxy.ts` is the Next.js middleware entry point — it verifies JWT bearer tokens (jwt mode) and passes through in demo mode.
+
+### UI component organization
+
+`src/components/` is split into feature areas rather than type:
+
+- `workbench/` — review decision UI: `IssueList`, `IssueDetailTabs`, `CreativeViewer`, `WorkbenchDrawer`, `WorkbenchHeader`
+- `intake/` — submission wizard: `IntakeStepper`, `IntakeMetaForm`, `IntakeUploadZone`, `IntakeClassificationPanel`, `IntakeRequiredMaterialsPanel`
+- `queue/` — dashboard list: `QueueTable`, `QueueFilters`, `QueueMetrics`
+- `ui/` — shared primitives: `DropZone`, `FilterBar`, `Stepper`, `Tabs`, `KpiCard`
+- Top-level: `AppShell`, `ReviewDetailWorkspace`, `ReviewDetailLoader`, `ReviewQueue`, `KnowledgeDocumentRegistry`, `RoleSwitcher`, `SamplePackageSelector`
+
+### Key environment variables
+
+`.env.example` at repo root is the canonical reference. The critical knobs for local vs production:
+
+| Variable | Local default | Production |
+|---|---|---|
+| `FINPROOF_REVIEW_STORE` | `mock` | `prisma` |
+| `FINPROOF_AUTH_MODE` | `demo` | `jwt` |
+| `FINPROOF_ANALYSIS_EXECUTION_MODE` | `inline` | `queued` |
+| `FINPROOF_MODEL_PROVIDER` | `deterministic` | `router` |
+| `FINPROOF_OCR_PROVIDER` | `deterministic` | `gemini` or `http` |
+| `FINPROOF_RAG_PROVIDER` | `deterministic` | `postgres` |
+| `FINPROOF_STORAGE_ADAPTER` | `local-metadata` | `s3` |
+| `FINPROOF_ENABLE_SAMPLE_DATA` | `false` | `false` |
+
 ## Conventions
 
 - **Path alias**: `@/*` → `src/*` (works in Next, Vitest, and tsx).

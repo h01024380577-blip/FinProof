@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -20,6 +19,7 @@ import type { RoleId } from "@/domain/types";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { useRoleContext } from "./RoleContext";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { FinProofMark } from "./FinProofMark";
 
 type NavigationItem = {
   href: string;
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="sidebar">
         <Link className="brand brand--wordmark" href={defaultHref} aria-label="FinProof home">
           <span className="brand__mark" aria-hidden="true">
-            <Image src="/finproof-logo.svg" alt="" width={168} height={42} priority />
+            <FinProofMark size={28} />
           </span>
           <span>
             <strong>FinProof</strong>

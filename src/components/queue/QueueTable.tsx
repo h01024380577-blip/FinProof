@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type JSX, type KeyboardEvent } from "react";
-import { Loader2, PlayCircle, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from "react";
+import { Loader2, PlayCircle, Trash2, UserCheck } from "lucide-react";
 import { RiskBadge, StatusBadge } from "@/components/Badges";
 import { statusLabels } from "@/domain/reviews";
 import type { ProductType, ReviewAction, ReviewCase, ReviewSummary, RoleId } from "@/domain/types";
@@ -128,6 +128,76 @@ function ReviewerEditor({
   );
 }
 
+type PendingOpen = {
+  review: ReviewSummary;
+  reviewerName: string;
+};
+
+function ReviewerConfirmToast({
+  pending,
+  onConfirm,
+  onCancel
+}: {
+  pending: PendingOpen;
+  onConfirm: (reviewerName: string) => void;
+  onCancel: () => void;
+}): JSX.Element {
+  const [name, setName] = useState(pending.reviewerName);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  return (
+    <div className="reviewer-confirm-backdrop" role="presentation" onClick={onCancel}>
+      <div
+        className="reviewer-confirm-toast"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reviewer-confirm-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="reviewer-confirm-toast__icon" aria-hidden="true">
+          <UserCheck size={22} />
+        </span>
+        <div className="reviewer-confirm-toast__body">
+          <p id="reviewer-confirm-title" className="reviewer-confirm-toast__title">
+            담당자 확인
+          </p>
+          <p className="reviewer-confirm-toast__sub">{pending.review.title}</p>
+          <input
+            ref={inputRef}
+            className="reviewer-confirm-toast__input"
+            value={name}
+            placeholder="담당자 이름"
+            aria-label="담당자 이름"
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && name.trim()) onConfirm(name.trim());
+              if (e.key === "Escape") onCancel();
+            }}
+          />
+        </div>
+        <div className="reviewer-confirm-toast__actions">
+          <button
+            className="button button--small button--primary"
+            type="button"
+            disabled={!name.trim()}
+            onClick={() => onConfirm(name.trim())}
+          >
+            검토 시작
+          </button>
+          <button className="button button--small" type="button" onClick={onCancel}>
+            취소
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function QueueTable({
   rows,
   activeRole,
@@ -144,6 +214,22 @@ export function QueueTable({
   onStartAnalysis,
   onOpenReview
 }: QueueTableProps): JSX.Element {
+  const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null);
+
+  function handleOpenReviewClick(review: ReviewSummary): void {
+    setPendingOpen({ review, reviewerName: review.reviewer || "" });
+  }
+
+  function handleConfirm(reviewerName: string): void {
+    if (!pendingOpen) return;
+    const reviewId = pendingOpen.review.id;
+    setPendingOpen(null);
+    if (reviewerName !== pendingOpen.review.reviewer && onSaveReviewer) {
+      onSaveReviewer(pendingOpen.review, reviewerName);
+    }
+    onOpenReview(reviewId);
+  }
+
   return (
     <div className="review-table review-table--queue" role="table" aria-label="Review cases">
       <div className="review-table__row review-table__row--head" role="row">
@@ -167,6 +253,14 @@ export function QueueTable({
 
       {!isLoading && rows.length === 0 ? (
         <div className="queue-empty-state">{emptyMessage ?? "아직 심의 요청이 없습니다."}</div>
+      ) : null}
+
+      {pendingOpen ? (
+        <ReviewerConfirmToast
+          pending={pendingOpen}
+          onConfirm={handleConfirm}
+          onCancel={() => setPendingOpen(null)}
+        />
       ) : null}
 
       {rows.map((review) => {
@@ -254,7 +348,7 @@ export function QueueTable({
                 <button
                   className="button button--small button--primary"
                   type="button"
-                  onClick={() => onOpenReview(review.id)}
+                  onClick={() => handleOpenReviewClick(review)}
                 >
                   검토하기
                 </button>

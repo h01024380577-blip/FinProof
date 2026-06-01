@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,6 +11,7 @@ import {
   Radar
 } from "lucide-react";
 import { LandingReveal } from "@/components/LandingReveal";
+import { FinProofMark } from "@/components/FinProofMark";
 
 const capabilityCards = [
   {
@@ -123,14 +123,7 @@ export default function HomePage() {
       <nav className="lp-nav">
         <div className="lp-nav-inner">
           <Link className="lp-brand" href="/" aria-label="FinProof 홈">
-            <Image
-              src="/finproof-mark.svg"
-              alt=""
-              width={18}
-              height={18}
-              priority
-              className="lp-brand-mark"
-            />
+            <FinProofMark size={18} className="lp-brand-mark" />
             <span className="lp-brand-name">FinProof</span>
           </Link>
           <div className="lp-nav-links">
