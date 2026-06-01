@@ -3143,6 +3143,7 @@ a.review-table__row:hover {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(440px, 0.85fr);
   align-items: end;
+  min-height: 88px;
   gap: 24px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
