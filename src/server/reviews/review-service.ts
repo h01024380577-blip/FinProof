@@ -175,7 +175,10 @@ function isDeletableHistoryStatus(status: ReviewStatus): boolean {
 }
 
 export function availableActionsFor(role: RoleId, status: ReviewStatus): ReviewAction[] {
-  if (status === "analysis_waiting" && (role === "reviewer" || role === "compliance_admin")) {
+  if (
+    (status === "submitted" || status === "analysis_waiting") &&
+    (role === "reviewer" || role === "compliance_admin")
+  ) {
     return ["start_analysis"];
   }
 

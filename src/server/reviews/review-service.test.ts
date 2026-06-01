@@ -80,6 +80,7 @@ describe("review service", () => {
   });
 
   it("derives available actions from role and review status", () => {
+    expect(availableActionsFor("reviewer", "submitted")).toEqual(["start_analysis"]);
     expect(availableActionsFor("requester", "analysis_waiting")).toEqual([]);
     expect(availableActionsFor("reviewer", "analysis_waiting")).toEqual(["start_analysis"]);
     expect(availableActionsFor("compliance_admin", "analysis_waiting")).toEqual(["start_analysis"]);
