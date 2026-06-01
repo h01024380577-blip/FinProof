@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useState, type JSX } from "react";
 import { LoaderCircle } from "lucide-react";
 import JSZip from "jszip";
 import { getRequiredMaterialRows, type RequiredMaterialRow } from "@/domain/intake";
-import { classifyUploadFile } from "@/domain/upload-policy";
+import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
 import type { ProductType, ReviewFile } from "@/domain/types";
 import { IntakeClassificationPanel } from "./intake/IntakeClassificationPanel";
 import { IntakeMetaForm, type IntakeMetaState } from "./intake/IntakeMetaForm";
@@ -87,12 +87,13 @@ async function buildFilePreview(files: File[]): Promise<ReviewFile[]> {
           if (entry.dir || entryPath.startsWith("__MACOSX/")) continue;
           const baseName = entryPath.split("/").filter(Boolean).pop() ?? entryPath;
           const mime = mimeForName(baseName);
+          const cls = classifyUploadFileWithConfidence({ name: baseName, type: mime, size: 0 });
           idSeq += 1;
           result.push({
             id: `local-file-${idSeq}`,
             name: `${file.name}/${entryPath}`,
-            fileType: classifyUploadFile({ name: baseName, type: mime, size: 0 }),
-            classificationConfidence: 0.82,
+            fileType: cls.fileType,
+            classificationConfidence: cls.confidence,
             parseStatus: "pending",
             contentType: mime,
             sizeBytes: 0
@@ -104,7 +105,7 @@ async function buildFilePreview(files: File[]): Promise<ReviewFile[]> {
           id: `local-file-${idSeq}`,
           name: file.name,
           fileType: "package_archive",
-          classificationConfidence: 0.82,
+          classificationConfidence: 0.99,
           parseStatus: "pending",
           contentType: "application/zip",
           sizeBytes: file.size
@@ -112,12 +113,13 @@ async function buildFilePreview(files: File[]): Promise<ReviewFile[]> {
       }
     } else {
       const mime = file.type || mimeForName(file.name);
+      const cls = classifyUploadFileWithConfidence({ name: file.name, type: mime, size: file.size });
       idSeq += 1;
       result.push({
         id: `local-file-${idSeq}`,
         name: file.name,
-        fileType: classifyUploadFile({ name: file.name, type: mime, size: file.size }),
-        classificationConfidence: 0.82,
+        fileType: cls.fileType,
+        classificationConfidence: cls.confidence,
         parseStatus: "pending",
         contentType: mime,
         sizeBytes: file.size
