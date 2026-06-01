@@ -208,7 +208,7 @@ describe("review service", () => {
     expect(result).toMatchObject({
       checkedDocumentCount: 1,
       changeSetCount: 1,
-      activated: true
+      activated: false
     });
     expect(sources).toEqual([
       expect.objectContaining({

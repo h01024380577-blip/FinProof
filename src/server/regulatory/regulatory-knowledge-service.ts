@@ -30,6 +30,7 @@ type RunSourceCheckInput = {
   productType?: ProductType;
   mappedChannels?: string[];
   mappedReviewCategories?: string[];
+  activateKnowledgeDocument?: boolean;
 };
 
 type RunSourceCheckResult = {
@@ -332,7 +333,7 @@ export function createRegulatoryKnowledgeService({
               detectedChange.changeType,
               detectedChange.changedSections,
               summaryText,
-              "failed"
+              gateStatus
             )
           )
         );
@@ -347,6 +348,10 @@ export function createRegulatoryKnowledgeService({
         });
 
         if (gateStatus === "failed") {
+          continue;
+        }
+
+        if (input.activateKnowledgeDocument === false) {
           continue;
         }
 

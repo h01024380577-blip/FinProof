@@ -768,7 +768,8 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
           documentType: document.documentType,
           productType: document.productType,
           mappedChannels: ["registered_knowledge_document"],
-          mappedReviewCategories: [document.documentType]
+          mappedReviewCategories: [document.documentType],
+          activateKnowledgeDocument: false
         });
 
         if (result.snapshotCreated) {
