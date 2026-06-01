@@ -193,6 +193,38 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.queryByText("FinProof Bank")).not.toBeInTheDocument();
   });
 
+  it("shows a spinner while an uploaded promotional poster is loading", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    const uploadReview = {
+      ...getReviewCaseById("rc-demo-deposit-001")!,
+      id: "rc-upload-001",
+      title: "실제 업로드 적금 홍보물",
+      promotionalCopy: "실제 업로드 자료 분석 대기",
+      disclosure: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
+      files: [
+        {
+          id: "file-upload-001",
+          name: "real-deposit-poster.png",
+          fileType: "promotional_creative" as const,
+          classificationConfidence: 0.91,
+          parseStatus: "pending" as const,
+          storageProvider: "local" as const,
+          storageKey: "local/rc-upload-001/file-upload-001/real-deposit-poster.png",
+          contentType: "image/png",
+          sizeBytes: 6
+        }
+      ]
+    };
+
+    render(<ReviewDetailWorkspace review={uploadReview} />);
+
+    const loadingStatus = screen.getByRole("status", { name: "홍보 포스터 로딩" });
+    expect(loadingStatus).toHaveTextContent("홍보 포스터를 불러오는 중입니다.");
+    expect(loadingStatus.querySelector(".action-spinner")).toBeInTheDocument();
+    expect(screen.queryByText("FinProof Bank")).not.toBeInTheDocument();
+    expect(screen.queryByText("실제 업로드 자료 분석 대기")).not.toBeInTheDocument();
+  });
+
   it("starts chat with an empty input placeholder instead of a hardcoded example answer", async () => {
     const user = userEvent.setup();
     const { container } = render(

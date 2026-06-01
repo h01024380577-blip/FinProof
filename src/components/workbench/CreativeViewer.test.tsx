@@ -129,14 +129,14 @@ describe("CreativeViewer", () => {
     const viewer = screen.getByLabelText("문서 미리보기");
     const zoomStage = screen.getByTestId("creative-viewer-zoom-stage");
 
-    await user.click(screen.getByRole("button", { name: "전체 화면" }));
+    await user.click(screen.getByRole("button", { name: "페이지 맞추기" }));
 
     expect(requestFullscreen).not.toHaveBeenCalled();
     expect(viewer).toHaveAttribute("data-frame-fit", "true");
     expect(zoomStage).toHaveAttribute("data-frame-fit", "true");
-    expect(screen.getByRole("button", { name: "전체 화면 종료" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "페이지 맞추기 해제" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "전체 화면 종료" }));
+    await user.click(screen.getByRole("button", { name: "페이지 맞추기 해제" }));
 
     expect(viewer).toHaveAttribute("data-frame-fit", "false");
     expect(zoomStage).toHaveAttribute("data-frame-fit", "false");

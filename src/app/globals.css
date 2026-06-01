@@ -2368,6 +2368,22 @@ a.review-table__row:hover {
   line-height: 1.45;
 }
 
+.poster--loading {
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  padding: 42px;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.poster--loading .action-spinner {
+  justify-self: center;
+  color: var(--primary);
+}
+
 .highlight-box {
   position: absolute;
   border: 0;

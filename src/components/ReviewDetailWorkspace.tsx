@@ -351,6 +351,9 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     fileId: string;
     url: string;
   } | null>(null);
+  const [failedUploadedCreativeFileId, setFailedUploadedCreativeFileId] = useState<string | null>(
+    null
+  );
   const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
   const [question, setQuestion] = useState("");
   const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
@@ -396,6 +399,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     uploadedCreativeObject && uploadedCreativeObject.fileId === uploadedCreativeFile?.id
       ? uploadedCreativeObject.url
       : null;
+  const isUploadedCreativeLoading = Boolean(
+    uploadedCreativeFile &&
+      !uploadedCreativeObjectUrl &&
+      failedUploadedCreativeFileId !== uploadedCreativeFile.id
+  );
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -422,17 +430,31 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       review.id
     )}/files/${encodeURIComponent(uploadedCreativeFile.id)}/content`;
 
-    fetch(contentUrl, { headers: roleHeaders })
-      .then((response) => (response.ok ? response.blob() : undefined))
-      .then((blob) => {
-        if (!blob || cancelled) {
+    async function loadUploadedCreative() {
+      try {
+        const response = await fetch(contentUrl, { headers: roleHeaders });
+        const blob = response.ok ? await response.blob() : undefined;
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!blob) {
+          setFailedUploadedCreativeFileId(uploadedCreativeFile.id);
           return;
         }
 
         objectUrl = URL.createObjectURL(blob);
+        setFailedUploadedCreativeFileId(null);
         setUploadedCreativeObject({ fileId: uploadedCreativeFile.id, url: objectUrl });
-      })
-      .catch(() => undefined);
+      } catch {
+        if (!cancelled) {
+          setFailedUploadedCreativeFileId(uploadedCreativeFile.id);
+        }
+      }
+    }
+
+    void loadUploadedCreative();
 
     return () => {
       cancelled = true;
@@ -1005,6 +1027,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
               ? { src: uploadedCreativeObjectUrl, alt: uploadedCreativeFile.name }
               : undefined
           }
+          isCreativeImageLoading={Boolean(uploadedCreativeFile) && isUploadedCreativeLoading}
           issues={review.issues}
           selectedIssueId={selectedIssue?.id}
           onSelectIssue={selectIssue}

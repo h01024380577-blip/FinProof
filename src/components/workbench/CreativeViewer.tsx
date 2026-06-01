@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
 import Image from "next/image";
-import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
+import { LoaderCircle, Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import type { ReviewIssue } from "@/domain/types";
 
 const MIN_ZOOM = 50;
@@ -18,6 +18,7 @@ export type CreativeViewerProps = {
     src: string;
     alt: string;
   };
+  isCreativeImageLoading?: boolean;
   issues: ReviewIssue[];
   selectedIssueId?: string;
   onSelectIssue: (issueId: string) => void;
@@ -61,6 +62,7 @@ export function CreativeViewer({
   copy,
   disclosure,
   creativeImage,
+  isCreativeImageLoading = false,
   issues,
   selectedIssueId,
   onSelectIssue
@@ -83,6 +85,10 @@ export function CreativeViewer({
     if (!isFrameFit) return;
     const el = viewportRef.current;
     if (!el) return;
+    if (typeof ResizeObserver === "undefined") {
+      const timeoutId = window.setTimeout(() => setFitZoom(calcFitZoom()), 0);
+      return () => window.clearTimeout(timeoutId);
+    }
     const ro = new ResizeObserver(() => setFitZoom(calcFitZoom()));
     ro.observe(el);
     return () => ro.disconnect();
@@ -153,7 +159,16 @@ export function CreativeViewer({
           data-frame-fit={isFrameFit}
           style={zoomStageStyle}
         >
-          {creativeImage ? (
+          {isCreativeImageLoading ? (
+            <div
+              className="poster poster--loading"
+              role="status"
+              aria-label="홍보 포스터 로딩"
+            >
+              <LoaderCircle className="action-spinner" size={28} aria-hidden="true" />
+              <span>홍보 포스터를 불러오는 중입니다.</span>
+            </div>
+          ) : creativeImage ? (
             <div className="poster poster--uploaded" data-source="uploaded">
               <Image
                 className="poster__image"
