@@ -11,7 +11,6 @@ import {
   History,
   PlusSquare,
   Settings,
-  ShieldCheck,
   UserCircle,
   type LucideIcon
 } from "lucide-react";
@@ -157,9 +156,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             ))}
           </nav>
-          <div className="topbar__slogan" aria-hidden="true">
-            <ShieldCheck size={15} />
-          </div>
           <div className="topbar__actions">
             <button className="topbar__icon-button" type="button" aria-label="알림" title="알림">
               <Bell size={19} aria-hidden="true" />
