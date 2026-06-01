@@ -186,7 +186,7 @@ describe("review service", () => {
     });
   });
 
-  it("tracks approved registered knowledge documents through the regulatory pipeline", async () => {
+  it("baselines approved knowledge documents and tracks later registered changes", async () => {
     const store = createMockReviewStore();
     const service = createReviewService({ store });
     const { document } = await service.createKnowledgeDocument(reviewerContext, {
@@ -196,17 +196,39 @@ describe("review service", () => {
       title: "예금 광고 내부 기준",
       version: "2026.06",
       effectiveFrom: "2026-06-01",
-      storageKey: "knowledge/deposit-policy.md"
+      sourceText: "최고금리 표현은 조건과 한도를 함께 고지합니다."
     });
 
     await service.approveKnowledgeDocument(reviewerContext, document.id);
+
+    const baselineResult = await service.trackKnowledgeDocumentRegulatoryChanges(reviewerContext);
+
+    expect(baselineResult).toMatchObject({
+      checkedDocumentCount: 1,
+      snapshotCreatedCount: 1,
+      changeSetCount: 0,
+      activated: false
+    });
+    await expect(service.listRegulatoryChangeSets(reviewerContext)).resolves.toEqual([]);
+
+    const { document: updatedDocument } = await service.createKnowledgeDocument(reviewerContext, {
+      id: "knowledge-deposit-policy-202607",
+      documentType: "internal_policy",
+      productType: "deposit",
+      title: "예금 광고 내부 기준",
+      version: "2026.07",
+      effectiveFrom: "2026-07-01",
+      sourceText: "최고금리 표현은 우대 조건과 한도를 같은 화면에 고지합니다."
+    });
+
+    await service.approveKnowledgeDocument(reviewerContext, updatedDocument.id);
 
     const result = await service.trackKnowledgeDocumentRegulatoryChanges(reviewerContext);
     const sources = await service.listRegulatorySources(reviewerContext);
     const changeSets = await service.listRegulatoryChangeSets(reviewerContext);
 
     expect(result).toMatchObject({
-      checkedDocumentCount: 1,
+      checkedDocumentCount: 2,
       changeSetCount: 1,
       activated: false
     });
@@ -219,7 +241,7 @@ describe("review service", () => {
     ]);
     expect(changeSets).toEqual([
       expect.objectContaining({
-        changeType: "created",
+        changeType: "amended",
         mappedProductTypes: ["deposit"],
         qualityGateStatus: "passed"
       })

@@ -426,6 +426,10 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     sourceId: string
   ): Promise<RegulatorySnapshot | undefined>;
+  listLatestRegulatorySnapshots(
+    scope: ReviewStoreScope,
+    sourceIds: string[]
+  ): Promise<Map<string, RegulatorySnapshot>>;
   createRegulatoryChangeSet(
     scope: ReviewStoreScope,
     input: CreateRegulatoryChangeSetInput

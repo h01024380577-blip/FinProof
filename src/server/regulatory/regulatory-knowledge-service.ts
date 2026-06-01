@@ -31,6 +31,7 @@ type RunSourceCheckInput = {
   mappedChannels?: string[];
   mappedReviewCategories?: string[];
   activateKnowledgeDocument?: boolean;
+  baselineOnly?: boolean;
 };
 
 type RunSourceCheckResult = {
@@ -269,6 +270,16 @@ export function createRegulatoryKnowledgeService({
         targetId: snapshot.id,
         afterValue: { sourceId: source.id, contentHash: hash }
       });
+
+      if (input.baselineOnly && !previousSnapshot) {
+        return {
+          sourceId: source.id,
+          snapshotCreated: true,
+          activated: false,
+          changeSetCount: 0,
+          activatedDocumentIds: []
+        };
+      }
 
       const previousSections =
         previousSnapshot && input.previousNormalizedText

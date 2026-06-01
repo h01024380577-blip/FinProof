@@ -716,12 +716,56 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         documentGroups.set(sourceId, group);
       }
 
+      const sourceIds = Array.from(documentGroups.keys());
+      const sourcesById = new Map(
+        (await store.listRegulatorySources(scope))
+          .filter((source) => sourceIds.includes(source.id))
+          .map((source) => [source.id, source])
+      );
+      const latestSnapshotsBySourceId = await store.listLatestRegulatorySnapshots(
+        scope,
+        sourceIds
+      );
+
       for (const [sourceId, groupedDocuments] of documentGroups) {
         const sortedDocuments = sortKnowledgeDocumentsForTracking(groupedDocuments);
         const document = sortedDocuments[sortedDocuments.length - 1];
         const fallbackPreviousDocument = sortedDocuments.at(-2);
 
         if (!document) {
+          continue;
+        }
+
+        let source = sourcesById.get(sourceId);
+
+        if (!source) {
+          try {
+            source = await store.createRegulatorySource(scope, {
+              id: sourceId,
+              sourceType: regulatorySourceTypeForDocument(document),
+              name: document.title,
+              repositoryPath: document.storageKey,
+              pollingSchedule: "manual",
+              trustLevel: regulatoryTrustLevelForDocument(document)
+            });
+          } catch (error) {
+            source = await store.getRegulatorySource(scope, sourceId);
+
+            if (!source) {
+              throw error;
+            }
+          }
+
+          sourcesById.set(source.id, source);
+        }
+
+        sourceCount += 1;
+
+        const latestSnapshot = latestSnapshotsBySourceId.get(source.id);
+        const previousDocumentId = document.supersedesDocumentId ?? fallbackPreviousDocument?.id;
+        const hasComparisonDocument = Boolean(previousDocumentId);
+
+        if (latestSnapshot && !hasComparisonDocument) {
           continue;
         }
 
@@ -732,22 +776,6 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
           continue;
         }
 
-        let source = await store.getRegulatorySource(scope, sourceId);
-
-        if (!source) {
-          source = await store.createRegulatorySource(scope, {
-            id: sourceId,
-            sourceType: regulatorySourceTypeForDocument(document),
-            name: document.title,
-            repositoryPath: document.storageKey,
-            pollingSchedule: "manual",
-            trustLevel: regulatoryTrustLevelForDocument(document)
-          });
-        }
-
-        sourceCount += 1;
-
-        const previousDocumentId = document.supersedesDocumentId ?? fallbackPreviousDocument?.id;
         const previousDocument =
           previousDocumentId === fallbackPreviousDocument?.id ? fallbackPreviousDocument : document;
         let previousChunks: { chunkText: string }[] | undefined;
@@ -769,7 +797,8 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
           productType: document.productType,
           mappedChannels: ["registered_knowledge_document"],
           mappedReviewCategories: [document.documentType],
-          activateKnowledgeDocument: false
+          activateKnowledgeDocument: false,
+          baselineOnly: !latestSnapshot
         });
 
         if (result.snapshotCreated) {

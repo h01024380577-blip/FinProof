@@ -1609,6 +1609,27 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return latestSnapshot ? clone(latestSnapshot) : undefined;
     },
 
+    async listLatestRegulatorySnapshots(scope: ReviewStoreScope, sourceIds) {
+      const requestedSourceIds = new Set(
+        sourceIds.filter((sourceId) => canAccessRegulatorySource(scope, sourceId))
+      );
+      const snapshots = Array.from(regulatorySnapshots.values())
+        .filter(
+          (snapshot) =>
+            snapshot.tenantId === scope.tenantId && requestedSourceIds.has(snapshot.sourceId)
+        )
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+      const latestSnapshots = new Map<string, RegulatorySnapshot>();
+
+      for (const snapshot of snapshots) {
+        if (!latestSnapshots.has(snapshot.sourceId)) {
+          latestSnapshots.set(snapshot.sourceId, clone(snapshot));
+        }
+      }
+
+      return latestSnapshots;
+    },
+
     async createRegulatoryChangeSet(
       scope: ReviewStoreScope,
       input: CreateRegulatoryChangeSetInput

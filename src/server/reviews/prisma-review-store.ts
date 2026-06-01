@@ -1169,6 +1169,30 @@ export function createPrismaReviewStore(): ReviewStore {
       return snapshot ? toRegulatorySnapshot(snapshot) : undefined;
     },
 
+    async listLatestRegulatorySnapshots(scope, sourceIds) {
+      if (sourceIds.length === 0) {
+        return new Map();
+      }
+
+      const snapshots = await prisma.regulatorySnapshot.findMany({
+        where: {
+          tenantId: scope.tenantId,
+          sourceId: { in: sourceIds },
+          source: { tenantId: scope.tenantId }
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }]
+      });
+      const latestSnapshots = new Map<string, RegulatorySnapshot>();
+
+      for (const snapshot of snapshots) {
+        if (!latestSnapshots.has(snapshot.sourceId)) {
+          latestSnapshots.set(snapshot.sourceId, toRegulatorySnapshot(snapshot));
+        }
+      }
+
+      return latestSnapshots;
+    },
+
     async createRegulatoryChangeSet(scope, input: CreateRegulatoryChangeSetInput) {
       const source = await prisma.regulatorySource.findFirst({
         where: { id: input.sourceId, tenantId: scope.tenantId },
