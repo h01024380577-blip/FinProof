@@ -40,10 +40,11 @@ const packageLabels: Record<ProductType, string> = {
   card: "카드 샘플 패키지",
   capital: "캐피탈 샘플 패키지",
   insurance: "보험 샘플 패키지",
-  investment: "투자상품 샘플 패키지"
+  investment: "투자상품 샘플 패키지",
+  image_test: "이미지 테스트 패키지"
 };
 
-const requiredMaterials: Record<"deposit" | "loan", RequiredMaterial[]> = {
+const requiredMaterials: Partial<Record<ProductType, RequiredMaterial[]>> = {
   deposit: [
     { label: "홍보물 시안", fileType: "promotional_creative" },
     { label: "원문 카피", fileType: "copy_draft" },
@@ -58,6 +59,9 @@ const requiredMaterials: Record<"deposit" | "loan", RequiredMaterial[]> = {
     { label: "금리표", fileType: "rate_table" },
     { label: "약관/대출 조건", fileType: "terms" },
     { label: "내부 체크리스트", fileType: "checklist", missingKey: "internal_checklist" }
+  ],
+  image_test: [
+    { label: "홍보 이미지", fileType: "promotional_creative" }
   ]
 };
 
@@ -95,11 +99,13 @@ export function buildSamplePackagePreview(id: string): SamplePackagePreview | un
 export function getRequiredMaterialRows(
   review: Pick<ReviewCase, "productType" | "files">
 ): RequiredMaterialRow[] {
-  if (review.productType !== "deposit" && review.productType !== "loan") {
+  const materials = requiredMaterials[review.productType];
+
+  if (!materials) {
     return [];
   }
 
-  return requiredMaterials[review.productType].map((material) => ({
+  return materials.map((material) => ({
     label: material.label,
     fileType: material.fileType,
     status: review.files.some((file) => file.fileType === material.fileType) ? "present" : "missing"

@@ -34,4 +34,21 @@ describe("sample package intake", () => {
       { label: "내부 체크리스트", fileType: "checklist", status: "present" }
     ]);
   });
+
+  it("requires only a promotional image for the image-only test product type", () => {
+    expect(
+      getRequiredMaterialRows({
+        productType: "image_test",
+        files: [
+          {
+            id: "file-test-poster",
+            name: "poster.png",
+            fileType: "promotional_creative",
+            classificationConfidence: 0.98,
+            parseStatus: "pending"
+          }
+        ]
+      })
+    ).toEqual([{ label: "홍보 이미지", fileType: "promotional_creative", status: "present" }]);
+  });
 });

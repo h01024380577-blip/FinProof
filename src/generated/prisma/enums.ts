@@ -51,7 +51,8 @@ export const ProductType = {
   card: 'card',
   capital: 'capital',
   insurance: 'insurance',
-  investment: 'investment'
+  investment: 'investment',
+  image_test: 'image_test'
 } as const
 
 export type ProductType = (typeof ProductType)[keyof typeof ProductType]

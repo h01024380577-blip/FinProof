@@ -32,6 +32,10 @@ function evidenceCandidateById(
   return artifacts.evidenceCandidates.find((candidate) => candidate.id === evidenceCandidateId);
 }
 
+function isRegisteredKnowledgeEvidence(candidate: RagEvidenceCandidate) {
+  return candidate.sourceType !== "product_doc";
+}
+
 function candidateToEvidence(
   candidate: RagEvidenceCandidate,
   issueId: string,
@@ -40,6 +44,10 @@ function candidateToEvidence(
   return {
     id: `${issueId}-evidence-${String(index + 1).padStart(3, "0")}`,
     sourceType: candidate.sourceType,
+    documentId: candidate.documentId,
+    chunkId: candidate.chunkId,
+    version: candidate.version,
+    effectiveFrom: candidate.effectiveFrom,
     title: candidate.title,
     page: candidate.page,
     section: candidate.section,
@@ -65,7 +73,9 @@ function issueEvidence(
   artifacts: AnalysisArtifacts,
   issueId: string
 ): Evidence[] {
-  const candidate = firstEvidenceCandidate(artifacts);
+  const candidate =
+    artifacts.evidenceCandidates.find(isRegisteredKnowledgeEvidence) ??
+    firstEvidenceCandidate(artifacts);
   const evidence = candidate
     ? candidateToEvidence(candidate, issueId, 0)
     : fallbackEvidence(review, artifacts);

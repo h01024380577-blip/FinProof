@@ -75,6 +75,7 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
           <option value="loan">대출</option>
           <option value="card">카드</option>
           <option value="investment">투자상품</option>
+          <option value="image_test">이미지 테스트</option>
         </select>
       </label>
 

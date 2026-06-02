@@ -101,7 +101,8 @@ function parseProductType(value: FormDataEntryValue | string | null): ProductTyp
     value === "card" ||
     value === "capital" ||
     value === "insurance" ||
-    value === "investment"
+    value === "investment" ||
+    value === "image_test"
   ) {
     return value;
   }

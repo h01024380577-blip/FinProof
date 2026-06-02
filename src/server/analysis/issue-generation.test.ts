@@ -1,4 +1,5 @@
 import { getReviewCaseById } from "@/domain/reviews";
+import type { ReviewCase } from "@/domain/types";
 import type { AnalysisArtifacts } from "./review-analysis-pipeline";
 import { buildAnalysisIssues } from "./issue-generation";
 
@@ -143,5 +144,71 @@ describe("issue generation", () => {
         })
       ])
     );
+  });
+
+  it("prefers registered knowledge evidence when deterministic issues cite their source", () => {
+    const review: ReviewCase = {
+      id: "rc-citation-source-001",
+      title: "금리 포스터 심의",
+      affiliate: "FinProof Bank",
+      productType: "deposit",
+      channelType: ["web"],
+      plannedPublishDate: "2026-06-10",
+      status: "analysis_complete",
+      highestRiskLevel: "info",
+      requester: "마케팅",
+      reviewer: "준법감시",
+      promotionalCopy: "",
+      disclosure: "",
+      productDescription: "",
+      missingMaterials: [],
+      files: [],
+      issues: [],
+      expectedDraft: ""
+    };
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-02T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-poster",
+          fileName: "poster.pdf",
+          text: "누구나 최고 연 5.0%",
+          confidence: 0.94,
+          provider: "gemini-ocr"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "evidence-candidate-poster",
+          sourceType: "product_doc",
+          title: "poster.pdf",
+          quoteSummary: "누구나 최고 연 5.0%",
+          relevanceScore: 0.97,
+          sourceFileId: "file-poster"
+        },
+        {
+          id: "knowledge-evidence-rate-rule",
+          sourceType: "law",
+          documentId: "doc-capital-enforcement",
+          chunkId: "chunk-capital-enforcement-68-5",
+          title: "자본시장법 시행령",
+          section: "제68조 제5항",
+          quoteSummary:
+            "최고 금리와 수익률 광고는 우대 조건, 적용 대상, 제한 사항을 함께 표시해야 합니다.",
+          relevanceScore: 0.88
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    const absoluteIssue = issues.find((candidate) => candidate.issueType === "absolute_claim");
+
+    expect(absoluteIssue?.evidence[0]).toMatchObject({
+      sourceType: "law",
+      documentId: "doc-capital-enforcement",
+      chunkId: "chunk-capital-enforcement-68-5",
+      title: "자본시장법 시행령",
+      section: "제68조 제5항"
+    });
   });
 });

@@ -62,6 +62,60 @@ describe("SamplePackageSelector", () => {
     ).toBe(screen.getByLabelText("요청 메모"));
   });
 
+  it("allows image-only submission for the image test product type", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        reviewCase: {
+          id: "rc-upload-image-test-001",
+          title: "이미지 테스트 심의",
+          productType: "image_test"
+        },
+        files: [
+          {
+            id: "file-upload-image-test-001",
+            name: "poster-only.png",
+            fileType: "promotional_creative",
+            classificationConfidence: 0.98,
+            parseStatus: "pending"
+          }
+        ],
+        missingMaterials: [],
+        analysisStartHref: "/api/v1/review-cases/rc-upload-image-test-001/analysis/start"
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SamplePackageSelector />);
+
+    expect(screen.getByRole("option", { name: "이미지 테스트" })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("심의 요청 제목"), "이미지 테스트 심의");
+    await user.type(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
+    await user.selectOptions(screen.getByLabelText("상품군"), "image_test");
+    await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
+    await user.upload(
+      screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
+        selector: "input"
+      }),
+      new File(["poster"], "poster-only.png", { type: "image/png" })
+    );
+
+    expect(screen.getByRole("button", { name: "심의 요청 제출" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "심의 요청 제출" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.any(FormData)
+      })
+    );
+  });
+
   it("uploads real files, shows deterministic classification, and keeps analysis gated to queue", async () => {
     const user = userEvent.setup();
     const fetchMock = vi.fn().mockResolvedValueOnce({

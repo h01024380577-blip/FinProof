@@ -45,7 +45,8 @@ const productTypes: Array<{ value: ProductType; label: string }> = [
   { value: "card", label: "카드" },
   { value: "capital", label: "캐피탈" },
   { value: "insurance", label: "보험" },
-  { value: "investment", label: "투자" }
+  { value: "investment", label: "투자" },
+  { value: "image_test", label: "이미지 테스트" }
 ];
 
 function statusLabel(status: KnowledgeDocument["approvalStatus"]): string {

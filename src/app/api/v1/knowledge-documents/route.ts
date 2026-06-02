@@ -206,7 +206,8 @@ function parseProductType(value: unknown): ProductType | undefined {
     value === "card" ||
     value === "capital" ||
     value === "insurance" ||
-    value === "investment"
+    value === "investment" ||
+    value === "image_test"
   ) {
     return value;
   }

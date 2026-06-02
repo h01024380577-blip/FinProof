@@ -66,7 +66,8 @@ function parseProductType(value: string): ProductType | undefined {
     value === "card" ||
     value === "capital" ||
     value === "insurance" ||
-    value === "investment"
+    value === "investment" ||
+    value === "image_test"
   ) {
     return value;
   }

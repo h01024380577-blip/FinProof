@@ -316,6 +316,57 @@ describe("review API routes", () => {
     });
   });
 
+  it("creates image-only test review cases without requiring document materials", async () => {
+    const boundary = "----finproof-image-test-upload";
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="title"',
+      "",
+      "이미지 테스트 심의",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="affiliate"',
+      "",
+      "광주은행",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "image_test",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="plannedPublishDate"',
+      "",
+      "2026-06-20",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="poster-only.png"',
+      "Content-Type: image/png",
+      "",
+      "poster",
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    const createResponse = await createPOST(
+      new Request("http://localhost/api/v1/review-cases", {
+        method: "POST",
+        headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+        body: multipartBody
+      })
+    );
+    const createBody = await createResponse.json();
+
+    expect(createResponse.status).toBe(201);
+    expect(createBody.reviewCase).toMatchObject({
+      productType: "image_test",
+      status: "analysis_waiting"
+    });
+    expect(createBody.files).toEqual([
+      expect.objectContaining({
+        name: "poster-only.png",
+        fileType: "promotional_creative"
+      })
+    ]);
+    expect(createBody.missingMaterials).toEqual([]);
+  });
+
   it("serves uploaded promotional creative bytes for the review viewer", async () => {
     const boundary = "----finproof-upload-file-content-test";
     const multipartBody = [

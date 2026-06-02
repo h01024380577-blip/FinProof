@@ -3,6 +3,9 @@ import { createGeminiOcrProvider, createReviewAnalysisPipeline } from "./review-
 import type { ModelProvider } from "@/server/ai/model-provider";
 import type { ReviewStoreScope } from "@/server/reviews";
 import type { ReviewSubAgentOrchestrator } from "./review-subagents";
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const review: ReviewCase = {
   id: "rc-upload-001",
@@ -117,6 +120,127 @@ describe("review analysis pipeline", () => {
     );
   });
 
+  it("extracts searchable text from stored PDF bodies before retrieval", async () => {
+    const binDir = await mkdtemp(path.join(tmpdir(), "finproof-pdftotext-"));
+    const originalPath = process.env.PATH;
+    const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;
+    const fakePdfToText = path.join(binDir, "pdftotext");
+
+    await writeFile(
+      fakePdfToText,
+      [
+        "#!/bin/sh",
+        "printf '%s\\n' '누구나 최고 연 5.0% 우대 조건 충족 시 적용됩니다. 급여이체와 자동이체 조건을 모두 충족해야 하며 세전 기준입니다.'"
+      ].join("\n")
+    );
+    await chmod(fakePdfToText, 0o755);
+    process.env.PATH = `${binDir}${path.delimiter}${originalPath ?? ""}`;
+    process.env.FINPROOF_PDFTOTEXT_PATH = fakePdfToText;
+
+    try {
+      const pipeline = createReviewAnalysisPipeline({
+        fileBodyReader: {
+          async getReviewFileBody(storageKey) {
+            expect(storageKey).toBe("local/rc-upload-001/file-upload-001/ad.pdf");
+
+            return new TextEncoder().encode("%PDF-1.7 searchable pdf fixture");
+          }
+        }
+      });
+
+      const artifacts = await pipeline.run({
+        review: {
+          ...review,
+          files: [
+            {
+              ...review.files[0],
+              name: "ad.pdf",
+              storageProvider: "local",
+              storageKey: "local/rc-upload-001/file-upload-001/ad.pdf",
+              contentType: "application/pdf"
+            }
+          ]
+        }
+      });
+
+      expect(artifacts.extractedDocuments).toEqual([
+        expect.objectContaining({
+          fileName: "ad.pdf",
+          provider: "local-pdf-text-extractor",
+          text: expect.stringContaining("누구나 최고 연 5.0%"),
+          confidence: 0.94
+        })
+      ]);
+      expect(artifacts.evidenceCandidates[0]).toEqual(
+        expect.objectContaining({
+          quoteSummary: expect.stringContaining("우대 조건 충족")
+        })
+      );
+    } finally {
+      process.env.PATH = originalPath;
+      process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
+  it("does not route metadata-only notices to multilingual or domain agents when extracted text exists", async () => {
+    const subAgentOrchestrator: ReviewSubAgentOrchestrator = {
+      run: vi.fn(async () => [])
+    };
+    const provider: ModelProvider = {
+      generateText: vi.fn(async () => ({
+        provider: "fixture",
+        model: "fixture",
+        text: "[]"
+      }))
+    };
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator,
+      ocrProvider: {
+        async extract() {
+          return [
+            {
+              fileId: "file-upload-archive",
+              fileName: "package.zip",
+              text: "CSV JSON Markdown uploaded body analysis unavailable",
+              confidence: 0.62,
+              provider: "metadata-only"
+            },
+            {
+              fileId: "file-upload-001",
+              fileName: "poster.txt",
+              text: "누구나 최고 연 5.0% 우대 조건 충족 시 적용됩니다.",
+              confidence: 0.96,
+              provider: "local-text-extractor"
+            }
+          ];
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.extractedDocuments).toEqual([
+      expect.objectContaining({
+        fileName: "poster.txt",
+        provider: "local-text-extractor"
+      })
+    ]);
+    expect(artifacts.multilingualSegments).toBeUndefined();
+    expect(provider.generateText).not.toHaveBeenCalled();
+    expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extractedDocuments: [
+          expect.objectContaining({
+            fileName: "poster.txt",
+            provider: "local-text-extractor"
+          })
+        ]
+      })
+    );
+  });
+
   it("extracts visual file text with Gemini OCR using inline file bytes", async () => {
     const pdfBytes = new TextEncoder().encode("%PDF-1.7 fake pdf bytes");
     const fetchImpl = vi.fn(async () => ({
@@ -203,6 +327,81 @@ describe("review analysis pipeline", () => {
         provider: "gemini-ocr"
       }
     ]);
+  });
+
+  it("falls back to Gemini OCR when a promotional PDF has too little embedded text", async () => {
+    const binDir = await mkdtemp(path.join(tmpdir(), "finproof-pdftotext-short-"));
+    const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;
+    const fakePdfToText = path.join(binDir, "pdftotext");
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 image-only poster pdf fixture");
+
+    await writeFile(fakePdfToText, ["#!/bin/sh", "printf '%s\\n' 'x'"].join("\n"));
+    await chmod(fakePdfToText, 0o755);
+    process.env.FINPROOF_PDFTOTEXT_PATH = fakePdfToText;
+
+    try {
+      const fetchImpl = vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        async json() {
+          return {
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      text: JSON.stringify({
+                        text: "포스터 PDF 이미지에서 OCR로 읽은 최고 연 5.20% 문구",
+                        confidence: 0.91
+                      })
+                    }
+                  ]
+                }
+              }
+            ]
+          };
+        }
+      }));
+      const provider = createGeminiOcrProvider(
+        {
+          GEMINI_API_KEY: "gemini-real",
+          FINPROOF_OCR_MODEL: "gemini-2.5-flash-lite"
+        },
+        {
+          async getReviewFileBody() {
+            return pdfBytes;
+          }
+        },
+        fetchImpl
+      );
+
+      const documents = await provider.extract({
+        review,
+        files: [
+          {
+            ...review.files[0],
+            name: "poster.pdf",
+            fileType: "promotional_creative",
+            contentType: "application/pdf",
+            storageKey: "local/rc-upload-001/poster.pdf"
+          }
+        ]
+      });
+
+      expect(fetchImpl).toHaveBeenCalledOnce();
+      expect(documents).toEqual([
+        expect.objectContaining({
+          fileName: "poster.pdf",
+          provider: "gemini-ocr",
+          text: "포스터 PDF 이미지에서 OCR로 읽은 최고 연 5.20% 문구",
+          confidence: 0.91
+        })
+      ]);
+    } finally {
+      process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
+      await rm(binDir, { recursive: true, force: true });
+    }
   });
 
   it("prioritizes extracted document text over metadata-only archive entries", async () => {

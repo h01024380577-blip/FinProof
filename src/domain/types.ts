@@ -19,7 +19,14 @@ export type ReviewStatus =
 
 export type ReviewAction = "start_analysis" | "open_workbench" | "view_audit";
 
-export type ProductType = "deposit" | "loan" | "card" | "capital" | "insurance" | "investment";
+export type ProductType =
+  | "deposit"
+  | "loan"
+  | "card"
+  | "capital"
+  | "insurance"
+  | "investment"
+  | "image_test";
 
 export type ReviewFile = {
   id: string;

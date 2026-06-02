@@ -23,6 +23,11 @@ export type IssueDetailTabsProps = {
   onSaveReviewerDecision: () => void;
 };
 
+type EvidenceDisplayItem = Evidence & {
+  sourceLabel?: string;
+  hideMetadata?: boolean;
+};
+
 export function IssueDetailTabs(props: IssueDetailTabsProps): JSX.Element {
   const { issue, activeTab, onTabChange } = props;
 
@@ -118,15 +123,73 @@ function formatEvidenceMetadata(evidence: Evidence): string {
   return parts.join(" · ");
 }
 
+function evidenceSourceLabel(sourceType: Evidence["sourceType"]): string {
+  const labels: Record<Evidence["sourceType"], string> = {
+    law: "법령",
+    internal_policy: "내부 기준",
+    product_doc: "업로드 자료",
+    case_history: "과거 심의 사례"
+  };
+
+  return labels[sourceType];
+}
+
+function objectParticle(value: string): "을" | "를" {
+  const lastChar = value.trim().at(-1);
+
+  if (!lastChar) {
+    return "를";
+  }
+
+  const code = lastChar.charCodeAt(0);
+  const hangulBase = 0xac00;
+  const hangulEnd = 0xd7a3;
+
+  if (code >= hangulBase && code <= hangulEnd) {
+    return (code - hangulBase) % 28 === 0 ? "를" : "을";
+  }
+
+  return /\d/.test(lastChar) ? "을" : "를";
+}
+
+function evidenceCitation(evidence: Evidence): string {
+  const section = evidence.section?.trim();
+  const location = section ? ` ${section}` : "";
+  const source = `${evidence.title}${location}`;
+
+  return `${source}${objectParticle(source)} 참고해 판단했습니다.`;
+}
+
+function fallbackEvidenceForIssue(issue: ReviewIssue): EvidenceDisplayItem {
+  return {
+    id: `${issue.id}-analysis-fallback-evidence`,
+    sourceType: "product_doc",
+    sourceLabel: "AI 분석 결과",
+    title: "AI 분석 결과",
+    quoteSummary: issue.description || issue.suggestedCopy || issue.targetText,
+    relevanceScore: issue.confidence ?? 1,
+    hideMetadata: true
+  };
+}
+
 function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
+  const evidenceItems: EvidenceDisplayItem[] =
+    issue.evidence.length > 0 ? issue.evidence : [fallbackEvidenceForIssue(issue)];
+
   return (
     <div className="evidence-stack">
-      {issue.evidence.map((evidence) => (
+      {evidenceItems.map((evidence) => (
         <article key={evidence.id} className="evidence-card">
-          <span>{evidence.sourceType}</span>
-          <strong className="evidence-card__title">{evidence.title}</strong>
-          <p className="evidence-card__quote">{evidence.quoteSummary}</p>
-          <small>{formatEvidenceMetadata(evidence)}</small>
+          <span>{evidence.sourceLabel ?? evidenceSourceLabel(evidence.sourceType)}</span>
+          <div className="evidence-card__source">
+            <small>참고 출처</small>
+            <strong className="evidence-card__title">{evidenceCitation(evidence)}</strong>
+          </div>
+          <div className="evidence-card__reason">
+            <small>판단 근거</small>
+            <p className="evidence-card__quote">{evidence.quoteSummary}</p>
+          </div>
+          {evidence.hideMetadata ? null : <small>{formatEvidenceMetadata(evidence)}</small>}
         </article>
       ))}
     </div>

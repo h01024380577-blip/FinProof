@@ -50,7 +50,8 @@ const productOptions = [
   { value: "card", label: "카드" },
   { value: "capital", label: "캐피탈" },
   { value: "insurance", label: "보험" },
-  { value: "investment", label: "투자상품" }
+  { value: "investment", label: "투자상품" },
+  { value: "image_test", label: "이미지 테스트" }
 ];
 
 export function QueueFilters({

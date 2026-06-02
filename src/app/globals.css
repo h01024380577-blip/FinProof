@@ -2487,6 +2487,20 @@ a.review-table__row:hover {
   word-break: break-word;
 }
 
+.evidence-card__source,
+.evidence-card__reason {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.evidence-card__source small,
+.evidence-card__reason small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .evidence-card__quote,
 .evidence-card small,
 .suggested-copy p {

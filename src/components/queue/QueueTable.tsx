@@ -12,7 +12,8 @@ const productLabels: Record<ProductType, string> = {
   card: "카드",
   capital: "캐피탈",
   insurance: "보험",
-  investment: "투자상품"
+  investment: "투자상품",
+  image_test: "이미지 테스트"
 };
 
 function isAnalysisWaiting(status: ReviewCase["status"]): boolean {
