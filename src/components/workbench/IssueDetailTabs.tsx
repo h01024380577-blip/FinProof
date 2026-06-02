@@ -134,24 +134,6 @@ function evidenceSourceLabel(sourceType: Evidence["sourceType"]): string {
   return labels[sourceType];
 }
 
-function objectParticle(value: string): "을" | "를" {
-  const lastChar = value.trim().at(-1);
-
-  if (!lastChar) {
-    return "를";
-  }
-
-  const code = lastChar.charCodeAt(0);
-  const hangulBase = 0xac00;
-  const hangulEnd = 0xd7a3;
-
-  if (code >= hangulBase && code <= hangulEnd) {
-    return (code - hangulBase) % 28 === 0 ? "를" : "을";
-  }
-
-  return /\d/.test(lastChar) ? "을" : "를";
-}
-
 function normalizeArticleReference(value: string): string {
   const trimmed = value.replace(/\s+/g, "").trim();
 
@@ -187,9 +169,8 @@ function displayEvidenceQuote(evidence: Evidence): string {
 function evidenceCitation(evidence: Evidence): string {
   const section = evidence.section?.trim() || articleReferenceFromQuote(evidence.quoteSummary);
   const location = section ? ` ${section}` : "";
-  const source = `${evidence.title}${location}`;
 
-  return `${source}${objectParticle(source)} 참고해 판단했습니다.`;
+  return `${evidence.title}${location}`;
 }
 
 function fallbackEvidenceForIssue(issue: ReviewIssue): EvidenceDisplayItem {

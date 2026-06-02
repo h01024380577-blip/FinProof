@@ -99,9 +99,7 @@ describe("IssueDetailTabs", () => {
     );
 
     expect(
-      screen.getByText(
-        "high-rate-deposit-review.zip/poster_high_rate_deposit.html §1을 참고해 판단했습니다."
-      )
+      screen.getByText("high-rate-deposit-review.zip/poster_high_rate_deposit.html §1")
     ).toHaveClass("evidence-card__title");
     expect(screen.getByText(/JB 슈퍼씨드 적금 홍보 시안/)).toHaveClass("evidence-card__quote");
   });
@@ -218,9 +216,8 @@ describe("IssueDetailTabs", () => {
     );
 
     expect(screen.getByText("참고 출처")).toBeInTheDocument();
-    expect(
-      screen.getByText("자본시장법 시행령 제68조 제5항을 참고해 판단했습니다.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("자본시장법 시행령 제68조 제5항")).toBeInTheDocument();
+    expect(screen.queryByText(/참고해 판단했습니다/)).not.toBeInTheDocument();
     expect(screen.getByText("판단 근거")).toBeInTheDocument();
     expect(screen.getByText(/수익률과 우대 조건은 소비자가 오인하지 않도록/)).toBeInTheDocument();
     expect(screen.getByText("법령")).toBeInTheDocument();
@@ -258,9 +255,7 @@ describe("IssueDetailTabs", () => {
       />
     );
 
-    expect(
-      screen.getByText("금융규제 가이드라인 제8조제3항을 참고해 판단했습니다.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("금융규제 가이드라인 제8조제3항")).toBeInTheDocument();
   });
 
   it("does not render table-of-contents dot leaders in evidence reasoning", () => {
@@ -294,7 +289,7 @@ describe("IssueDetailTabs", () => {
       />
     );
 
-    expect(screen.getByText("금융규제 가이드라인을 참고해 판단했습니다.")).toBeInTheDocument();
+    expect(screen.getByText("금융규제 가이드라인")).toBeInTheDocument();
     expect(screen.getByText("등록된 지식문서의 조항 본문을 기준으로 판단했습니다.")).toBeInTheDocument();
     expect(screen.queryByText(/목 차/)).not.toBeInTheDocument();
     expect(screen.queryByText(/··/)).not.toBeInTheDocument();
@@ -322,9 +317,8 @@ describe("IssueDetailTabs", () => {
       />
     );
 
-    expect(screen.getByText("AI 분석 결과")).toBeInTheDocument();
+    expect(screen.getAllByText("AI 분석 결과")).toHaveLength(2);
     expect(screen.getByText("참고 출처")).toBeInTheDocument();
-    expect(screen.getByText("AI 분석 결과를 참고해 판단했습니다.")).toBeInTheDocument();
     expect(screen.getByText("판단 근거")).toBeInTheDocument();
     expect(screen.getByText("최고 금리 표현이 확인되었지만 적용 조건이 함께 확인되지 않았습니다.")).toBeInTheDocument();
   });
