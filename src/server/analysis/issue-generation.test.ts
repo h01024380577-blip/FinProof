@@ -211,6 +211,69 @@ describe("issue generation", () => {
     ]);
   });
 
+  it("prefers article body knowledge evidence over table-of-contents chunks", () => {
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-02T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "poster.txt",
+          text: "누구나 최고 연 5.0%",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "knowledge-financial-ad-guideline-toc",
+          sourceType: "internal_policy",
+          documentId: "doc-financial-ad-guideline",
+          chunkId: "chunk-financial-ad-guideline-toc",
+          title: "금융규제 가이드라인",
+          quoteSummary:
+            "별첨자료 금융광고규제 가이드라인 2021. 6. 8. 목 차 Ⅰ. 금소법 제정에 따른 광고규제 변화 · ·· ·· ·· ·· ·· 1 Ⅱ. 광고규제 적용대상 · ·· ·· ·· ·· ·· 3",
+          relevanceScore: 0.96
+        },
+        {
+          id: "knowledge-financial-ad-guideline-8-3",
+          sourceType: "internal_policy",
+          documentId: "doc-financial-ad-guideline",
+          chunkId: "chunk-financial-ad-guideline-8-3",
+          title: "금융규제 가이드라인",
+          quoteSummary:
+            "금소법 시행령 제8조제3항 각 호의 내용 중 일부를 제외함으로 인해 금융소비자의 합리적 의사결정이 저해될 우려가 없을 것",
+          relevanceScore: 0.79
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-creative-review-001",
+          agent: "creative_review",
+          title: "광고 중요사항 고지 확인 필요",
+          issueType: "ai_creative_review",
+          riskLevel: "high",
+          targetText: "누구나 최고 연 5.0%",
+          description: "중요한 제한 조건이 누락될 수 있습니다.",
+          suggestedAction: "change_request",
+          suggestedCopy: "제한 조건을 함께 표시해 주세요.",
+          evidenceCandidateIds: ["knowledge-financial-ad-guideline-toc"],
+          confidence: 0.9
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    const aiIssue = issues.find((candidate) => candidate.issueType === "ai_creative_review");
+
+    expect(aiIssue?.evidence).toEqual([
+      expect.objectContaining({
+        chunkId: "chunk-financial-ad-guideline-8-3",
+        quoteSummary: expect.stringContaining("제8조제3항")
+      })
+    ]);
+  });
+
   it("prefers registered knowledge evidence when deterministic issues cite their source", () => {
     const review: ReviewCase = {
       id: "rc-citation-source-001",

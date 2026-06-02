@@ -36,6 +36,19 @@ function isRegisteredKnowledgeEvidence(candidate: RagEvidenceCandidate) {
   return candidate.sourceType === "law" || candidate.sourceType === "internal_policy";
 }
 
+function hasArticleReference(value: string) {
+  return /(?:제)?\d+조(?:\s*제?\d+항)?(?:\s*제?\d+호)?/.test(value);
+}
+
+function isTableOfContentsEvidence(candidate: RagEvidenceCandidate) {
+  const text = normalizeText(candidate.quoteSummary);
+  const hasTocMarker = /목\s*차|contents/i.test(text);
+  const hasDotLeader = /[·.]{2,}|(?:·\s*){3,}/.test(text);
+  const hasSectionHeadingList = /[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]\.\s*\S+/.test(text);
+
+  return hasTocMarker && (hasDotLeader || hasSectionHeadingList);
+}
+
 function isNotCaseHistoryEvidence(candidate: RagEvidenceCandidate) {
   return candidate.sourceType !== "case_history";
 }
@@ -44,11 +57,28 @@ function preferredEvidenceCandidate(
   artifacts: AnalysisArtifacts,
   candidates: RagEvidenceCandidate[]
 ): RagEvidenceCandidate | undefined {
+  const registeredCandidates = [
+    ...candidates.filter(isRegisteredKnowledgeEvidence),
+    ...artifacts.evidenceCandidates.filter(isRegisteredKnowledgeEvidence)
+  ];
+  const articleCandidates = registeredCandidates.filter(
+    (candidate) =>
+      !isTableOfContentsEvidence(candidate) &&
+      (candidate.section?.trim() || hasArticleReference(candidate.quoteSummary))
+  );
+  const usableRegisteredCandidates = registeredCandidates.filter(
+    (candidate) => !isTableOfContentsEvidence(candidate)
+  );
+  const nonCaseCandidates = [
+    ...candidates.filter(isNotCaseHistoryEvidence),
+    ...artifacts.evidenceCandidates.filter(isNotCaseHistoryEvidence)
+  ].filter((candidate) => !isTableOfContentsEvidence(candidate));
+
   return (
-    candidates.find(isRegisteredKnowledgeEvidence) ??
-    artifacts.evidenceCandidates.find(isRegisteredKnowledgeEvidence) ??
-    candidates.find(isNotCaseHistoryEvidence) ??
-    artifacts.evidenceCandidates.find(isNotCaseHistoryEvidence) ??
+    articleCandidates[0] ??
+    usableRegisteredCandidates[0] ??
+    nonCaseCandidates[0] ??
+    registeredCandidates[0] ??
     candidates[0] ??
     firstEvidenceCandidate(artifacts)
   );

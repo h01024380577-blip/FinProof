@@ -164,6 +164,26 @@ function articleReferenceFromQuote(value: string): string | undefined {
   return match ? normalizeArticleReference(match[0]) : undefined;
 }
 
+function isTableOfContentsQuote(value: string): boolean {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  const hasTocMarker = /목\s*차|contents/i.test(normalized);
+  const hasDotLeader = /[·.]{2,}|(?:·\s*){3,}/.test(normalized);
+  const hasSectionHeadingList = /[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]\.\s*\S+/.test(normalized);
+
+  return hasTocMarker && (hasDotLeader || hasSectionHeadingList);
+}
+
+function displayEvidenceQuote(evidence: Evidence): string {
+  if (
+    (evidence.sourceType === "law" || evidence.sourceType === "internal_policy") &&
+    isTableOfContentsQuote(evidence.quoteSummary)
+  ) {
+    return "등록된 지식문서의 조항 본문을 기준으로 판단했습니다.";
+  }
+
+  return evidence.quoteSummary.replace(/(?:\s*[·.]\s*){4,}/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function evidenceCitation(evidence: Evidence): string {
   const section = evidence.section?.trim() || articleReferenceFromQuote(evidence.quoteSummary);
   const location = section ? ` ${section}` : "";
@@ -199,7 +219,7 @@ function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
           </div>
           <div className="evidence-card__reason">
             <small>판단 근거</small>
-            <p className="evidence-card__quote">{evidence.quoteSummary}</p>
+            <p className="evidence-card__quote">{displayEvidenceQuote(evidence)}</p>
           </div>
           {evidence.hideMetadata ? null : <small>{formatEvidenceMetadata(evidence)}</small>}
         </article>

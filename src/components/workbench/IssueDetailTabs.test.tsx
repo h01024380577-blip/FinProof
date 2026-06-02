@@ -263,6 +263,43 @@ describe("IssueDetailTabs", () => {
     ).toBeInTheDocument();
   });
 
+  it("does not render table-of-contents dot leaders in evidence reasoning", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          evidence: [
+            {
+              id: "knowledge-guideline-toc",
+              sourceType: "internal_policy",
+              documentId: "doc-financial-ad-guideline",
+              chunkId: "chunk-financial-ad-guideline-toc",
+              title: "금융규제 가이드라인",
+              quoteSummary:
+                "별첨자료 금융광고규제 가이드라인 2021. 6. 8. 목 차 Ⅰ. 금소법 제정에 따른 광고규제 변화 · ·· ·· ·· ·· ·· 1 Ⅱ. 광고규제 적용대상 · ·· ·· ·· ·· ·· 3",
+              relevanceScore: 0.62
+            }
+          ]
+        }}
+        activeTab="evidence"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("금융규제 가이드라인을 참고해 판단했습니다.")).toBeInTheDocument();
+    expect(screen.getByText("등록된 지식문서의 조항 본문을 기준으로 판단했습니다.")).toBeInTheDocument();
+    expect(screen.queryByText(/목 차/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/··/)).not.toBeInTheDocument();
+  });
+
   it("renders the cited source layout for completed issues that have no persisted evidence", () => {
     render(
       <IssueDetailTabs
