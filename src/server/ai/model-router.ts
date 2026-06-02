@@ -146,10 +146,6 @@ function escalationReason(context: ModelRouteContext): string | undefined {
     return "low_evidence";
   }
 
-  if (context.lowOcrConfidence) {
-    return "low_ocr_confidence";
-  }
-
   if (context.finalRejectionWording) {
     return "final_rejection_wording";
   }
@@ -223,6 +219,15 @@ export function selectModelRoute(
 
   if (task === "creative_review" && (context.visualUnderstanding || context.complexVisual)) {
     return multimodalRoute(task, config, context.complexVisual ? "complex_visual" : undefined);
+  }
+
+  if (
+    task === "english_translator_risk" ||
+    task === "japanese_translator_risk" ||
+    task === "chinese_translator_risk"
+  ) {
+    const reason = context.lowOcrConfidence ? "low_ocr_confidence" : escalationReason(context);
+    return textRoute(task, reason ? "escalation_text" : "default_text", config, reason);
   }
 
   if (task === "main_compliance") {

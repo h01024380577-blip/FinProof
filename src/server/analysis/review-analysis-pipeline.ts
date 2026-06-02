@@ -97,6 +97,7 @@ type RagRetrieveInput = {
 
 export type RagRetriever = {
   retrieve(input: RagRetrieveInput): Promise<RagEvidenceCandidate[]>;
+  prefetch?(input: { review: ReviewCase; scope?: ReviewStoreScope }): Promise<void>;
 };
 
 export type ReviewFileBodyReader = Pick<ReviewStorageAdapter, "getReviewFileBody">;
@@ -590,8 +591,46 @@ function createLexicalRagRetriever(
   embeddingProvider: EmbeddingProvider = createEmbeddingProvider(env)
 ): RagRetriever {
   const config = getAnalysisProviderConfig(env);
+  let cachedKnowledgeCaseCandidates: RagEvidenceCandidate[] | undefined;
+
+  async function fetchKnowledgeCaseCandidates(
+    review: ReviewCase,
+    scope: ReviewStoreScope | undefined,
+    query: string
+  ): Promise<RagEvidenceCandidate[]> {
+    const queryEmbedding =
+      reviewStore && scope ? (await embeddingProvider.embed([query]))[0] : undefined;
+    const [knowledgeCandidates, caseHistoryCandidates] = await Promise.all([
+      reviewStore && scope
+        ? reviewStore.searchKnowledgeEvidence(scope, {
+            query,
+            productType: review.productType,
+            topK: config.rag.topK * 2,
+            minScore: config.rag.minScore,
+            queryEmbedding
+          })
+        : Promise.resolve([]),
+      reviewStore?.searchCaseHistoryEvidence && scope
+        ? reviewStore.searchCaseHistoryEvidence(scope, {
+            query,
+            productType: review.productType,
+            topK: config.rag.topK,
+            minScore: config.rag.minScore,
+            queryEmbedding,
+            excludeReviewCaseId: review.id
+          })
+        : Promise.resolve([])
+    ]);
+
+    return [...knowledgeCandidates, ...caseHistoryCandidates];
+  }
 
   return {
+    async prefetch({ review, scope }) {
+      const query = reviewRagQuery(review);
+      cachedKnowledgeCaseCandidates = await fetchKnowledgeCaseCandidates(review, scope, query);
+    },
+
     async retrieve({ review, extractedDocuments, scope }) {
       const query = reviewRagQuery(review);
       const searchableDocuments = documentsForAnalysis(extractedDocuments);
@@ -607,31 +646,14 @@ function createLexicalRagRetriever(
         }))
         .filter((candidate) => candidate.relevanceScore >= config.rag.minScore)
         .sort((left, right) => right.relevanceScore - left.relevanceScore);
-      const queryEmbedding =
-        reviewStore && scope ? (await embeddingProvider.embed([query]))[0] : undefined;
-      const knowledgeCandidates =
-        reviewStore && scope
-          ? await reviewStore.searchKnowledgeEvidence(scope, {
-              query,
-              productType: review.productType,
-              topK: config.rag.topK * 2,
-              minScore: config.rag.minScore,
-              queryEmbedding
-            })
-          : [];
-      const caseHistoryCandidates =
-        reviewStore?.searchCaseHistoryEvidence && scope
-          ? await reviewStore.searchCaseHistoryEvidence(scope, {
-              query,
-              productType: review.productType,
-              topK: config.rag.topK,
-              minScore: config.rag.minScore,
-              queryEmbedding,
-              excludeReviewCaseId: review.id
-            })
-          : [];
 
-      return [...productDocumentCandidates, ...knowledgeCandidates, ...caseHistoryCandidates];
+      // Use candidates prefetched in parallel with OCR if available, otherwise fetch now
+      const knowledgeCaseCandidates =
+        cachedKnowledgeCaseCandidates ??
+        (await fetchKnowledgeCaseCandidates(review, scope, query));
+      cachedKnowledgeCaseCandidates = undefined;
+
+      return [...productDocumentCandidates, ...knowledgeCaseCandidates];
     }
   };
 }
@@ -805,8 +827,15 @@ export function createReviewAnalysisPipeline({
     async run({ review, scope }) {
       const config = getAnalysisProviderConfig();
       const query = reviewRagQuery(review);
-      const extractedDocuments = await ocrProvider.extract({ review, files: review.files });
+      // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
+      // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
+      const [extractedDocuments] = await Promise.all([
+        ocrProvider.extract({ review, files: review.files }),
+        ragRetriever.prefetch?.({ review, scope })
+      ]);
       const analysisDocuments = documentsForAnalysis(extractedDocuments);
+      // retrieve() uses the prefetched knowledge/case candidates and computes
+      // product doc candidates from OCR results — no duplicate DB queries.
       const retrievedCandidates = await ragRetriever.retrieve({
         review,
         extractedDocuments: analysisDocuments,
