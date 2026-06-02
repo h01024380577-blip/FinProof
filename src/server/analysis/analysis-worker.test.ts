@@ -103,4 +103,67 @@ describe("analysis worker", () => {
     const reviewCase = await store.getReviewCase(scope, "rc-demo-deposit-001");
     expect(reviewCase?.status).toBe("analysis_waiting");
   });
+
+  it("uses the configured storage adapter when building the default pipeline", async () => {
+    const store = createMockReviewStore();
+    await store.createReviewCaseFromUploadedFiles(scope, {
+      reviewCaseId: "rc-worker-upload-001",
+      title: "업로드 본문 분석",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [
+        {
+          id: "file-upload-html-001",
+          name: "poster.html",
+          type: "text/html",
+          size: 96,
+          storageProvider: "local",
+          storageKey: "local/rc-worker-upload-001/file-upload-html-001/poster.html"
+        }
+      ]
+    });
+    await store.enqueueAnalysis(scope, "rc-worker-upload-001");
+
+    const worker = createAnalysisWorker({
+      store,
+      storage: {
+        async getReviewFileBody(storageKey) {
+          expect(storageKey).toBe("local/rc-worker-upload-001/file-upload-html-001/poster.html");
+
+          return new TextEncoder().encode(
+            "<h1>누구나 최고 연 5.0%</h1><p>급여이체 등 우대 조건 충족 시 적용됩니다.</p>"
+          );
+        },
+        async getFileBody(storageKey) {
+          return this.getReviewFileBody(storageKey);
+        },
+        async putReviewFile() {
+          throw new Error("not used");
+        },
+        async putKnowledgeDocumentFile() {
+          throw new Error("not used");
+        },
+        sampleReviewFile() {
+          throw new Error("not used");
+        }
+      }
+    });
+
+    const result = await worker.runOnce({
+      tenantId: "tenant-demo",
+      workerId: "worker-storage"
+    });
+    const latest = await store.getLatestAnalysisJob(scope, "rc-worker-upload-001");
+
+    expect(result).toMatchObject({ processed: true, status: "completed" });
+    expect(latest?.artifacts?.extractedDocuments).toEqual([
+      expect.objectContaining({
+        fileName: "poster.html",
+        provider: "local-text-extractor",
+        text: expect.stringContaining("누구나 최고 연 5.0%")
+      })
+    ]);
+  });
 });

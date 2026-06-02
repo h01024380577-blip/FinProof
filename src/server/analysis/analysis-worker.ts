@@ -4,11 +4,13 @@ import {
   createReviewAnalysisPipeline,
   type ReviewAnalysisPipeline
 } from "./review-analysis-pipeline";
+import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 
 const DEFAULT_STALE_JOB_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
 type AnalysisWorkerDeps = {
   store?: ReviewStore;
+  storage?: ReviewStorageAdapter;
   pipeline?: ReviewAnalysisPipeline;
   staleJobThresholdMs?: number;
 };
@@ -43,7 +45,13 @@ function errorMessage(error: unknown) {
 
 export function createAnalysisWorker(deps: AnalysisWorkerDeps = {}) {
   const store = deps.store ?? getReviewStore();
-  const pipeline = deps.pipeline ?? createReviewAnalysisPipeline({ reviewStore: store });
+  const storage = deps.storage ?? getReviewStorageAdapter();
+  const pipeline =
+    deps.pipeline ??
+    createReviewAnalysisPipeline({
+      fileBodyReader: storage,
+      reviewStore: store
+    });
 
   return {
     async runOnce(input: RunOnceInput): Promise<RunOnceResult> {
