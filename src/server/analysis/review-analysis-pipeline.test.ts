@@ -329,6 +329,54 @@ describe("review analysis pipeline", () => {
     ]);
   });
 
+  it("passes AbortSignal timeout to Gemini OCR fetch", async () => {
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 fake");
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(init?.signal).toBeDefined();
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        async json() {
+          return {
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      text: JSON.stringify({ text: "광고 텍스트", confidence: 0.9 })
+                    }
+                  ]
+                }
+              }
+            ]
+          };
+        }
+      };
+    });
+
+    const provider = createGeminiOcrProvider(
+      { GEMINI_API_KEY: "test-key", FINPROOF_OCR_TIMEOUT_MS: "5000" },
+      { async getReviewFileBody() { return pdfBytes; } },
+      fetchImpl
+    );
+
+    await provider.extract({
+      review,
+      files: [
+        {
+          ...review.files[0],
+          name: "ad.pdf",
+          contentType: "application/pdf",
+          storageKey: "s3://bucket/ad.pdf"
+        }
+      ]
+    });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
   it("falls back to Gemini OCR when a promotional PDF has too little embedded text", async () => {
     const binDir = await mkdtemp(path.join(tmpdir(), "finproof-pdftotext-short-"));
     const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;

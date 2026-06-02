@@ -450,6 +450,7 @@ export function createGeminiOcrProvider(
         "FINPROOF_OCR_MAX_INLINE_BYTES",
         20 * 1024 * 1024
       );
+      const ocrTimeoutMs = positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000);
 
       return Promise.all(
         files.map(async (file) => {
@@ -482,6 +483,7 @@ export function createGeminiOcrProvider(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
             {
               method: "POST",
+              signal: AbortSignal.timeout(ocrTimeoutMs),
               headers: {
                 "content-type": "application/json",
                 "x-goog-api-key": apiKey
