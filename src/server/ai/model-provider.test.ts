@@ -215,3 +215,61 @@ describe("model provider", () => {
     ).toBe("candidate text");
   });
 });
+
+describe("model provider fetch timeouts", () => {
+  it("passes AbortSignal to Gemini generateContent fetch", async () => {
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(init?.signal).toBeDefined();
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        async json() {
+          return {
+            candidates: [{ content: { parts: [{ text: "결과 텍스트" }] } }]
+          };
+        }
+      };
+    });
+
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "gemini",
+        GEMINI_API_KEY: "test-key",
+        FINPROOF_MODEL_TIMEOUT_MS: "5000"
+      },
+      fetchImpl
+    );
+
+    await provider.generateText({ instructions: "sys", input: "user", fallback: "" });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it("passes AbortSignal to OpenAI responses fetch", async () => {
+    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(init?.signal).toBeDefined();
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        async json() {
+          return { output_text: "결과" };
+        }
+      };
+    });
+
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "openai",
+        OPENAI_API_KEY: "test-key",
+        FINPROOF_MODEL_TIMEOUT_MS: "5000"
+      },
+      fetchImpl
+    );
+
+    await provider.generateText({ instructions: "sys", input: "user", fallback: "" });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+});

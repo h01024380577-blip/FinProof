@@ -44,6 +44,12 @@ function envValue(env: Env, key: string): string | undefined {
   return value && value.trim().length > 0 ? value.trim() : undefined;
 }
 
+function positiveNumber(env: Env, key: string, fallback: number): number {
+  const raw = env[key];
+  const parsed = raw ? Number(raw) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export function extractOpenAIText(body: unknown): string {
   if (
     body &&
@@ -149,6 +155,8 @@ export function createModelProvider(
     };
   }
 
+  const modelTimeoutMs = positiveNumber(env, "FINPROOF_MODEL_TIMEOUT_MS", 120_000);
+
   if (provider === "router") {
     return {
       async generateText(input) {
@@ -161,7 +169,8 @@ export function createModelProvider(
           env,
           fetchImpl,
           route.provider,
-          route.model
+          route.model,
+          modelTimeoutMs
         );
         const result = await providerForRoute.generateText(input);
 
@@ -174,14 +183,15 @@ export function createModelProvider(
     };
   }
 
-  return createProviderForRoute(env, fetchImpl, provider, model);
+  return createProviderForRoute(env, fetchImpl, provider, model, modelTimeoutMs);
 }
 
 function createProviderForRoute(
   env: Env,
   fetchImpl: FetchLike,
   provider: "openai" | "gemini",
-  model: string
+  model: string,
+  modelTimeoutMs: number
 ): ModelProvider {
   if (provider === "gemini") {
     return {
@@ -196,6 +206,7 @@ function createProviderForRoute(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
           {
             method: "POST",
+            signal: AbortSignal.timeout(modelTimeoutMs),
             headers: {
               "content-type": "application/json",
               "x-goog-api-key": apiKey
@@ -238,6 +249,7 @@ function createProviderForRoute(
 
       const response = await fetchImpl("https://api.openai.com/v1/responses", {
         method: "POST",
+        signal: AbortSignal.timeout(modelTimeoutMs),
         headers: {
           authorization: `Bearer ${apiKey}`,
           "content-type": "application/json"
