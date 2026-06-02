@@ -5,9 +5,12 @@ import {
   type ReviewAnalysisPipeline
 } from "./review-analysis-pipeline";
 
+const DEFAULT_STALE_JOB_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+
 type AnalysisWorkerDeps = {
   store?: ReviewStore;
   pipeline?: ReviewAnalysisPipeline;
+  staleJobThresholdMs?: number;
 };
 
 type RunOnceInput = {
@@ -44,6 +47,17 @@ export function createAnalysisWorker(deps: AnalysisWorkerDeps = {}) {
 
   return {
     async runOnce(input: RunOnceInput): Promise<RunOnceResult> {
+      const thresholdMs = deps.staleJobThresholdMs ?? DEFAULT_STALE_JOB_THRESHOLD_MS;
+
+      try {
+        const staleCount = await store.failStaleAnalysisJobs(input.tenantId, thresholdMs);
+        if (staleCount > 0) {
+          console.warn(`[Worker] failed ${staleCount} stale job(s) older than ${thresholdMs}ms`);
+        }
+      } catch (staleError) {
+        console.error(`[Worker] failStaleAnalysisJobs threw:`, staleError);
+      }
+
       let claimed;
       try {
         claimed = await store.claimNextAnalysisJob(input.tenantId, input.workerId);

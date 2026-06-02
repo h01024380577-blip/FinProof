@@ -1148,6 +1148,48 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return undefined;
     },
 
+    async failStaleAnalysisJobs(tenantId: string, olderThanMs: number): Promise<number> {
+      const cutoff = new Date(Date.now() - olderThanMs);
+      let count = 0;
+
+      for (const [reviewCaseId, jobs] of analysisJobs) {
+        if (caseTenants.get(reviewCaseId) !== tenantId) continue;
+
+        const updatedJobs = jobs.map((job) => {
+          if (
+            job.status === "running" &&
+            job.startedAt &&
+            new Date(job.startedAt) <= cutoff
+          ) {
+            count++;
+            return {
+              ...job,
+              status: "failed" as const,
+              progress: 100,
+              currentStep: "worker_failed",
+              completedAt: nowIso(),
+              errorMessage: `stale: job exceeded ${Math.round(olderThanMs / 1000)}s timeout`
+            };
+          }
+          return job;
+        });
+
+        analysisJobs.set(reviewCaseId, updatedJobs);
+
+        const newlyFailed = updatedJobs.filter(
+          (j, i) => jobs[i]?.status === "running" && j.status === "failed"
+        );
+        if (newlyFailed.length > 0) {
+          const review = cases.get(reviewCaseId);
+          if (review) {
+            cases.set(reviewCaseId, { ...review, status: "analysis_waiting" });
+          }
+        }
+      }
+
+      return count;
+    },
+
     async getLatestAnalysisJob(scope: ReviewStoreScope, reviewCaseId) {
       if (!canAccessCase(scope, reviewCaseId)) {
         return undefined;

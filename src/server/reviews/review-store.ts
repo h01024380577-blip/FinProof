@@ -343,6 +343,10 @@ export interface ReviewStore {
     jobId: string,
     errorMessage: string
   ): Promise<AnalysisJob | undefined>;
+  failStaleAnalysisJobs(
+    tenantId: string,
+    olderThanMs: number
+  ): Promise<number>;
   getLatestAnalysisJob(
     scope: ReviewStoreScope,
     reviewCaseId: string

@@ -71,4 +71,36 @@ describe("analysis worker", () => {
       })
     });
   });
+
+  it("fails stale running jobs at startup before claiming new work", async () => {
+    const store = createMockReviewStore();
+    await store.createReviewCaseFromSamplePackage(scope, {
+      samplePackageId: "rc-demo-deposit-001"
+    });
+    await store.enqueueAnalysis(scope, "rc-demo-deposit-001");
+
+    // Claim the job to put it in "running" state (simulates a dead worker)
+    await store.claimNextAnalysisJob("tenant-demo", "worker-stale");
+
+    // With threshold=0, any running job is considered stale
+    const worker = createAnalysisWorker({
+      store,
+      pipeline: { async run({ review }) { void review; return artifacts; } },
+      staleJobThresholdMs: 0
+    });
+
+    // runOnce should fail the stale job, but there's nothing left in the queue to claim
+    const result = await worker.runOnce({ tenantId: "tenant-demo", workerId: "worker-new" });
+
+    expect(result).toEqual({ processed: false });
+
+    // Verify the stale job was actually failed
+    const latest = await store.getLatestAnalysisJob(scope, "rc-demo-deposit-001");
+    expect(latest?.status).toBe("failed");
+    expect(latest?.errorMessage).toMatch(/stale/);
+
+    // Verify the case was also reset so it can be re-queued
+    const reviewCase = await store.getReviewCase(scope, "rc-demo-deposit-001");
+    expect(reviewCase?.status).toBe("analysis_waiting");
+  });
 });

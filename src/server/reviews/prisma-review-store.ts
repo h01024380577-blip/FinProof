@@ -2604,6 +2604,35 @@ export function createPrismaReviewStore(): ReviewStore {
       });
     },
 
+    async failStaleAnalysisJobs(tenantId: string, olderThanMs: number): Promise<number> {
+      const cutoff = new Date(Date.now() - olderThanMs);
+      const errorMsg = `stale: job exceeded ${Math.round(olderThanMs / 1000)}s timeout`;
+
+      const rows = await prisma.$queryRaw<{ count: bigint }[]>`
+        WITH stale AS (
+          UPDATE analysis_jobs
+          SET
+            status       = 'failed',
+            progress     = 100,
+            current_step = 'worker_failed',
+            completed_at = now(),
+            error_message = ${errorMsg}
+          WHERE tenant_id  = ${tenantId}
+            AND status     = 'running'
+            AND started_at < ${cutoff}
+          RETURNING review_case_id
+        ),
+        reset AS (
+          UPDATE review_cases
+          SET status = 'analysis_waiting', updated_at = now()
+          WHERE id IN (SELECT review_case_id FROM stale)
+        )
+        SELECT COUNT(*) AS count FROM stale
+      `;
+
+      return Number(rows[0]?.count ?? 0);
+    },
+
     async getLatestAnalysisJob(scope, reviewCaseId) {
       const row = await prisma.analysisJob.findFirst({
         where: { tenantId: scope.tenantId, reviewCaseId },
