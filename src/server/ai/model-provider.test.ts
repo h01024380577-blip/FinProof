@@ -242,8 +242,11 @@ describe("model provider fetch timeouts", () => {
       fetchImpl
     );
 
-    await provider.generateText({ instructions: "sys", input: "user", fallback: "" });
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+    await provider.generateText({ task: "draft", instructions: "sys", input: "user", fallback: "" });
     expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(timeoutSpy).toHaveBeenCalledWith(5000);
+    timeoutSpy.mockRestore();
   });
 
   it("passes AbortSignal to OpenAI responses fetch", async () => {
@@ -269,7 +272,10 @@ describe("model provider fetch timeouts", () => {
       fetchImpl
     );
 
-    await provider.generateText({ instructions: "sys", input: "user", fallback: "" });
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+    await provider.generateText({ task: "draft", instructions: "sys", input: "user", fallback: "" });
     expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(timeoutSpy).toHaveBeenCalledWith(5000);
+    timeoutSpy.mockRestore();
   });
 });
