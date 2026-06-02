@@ -2146,7 +2146,6 @@ export function createPrismaReviewStore(): ReviewStore {
           })
         ]);
       } catch (txError) {
-        console.error(`[claimNextAnalysisJob] $transaction failed for job=${queued.id}:`, txError);
         throw txError;
       }
 
@@ -2200,7 +2199,8 @@ export function createPrismaReviewStore(): ReviewStore {
           where: { id: job.reviewCaseId },
           data: {
             status: "analysis_complete",
-            analysisCompletedAt: now
+            analysisCompletedAt: now,
+            analysisNotice: null
           },
           include: reviewInclude
         });

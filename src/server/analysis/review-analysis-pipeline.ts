@@ -33,6 +33,11 @@ import {
   type AgentFinding,
   type ReviewSubAgentOrchestrator
 } from "./review-subagents";
+import { execFile } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
 
 export type ExtractedDocument = {
   fileId: string;
@@ -122,6 +127,9 @@ type ReviewAnalysisPipelineOptions = {
   now?: () => Date;
 };
 
+const execFileAsync = promisify(execFile);
+const DEFAULT_MIN_PDF_TEXT_CHARS = 40;
+
 function textPreview(text: string, maxLength: number) {
   const normalized = text.replace(/\s+/g, " ").trim();
 
@@ -161,6 +169,12 @@ function isTextLikeFile(file: ReviewFile) {
   );
 }
 
+function isPdfFile(file: ReviewFile) {
+  const contentType = file.contentType?.split(";")[0]?.trim().toLowerCase();
+
+  return contentType === "application/pdf" || /\.pdf$/i.test(file.name);
+}
+
 function stripHtml(text: string) {
   return text
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -184,6 +198,45 @@ function decodeStoredText(file: ReviewFile, body: Uint8Array) {
       : decoded.replace(/\s+/g, " ").trim();
 
   return text.length > 0 ? text : undefined;
+}
+
+async function extractPdfText(body: Uint8Array) {
+  const tempDir = await mkdtemp(path.join(tmpdir(), "finproof-pdf-"));
+  const pdfPath = path.join(tempDir, "input.pdf");
+  const pdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH?.trim() || "/usr/bin/pdftotext";
+
+  try {
+    await writeFile(pdfPath, body);
+    const { stdout } = await execFileAsync(pdfToTextPath, [pdfPath, "-"], {
+      timeout: 15_000,
+      maxBuffer: 10 * 1024 * 1024
+    });
+    const text = String(stdout).replace(/\s+/g, " ").trim();
+
+    return text.length > 0 ? text : undefined;
+  } catch (error) {
+    console.log(`[PDFTextExtractor] unavailable or failed: ${errorMessage(error)}`);
+
+    return undefined;
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function minPdfTextChars() {
+  const parsed = Number(process.env.FINPROOF_PDF_TEXT_MIN_CHARS?.trim());
+
+  return Number.isFinite(parsed) && parsed >= 0
+    ? Math.floor(parsed)
+    : DEFAULT_MIN_PDF_TEXT_CHARS;
+}
+
+function hasEnoughPdfText(text: string) {
+  return text.replace(/\s+/g, "").length >= minPdfTextChars();
 }
 
 function metadataOnlyText(file: ReviewFile) {
@@ -218,14 +271,46 @@ function sampleOrMetadataDocument(review: ReviewCase, file: ReviewFile): Extract
   };
 }
 
-async function extractStoredText(file: ReviewFile, fileBodyReader?: ReviewFileBodyReader) {
-  if (!file.storageKey || !fileBodyReader || !isTextLikeFile(file)) {
+async function extractStoredDocument(file: ReviewFile, fileBodyReader?: ReviewFileBodyReader) {
+  if (!file.storageKey || !fileBodyReader || (!isTextLikeFile(file) && !isPdfFile(file))) {
     return undefined;
   }
 
   const body = await fileBodyReader.getReviewFileBody(file.storageKey);
 
-  return body ? decodeStoredText(file, body) : undefined;
+  if (!body) {
+    return undefined;
+  }
+
+  if (isTextLikeFile(file)) {
+    const text = decodeStoredText(file, body);
+
+    return text
+      ? {
+          text,
+          provider: "local-text-extractor",
+          confidence: 0.96
+        }
+      : undefined;
+  }
+
+  const pdfText = await extractPdfText(body);
+
+  return pdfText && hasEnoughPdfText(pdfText)
+    ? {
+        text: pdfText,
+        provider: "local-pdf-text-extractor",
+        confidence: 0.94
+      }
+    : undefined;
+}
+
+function documentsForAnalysis(documents: ExtractedDocument[]) {
+  const extracted = documents.filter(
+    (document) => document.provider !== "metadata-only" && document.text.trim().length > 0
+  );
+
+  return extracted.length > 0 ? extracted : documents;
 }
 
 function createDeterministicOcrProvider(fileBodyReader?: ReviewFileBodyReader): OcrProvider {
@@ -233,16 +318,16 @@ function createDeterministicOcrProvider(fileBodyReader?: ReviewFileBodyReader): 
     async extract({ review, files }) {
       return Promise.all(
         files.map(async (file) => {
-          const storedText = await extractStoredText(file, fileBodyReader);
+          const storedDocument = await extractStoredDocument(file, fileBodyReader);
 
-          if (storedText) {
+          if (storedDocument) {
             return {
               fileId: file.id,
               fileName: file.name,
               storageKey: file.storageKey,
-              text: storedText,
-              confidence: 0.96,
-              provider: "local-text-extractor"
+              text: storedDocument.text,
+              confidence: storedDocument.confidence,
+              provider: storedDocument.provider
             };
           }
 
@@ -368,16 +453,16 @@ export function createGeminiOcrProvider(
 
       return Promise.all(
         files.map(async (file) => {
-          const storedText = await extractStoredText(file, fileBodyReader);
+          const storedDocument = await extractStoredDocument(file, fileBodyReader);
 
-          if (storedText) {
+          if (storedDocument) {
             return {
               fileId: file.id,
               fileName: file.name,
               storageKey: file.storageKey,
-              text: storedText,
-              confidence: 0.96,
-              provider: "local-text-extractor"
+              text: storedDocument.text,
+              confidence: storedDocument.confidence,
+              provider: storedDocument.provider
             };
           }
 
@@ -427,6 +512,8 @@ export function createGeminiOcrProvider(
           );
 
           if (!response.ok) {
+            const errBody = await response.text().catch(() => "");
+            console.log(`[GeminiOCR] API error ${response.status}: ${errBody.slice(0, 200)}`);
             throw new Error(
               `Gemini OCR request failed: ${response.status ?? "unknown"} ${
                 response.statusText ?? ""
@@ -434,7 +521,8 @@ export function createGeminiOcrProvider(
             );
           }
 
-          const extracted = parseGeminiOcrText(extractGeminiText(await response.json()));
+          const rawJson = await response.json();
+          const extracted = parseGeminiOcrText(extractGeminiText(rawJson));
 
           if (!extracted.text) {
             return sampleOrMetadataDocument(review, file);
@@ -504,11 +592,7 @@ function createLexicalRagRetriever(
   return {
     async retrieve({ review, extractedDocuments, scope }) {
       const query = reviewRagQuery(review);
-      const searchableDocuments = extractedDocuments.some(
-        (document) => document.provider !== "metadata-only" && document.text.trim().length > 0
-      )
-        ? extractedDocuments.filter((document) => document.provider !== "metadata-only")
-        : extractedDocuments;
+      const searchableDocuments = documentsForAnalysis(extractedDocuments);
 
       const productDocumentCandidates = searchableDocuments
         .map((document, index) => ({
@@ -720,9 +804,10 @@ export function createReviewAnalysisPipeline({
       const config = getAnalysisProviderConfig();
       const query = reviewRagQuery(review);
       const extractedDocuments = await ocrProvider.extract({ review, files: review.files });
+      const analysisDocuments = documentsForAnalysis(extractedDocuments);
       const retrievedCandidates = await ragRetriever.retrieve({
         review,
-        extractedDocuments,
+        extractedDocuments: analysisDocuments,
         scope
       });
       const evidenceCandidates = (
@@ -731,7 +816,7 @@ export function createReviewAnalysisPipeline({
           candidates: retrievedCandidates
         })
       ).slice(0, config.rerank.topK);
-      const multilingualSegments = segmentMultilingualDocuments(extractedDocuments);
+      const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =
         multilingualSegments.length > 0
           ? await runMultilingualRiskTeam({
@@ -748,7 +833,7 @@ export function createReviewAnalysisPipeline({
             };
       const orchestratedFindings = await subAgentOrchestrator.run({
         review,
-        extractedDocuments,
+        extractedDocuments: analysisDocuments,
         evidenceCandidates,
         priorFindings: multilingualResult.agentFindings
       });
@@ -758,7 +843,7 @@ export function createReviewAnalysisPipeline({
       );
       const artifacts = {
         generatedAt: now().toISOString(),
-        extractedDocuments,
+        extractedDocuments: analysisDocuments,
         evidenceCandidates,
         ...(agentFindings.length > 0 ? { agentFindings } : {}),
         ...(multilingualSegments.length > 0 ? { multilingualSegments } : {}),

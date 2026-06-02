@@ -28,7 +28,9 @@ function storagePath(rootDir: string, storageKey: string) {
   const relativePath = storageKey
     .replace(/^local\//, "")
     .split("/")
-    .map((segment) => normalizeFileName(segment))
+    // Normalize to NFC so that keys stored as NFD (e.g. from macOS uploads) resolve
+    // to the same path as files written by this adapter, which uses NFC.
+    .map((segment) => normalizeFileName(segment).normalize("NFC"))
     .join(path.sep);
 
   return path.join(/* turbopackIgnore: true */ rootDir, relativePath);
@@ -41,7 +43,7 @@ export function createLocalMetadataStorageAdapter({
     async putReviewFile(input: PutReviewFileInput): Promise<StoredFileMetadata> {
       const storageKey = `local/${input.reviewCaseId}/${input.fileId}/${normalizeFileName(
         input.fileName
-      )}`;
+      ).normalize("NFC")}`;
       const targetPath = storagePath(rootDir, storageKey);
 
       if (!targetPath) {
@@ -64,7 +66,7 @@ export function createLocalMetadataStorageAdapter({
     ): Promise<StoredFileMetadata> {
       const storageKey = `local/knowledge-documents/${input.documentId}/${normalizeFileName(
         input.fileName
-      )}`;
+      ).normalize("NFC")}`;
       const targetPath = storagePath(rootDir, storageKey);
 
       if (!targetPath) {
@@ -84,7 +86,6 @@ export function createLocalMetadataStorageAdapter({
 
     async getFileBody(storageKey: string): Promise<Uint8Array | undefined> {
       const targetPath = storagePath(rootDir, storageKey);
-      console.log(`[StorageAdapter] getFileBody key=${storageKey} rootDir=${rootDir} path=${targetPath}`);
 
       if (!targetPath) {
         return undefined;
@@ -92,10 +93,8 @@ export function createLocalMetadataStorageAdapter({
 
       try {
         const data = await readFile(targetPath);
-        console.log(`[StorageAdapter] read OK size=${data.length}`);
         return Uint8Array.from(data);
       } catch (error) {
-        console.log(`[StorageAdapter] read error code=${(error as any)?.code} path=${targetPath}`);
         if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
           return undefined;
         }

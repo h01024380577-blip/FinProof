@@ -55,7 +55,6 @@ export function createAnalysisWorker(deps: AnalysisWorkerDeps = {}) {
       if (!claimed) {
         return { processed: false };
       }
-      console.log(`[Worker] claimed job=${claimed.id} case=${claimed.reviewCaseId}`);
 
       const scope = workerScope(input);
       let artifacts;
