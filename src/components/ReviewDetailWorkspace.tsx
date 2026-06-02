@@ -424,11 +424,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       return undefined;
     }
 
+    const file = uploadedCreativeFile;
     let objectUrl: string | null = null;
     let cancelled = false;
     const contentUrl = `/api/v1/review-cases/${encodeURIComponent(
       review.id
-    )}/files/${encodeURIComponent(uploadedCreativeFile.id)}/content`;
+    )}/files/${encodeURIComponent(file.id)}/content`;
 
     async function loadUploadedCreative() {
       try {
@@ -440,16 +441,16 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         }
 
         if (!blob) {
-          setFailedUploadedCreativeFileId(uploadedCreativeFile.id);
+          setFailedUploadedCreativeFileId(file.id);
           return;
         }
 
         objectUrl = URL.createObjectURL(blob);
         setFailedUploadedCreativeFileId(null);
-        setUploadedCreativeObject({ fileId: uploadedCreativeFile.id, url: objectUrl });
+        setUploadedCreativeObject({ fileId: file.id, url: objectUrl });
       } catch {
         if (!cancelled) {
-          setFailedUploadedCreativeFileId(uploadedCreativeFile.id);
+          setFailedUploadedCreativeFileId(file.id);
         }
       }
     }
