@@ -345,7 +345,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const reviewerCanMutate = canMutateReview(activeRole);
   const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
-  const [draft, setDraftState] = useState(review.currentDraft ?? review.expectedDraft);
+  const [draft, setDraftState] = useState(review.currentDraft ?? "");
   const latestDraftRef = useRef(draft);
   const [uploadedCreativeObject, setUploadedCreativeObject] = useState<{
     fileId: string;
@@ -972,6 +972,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         aria-label="Opinion draft"
         data-scroll-region="draft-editor"
         disabled={!reviewerCanMutate}
+        placeholder={reviewerCanMutate ? "초안 생성 버튼을 눌러 AI 초안을 생성하세요." : ""}
         onChange={(event) => {
           setDraft(event.target.value);
           setDraftNotice(null);
