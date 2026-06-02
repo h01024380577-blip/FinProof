@@ -33,7 +33,25 @@ function evidenceCandidateById(
 }
 
 function isRegisteredKnowledgeEvidence(candidate: RagEvidenceCandidate) {
-  return candidate.sourceType !== "product_doc";
+  return candidate.sourceType === "law" || candidate.sourceType === "internal_policy";
+}
+
+function isNotCaseHistoryEvidence(candidate: RagEvidenceCandidate) {
+  return candidate.sourceType !== "case_history";
+}
+
+function preferredEvidenceCandidate(
+  artifacts: AnalysisArtifacts,
+  candidates: RagEvidenceCandidate[]
+): RagEvidenceCandidate | undefined {
+  return (
+    candidates.find(isRegisteredKnowledgeEvidence) ??
+    artifacts.evidenceCandidates.find(isRegisteredKnowledgeEvidence) ??
+    candidates.find(isNotCaseHistoryEvidence) ??
+    artifacts.evidenceCandidates.find(isNotCaseHistoryEvidence) ??
+    candidates[0] ??
+    firstEvidenceCandidate(artifacts)
+  );
 }
 
 function candidateToEvidence(
@@ -73,9 +91,7 @@ function issueEvidence(
   artifacts: AnalysisArtifacts,
   issueId: string
 ): Evidence[] {
-  const candidate =
-    artifacts.evidenceCandidates.find(isRegisteredKnowledgeEvidence) ??
-    firstEvidenceCandidate(artifacts);
+  const candidate = preferredEvidenceCandidate(artifacts, []);
   const evidence = candidate
     ? candidateToEvidence(candidate, issueId, 0)
     : fallbackEvidence(review, artifacts);
@@ -159,8 +175,11 @@ function issuesFromAgentFindings(review: ReviewCase, artifacts: AnalysisArtifact
     const issueId = `issue-${review.id}-${finding.id}`;
     const matchedEvidence = finding.evidenceCandidateIds
       .map((candidateId) => evidenceCandidateById(artifacts, candidateId))
-      .filter((candidate): candidate is RagEvidenceCandidate => Boolean(candidate))
-      .map((candidate, index) => candidateToEvidence(candidate, issueId, index));
+      .filter((candidate): candidate is RagEvidenceCandidate => Boolean(candidate));
+    const preferredEvidence = preferredEvidenceCandidate(artifacts, matchedEvidence);
+    const issueEvidence = preferredEvidence
+      ? [candidateToEvidence(preferredEvidence, issueId, 0)]
+      : [];
 
     return {
       id: issueId,
@@ -176,8 +195,8 @@ function issuesFromAgentFindings(review: ReviewCase, artifacts: AnalysisArtifact
       suggestedCopy: finding.suggestedCopy,
       multilingualContext: multilingualContextFromFinding(finding),
       evidence:
-        matchedEvidence.length > 0
-          ? matchedEvidence
+        issueEvidence.length > 0
+          ? issueEvidence
           : [
               {
                 ...fallbackEvidence(review, artifacts),

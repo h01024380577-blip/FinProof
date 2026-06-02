@@ -227,6 +227,42 @@ describe("IssueDetailTabs", () => {
     expect(screen.queryByText("law")).not.toBeInTheDocument();
   });
 
+  it("extracts an article reference from registered knowledge text when section metadata is absent", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          evidence: [
+            {
+              id: "knowledge-guideline-001",
+              sourceType: "internal_policy",
+              documentId: "doc-financial-ad-guideline",
+              chunkId: "chunk-financial-ad-guideline-8-3",
+              title: "금융규제 가이드라인",
+              quoteSummary:
+                "8조제3항 각 호의 내용 중 일부를 제외함으로 인해 금융소비자의 합리적 의사결정이 저해될 우려가 없을 것",
+              relevanceScore: 0.79
+            }
+          ]
+        }}
+        activeTab="evidence"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(
+      screen.getByText("금융규제 가이드라인 제8조제3항을 참고해 판단했습니다.")
+    ).toBeInTheDocument();
+  });
+
   it("renders the cited source layout for completed issues that have no persisted evidence", () => {
     render(
       <IssueDetailTabs

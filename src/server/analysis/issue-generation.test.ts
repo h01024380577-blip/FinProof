@@ -146,6 +146,71 @@ describe("issue generation", () => {
     );
   });
 
+  it("uses registered knowledge evidence instead of case history for model subagent findings", () => {
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-02T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "poster.txt",
+          text: "누구나 최고 연 5.0%",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "case-history-rc-upload-001",
+          sourceType: "case_history",
+          title: "rc-upload-001",
+          quoteSummary: "과거 유사 심의 사례입니다.",
+          relevanceScore: 0.93
+        },
+        {
+          id: "knowledge-financial-consumer-protection-article-21",
+          sourceType: "law",
+          documentId: "doc-financial-consumer-protection",
+          chunkId: "chunk-financial-consumer-protection-21",
+          title: "금융소비자 보호에 관한 법률",
+          section: "제21조 제3항",
+          quoteSummary:
+            "금융상품 광고는 소비자가 오인하지 않도록 중요사항과 제한조건을 명확히 표시해야 합니다.",
+          relevanceScore: 0.88
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-creative-review-001",
+          agent: "creative_review",
+          title: "절대적 혜택 표현 확인 필요",
+          issueType: "ai_creative_review",
+          riskLevel: "high",
+          targetText: "누구나 최고 연 5.0%",
+          description: "절대 표현이 소비자 오인을 유발할 수 있습니다.",
+          suggestedAction: "change_request",
+          suggestedCopy: "최고 금리 적용 조건을 함께 표시해 주세요.",
+          evidenceCandidateIds: ["case-history-rc-upload-001"],
+          confidence: 0.9
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    const aiIssue = issues.find((candidate) => candidate.issueType === "ai_creative_review");
+
+    expect(aiIssue?.evidence).toEqual([
+      expect.objectContaining({
+        sourceType: "law",
+        documentId: "doc-financial-consumer-protection",
+        chunkId: "chunk-financial-consumer-protection-21",
+        title: "금융소비자 보호에 관한 법률",
+        section: "제21조 제3항",
+        quoteSummary: expect.stringContaining("중요사항과 제한조건")
+      })
+    ]);
+  });
+
   it("prefers registered knowledge evidence when deterministic issues cite their source", () => {
     const review: ReviewCase = {
       id: "rc-citation-source-001",

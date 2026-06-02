@@ -152,8 +152,20 @@ function objectParticle(value: string): "을" | "를" {
   return /\d/.test(lastChar) ? "을" : "를";
 }
 
+function normalizeArticleReference(value: string): string {
+  const trimmed = value.replace(/\s+/g, "").trim();
+
+  return trimmed.startsWith("제") ? trimmed : `제${trimmed}`;
+}
+
+function articleReferenceFromQuote(value: string): string | undefined {
+  const match = value.match(/(?:제)?\d+조(?:\s*제?\d+항)?(?:\s*제?\d+호)?/);
+
+  return match ? normalizeArticleReference(match[0]) : undefined;
+}
+
 function evidenceCitation(evidence: Evidence): string {
-  const section = evidence.section?.trim();
+  const section = evidence.section?.trim() || articleReferenceFromQuote(evidence.quoteSummary);
   const location = section ? ` ${section}` : "";
   const source = `${evidence.title}${location}`;
 
