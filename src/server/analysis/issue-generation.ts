@@ -53,6 +53,19 @@ function isNotCaseHistoryEvidence(candidate: RagEvidenceCandidate) {
   return candidate.sourceType !== "case_history";
 }
 
+function isVisualCreativeUpload(file: ReviewCase["files"][number]) {
+  const contentType = file.contentType?.split(";")[0]?.trim().toLowerCase() ?? "";
+  const fileName = file.name.toLowerCase();
+  const hasVisualContentType = contentType.startsWith("image/") || contentType === "application/pdf";
+  const hasVisualExtension = /\.(jpe?g|png|webp|gif|heic|heif|pdf)$/i.test(fileName);
+
+  return file.fileType === "promotional_creative" && (hasVisualContentType || hasVisualExtension);
+}
+
+function isImageOnlyReview(review: ReviewCase) {
+  return review.files.length > 0 && review.files.every(isVisualCreativeUpload);
+}
+
 function preferredEvidenceCandidate(
   artifacts: AnalysisArtifacts,
   candidates: RagEvidenceCandidate[]
@@ -257,7 +270,7 @@ export function buildAnalysisIssues(
   const conditionPattern = /(조건|우대|기본|세전|한도|충족|적용|대상|기간|고시)/;
   const absoluteClaimPattern = /(누구나|무조건|전원|100%|반드시|확정|보장)/;
 
-  if (text.length === 0) {
+  if (text.length === 0 && !isImageOnlyReview(review)) {
     issues.push(
       baseIssue({
         review,

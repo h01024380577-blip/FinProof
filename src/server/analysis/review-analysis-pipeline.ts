@@ -307,11 +307,9 @@ async function extractStoredDocument(file: ReviewFile, fileBodyReader?: ReviewFi
 }
 
 function documentsForAnalysis(documents: ExtractedDocument[]) {
-  const extracted = documents.filter(
+  return documents.filter(
     (document) => document.provider !== "metadata-only" && document.text.trim().length > 0
   );
-
-  return extracted.length > 0 ? extracted : documents;
 }
 
 function createDeterministicOcrProvider(fileBodyReader?: ReviewFileBodyReader): OcrProvider {

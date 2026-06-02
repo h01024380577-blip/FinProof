@@ -241,6 +241,55 @@ describe("review analysis pipeline", () => {
     );
   });
 
+  it("does not route image metadata-only notices to review agents when image OCR text is unavailable", async () => {
+    const subAgentOrchestrator: ReviewSubAgentOrchestrator = {
+      run: vi.fn(async () => [])
+    };
+    const pipeline = createReviewAnalysisPipeline({
+      subAgentOrchestrator,
+      ocrProvider: {
+        async extract() {
+          return [
+            {
+              fileId: "file-upload-001",
+              fileName: "loan-ad.jpeg",
+              text: [
+                "파일명: loan-ad.jpeg",
+                "이 파일은 현재 로컬 텍스트 추출 대상이 아니거나 저장 본문을 읽을 수 없습니다."
+              ].join("\n"),
+              confidence: 0.62,
+              provider: "metadata-only"
+            }
+          ];
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({
+      review: {
+        ...review,
+        productType: "image_test",
+        promotionalCopy: "",
+        disclosure: "",
+        productDescription: "",
+        files: [
+          {
+            ...review.files[0],
+            name: "loan-ad.jpeg",
+            contentType: "image/jpeg"
+          }
+        ]
+      }
+    });
+
+    expect(artifacts.extractedDocuments).toEqual([]);
+    expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extractedDocuments: []
+      })
+    );
+  });
+
   it("extracts visual file text with Gemini OCR using inline file bytes", async () => {
     const pdfBytes = new TextEncoder().encode("%PDF-1.7 fake pdf bytes");
     const fetchImpl = vi.fn(async () => ({

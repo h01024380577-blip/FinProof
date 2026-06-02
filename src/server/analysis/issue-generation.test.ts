@@ -339,4 +339,53 @@ describe("issue generation", () => {
       section: "제68조 제5항"
     });
   });
+
+  it("does not create unreadable-image issues when only image files are uploaded without OCR text", () => {
+    const review: ReviewCase = {
+      id: "rc-image-only-001",
+      title: "이미지 단독 업로드 심의",
+      affiliate: "광주은행",
+      productType: "image_test",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      status: "analysis_complete",
+      highestRiskLevel: "info",
+      requester: "업로드 요청자",
+      reviewer: "준법심의자",
+      promotionalCopy: "",
+      disclosure: "",
+      productDescription: "",
+      missingMaterials: [],
+      files: [
+        {
+          id: "file-image-only-001",
+          name: "대출광고1.jpeg",
+          fileType: "promotional_creative",
+          classificationConfidence: 0.95,
+          parseStatus: "pending",
+          storageProvider: "local",
+          storageKey: "local/rc-image-only-001/file-image-only-001/loan-ad.jpeg",
+          contentType: "image/jpeg",
+          sizeBytes: 1024
+        }
+      ],
+      issues: [],
+      expectedDraft: ""
+    };
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-02T00:00:00.000Z",
+      extractedDocuments: [],
+      evidenceCandidates: []
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          issueType: "ocr_required"
+        })
+      ])
+    );
+  });
 });
