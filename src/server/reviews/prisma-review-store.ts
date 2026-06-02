@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { answerReviewQuestion } from "@/domain/chat";
+import {
+  answerReviewQuestion,
+  generateIssueBasedOpinionDraft,
+  shouldReplaceStaleOpinionDraft
+} from "@/domain/chat";
 import { getRequiredMaterialRows } from "@/domain/intake";
 import { generateReviewReport } from "@/domain/reports";
 import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
@@ -2487,17 +2491,38 @@ export function createPrismaReviewStore(): ReviewStore {
               select: { riskLevel: true }
             })
           ]);
+          const highestRiskLevel =
+            issueRiskRows.length > 0
+              ? highestRiskLevelFrom(
+                  issueRiskRows.map((issue) => issue.riskLevel),
+                  "info"
+                )
+              : review.highestRiskLevel;
+          const refreshedReview = await tx.reviewCase.findFirst({
+            where: { id: input.reviewCaseId, tenantId: scope.tenantId },
+            include: reviewInclude
+          });
+
+          if (!refreshedReview) {
+            throw new AnalysisJobTransitionConflictError();
+          }
+
+          const reviewForDraft: ReviewCase = {
+            ...toReviewCase(reviewRow(refreshedReview)),
+            highestRiskLevel
+          };
+          const reviewUpdateData: Prisma.ReviewCaseUpdateInput = {
+            highestRiskLevel
+          };
+
+          if (shouldReplaceStaleOpinionDraft(reviewCase.currentDraft)) {
+            reviewUpdateData.currentDraft = generateIssueBasedOpinionDraft(reviewForDraft);
+            reviewUpdateData.currentDraftVersion = { increment: 1 };
+          }
+
           await tx.reviewCase.update({
             where: { id: input.reviewCaseId },
-            data: {
-              highestRiskLevel:
-                issueRiskRows.length > 0
-                  ? highestRiskLevelFrom(
-                      issueRiskRows.map((issue) => issue.riskLevel),
-                      "info"
-                    )
-                  : review.highestRiskLevel
-            }
+            data: reviewUpdateData
           });
           const persistedJob = await tx.analysisJob.updateMany({
             where: {

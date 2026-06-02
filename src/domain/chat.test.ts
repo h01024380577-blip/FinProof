@@ -1,4 +1,8 @@
-import { answerReviewQuestion, generateDraftWithChatContext } from "./chat";
+import {
+  answerReviewQuestion,
+  generateDraftWithChatContext,
+  generateIssueBasedOpinionDraft
+} from "./chat";
 import { getReviewCaseById } from "./reviews";
 
 describe("review chat guardrails", () => {
@@ -39,8 +43,20 @@ describe("review chat guardrails", () => {
 
     const draft = generateDraftWithChatContext(review, [response]);
 
-    expect(draft).toContain(review.expectedDraft);
+    expect(draft).toContain(issue.title);
+    expect(draft).toContain(issue.suggestedCopy);
     expect(draft).toContain("채팅 반영");
     expect(draft).toContain("정기적금 상품설명서");
+  });
+
+  it("generates an opinion draft from analyzed issues when no chat context is selected", () => {
+    const draft = generateIssueBasedOpinionDraft(review);
+
+    expect(draft).toContain("수정 요청 의견 초안");
+    expect(draft).toContain(issue.title);
+    expect(draft).toContain(issue.targetText);
+    expect(draft).toContain(issue.description);
+    expect(draft).toContain(issue.suggestedCopy);
+    expect(draft).toContain(issue.evidence[0].title);
   });
 });

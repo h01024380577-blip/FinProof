@@ -164,6 +164,7 @@ describe("review AI service", () => {
   it("uses model text for draft generation", async () => {
     const provider = modelProvider("모델 수정 요청 초안");
     const draft = await generateDraftWithModel(review, [], provider);
+    const call = vi.mocked(provider.generateText).mock.calls[0]?.[0];
 
     expect(draft).toBe("모델 수정 요청 초안");
     expect(provider.generateText).toHaveBeenCalledWith(
@@ -172,9 +173,11 @@ describe("review AI service", () => {
         routeContext: expect.objectContaining({
           riskLevel: review.highestRiskLevel
         }),
-        fallback: review.expectedDraft
+        fallback: expect.stringContaining(issue.title)
       })
     );
+    expect(call?.input).toContain(issue.title);
+    expect(call?.input).toContain(issue.suggestedCopy);
   });
 
   it("uses model text for report markdown while keeping report metadata", async () => {

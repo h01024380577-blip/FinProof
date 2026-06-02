@@ -24,7 +24,7 @@ type AnswerQuestionInput = {
 };
 
 function reviewSummary(review: ReviewCase) {
-  return JSON.stringify({
+  return {
     id: review.id,
     title: review.title,
     affiliate: review.affiliate,
@@ -32,7 +32,24 @@ function reviewSummary(review: ReviewCase) {
     promotionalCopy: review.promotionalCopy,
     disclosure: review.disclosure,
     missingMaterials: review.missingMaterials
-  });
+  };
+}
+
+function issueSummary(issue: ReviewIssue) {
+  return {
+    title: issue.title,
+    issueType: issue.issueType,
+    riskLevel: issue.riskLevel,
+    targetText: issue.targetText,
+    description: issue.description,
+    suggestedCopy: issue.suggestedCopy,
+    evidence: issue.evidence.map((evidence) => ({
+      title: evidence.title,
+      section: evidence.section,
+      quoteSummary: evidence.quoteSummary,
+      relevanceScore: evidence.relevanceScore
+    }))
+  };
 }
 
 function defaultModelProvider() {
@@ -138,9 +155,10 @@ export async function generateDraftWithModel(
     task: "opinion_draft",
     routeContext: draftRouteContext(review, chatResponses),
     instructions:
-      "Write a concise Korean financial advertising review opinion draft. Use only the supplied review and reviewer chat context.",
+      "Write a concise Korean financial advertising review opinion draft. Reflect every supplied review issue and suggested copy. Use only the supplied review, issues, evidence, and reviewer chat context. If analysis is complete and issues exist, do not mention OCR/RAG pre-analysis or evidence shortage unless the issue itself says so.",
     input: JSON.stringify({
       review: reviewSummary(review),
+      issues: review.issues.map(issueSummary),
       chatResponses,
       fallback
     }),

@@ -264,6 +264,74 @@ describe("mock review store", () => {
     });
   });
 
+  it("replaces stale pre-analysis opinion drafts with issue-based drafts after analysis output persistence", async () => {
+    const store = createMockReviewStore();
+    await store.createReviewCaseFromUploadedFiles(scope, {
+      reviewCaseId: "rc-draft-refresh-test",
+      title: "예금 광고 분석",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [
+        {
+          id: "file-deposit-poster",
+          name: "deposit-poster.txt",
+          type: "text/plain",
+          size: 1024
+        }
+      ]
+    });
+    await store.saveOpinionDraft(
+      scope,
+      "rc-draft-refresh-test",
+      "검토의견 초안: 현재 건은 OCR/RAG 분석 전 단계로 구체적 근거 확인이 어렵습니다."
+    );
+    await store.enqueueAnalysis(scope, "rc-draft-refresh-test");
+    const claimedJob = await store.claimNextAnalysisJob(scope.tenantId, "worker-test");
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-02T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-deposit-poster",
+          fileName: "deposit-poster.txt",
+          text: "급여이체 고객 연 최고 5.20%",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [],
+      findings: [
+        {
+          agentType: "main",
+          issueType: "rate",
+          riskLevel: "caution",
+          title: "최고금리 조건 안내 불충분",
+          targetText: "급여이체 고객 연 최고 5.20%",
+          targetBbox: [0, 0, 0, 0],
+          description:
+            "급여이체만으로 최고금리가 가능한 것처럼 보이나 실제로는 추가 우대 조건이 필요합니다.",
+          suggestedAction: "change_request",
+          suggestedCopy: "급여이체·자동이체 조건 충족 시 최고 연 5.20%",
+          confidence: 0.9,
+          evidence: []
+        }
+      ]
+    };
+
+    await store.persistAnalysisOutputs(scope, {
+      reviewCaseId: "rc-draft-refresh-test",
+      jobId: claimedJob!.id,
+      artifacts
+    });
+
+    const review = await store.getReviewCase(scope, "rc-draft-refresh-test");
+
+    expect(review?.currentDraft).toContain("최고금리 조건 안내 불충분");
+    expect(review?.currentDraft).toContain("급여이체·자동이체 조건 충족 시 최고 연 5.20%");
+    expect(review?.currentDraft).not.toContain("OCR/RAG 분석 전");
+  });
+
   it("updates review case status for final reviewer action", async () => {
     const store = createMockReviewStore();
     await store.createReviewCaseFromSamplePackage(scope, {

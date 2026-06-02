@@ -1,5 +1,9 @@
 import { getRequiredMaterialRows } from "@/domain/intake";
-import { answerReviewQuestion } from "@/domain/chat";
+import {
+  answerReviewQuestion,
+  generateIssueBasedOpinionDraft,
+  shouldReplaceStaleOpinionDraft
+} from "@/domain/chat";
 import { generateReviewReport } from "@/domain/reports";
 import { reviewCases } from "@/domain/reviews";
 import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
@@ -1056,14 +1060,25 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
               );
             })()
           : review.issues;
-      const updatedReview: ReviewCase = {
+      const highestRiskLevel =
+        generatedIssues.find((issue) => issue.riskLevel === "reject_recommended")?.riskLevel ??
+        generatedIssues.find((issue) => issue.riskLevel === "high")?.riskLevel ??
+        generatedIssues.find((issue) => issue.riskLevel === "caution")?.riskLevel ??
+        review.highestRiskLevel;
+      const analysisReview: ReviewCase = {
         ...review,
         issues: generatedIssues,
-        highestRiskLevel:
-          generatedIssues.find((issue) => issue.riskLevel === "reject_recommended")?.riskLevel ??
-          generatedIssues.find((issue) => issue.riskLevel === "high")?.riskLevel ??
-          generatedIssues.find((issue) => issue.riskLevel === "caution")?.riskLevel ??
-          review.highestRiskLevel
+        highestRiskLevel
+      };
+      const shouldRefreshDraft = shouldReplaceStaleOpinionDraft(review.currentDraft);
+      const updatedReview: ReviewCase = {
+        ...analysisReview,
+        ...(shouldRefreshDraft
+          ? {
+              currentDraft: generateIssueBasedOpinionDraft(analysisReview),
+              currentDraftVersion: (review.currentDraftVersion ?? 0) + 1
+            }
+          : {})
       };
 
       cases.set(reviewCaseId, updatedReview);
