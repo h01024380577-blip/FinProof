@@ -6,10 +6,24 @@ describe("model router", () => {
       defaultTextModel: "gpt-5-mini",
       escalationTextModel: "gpt-5.4",
       highestPrecisionTextModel: "gpt-5.5",
-      multimodalModel: "gemini-2.5-flash",
-      multimodalEscalationModel: "gemini-2.5-pro",
+      multimodalModel: "gpt-5-mini",
+      multimodalEscalationModel: "gpt-5.4",
       embeddingModel: "text-embedding-3-small",
       embeddingEscalationModel: "text-embedding-3-large"
+    });
+  });
+
+  it("refuses Gemini model names in non-OCR routing config", () => {
+    expect(
+      getModelRoutingConfig({
+        FINPROOF_MODEL_DEFAULT_TEXT: "gemini-2.5-flash",
+        FINPROOF_MODEL_MULTIMODAL: "gemini-2.5-flash",
+        FINPROOF_MODEL_MULTIMODAL_ESCALATION: "gemini-2.5-pro"
+      })
+    ).toMatchObject({
+      defaultTextModel: "gpt-5-mini",
+      multimodalModel: "gpt-5-mini",
+      multimodalEscalationModel: "gpt-5.4"
     });
   });
 
@@ -49,18 +63,18 @@ describe("model router", () => {
     });
   });
 
-  it("routes multimodal review to Gemini and escalates complex visual review", () => {
+  it("keeps multimodal review routes on OpenAI text models", () => {
     expect(selectModelRoute("ocr_visual_understanding", {})).toEqual({
       task: "ocr_visual_understanding",
-      provider: "gemini",
-      model: "gemini-2.5-flash",
-      modelTier: "multimodal"
+      provider: "openai",
+      model: "gpt-5-mini",
+      modelTier: "default_text"
     });
     expect(selectModelRoute("ocr_visual_understanding", { complexVisual: true })).toEqual({
       task: "ocr_visual_understanding",
-      provider: "gemini",
-      model: "gemini-2.5-pro",
-      modelTier: "multimodal_escalation",
+      provider: "openai",
+      model: "gpt-5.4",
+      modelTier: "escalation_text",
       escalationReason: "complex_visual"
     });
   });

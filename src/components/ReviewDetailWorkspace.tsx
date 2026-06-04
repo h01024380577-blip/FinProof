@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Download, FilePenLine, LoaderCircle, MessageCircle, Save, Send, X } from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
-import { productLabels, riskLabels, statusLabels } from "@/domain/reviews";
+import { productLabels, statusLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, RiskLevel, RoleId } from "@/domain/types";
 import { useRoleContext } from "./RoleContext";
 import { WorkbenchHeader } from "./workbench/WorkbenchHeader";
@@ -1018,9 +1018,9 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         id={review.id}
         title={review.title}
         reviewStatus={reviewStatus}
-        statusLabel={statusLabels[reviewStatus]}
-        riskLabel={riskLabels[review.highestRiskLevel]}
+        riskLevel={review.highestRiskLevel}
         productLabel={productLabels[review.productType]}
+        requester={review.requester}
         reviewer={review.reviewer}
         deadline={review.plannedPublishDate}
         canMutate={reviewerCanMutate}

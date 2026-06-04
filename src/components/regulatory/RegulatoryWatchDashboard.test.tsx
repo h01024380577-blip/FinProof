@@ -1,6 +1,16 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { render, screen, waitFor } from "@testing-library/react";
+import { within } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import { RegulatoryWatchDashboard } from "./RegulatoryWatchDashboard";
+
+function cssBlock(css: string, selector: string): string {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  return css.match(new RegExp(`${escapedSelector}\\s*\\{(?<body>[\\s\\S]*?)\\n\\}`))?.groups
+    ?.body ?? "";
+}
 
 describe("RegulatoryWatchDashboard", () => {
   afterEach(() => {
@@ -101,6 +111,154 @@ describe("RegulatoryWatchDashboard", () => {
     );
   });
 
+  it("shows only change sets with changed sections in the recent change list", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ sources: [] })
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            changeSets: [
+              {
+                id: "reg-change-empty",
+                tenantId: "tenant-demo",
+                sourceId: "reg-source-001",
+                newSnapshotId: "reg-snapshot-empty",
+                changeType: "amended",
+                changeSummary: "이미 추적 완료된 기준입니다.",
+                changedSections: [],
+                riskImpactLevel: "info",
+                interpretationSummary: "새로 변경된 조항이 없습니다.",
+                mappedProductTypes: [],
+                mappedChannels: [],
+                mappedReviewCategories: [],
+                qualityGateStatus: "passed",
+                confidence: 0.9,
+                createdKnowledgeDocumentId: "knowledge-auto-existing",
+                createdAt: "2026-06-01T00:00:00.000Z"
+              },
+              {
+                id: "reg-change-with-content",
+                tenantId: "tenant-demo",
+                sourceId: "reg-source-001",
+                newSnapshotId: "reg-snapshot-002",
+                changeType: "created",
+                changeSummary: "신용카드 권유 제한 조항이 신설되었습니다.",
+                changedSections: [
+                  {
+                    sectionId: "section-002",
+                    title: "금융소비자 보호에 관한 감독규정",
+                    diffSummary: "신설 조항입니다.",
+                    citation: {
+                      snapshotId: "reg-snapshot-002",
+                      sectionId: "section-002"
+                    }
+                  }
+                ],
+                riskImpactLevel: "high",
+                interpretationSummary: "신용카드 권유 제한 기준 신설",
+                mappedProductTypes: ["loan"],
+                mappedChannels: ["branch"],
+                mappedReviewCategories: ["law"],
+                qualityGateStatus: "failed",
+                confidence: 0.86,
+                createdAt: "2026-06-01T00:10:00.000Z"
+              }
+            ]
+          })
+        })
+    );
+
+    render(<RegulatoryWatchDashboard />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+    const recentChangePanel = screen.getByLabelText("최근 규제 변경");
+    expect(within(recentChangePanel).getByText("1건")).toBeInTheDocument();
+    expect(screen.getByText("신용카드 권유 제한 조항이 신설되었습니다.")).toBeInTheDocument();
+    expect(screen.queryByText("이미 추적 완료된 기준입니다.")).not.toBeInTheDocument();
+  });
+
+  it("lets regulatory section summaries preserve readable line breaks without clamping", () => {
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    const sectionSummaryBlock = cssBlock(css, ".regulatory-change-card__sections p");
+
+    expect(sectionSummaryBlock).toContain("white-space: pre-wrap");
+    expect(sectionSummaryBlock).toContain("overflow-wrap: anywhere");
+    expect(sectionSummaryBlock).not.toContain("-webkit-line-clamp");
+  });
+
+  it("breaks dense legal provision text at amendment dates, article markers, and clause numbers", async () => {
+    const denseLegalText =
+      "삭제 <2020. 3. 24.> 제18조의6(광고의 자율심의) ① 상호저축은행이 예금등, 대출, 후순위채권 등 자신이 취급하는 상품에 관하여 광고를 하려는 경우에는 광고계획신고서와 광고안을 제25조에 따른 상호저축은행중앙회에 제출하여 심의를 받아야 한다. <개정 2020. 3. 24.> ② 중앙회는 제1항에 따른 심의 결과 광고의 내용이 사실과 다르거나 금융소비자 보호에 관한 법률 제22조를 위반하여 광고하려는 경우에는 해당 상호저축은행에 대하여 광고의 시정이나 사용중단을 요구할 수 있다. 이 경우 해당 상호저축은행은 정당한 사유가 없으면 중앙회의 요구에 성실히 응하여야 한다. <개정 2020. 3. 24.> ③ 중앙회는 매분기별 광고 심의 결과를 해당 분기의 말일부터 1개월 이내에 금융위원회에 보고하여야 한다. [본조신설 2013. 8. 13.] 제18조의7(고객응대직원에 대한 보호 조치 의무) ① 상호저축은행은 고객을 직접 응대하는 직원을 보호하기 위하여 다음 각 호의 조치를 하여야 한다. 1. 직원이 요청하는 경우 해당 고객으로부터의 분리 및 업무담당자 교체 2. 직원에 대한 치료 및 상담 지원 3. 고객을 직접 응대하는 직원의 요구를 이유로 직원에게 불이익을 주어서는 아니 된다. [본조신설 2016. 3. 29.] 제19조(이익금의 처리) ① 상호저축은행은 자본금의 총액이 될 때까지 매 사업연도의 이익금의 100분의 10 이상을 적립금으로 적립하여야 한다. [전문개정 2010. 3. 22.] 제20조 삭제 <1999. 2. 1.> 제21조(해산) 상호저축은행은 다음 각 호의 어느 하나에 해당하는 사유가 있으면 해산한다. 1. 제24조 제2항에 따른 영업인가의 취소 2. 제10조 제1항 제1호에 따른 합병 또는 같은 항 제2호에 따른 영업전부의 폐업ㆍ양도 3. 제24조의9 제3항, 제24조의11 제1항 또는 제24조의15 제2항에 따른 계약의 전부이전 4. 금융산업의 구조개선에 관한 법률 제14조 제2항에 따른 계약이전 또는 같은 법 제26조에 따른 영업의 전부양도 [전문개정 2010. 3. 22.] 제3장 감독 <개정 2010. 3. 22.> 제22조(감독)";
+
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ sources: [] })
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            changeSets: [
+              {
+                id: "reg-change-dense-law",
+                tenantId: "tenant-demo",
+                sourceId: "reg-source-law",
+                newSnapshotId: "reg-snapshot-law",
+                changeType: "created",
+                changeSummary: "상호저축은행법 변경: 삭제 <2020. 3. 24.> 제18조의6",
+                changedSections: [
+                  {
+                    sectionId: "section-dense-law",
+                    title: "상호저축은행법",
+                    diffSummary: denseLegalText,
+                    citation: {
+                      snapshotId: "reg-snapshot-law",
+                      sectionId: "section-dense-law"
+                    }
+                  }
+                ],
+                riskImpactLevel: "high",
+                interpretationSummary: "상호저축은행법 변경분은 광고 심의 지식베이스에 자동 반영됩니다.",
+                mappedProductTypes: ["loan"],
+                mappedChannels: ["mobile_banner"],
+                mappedReviewCategories: ["law"],
+                qualityGateStatus: "passed",
+                confidence: 0.92,
+                createdAt: "2026-06-01T09:24:00.000Z"
+              }
+            ]
+          })
+        })
+    );
+
+    render(<RegulatoryWatchDashboard />);
+
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+
+    const sectionSummary = document.querySelector(".regulatory-change-card__sections p");
+    const lines = sectionSummary?.textContent?.split("\n").filter(Boolean) ?? [];
+
+    expect(sectionSummary?.textContent).toContain("삭제\n<2020. 3. 24.>");
+    expect(sectionSummary?.textContent).toContain("\n제18조의6");
+    expect(sectionSummary?.textContent).toContain("\n① 상호저축은행");
+    expect(sectionSummary?.textContent).toContain("\n[본조신설 2013. 8. 13.]");
+    expect(sectionSummary?.textContent).toContain("\n제19조(이익금의 처리)");
+    expect(sectionSummary?.textContent).toContain("\n1. 제24조 제2항");
+    expect(sectionSummary?.textContent).toContain("\n[전문개정 2010. 3. 22.]");
+    expect(sectionSummary?.textContent).toContain("\n제3장 감독");
+    expect(lines.length).toBeGreaterThan(12);
+  });
+
   it("tracks registered knowledge document changes from the dashboard", async () => {
     const user = userEvent.setup();
     let resolveTrackRequest: (value: unknown) => void = () => {};
@@ -148,7 +306,17 @@ describe("RegulatoryWatchDashboard", () => {
               newSnapshotId: "reg-snapshot-001",
               changeType: "created",
               changeSummary: "최고금리 표시 기준이 신설되었습니다.",
-              changedSections: [],
+              changedSections: [
+                {
+                  sectionId: "section-rate-display",
+                  title: "최고금리 표시 기준",
+                  diffSummary: "신설 조항입니다.",
+                  citation: {
+                    snapshotId: "reg-snapshot-001",
+                    sectionId: "section-rate-display"
+                  }
+                }
+              ],
               riskImpactLevel: "high",
               interpretationSummary: "최고금리 조건 병기 기준 강화",
               mappedProductTypes: ["deposit"],

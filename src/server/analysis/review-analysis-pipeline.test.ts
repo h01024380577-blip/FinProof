@@ -1,5 +1,9 @@
 import type { ReviewCase } from "@/domain/types";
-import { createGeminiOcrProvider, createReviewAnalysisPipeline } from "./review-analysis-pipeline";
+import {
+  createGeminiOcrProvider,
+  createOpenAiOcrProvider,
+  createReviewAnalysisPipeline
+} from "./review-analysis-pipeline";
 import type { ModelProvider } from "@/server/ai/model-provider";
 import type { ReviewStoreScope } from "@/server/reviews";
 import type { ReviewSubAgentOrchestrator } from "./review-subagents";
@@ -424,6 +428,201 @@ describe("review analysis pipeline", () => {
     });
 
     expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it("refuses Gemini Pro for OCR and uses Flash-Lite instead", async () => {
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 fake");
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      async json() {
+        return {
+          candidates: [
+            {
+              content: {
+                parts: [{ text: JSON.stringify({ text: "광고 텍스트", confidence: 0.9 }) }]
+              }
+            }
+          ]
+        };
+      }
+    }));
+    const provider = createGeminiOcrProvider(
+      { GEMINI_API_KEY: "test-key", FINPROOF_OCR_MODEL: "gemini-2.5-pro" },
+      { async getReviewFileBody() { return pdfBytes; } },
+      fetchImpl
+    );
+
+    await provider.extract({
+      review,
+      files: [
+        {
+          ...review.files[0],
+          name: "ad.pdf",
+          contentType: "application/pdf",
+          storageKey: "s3://bucket/ad.pdf"
+        }
+      ]
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent",
+      expect.any(Object)
+    );
+  });
+
+  it("extracts image text with OpenAI OCR responses", async () => {
+    const imageBytes = new TextEncoder().encode("fake image bytes");
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      async json() {
+        return {
+          output_text: JSON.stringify({
+            text: "최고 연 5.0% 우대 조건 충족 시 적용",
+            confidence: 0.92
+          })
+        };
+      }
+    }));
+    const provider = createOpenAiOcrProvider(
+      {
+        OPENAI_API_KEY: "sk-real",
+        FINPROOF_OCR_MODEL: "gpt-5-mini"
+      },
+      {
+        async getReviewFileBody(storageKey) {
+          expect(storageKey).toBe("s3://bucket/poster.png");
+          return imageBytes;
+        }
+      },
+      fetchImpl
+    );
+
+    const documents = await provider.extract({
+      review,
+      files: [
+        {
+          ...review.files[0],
+          name: "poster.png",
+          contentType: "image/png",
+          storageKey: "s3://bucket/poster.png"
+        }
+      ]
+    });
+
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.openai.com/v1/responses",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          authorization: "Bearer sk-real",
+          "content-type": "application/json"
+        })
+      })
+    );
+    const requestInit = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+    const payload = JSON.parse(String(requestInit.body)) as {
+      model: string;
+      input: { content: Array<Record<string, unknown>> }[];
+    };
+    expect(payload.model).toBe("gpt-5-mini");
+    expect(payload.input[0]?.content).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "input_text" }),
+        expect.objectContaining({
+          type: "input_image",
+          image_url: `data:image/png;base64,${Buffer.from(imageBytes).toString("base64")}`
+        })
+      ])
+    );
+    expect(documents).toEqual([
+      {
+        fileId: "file-upload-001",
+        fileName: "poster.png",
+        storageKey: "s3://bucket/poster.png",
+        text: "최고 연 5.0% 우대 조건 충족 시 적용",
+        confidence: 0.92,
+        provider: "openai-ocr"
+      }
+    ]);
+  });
+
+  it("sends image-only PDFs as OpenAI OCR file inputs", async () => {
+    const binDir = await mkdtemp(path.join(tmpdir(), "finproof-openai-pdf-"));
+    const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;
+    const fakePdfToText = path.join(binDir, "pdftotext");
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 image-only");
+
+    await writeFile(fakePdfToText, ["#!/bin/sh", "printf '%s\\n' 'x'"].join("\n"));
+    await chmod(fakePdfToText, 0o755);
+    process.env.FINPROOF_PDFTOTEXT_PATH = fakePdfToText;
+
+    try {
+      const fetchImpl = vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        async json() {
+          return {
+            output_text: JSON.stringify({ text: "PDF 포스터 문구", confidence: 0.88 })
+          };
+        }
+      }));
+      const provider = createOpenAiOcrProvider(
+        {
+          OPENAI_API_KEY: "sk-real",
+          FINPROOF_OCR_MODEL: "gemini-2.5-flash-lite"
+        },
+        {
+          async getReviewFileBody() {
+            return pdfBytes;
+          }
+        },
+        fetchImpl
+      );
+
+      const documents = await provider.extract({
+        review,
+        files: [
+          {
+            ...review.files[0],
+            name: "poster.pdf",
+            contentType: "application/pdf",
+            storageKey: "s3://bucket/poster.pdf"
+          }
+        ]
+      });
+
+      const requestInit = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+      const payload = JSON.parse(String(requestInit.body)) as {
+        model: string;
+        input: { content: Array<Record<string, unknown>> }[];
+      };
+      expect(payload.model).toBe("gpt-5-mini");
+      expect(payload.input[0]?.content).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: "input_file",
+            filename: "poster.pdf",
+            file_data: `data:application/pdf;base64,${Buffer.from(pdfBytes).toString("base64")}`
+          })
+        ])
+      );
+      expect(documents).toEqual([
+        expect.objectContaining({
+          fileName: "poster.pdf",
+          text: "PDF 포스터 문구",
+          confidence: 0.88,
+          provider: "openai-ocr"
+        })
+      ]);
+    } finally {
+      process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
+      await rm(binDir, { recursive: true, force: true });
+    }
   });
 
   it("falls back to Gemini OCR when a promotional PDF has too little embedded text", async () => {

@@ -134,14 +134,19 @@ export function createModelProvider(
   fetchImpl: FetchLike = fetch
 ): ModelProvider {
   const providerValue = envValue(env, "FINPROOF_MODEL_PROVIDER");
+  if (providerValue === "gemini") {
+    return {
+      async generateText() {
+        throw new Error("FINPROOF_MODEL_PROVIDER=gemini is disabled; Gemini is only allowed for OCR");
+      }
+    };
+  }
+
   const provider =
-    providerValue === "openai" || providerValue === "gemini" || providerValue === "router"
+    providerValue === "openai" || providerValue === "router"
       ? providerValue
       : "deterministic";
-  const model =
-    provider === "gemini"
-      ? (envValue(env, "GEMINI_MODEL") ?? "gemini-2.5-flash")
-      : (envValue(env, "OPENAI_MODEL") ?? "gpt-5-mini");
+  const model = envValue(env, "OPENAI_MODEL") ?? "gpt-5-mini";
 
   if (provider === "deterministic") {
     return {

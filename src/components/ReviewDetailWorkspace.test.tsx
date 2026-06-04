@@ -873,6 +873,9 @@ describe("ReviewDetailWorkspace", () => {
       })
     );
     expect(await screen.findByText("최종 상태가 승인으로 저장되었습니다.")).toBeInTheDocument();
+    expect(
+      screen.getAllByText("승인").find((element) => element.dataset.status === "approved")
+    ).toBeInTheDocument();
     expect(pushMock).toHaveBeenCalledWith("/reviews?scope=history");
   });
 

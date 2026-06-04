@@ -82,7 +82,7 @@ function isFinalizedReview(status: ReviewCase["status"]): boolean {
 }
 
 export function ReviewQueue(): JSX.Element {
-  const { activeRole, apiHeaders } = useRole();
+  const { activeRole, apiHeaders, currentUser, isAuthenticated } = useRole();
   const router = useRouter();
   const searchParams = useSearchParams();
   const scope = searchParams.get("scope") === "history" ? "history" : "active";
@@ -472,6 +472,7 @@ export function ReviewQueue(): JSX.Element {
                     : "아직 심의 이력이 없습니다."
                 : "아직 심의 요청이 없습니다. 새 심의 요청을 생성해 자료 패키지를 업로드하세요."
           }
+          loggedInUser={isAuthenticated ? currentUser : null}
           onSaveReviewer={(review, reviewer) => void saveReviewer(review, reviewer)}
           onDeleteReviewHistory={(review) => void deleteReviewHistory(review)}
           onStartAnalysis={(review) => void startAnalysis(review)}

@@ -85,17 +85,35 @@ function value(env: Env, key: string): string | undefined {
   return raw && raw.trim().length > 0 ? raw.trim() : undefined;
 }
 
+function nonGeminiModel(env: Env, key: string, fallback: string): string {
+  const configuredModel = value(env, key);
+
+  return configuredModel && !/^gemini[-\w.]*/i.test(configuredModel)
+    ? configuredModel
+    : fallback;
+}
+
 export function getModelRoutingConfig(env: Env = process.env): ModelRoutingConfig {
   return {
-    defaultTextModel: value(env, "FINPROOF_MODEL_DEFAULT_TEXT") ?? "gpt-5-mini",
-    escalationTextModel: value(env, "FINPROOF_MODEL_ESCALATION_TEXT") ?? "gpt-5.4",
-    highestPrecisionTextModel: value(env, "FINPROOF_MODEL_HIGHEST_PRECISION_TEXT") ?? "gpt-5.5",
-    multimodalModel: value(env, "FINPROOF_MODEL_MULTIMODAL") ?? "gemini-2.5-flash",
-    multimodalEscalationModel:
-      value(env, "FINPROOF_MODEL_MULTIMODAL_ESCALATION") ?? "gemini-2.5-pro",
-    embeddingModel: value(env, "FINPROOF_EMBEDDING_MODEL") ?? "text-embedding-3-small",
-    embeddingEscalationModel:
-      value(env, "FINPROOF_EMBEDDING_ESCALATION_MODEL") ?? "text-embedding-3-large"
+    defaultTextModel: nonGeminiModel(env, "FINPROOF_MODEL_DEFAULT_TEXT", "gpt-5-mini"),
+    escalationTextModel: nonGeminiModel(env, "FINPROOF_MODEL_ESCALATION_TEXT", "gpt-5.4"),
+    highestPrecisionTextModel: nonGeminiModel(
+      env,
+      "FINPROOF_MODEL_HIGHEST_PRECISION_TEXT",
+      "gpt-5.5"
+    ),
+    multimodalModel: nonGeminiModel(env, "FINPROOF_MODEL_MULTIMODAL", "gpt-5-mini"),
+    multimodalEscalationModel: nonGeminiModel(
+      env,
+      "FINPROOF_MODEL_MULTIMODAL_ESCALATION",
+      "gpt-5.4"
+    ),
+    embeddingModel: nonGeminiModel(env, "FINPROOF_EMBEDDING_MODEL", "text-embedding-3-small"),
+    embeddingEscalationModel: nonGeminiModel(
+      env,
+      "FINPROOF_EMBEDDING_ESCALATION_MODEL",
+      "text-embedding-3-large"
+    )
   };
 }
 
@@ -178,20 +196,6 @@ function textRoute(
   };
 }
 
-function multimodalRoute(
-  task: ModelRouteTask,
-  config: ModelRoutingConfig,
-  reason?: string
-): ModelRoute {
-  return {
-    task,
-    provider: "gemini",
-    model: reason ? config.multimodalEscalationModel : config.multimodalModel,
-    modelTier: reason ? "multimodal_escalation" : "multimodal",
-    ...(reason ? { escalationReason: reason } : {})
-  };
-}
-
 export function selectModelRoute(
   task: ModelRouteTask,
   context: ModelRouteContext = {},
@@ -214,11 +218,12 @@ export function selectModelRoute(
         ? "low_ocr_confidence"
         : undefined;
 
-    return multimodalRoute(task, config, reason);
+    return textRoute(task, reason ? "escalation_text" : "default_text", config, reason);
   }
 
   if (task === "creative_review" && (context.visualUnderstanding || context.complexVisual)) {
-    return multimodalRoute(task, config, context.complexVisual ? "complex_visual" : undefined);
+    const reason = context.complexVisual ? "complex_visual" : undefined;
+    return textRoute(task, reason ? "escalation_text" : "default_text", config, reason);
   }
 
   if (

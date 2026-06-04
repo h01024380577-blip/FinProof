@@ -60,19 +60,8 @@ describe("model provider", () => {
     });
   });
 
-  it("constructs Gemini generateContent requests", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        candidates: [
-          {
-            content: {
-              parts: [{ text: "gemini generated text" }]
-            }
-          }
-        ]
-      })
-    });
+  it("disables Gemini for non-OCR model generation", async () => {
+    const fetchMock = vi.fn();
     const provider = createModelProvider(
       {
         FINPROOF_MODEL_PROVIDER: "gemini",
@@ -82,34 +71,15 @@ describe("model provider", () => {
       fetchMock
     );
 
-    const result = await provider.generateText({
-      task: "chat",
-      instructions: "Answer with evidence",
-      input: "question",
-      fallback: "fallback answer"
-    });
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      expect.objectContaining({
-        method: "POST",
-        headers: expect.objectContaining({
-          "content-type": "application/json",
-          "x-goog-api-key": "gemini-test"
-        }),
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: "Answer with evidence" }]
-          },
-          contents: [{ parts: [{ text: "question" }] }]
-        })
+    await expect(
+      provider.generateText({
+        task: "chat",
+        instructions: "Answer with evidence",
+        input: "question",
+        fallback: "fallback answer"
       })
-    );
-    expect(result).toEqual({
-      provider: "gemini",
-      model: "gemini-2.5-flash",
-      text: "gemini generated text"
-    });
+    ).rejects.toThrow("Gemini is only allowed for OCR");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("routes text tasks through the Obsidian model baseline", async () => {
@@ -152,17 +122,15 @@ describe("model provider", () => {
     });
   });
 
-  it("routes multimodal tasks through Gemini escalation", async () => {
+  it("routes multimodal tasks through OpenAI escalation", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        candidates: [{ content: { parts: [{ text: "visual analysis" }] } }]
-      })
+      json: async () => ({ output_text: "visual analysis" })
     });
     const provider = createModelProvider(
       {
         FINPROOF_MODEL_PROVIDER: "router",
-        GEMINI_API_KEY: "gemini-test"
+        OPENAI_API_KEY: "sk-test"
       },
       fetchMock
     );
@@ -176,13 +144,19 @@ describe("model provider", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
-      expect.any(Object)
+      "https://api.openai.com/v1/responses",
+      expect.objectContaining({
+        body: JSON.stringify({
+          model: "gpt-5.4",
+          instructions: "Read image",
+          input: "image payload"
+        })
+      })
     );
     expect(result).toMatchObject({
-      provider: "gemini",
-      model: "gemini-2.5-pro",
-      modelTier: "multimodal_escalation",
+      provider: "openai",
+      model: "gpt-5.4",
+      modelTier: "escalation_text",
       escalationReason: "complex_visual",
       text: "visual analysis"
     });
@@ -217,38 +191,6 @@ describe("model provider", () => {
 });
 
 describe("model provider fetch timeouts", () => {
-  it("passes AbortSignal to Gemini generateContent fetch", async () => {
-    const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
-      expect(init?.signal).toBeDefined();
-      expect(init?.signal).toBeInstanceOf(AbortSignal);
-      return {
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        async json() {
-          return {
-            candidates: [{ content: { parts: [{ text: "결과 텍스트" }] } }]
-          };
-        }
-      };
-    });
-
-    const provider = createModelProvider(
-      {
-        FINPROOF_MODEL_PROVIDER: "gemini",
-        GEMINI_API_KEY: "test-key",
-        FINPROOF_MODEL_TIMEOUT_MS: "5000"
-      },
-      fetchImpl
-    );
-
-    const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
-    await provider.generateText({ task: "draft", instructions: "sys", input: "user", fallback: "" });
-    expect(fetchImpl).toHaveBeenCalledOnce();
-    expect(timeoutSpy).toHaveBeenCalledWith(5000);
-    timeoutSpy.mockRestore();
-  });
-
   it("passes AbortSignal to OpenAI responses fetch", async () => {
     const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
       expect(init?.signal).toBeDefined();

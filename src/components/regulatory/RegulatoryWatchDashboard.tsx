@@ -88,11 +88,20 @@ function readableRegulatoryText(value: string, maxLength = 220): string {
     compacted.length > maxLength ? `${compacted.slice(0, maxLength).trim()}...` : compacted;
 
   return trimmed
-    .replace(/(^|[^\d])\s+((?:[1-9]|1[0-9]|20)\.)\s+(?=[가-힣A-Za-z"“「])/g, "$1\n$2 ")
+    .replace(/\s+(?=<\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.>)/g, "\n")
+    .replace(/\s+(?=<(?:개정|전문개정)\s+\d{4}\.)/g, "\n")
+    .replace(/\s+(?=\[(?:본조신설|전문개정|제목개정)\s+\d{4}\.)/g, "\n")
+    .replace(/(?<=다\.)\s+(?=이 경우|다음 각 [가-힣])/g, "\n")
     .replace(/\s+(?=[①②③④⑤⑥⑦⑧⑨⑩])/g, "\n")
-    .replace(/\s+(?=<개정)/g, "\n")
-    .replace(/\s+(?=제\d+조(?:의\d+)?)/g, "\n")
+    .replace(/(?<!\d\.)\s+(?=제\d+조(?:의\d+)?(?:\(|\s|$))/g, "\n")
+    .replace(/\s+(?=제\d+장(?:\s|$))/g, "\n")
+    .replace(/(^|[^\d])\s+((?:[1-9]|1[0-9]|20)\.)\s+(?=[가-힣A-Za-z"“「제])/g, "$1\n$2 ")
+    .replace(/\s+(?=다\.\s+그 밖)/g, "\n")
     .replace(/\n{3,}/g, "\n\n");
+}
+
+function hasChangedContent(changeSet: RegulatoryChangeSet): boolean {
+  return changeSet.changedSections.length > 0;
 }
 
 function changeTypeLabel(changeType: RegulatoryChangeSet["changeType"]): string {
@@ -198,12 +207,14 @@ export function RegulatoryWatchDashboard(): JSX.Element {
     }
   }
 
+  const recentChangeSets = useMemo(() => changeSets.filter(hasChangedContent), [changeSets]);
+
   const metrics = useMemo(() => {
     const failedSources = sources.filter((source) => source.status === "failing").length;
-    const passedChanges = changeSets.filter(
+    const passedChanges = recentChangeSets.filter(
       (changeSet) => changeSet.qualityGateStatus === "passed"
     ).length;
-    const attentionChanges = changeSets.filter(
+    const attentionChanges = recentChangeSets.filter(
       (changeSet) => changeSet.qualityGateStatus !== "passed"
     ).length;
 
@@ -213,7 +224,7 @@ export function RegulatoryWatchDashboard(): JSX.Element {
       { label: "자동 반영", value: passedChanges, icon: CheckCircle2 },
       { label: "검토 필요", value: attentionChanges, icon: Clock3 }
     ];
-  }, [changeSets, sources]);
+  }, [recentChangeSets, sources]);
 
   return (
     <main className="knowledge-page regulatory-page">
@@ -313,14 +324,14 @@ export function RegulatoryWatchDashboard(): JSX.Element {
               <h2>최근 변경</h2>
               <p>품질 게이트 결과와 매핑 범위를 기준으로 반영 상태를 추적합니다.</p>
             </div>
-            <strong>{changeSets.length}건</strong>
+            <strong>{recentChangeSets.length}건</strong>
           </div>
 
           <div className="regulatory-change-list regulatory-scroll-region--changes">
-            {changeSets.length === 0 ? (
+            {recentChangeSets.length === 0 ? (
               <div className="regulatory-empty">최근 감지된 변경이 없습니다.</div>
             ) : (
-              changeSets.map((changeSet) => {
+              recentChangeSets.map((changeSet) => {
                 const highlightedSections = changeSet.changedSections.slice(0, 2);
 
                 return (
@@ -347,7 +358,7 @@ export function RegulatoryWatchDashboard(): JSX.Element {
                           <div key={section.sectionId}>
                             <strong>{section.title || section.sectionNumber || "변경 섹션"}</strong>
                             <p title={section.diffSummary}>
-                              {readableRegulatoryText(section.diffSummary, 260)}
+                              {readableRegulatoryText(section.diffSummary, 3000)}
                             </p>
                           </div>
                         ))}

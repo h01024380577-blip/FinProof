@@ -3,7 +3,8 @@ type Env = Record<string, string | undefined>;
 type OcrConfig =
   | { provider: "deterministic" }
   | { provider: "http"; endpoint: string | undefined; apiKeyConfigured: boolean }
-  | { provider: "gemini"; apiKeyConfigured: boolean; model: string };
+  | { provider: "gemini"; apiKeyConfigured: boolean; model: string }
+  | { provider: "openai"; apiKeyConfigured: boolean; model: string };
 
 type RagConfig =
   | {
@@ -64,7 +65,7 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
   const missing: string[] = [];
   const ocrProviderValue = value(env, "FINPROOF_OCR_PROVIDER");
   const ocrProvider =
-    ocrProviderValue === "http" || ocrProviderValue === "gemini"
+    ocrProviderValue === "http" || ocrProviderValue === "gemini" || ocrProviderValue === "openai"
       ? ocrProviderValue
       : "deterministic";
   const ragProvider =
@@ -82,7 +83,9 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
     (rerankProvider === "cohere" ? "rerank-v3.5" : "bge-reranker-v2-m3");
   const rerankTopK = positiveNumber(env, "FINPROOF_RERANK_TOP_K", topK);
   const endpoint = value(env, "FINPROOF_OCR_ENDPOINT");
-  const ocrModel = value(env, "FINPROOF_OCR_MODEL") ?? "gemini-2.5-flash-lite";
+  const ocrModel =
+    value(env, "FINPROOF_OCR_MODEL") ??
+    (ocrProvider === "openai" ? "gpt-5-mini" : "gemini-2.5-flash-lite");
   const rerankEndpoint = value(env, "FINPROOF_RERANK_ENDPOINT");
   const databaseUrl = value(env, "DATABASE_URL");
 
@@ -91,6 +94,9 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
   }
   if (ocrProvider === "gemini" && !value(env, "GEMINI_API_KEY")) {
     missing.push("GEMINI_API_KEY");
+  }
+  if (ocrProvider === "openai" && !value(env, "OPENAI_API_KEY")) {
+    missing.push("OPENAI_API_KEY");
   }
 
   if (ragProvider === "postgres" && !databaseUrl) {
@@ -118,6 +124,12 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
               apiKeyConfigured: Boolean(value(env, "GEMINI_API_KEY")),
               model: ocrModel
             }
+          : ocrProvider === "openai"
+            ? {
+                provider: "openai",
+                apiKeyConfigured: Boolean(value(env, "OPENAI_API_KEY")),
+                model: ocrModel
+              }
         : { provider: "deterministic" },
     rag:
       ragProvider === "postgres"

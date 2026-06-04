@@ -20,7 +20,6 @@ export type DemoUser = {
 export type DemoLoginInput = {
   name: string;
   role: RoleId;
-  userId?: string;
   authToken?: string;
 };
 
@@ -43,6 +42,11 @@ export type RoleContextValue = {
 
 const demoSessionStorageKey = "finproof.demoSession";
 const authTokenStorageKey = "finproof.authToken";
+const seededDemoUserIds: Record<RoleId, string> = {
+  requester: "user-requester-demo",
+  reviewer: "user-reviewer-demo",
+  compliance_admin: "user-admin-demo"
+};
 
 const RoleContext = createContext<RoleContextValue | null>(null);
 
@@ -54,10 +58,8 @@ function isRoleId(role: unknown): role is RoleId {
   return role === "requester" || role === "reviewer" || role === "compliance_admin";
 }
 
-function createDemoUserId(role: RoleId, name: string) {
-  const stableName = encodeURIComponent(name.trim()).replaceAll("%", "").toLowerCase().slice(0, 48);
-
-  return `demo-${role}-${stableName || "user"}`;
+function seededDemoUserIdForRole(role: RoleId) {
+  return seededDemoUserIds[role];
 }
 
 function headerUserName(currentUser: DemoUser | null): string {
@@ -91,10 +93,7 @@ function readStoredDemoUser() {
     return {
       name: currentUser.name.trim(),
       role: currentUser.role,
-      userId:
-        typeof currentUser.userId === "string" && currentUser.userId.trim().length > 0
-          ? currentUser.userId.trim()
-          : createDemoUserId(currentUser.role, currentUser.name)
+      userId: seededDemoUserIdForRole(currentUser.role)
     };
   } catch {
     return null;
@@ -179,7 +178,7 @@ export function RoleProvider({
       const nextUser = {
         name,
         role: input.role,
-        userId: input.userId?.trim() || createDemoUserId(input.role, name)
+        userId: seededDemoUserIdForRole(input.role)
       };
 
       setCurrentUser(nextUser);
@@ -209,7 +208,7 @@ export function RoleProvider({
         return previousUser;
       }
 
-      const nextUser = { ...previousUser, role };
+      const nextUser = { ...previousUser, role, userId: seededDemoUserIdForRole(role) };
       persistDemoUser(nextUser);
 
       return nextUser;

@@ -75,6 +75,11 @@ function RoleSessionControl({ context }: { context: RoleContextValue }) {
       return;
     }
 
+    if (loginRole === "reviewer" && securityCode.trim() !== "admin") {
+      setFormError("심의자 보안코드를 확인해 주세요.");
+      return;
+    }
+
     context.login({ name: trimmedName, role: loginRole });
     closeLogin();
   }

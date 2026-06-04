@@ -58,6 +58,7 @@ jobs:
             --exclude='.next' \
             --exclude='.env' \
             --exclude='security' \
+            --exclude='.finproof-uploads' \
             -e "ssh -i ~/.ssh/finproof_agent" \
             ./ "$EC2_USER@$EC2_HOST:$EC2_APP_DIR/"
 

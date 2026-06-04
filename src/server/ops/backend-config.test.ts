@@ -21,9 +21,9 @@ describe("backend runtime config", () => {
       expect.arrayContaining([
         "FINPROOF_AUTH_MODE=jwt",
         "FINPROOF_REVIEW_STORE=prisma",
-        "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
+        "FINPROOF_MODEL_PROVIDER=router|openai",
         "FINPROOF_EMBEDDING_PROVIDER=openai",
-        "FINPROOF_OCR_PROVIDER=gemini|http",
+        "FINPROOF_OCR_PROVIDER=openai|gemini|http",
         "FINPROOF_RAG_PROVIDER=postgres",
         "FINPROOF_RERANK_PROVIDER=cohere",
         "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
@@ -43,9 +43,9 @@ describe("backend runtime config", () => {
     expect(config.productionGaps).toEqual(
       expect.arrayContaining([
         "FINPROOF_REVIEW_STORE=prisma",
-        "FINPROOF_MODEL_PROVIDER=router|openai|gemini",
+        "FINPROOF_MODEL_PROVIDER=router|openai",
         "FINPROOF_EMBEDDING_PROVIDER=openai",
-        "FINPROOF_OCR_PROVIDER=gemini|http",
+        "FINPROOF_OCR_PROVIDER=openai|gemini|http",
         "FINPROOF_RAG_PROVIDER=postgres",
         "FINPROOF_RERANK_PROVIDER=cohere",
         "FINPROOF_UPLOAD_SCAN_PROVIDER=http",
@@ -169,7 +169,23 @@ describe("backend runtime config", () => {
       model: "gemini-2.5-flash-lite"
     });
     expect(config.missing).not.toContain("GEMINI_API_KEY");
-    expect(config.productionGaps).not.toContain("FINPROOF_OCR_PROVIDER=gemini|http");
+    expect(config.productionGaps).not.toContain("FINPROOF_OCR_PROVIDER=openai|gemini|http");
+  });
+
+  it("configures OpenAI OCR with the shared OpenAI API key", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_OCR_PROVIDER: "openai",
+      OPENAI_API_KEY: "sk-real",
+      FINPROOF_OCR_MODEL: "gpt-5-mini"
+    });
+
+    expect(config.ocr).toEqual({
+      provider: "openai",
+      configured: true,
+      model: "gpt-5-mini"
+    });
+    expect(config.missing).not.toContain("OPENAI_API_KEY");
+    expect(config.productionGaps).not.toContain("FINPROOF_OCR_PROVIDER=openai|gemini|http");
   });
 
   it("requires an OpenAI key when OpenAI embeddings are selected", () => {
@@ -218,29 +234,29 @@ describe("backend runtime config", () => {
     const config = getBackendRuntimeConfig({
       FINPROOF_AUTH_MODE: "jwt",
       FINPROOF_AUTH_JWT_SECRET: "super-secret",
-      FINPROOF_MODEL_PROVIDER: "gemini",
-      GEMINI_API_KEY: "gemini-real",
-      GEMINI_MODEL: "gemini-2.5-flash"
+      FINPROOF_MODEL_PROVIDER: "openai",
+      OPENAI_API_KEY: "sk-real",
+      OPENAI_MODEL: "gpt-5.2"
     });
 
     expect(redactedBackendRuntimeConfig(config).secrets).toEqual({
       FINPROOF_AUTH_JWT_SECRET: "set",
-      GEMINI_API_KEY: "set"
+      OPENAI_API_KEY: "set"
     });
   });
 
-  it("requires Gemini API key when Gemini provider is selected", () => {
+  it("does not allow Gemini as a non-OCR model provider", () => {
     const config = getBackendRuntimeConfig({
       FINPROOF_AUTH_MODE: "jwt",
       FINPROOF_AUTH_JWT_SECRET: "super-secret",
       FINPROOF_MODEL_PROVIDER: "gemini"
     });
 
-    expect(config.model.provider).toBe("gemini");
-    expect(config.missing).toContain("GEMINI_API_KEY");
+    expect(config.model.provider).toBe("deterministic");
+    expect(config.productionGaps).toContain("FINPROOF_MODEL_PROVIDER=router|openai");
   });
 
-  it("requires both text and multimodal keys for router mode", () => {
+  it("requires the OpenAI key for router mode", () => {
     const config = getBackendRuntimeConfig({
       FINPROOF_AUTH_MODE: "jwt",
       FINPROOF_AUTH_JWT_SECRET: "super-secret",
@@ -252,9 +268,10 @@ describe("backend runtime config", () => {
     expect(config.model).toMatchObject({
       defaultTextModel: "gpt-5-mini",
       escalationTextModel: "gpt-5.4",
-      multimodalModel: "gemini-2.5-flash"
+      multimodalModel: "gpt-5-mini",
+      multimodalEscalationModel: "gpt-5.4"
     });
-    expect(config.missing).toContain("GEMINI_API_KEY");
+    expect(config.missing).not.toContain("GEMINI_API_KEY");
   });
 
   it("accepts JWKS auth with issuer and audience instead of a shared secret", () => {
@@ -267,10 +284,9 @@ describe("backend runtime config", () => {
       DATABASE_URL: "postgresql://runtime",
       FINPROOF_MODEL_PROVIDER: "router",
       OPENAI_API_KEY: "sk-real",
-      GEMINI_API_KEY: "gemini-real",
       FINPROOF_EMBEDDING_PROVIDER: "openai",
-      FINPROOF_OCR_PROVIDER: "gemini",
-      FINPROOF_OCR_MODEL: "gemini-2.5-flash-lite",
+      FINPROOF_OCR_PROVIDER: "openai",
+      FINPROOF_OCR_MODEL: "gpt-5-mini",
       FINPROOF_RAG_PROVIDER: "postgres",
       FINPROOF_RERANK_PROVIDER: "cohere",
       COHERE_API_KEY: "cohere-real",

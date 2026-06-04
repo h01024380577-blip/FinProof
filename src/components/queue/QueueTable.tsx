@@ -65,6 +65,7 @@ export type QueueTableProps = {
   emptyMessage?: string;
   canDeleteReviewHistory?: boolean;
   deletingReviewHistoryIds?: string[];
+  loggedInUser?: { name: string } | null;
   onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
   onDeleteReviewHistory?: (review: ReviewSummary) => void;
   onStartAnalysis: (review: ReviewSummary) => void;
@@ -150,6 +151,7 @@ export function QueueTable({
   emptyMessage,
   canDeleteReviewHistory = false,
   deletingReviewHistoryIds = [],
+  loggedInUser,
   onSaveReviewer,
   onDeleteReviewHistory,
   onStartAnalysis,
@@ -158,6 +160,14 @@ export function QueueTable({
   const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null);
 
   function handleOpenReviewClick(review: ReviewSummary): void {
+    if (loggedInUser) {
+      const reviewerName = loggedInUser.name;
+      if (reviewerName !== review.reviewer && onSaveReviewer) {
+        onSaveReviewer(review, reviewerName);
+      }
+      onOpenReview(review.id);
+      return;
+    }
     setPendingOpen({ review, reviewerName: review.reviewer || "" });
   }
 

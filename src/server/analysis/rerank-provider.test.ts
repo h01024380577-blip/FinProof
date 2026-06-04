@@ -1,5 +1,5 @@
 import type { RagEvidenceCandidate } from "./review-analysis-pipeline";
-import { createCohereReranker } from "./rerank-provider";
+import { createCohereReranker, createHttpReranker } from "./rerank-provider";
 
 const candidates: RagEvidenceCandidate[] = [
   {
@@ -82,6 +82,68 @@ describe("Cohere reranker", () => {
     expect(ranked).toEqual([
       { ...candidates[1], relevanceScore: 0.97 },
       { ...candidates[0], relevanceScore: 0.51 }
+    ]);
+  });
+
+  it("falls back to deterministic reranking when Cohere fails", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 502,
+      statusText: "Bad Gateway",
+      async json() {
+        return {};
+      }
+    }));
+    const reranker = createCohereReranker(
+      {
+        FINPROOF_RERANK_PROVIDER: "cohere",
+        COHERE_API_KEY: "cohere-key",
+        FINPROOF_RERANK_MODEL: "rerank-v3.5",
+        FINPROOF_RERANK_TOP_K: "2"
+      },
+      fetchImpl
+    );
+
+    const ranked = await reranker.rerank({
+      query: "최고금리 표시 조건",
+      candidates
+    });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(ranked).toEqual([
+      expect.objectContaining({ id: "ev-2" }),
+      expect.objectContaining({ id: "ev-1" })
+    ]);
+  });
+
+  it("falls back to deterministic reranking when HTTP rerank fails", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: false,
+      status: 400,
+      statusText: "Bad Request",
+      async json() {
+        return {};
+      }
+    }));
+    const reranker = createHttpReranker(
+      {
+        FINPROOF_RERANK_PROVIDER: "http",
+        FINPROOF_RERANK_ENDPOINT: "https://rerank.example.com",
+        FINPROOF_RERANK_MODEL: "bge-reranker-v2-m3",
+        FINPROOF_RERANK_TOP_K: "2"
+      },
+      fetchImpl
+    );
+
+    const ranked = await reranker.rerank({
+      query: "최고금리 표시 조건",
+      candidates
+    });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(ranked).toEqual([
+      expect.objectContaining({ id: "ev-2" }),
+      expect.objectContaining({ id: "ev-1" })
     ]);
   });
 });

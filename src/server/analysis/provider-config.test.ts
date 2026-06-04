@@ -44,6 +44,32 @@ describe("analysis provider config", () => {
     expect(config.missing).not.toContain("GEMINI_API_KEY");
   });
 
+  it("uses OpenAI OCR with the shared OpenAI API key", () => {
+    const config = getAnalysisProviderConfig({
+      FINPROOF_OCR_PROVIDER: "openai",
+      OPENAI_API_KEY: "sk-real",
+      FINPROOF_OCR_MODEL: "gpt-5-mini"
+    });
+
+    expect(config.ocr).toEqual({
+      provider: "openai",
+      apiKeyConfigured: true,
+      model: "gpt-5-mini"
+    });
+    expect(config.missing).not.toContain("OPENAI_API_KEY");
+  });
+
+  it("requires the shared OpenAI API key when OpenAI OCR is enabled", () => {
+    const config = getAnalysisProviderConfig({ FINPROOF_OCR_PROVIDER: "openai" });
+
+    expect(config.ocr).toEqual({
+      provider: "openai",
+      apiKeyConfigured: false,
+      model: "gpt-5-mini"
+    });
+    expect(config.missing).toContain("OPENAI_API_KEY");
+  });
+
   it("requires the shared Gemini API key when Gemini OCR is enabled", () => {
     const config = getAnalysisProviderConfig({ FINPROOF_OCR_PROVIDER: "gemini" });
 

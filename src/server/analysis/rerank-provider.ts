@@ -31,6 +31,10 @@ function value(env: Env, key: string): string | undefined {
   return raw && raw.trim().length > 0 ? raw.trim() : undefined;
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function overlapScore(query: string, text: string): number {
   const terms = query
     .split(/[\s.,:;!?()[\]{}"'`~|\\/]+/)
@@ -59,6 +63,12 @@ export function createDeterministicReranker(): Reranker {
       });
     }
   };
+}
+
+async function fallbackRerank(input: RerankInput, reason: string) {
+  console.log(`[Reranker] falling back to deterministic reranker: ${reason}`);
+
+  return createDeterministicReranker().rerank(input);
 }
 
 function parseRerankResponse(
@@ -105,34 +115,40 @@ export function createHttpReranker(env: Env = process.env, fetchImpl: FetchLike 
 
   return {
     provider: config.model,
-    async rerank({ query, candidates }) {
-      const response = await fetchImpl(endpoint, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          ...(value(env, "FINPROOF_RERANK_API_KEY")
-            ? { authorization: `Bearer ${value(env, "FINPROOF_RERANK_API_KEY")}` }
-            : {})
-        },
-        body: JSON.stringify({
-          model: config.model,
-          query,
-          documents: candidates.map((candidate) => ({
-            id: candidate.id,
-            text: candidate.quoteSummary,
-            title: candidate.title,
-            sourceType: candidate.sourceType
-          }))
-        })
-      });
+    async rerank(input) {
+      const { query, candidates } = input;
+      try {
+        const response = await fetchImpl(endpoint, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            ...(value(env, "FINPROOF_RERANK_API_KEY")
+              ? { authorization: `Bearer ${value(env, "FINPROOF_RERANK_API_KEY")}` }
+              : {})
+          },
+          body: JSON.stringify({
+            model: config.model,
+            query,
+            documents: candidates.map((candidate) => ({
+              id: candidate.id,
+              text: candidate.quoteSummary,
+              title: candidate.title,
+              sourceType: candidate.sourceType
+            }))
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(
-          `Rerank provider failed: ${response.status ?? "unknown"} ${response.statusText ?? ""}`.trim()
-        );
+        if (!response.ok) {
+          return fallbackRerank(
+            input,
+            `HTTP rerank failed: ${response.status ?? "unknown"} ${response.statusText ?? ""}`.trim()
+          );
+        }
+
+        return parseRerankResponse(await response.json(), candidates);
+      } catch (error) {
+        return fallbackRerank(input, `HTTP rerank unavailable: ${errorMessage(error)}`);
       }
-
-      return parseRerankResponse(await response.json(), candidates);
     }
   };
 }
@@ -150,33 +166,41 @@ export function createCohereReranker(
 
   return {
     provider: config.model,
-    async rerank({ query, candidates }) {
-      const response = await fetchImpl(COHERE_RERANK_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: config.model,
-          query,
-          documents: candidates.map((candidate) => ({
-            text: candidate.quoteSummary,
-            title: candidate.title,
-            sourceType: candidate.sourceType
-          })),
-          top_n: config.topK,
-          return_documents: false
-        })
-      });
+    async rerank(input) {
+      const { query, candidates } = input;
+      try {
+        const response = await fetchImpl(COHERE_RERANK_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: config.model,
+            query,
+            documents: candidates.map((candidate) => ({
+              text: candidate.quoteSummary,
+              title: candidate.title,
+              sourceType: candidate.sourceType
+            })),
+            top_n: config.topK,
+            return_documents: false
+          })
+        });
 
-      if (!response.ok) {
-        throw new Error(
-          `Cohere rerank failed: ${response.status ?? "unknown"} ${response.statusText ?? ""}`.trim()
-        );
+        if (!response.ok) {
+          return fallbackRerank(
+            input,
+            `Cohere rerank failed: ${response.status ?? "unknown"} ${
+              response.statusText ?? ""
+            }`.trim()
+          );
+        }
+
+        return parseRerankResponse(await response.json(), candidates);
+      } catch (error) {
+        return fallbackRerank(input, `Cohere rerank unavailable: ${errorMessage(error)}`);
       }
-
-      return parseRerankResponse(await response.json(), candidates);
     }
   };
 }

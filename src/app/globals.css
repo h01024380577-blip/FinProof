@@ -4344,8 +4344,7 @@ a.review-table__row:hover {
 }
 
 .regulatory-change-card__headline h3,
-.regulatory-change-card__summary,
-.regulatory-change-card__sections p {
+.regulatory-change-card__summary {
   margin: 0;
   overflow: hidden;
   display: -webkit-box;
@@ -4387,11 +4386,13 @@ a.review-table__row:hover {
 }
 
 .regulatory-change-card__sections p {
-  -webkit-line-clamp: 2;
+  margin: 0;
   color: var(--text-soft);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-relaxed);
-  white-space: pre-line;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: keep-all;
 }
 
 .regulatory-change-card__sections > span {
@@ -5156,13 +5157,113 @@ a.review-table__row:hover {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: var(--app-bg);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 12px;
+  min-height: auto;
+  padding: 10px 12px;
+  background: #ffffff;
 }
+
+.workbench-summary {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.workbench-summary-row {
+  display: grid;
+  grid-template-columns:
+    minmax(82px, 0.82fr)
+    minmax(220px, 1.64fr)
+    minmax(66px, 0.54fr)
+    minmax(74px, 0.58fr)
+    minmax(82px, 0.66fr)
+    minmax(82px, 0.6fr)
+    minmax(78px, 0.58fr)
+    minmax(86px, 0.64fr)
+    minmax(70px, 0.52fr);
+  min-height: 44px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.workbench-summary-row:first-child {
+  border-top: 0;
+}
+
+.workbench-summary-row--head {
+  min-height: 32px;
+  background: #f4f5f7;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.workbench-summary-row > [role="cell"],
+.workbench-summary-row > [role="columnheader"] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-summary-title h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.96rem;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.workbench-summary-title {
+  white-space: normal;
+}
+
+.workbench-header .detail__actions {
+  min-width: 184px;
+  align-content: center;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #f8fafc;
+}
+
 .workbench-header__group-label {
   font-size: var(--font-size-xs);
   color: var(--muted);
   margin-right: var(--space-2);
   align-self: center;
+}
+
+@media (max-width: 1200px) {
+  .workbench-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .workbench-header .detail__actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .workbench-summary {
+    overflow-x: auto;
+  }
+
+  .workbench-summary-row {
+    min-width: 840px;
+  }
 }
 
 /* Spec 2: IssueList risk-color surfaces */

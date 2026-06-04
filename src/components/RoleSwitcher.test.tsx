@@ -49,12 +49,16 @@ describe("RoleSwitcher", () => {
     expect(screen.getByLabelText("active-role")).toHaveTextContent("requester");
     expect(screen.getByLabelText("authenticated")).toHaveTextContent("true");
     expect(screen.getByLabelText("current-user")).toHaveTextContent("홍길동");
+    expect(screen.getByLabelText("headers")).toHaveTextContent(
+      '"x-finproof-user-id":"user-requester-demo"'
+    );
     expect(screen.queryByRole("radio", { name: "요청자" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "심의자" })).not.toBeInTheDocument();
     expect(window.localStorage.getItem("finproof.demoSession")).toContain("홍길동");
+    expect(window.localStorage.getItem("finproof.demoSession")).toContain("user-requester-demo");
   });
 
-  it("requires a security code for reviewer login but accepts any non-empty value", async () => {
+  it("requires admin as the reviewer security code", async () => {
     const user = userEvent.setup();
     render(
       <RoleProvider initialRole="requester">
@@ -74,7 +78,14 @@ describe("RoleSwitcher", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("심의자 보안코드를 입력해 주세요.");
     expect(screen.getByLabelText("active-role")).toHaveTextContent("requester");
 
-    await user.type(screen.getByLabelText("심의자 보안코드"), "demo-code");
+    await user.type(screen.getByLabelText("심의자 보안코드"), "wrong-code");
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("심의자 보안코드를 확인해 주세요.");
+    expect(screen.getByLabelText("active-role")).toHaveTextContent("requester");
+
+    await user.clear(screen.getByLabelText("심의자 보안코드"));
+    await user.type(screen.getByLabelText("심의자 보안코드"), "admin");
     await user.click(screen.getByRole("button", { name: "시작하기" }));
 
     expect(screen.getByRole("button", { name: "박민준 심의자" })).toBeInTheDocument();
@@ -93,7 +104,7 @@ describe("RoleSwitcher", () => {
     await user.click(screen.getByRole("button", { name: "로그인" }));
     await user.click(screen.getByRole("radio", { name: "심의자" }));
     await user.type(screen.getByLabelText("이름"), "김심의");
-    await user.type(screen.getByLabelText("심의자 보안코드"), "1");
+    await user.type(screen.getByLabelText("심의자 보안코드"), "admin");
     await user.click(screen.getByRole("button", { name: "시작하기" }));
 
     await user.click(screen.getByRole("button", { name: "김심의 심의자" }));
@@ -138,7 +149,7 @@ describe("RoleSwitcher", () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText("headers")).toHaveTextContent('"x-finproof-role":"reviewer"');
     expect(screen.getByLabelText("headers")).toHaveTextContent(
-      '"x-finproof-user-id":"demo-reviewer-existing"'
+      '"x-finproof-user-id":"user-reviewer-demo"'
     );
     expect(screen.getByLabelText("headers")).toHaveTextContent(
       '"x-finproof-user-name":"Existing%20Reviewer"'

@@ -8,6 +8,7 @@ import type {
 } from "@/domain/types";
 import {
   createModelProvider,
+  extractOpenAIText,
   extractGeminiText,
   type ModelProvider
 } from "@/server/ai/model-provider";
@@ -411,10 +412,24 @@ function parseGeminiOcrText(rawText: string) {
   };
 }
 
+function parseOcrText(rawText: string) {
+  return parseGeminiOcrText(rawText);
+}
+
 function geminiOcrSystemInstruction() {
   return [
     "당신은 금융 광고 심의용 OCR 엔진입니다.",
     "첨부된 PDF 또는 이미지에서 실제로 보이는 텍스트만 추출하세요.",
+    "보이지 않는 문구, 법령 해석, 요약, 추론은 절대 추가하지 마세요.",
+    "표와 줄바꿈은 의미가 보존되도록 평문으로 정리하세요.",
+    '응답은 반드시 JSON 객체 하나로만 작성하세요: {"text":"추출 텍스트","confidence":0.0}'
+  ].join("\n");
+}
+
+function openAiOcrInstruction() {
+  return [
+    "당신은 금융 광고 심의용 OCR 엔진입니다.",
+    "첨부된 이미지 또는 PDF에서 실제로 보이는 텍스트만 추출하세요.",
     "보이지 않는 문구, 법령 해석, 요약, 추론은 절대 추가하지 마세요.",
     "표와 줄바꿈은 의미가 보존되도록 평문으로 정리하세요.",
     '응답은 반드시 JSON 객체 하나로만 작성하세요: {"text":"추출 텍스트","confidence":0.0}'
@@ -430,6 +445,150 @@ function geminiOcrUserPrompt(review: ReviewCase, file: ReviewFile) {
   ].join("\n");
 }
 
+function geminiOcrModel(env: Record<string, string | undefined>) {
+  const configuredModel = env.FINPROOF_OCR_MODEL?.trim();
+
+  if (!configuredModel) {
+    return "gemini-2.5-flash-lite";
+  }
+
+  if (/gemini[-\w.]*pro/i.test(configuredModel)) {
+    console.log(
+      `[GeminiOCR] refusing disallowed OCR model ${configuredModel}; using gemini-2.5-flash-lite`
+    );
+    return "gemini-2.5-flash-lite";
+  }
+
+  return configuredModel;
+}
+
+function openAiOcrModel(env: Record<string, string | undefined>) {
+  const configuredModel = env.FINPROOF_OCR_MODEL?.trim();
+
+  if (!configuredModel || /^gemini[-\w.]*/i.test(configuredModel)) {
+    return "gpt-5-mini";
+  }
+
+  return configuredModel;
+}
+
+function openAiOcrContentPart(file: ReviewFile, mimeType: string, body: Uint8Array) {
+  const dataUrl = `data:${mimeType};base64,${Buffer.from(body).toString("base64")}`;
+
+  return mimeType === "application/pdf"
+    ? {
+        type: "input_file",
+        filename: file.name,
+        file_data: dataUrl
+      }
+    : {
+        type: "input_image",
+        image_url: dataUrl
+      };
+}
+
+export function createOpenAiOcrProvider(
+  env: Record<string, string | undefined> = process.env,
+  fileBodyReader?: ReviewFileBodyReader,
+  fetchImpl: OcrFetchLike = fetch
+): OcrProvider {
+  return {
+    async extract({ review, files }) {
+      const apiKey = env.OPENAI_API_KEY?.trim();
+
+      if (!apiKey) {
+        throw new Error("OPENAI_API_KEY is required when FINPROOF_OCR_PROVIDER=openai");
+      }
+
+      const model = openAiOcrModel(env);
+      const maxInlineBytes = positiveInteger(
+        env,
+        "FINPROOF_OCR_MAX_INLINE_BYTES",
+        20 * 1024 * 1024
+      );
+      const ocrTimeoutMs = positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000);
+
+      return Promise.all(
+        files.map(async (file) => {
+          const storedDocument = await extractStoredDocument(file, fileBodyReader);
+
+          if (storedDocument) {
+            return {
+              fileId: file.id,
+              fileName: file.name,
+              storageKey: file.storageKey,
+              text: storedDocument.text,
+              confidence: storedDocument.confidence,
+              provider: storedDocument.provider
+            };
+          }
+
+          const mimeType = geminiOcrMimeType(file);
+
+          if (!mimeType || !file.storageKey || !fileBodyReader) {
+            return sampleOrMetadataDocument(review, file);
+          }
+
+          const body = await fileBodyReader.getReviewFileBody(file.storageKey);
+
+          if (!body || body.byteLength > maxInlineBytes) {
+            return sampleOrMetadataDocument(review, file);
+          }
+
+          const response = await fetchImpl("https://api.openai.com/v1/responses", {
+            method: "POST",
+            signal: AbortSignal.timeout(ocrTimeoutMs),
+            headers: {
+              authorization: `Bearer ${apiKey}`,
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({
+              model,
+              input: [
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "input_text",
+                      text: `${openAiOcrInstruction()}\n\n${geminiOcrUserPrompt(review, file)}`
+                    },
+                    openAiOcrContentPart(file, mimeType, body)
+                  ]
+                }
+              ],
+              max_output_tokens: 2000
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `OpenAI OCR request failed: ${response.status ?? "unknown"} ${
+                response.statusText ?? ""
+              }`.trim()
+            );
+          }
+
+          const rawJson = await response.json();
+          const extracted = parseOcrText(extractOpenAIText(rawJson));
+
+          if (!extracted.text) {
+            return sampleOrMetadataDocument(review, file);
+          }
+
+          return {
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: extracted.text,
+            confidence: extracted.confidence,
+            provider: "openai-ocr"
+          };
+        })
+      );
+    }
+  };
+}
+
 export function createGeminiOcrProvider(
   env: Record<string, string | undefined> = process.env,
   fileBodyReader?: ReviewFileBodyReader,
@@ -443,7 +602,7 @@ export function createGeminiOcrProvider(
         throw new Error("GEMINI_API_KEY is required when FINPROOF_OCR_PROVIDER=gemini");
       }
 
-      const model = env.FINPROOF_OCR_MODEL?.trim() || "gemini-2.5-flash-lite";
+      const model = geminiOcrModel(env);
       const maxInlineBytes = positiveInteger(
         env,
         "FINPROOF_OCR_MAX_INLINE_BYTES",
@@ -669,6 +828,10 @@ function defaultOcrProvider(fileBodyReader?: ReviewFileBodyReader) {
 
   if (config.ocr.provider === "gemini") {
     return createGeminiOcrProvider(process.env, fileBodyReader);
+  }
+
+  if (config.ocr.provider === "openai") {
+    return createOpenAiOcrProvider(process.env, fileBodyReader);
   }
 
   return createDeterministicOcrProvider(fileBodyReader);

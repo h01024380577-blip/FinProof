@@ -1,7 +1,8 @@
 "use client";
 
 import type { JSX } from "react";
-import { AlertTriangle, CircleCheck, CircleX, LoaderCircle } from "lucide-react";
+import { CircleCheck, CircleX, LoaderCircle } from "lucide-react";
+import { RiskBadge, StatusBadge } from "@/components/Badges";
 import type { ReviewCase, ReviewIssue } from "@/domain/types";
 
 export type FinalDecisionAction = Extract<
@@ -13,9 +14,9 @@ export type WorkbenchHeaderProps = {
   id: string;
   title: string;
   reviewStatus: ReviewCase["status"];
-  statusLabel: string;
-  riskLabel: string;
+  riskLevel: ReviewCase["highestRiskLevel"];
   productLabel: string;
+  requester: string;
   reviewer: string;
   deadline: string;
   canMutate: boolean;
@@ -27,9 +28,9 @@ export function WorkbenchHeader({
   id,
   title,
   reviewStatus,
-  statusLabel,
-  riskLabel,
+  riskLevel,
   productLabel,
+  requester,
   reviewer,
   deadline,
   canMutate,
@@ -38,27 +39,41 @@ export function WorkbenchHeader({
 }: WorkbenchHeaderProps): JSX.Element {
   const finalDecisionDisabled =
     !canMutate || isFinalizingReview || reviewStatus === "approved" || reviewStatus === "rejected";
+  const requestDepartment = requestDepartmentFor({ requester, productLabel });
 
   return (
-    <section className="detail__header workbench-header">
-      <div className="detail__title-block">
-        <p className="detail__crumb">{id}</p>
-        <h2>{title}</h2>
-        <p className="detail__meta">
-          <span className="status-dot" aria-hidden="true" />
-          {statusLabel}
-          <span aria-hidden="true">|</span>
-          {productLabel}
-          <span aria-hidden="true">|</span>
-          <span className="detail__risk-line">
-            <AlertTriangle size={15} aria-hidden="true" />
-            최고 위험도: {riskLabel}
+    <section className="detail__header workbench-header" aria-label="심의 상세 요약">
+      <div className="workbench-summary" role="table" aria-label="심의 상세 요약">
+        <div className="workbench-summary-row workbench-summary-row--head" role="row">
+          <span role="columnheader">심의 ID</span>
+          <span role="columnheader">제목</span>
+          <span role="columnheader">상품군</span>
+          <span role="columnheader">요청 부서</span>
+          <span role="columnheader">요청자</span>
+          <span role="columnheader">상태</span>
+          <span role="columnheader">위험도</span>
+          <span role="columnheader">마감일</span>
+          <span role="columnheader">담당자</span>
+        </div>
+        <div className="workbench-summary-row" role="row" aria-label={title}>
+          <span className="queue-id" role="cell">
+            {id}
           </span>
-          <span aria-hidden="true">|</span>
-          담당: {reviewer}
-          <span aria-hidden="true">|</span>
-          마감: {deadline}
-        </p>
+          <span className="workbench-summary-title" role="cell">
+            <h2>{title}</h2>
+          </span>
+          <span role="cell">{productLabel}</span>
+          <span role="cell">{requestDepartment}</span>
+          <span role="cell">{requester || "미기재"}</span>
+          <span role="cell">
+            <StatusBadge status={reviewStatus} />
+          </span>
+          <span role="cell">
+            <RiskBadge level={riskLevel} />
+          </span>
+          <span role="cell">{deadline}</span>
+          <span role="cell">{reviewer || "미배정"}</span>
+        </div>
       </div>
       <div className="detail__actions" role="group" aria-label="최종 심의 결정">
         <span className="workbench-header__group-label" aria-hidden="true">
@@ -95,4 +110,17 @@ export function WorkbenchHeader({
       </div>
     </section>
   );
+}
+
+function requestDepartmentFor({
+  requester,
+  productLabel
+}: {
+  requester: string;
+  productLabel: string;
+}): string {
+  if (requester.includes("업로드")) return "디지털마케팅팀";
+  if (productLabel === "카드") return "제휴마케팅팀";
+  if (productLabel === "대출") return "리테일금융팀";
+  return "마케팅팀";
 }
