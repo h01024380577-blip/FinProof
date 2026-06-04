@@ -453,6 +453,107 @@ describe("ReviewQueue", () => {
     expect(pushMock).toHaveBeenCalledWith("/reviews/rc-upload-001");
   });
 
+  it("tracks multiple analysis jobs independently and shows failed job retry state", async () => {
+    const user = userEvent.setup();
+    const first = {
+      ...reviewSummaries[1],
+      id: "rc-upload-001",
+      title: "첫 번째 업로드"
+    };
+    const second = {
+      ...reviewSummaries[1],
+      id: "rc-upload-002",
+      title: "두 번째 업로드"
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ reviewCases: [first, second] })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCaseId: first.id,
+          status: "analysis_queued",
+          jobId: "job-1",
+          issueCount: 0,
+          analysisHref: `/reviews/${first.id}`
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCaseId: first.id,
+          status: "running",
+          progress: 20,
+          currentStep: "worker_running",
+          jobId: "job-1"
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCaseId: second.id,
+          status: "analysis_queued",
+          jobId: "job-2",
+          issueCount: 0,
+          analysisHref: `/reviews/${second.id}`
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          reviewCaseId: second.id,
+          status: "failed",
+          progress: 100,
+          currentStep: "worker_failed",
+          jobId: "job-2",
+          errorMessage: "Cohere rerank failed: 400 Bad Request"
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer", "reviewer.jwt");
+
+    await user.click(
+      within(await screen.findByRole("row", { name: /첫 번째 업로드/ })).getByRole("button", {
+        name: "AI 분석 시작"
+      })
+    );
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-upload-001/analysis/status",
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "x-finproof-role": "reviewer",
+            authorization: "Bearer reviewer.jwt"
+          })
+        })
+      );
+    });
+
+    await user.click(
+      within(await screen.findByRole("row", { name: /두 번째 업로드/ })).getByRole("button", {
+        name: "AI 분석 시작"
+      })
+    );
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByRole("row", { name: /첫 번째 업로드/ })).getByRole("button", {
+          name: "분석중"
+        })
+      ).toBeDisabled();
+      expect(
+        within(screen.getByRole("row", { name: /두 번째 업로드/ })).getByRole("button", {
+          name: "AI 분석 재시도"
+        })
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByText("분석 실패: Cohere rerank failed: 400 Bad Request")).toBeInTheDocument();
+  });
+
   it("uses backend pagination when the reviewer moves through queue pages", async () => {
     const user = userEvent.setup();
     const fetchMock = vi

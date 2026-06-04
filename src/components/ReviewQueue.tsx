@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { ReviewCase, ReviewSummary } from "@/domain/types";
 import { QueueMetrics, type QueueMetricValues } from "./queue/QueueMetrics";
 import { QueueFilters, type QueueFilterState } from "./queue/QueueFilters";
-import { QueueTable } from "./queue/QueueTable";
+import { QueueTable, type QueueAnalysisState, type QueueAnalysisStates } from "./queue/QueueTable";
 import { useRole } from "./RoleContext";
 
 type ReviewCasesResponse = {
@@ -20,6 +20,15 @@ type AnalysisStartResponse = {
   reviewCaseId: string;
   status: ReviewCase["status"];
   analysisHref: string;
+  jobId?: string;
+};
+type AnalysisStatusResponse = {
+  reviewCaseId: string;
+  status: "not_started" | "queued" | "running" | "completed" | "failed";
+  progress: number;
+  currentStep: string;
+  jobId: string | null;
+  errorMessage?: string;
 };
 type ReviewerUpdateResponse = {
   reviewCase?: Pick<ReviewCase, "id" | "reviewer">;
@@ -89,7 +98,7 @@ export function ReviewQueue(): JSX.Element {
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
+  const [analysisStates, setAnalysisStates] = useState<QueueAnalysisStates>({});
   const pollingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const [deletingHistoryIds, setDeletingHistoryIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
@@ -215,47 +224,134 @@ export function ReviewQueue(): JSX.Element {
     };
   }, []);
 
+  function clearPollingTimer(reviewId: string): void {
+    const timer = pollingTimers.current.get(reviewId);
+
+    if (timer) {
+      clearTimeout(timer);
+      pollingTimers.current.delete(reviewId);
+    }
+  }
+
+  function setAnalysisState(reviewId: string, state: QueueAnalysisState | undefined): void {
+    setAnalysisStates((current) => {
+      const next = { ...current };
+
+      if (state) {
+        next[reviewId] = state;
+      } else {
+        delete next[reviewId];
+      }
+
+      return next;
+    });
+  }
+
+  async function refreshReviewAfterAnalysis(reviewId: string): Promise<boolean> {
+    const response = await fetch(`/api/v1/review-cases/${reviewId}`, {
+      headers: apiHeaders()
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const body = (await response.json()) as { reviewCase: ReviewCase };
+    const { reviewCase } = body;
+
+    setReviews((current) =>
+      current.map((candidate) =>
+        candidate.id === reviewId
+          ? {
+              ...candidate,
+              status: reviewCase.status,
+              highestRiskLevel: reviewCase.highestRiskLevel,
+              reviewer: reviewCase.reviewer,
+              availableActions: fallbackActionsFor(
+                activeRole,
+                reviewCase.status
+              ) as unknown as ReviewSummary["availableActions"]
+            }
+          : candidate
+      )
+    );
+
+    return true;
+  }
+
   async function pollForCompletion(reviewId: string, attempt = 0): Promise<void> {
     const MAX_ATTEMPTS = 90; // ~3 minutes at 2s intervals
     if (attempt >= MAX_ATTEMPTS) {
-      setActiveAnalysisId(null);
-      pollingTimers.current.delete(reviewId);
+      setAnalysisState(reviewId, {
+        status: "failed",
+        errorMessage: "분석 상태 확인 시간이 초과되었습니다."
+      });
+      clearPollingTimer(reviewId);
       return;
     }
 
     try {
-      const response = await fetch(`/api/v1/review-cases/${reviewId}`, {
+      const response = await fetch(`/api/v1/review-cases/${reviewId}/analysis/status`, {
         headers: apiHeaders()
       });
       if (response.ok) {
-        const body = (await response.json()) as { reviewCase: ReviewCase };
-        const { status } = body.reviewCase;
-        const isTerminal =
-          status === "analysis_complete" ||
-          status === "analysis_waiting" ||
-          status === "under_review" ||
-          status === "approved" ||
-          status === "rejected" ||
-          status === "change_requested" ||
-          status === "on_hold";
+        const body = (await response.json()) as AnalysisStatusResponse;
 
-        if (isTerminal) {
+        if (body.status === "completed") {
+          const refreshed = await refreshReviewAfterAnalysis(reviewId);
+
+          if (!refreshed) {
+            setReviews((current) =>
+              current.map((candidate) =>
+                candidate.id === reviewId
+                  ? {
+                      ...candidate,
+                      status: "analysis_complete",
+                      availableActions: fallbackActionsFor(
+                        activeRole,
+                        "analysis_complete"
+                      ) as unknown as ReviewSummary["availableActions"]
+                    }
+                  : candidate
+              )
+            );
+          }
+
+          setAnalysisState(reviewId, undefined);
+          clearPollingTimer(reviewId);
+          return;
+        }
+
+        if (body.status === "failed") {
           setReviews((current) =>
             current.map((candidate) =>
               candidate.id === reviewId
                 ? {
                     ...candidate,
-                    status,
+                    status: "analysis_waiting",
                     availableActions: fallbackActionsFor(
                       activeRole,
-                      status
+                      "analysis_waiting"
                     ) as unknown as ReviewSummary["availableActions"]
                   }
                 : candidate
             )
           );
-          setActiveAnalysisId(null);
-          pollingTimers.current.delete(reviewId);
+          setAnalysisState(reviewId, {
+            status: "failed",
+            errorMessage: body.errorMessage
+          });
+          clearPollingTimer(reviewId);
+          return;
+        }
+
+        if (body.status === "queued" || body.status === "running") {
+          setAnalysisState(reviewId, { status: body.status });
+        }
+
+        if (body.status === "not_started") {
+          setAnalysisState(reviewId, undefined);
+          clearPollingTimer(reviewId);
           return;
         }
       }
@@ -263,12 +359,14 @@ export function ReviewQueue(): JSX.Element {
       // swallow and retry
     }
 
+    clearPollingTimer(reviewId);
     const timer = setTimeout(() => void pollForCompletion(reviewId, attempt + 1), 2000);
     pollingTimers.current.set(reviewId, timer);
   }
 
   async function startAnalysis(review: ReviewSummary): Promise<void> {
-    setActiveAnalysisId(review.id);
+    clearPollingTimer(review.id);
+    setAnalysisState(review.id, { status: "queued" });
     setLoadError(null);
     try {
       const response = await fetch(`/api/v1/review-cases/${review.id}/analysis/start`, {
@@ -293,20 +391,26 @@ export function ReviewQueue(): JSX.Element {
               : candidate
           )
         );
-        setActiveAnalysisId(null);
+        setAnalysisState(review.id, undefined);
       } else {
         setReviews((current) =>
           current.map((candidate) =>
             candidate.id === review.id ? { ...candidate, status: body.status } : candidate
           )
         );
+        setAnalysisState(review.id, {
+          status: body.status === "analysis_in_progress" ? "running" : "queued"
+        });
         void pollForCompletion(review.id);
       }
     } catch (error) {
-      setLoadError(
-        error instanceof Error ? error.message : "분석 시작 요청을 처리하지 못했습니다."
-      );
-      setActiveAnalysisId(null);
+      const message = error instanceof Error ? error.message : "분석 시작 요청을 처리하지 못했습니다.";
+
+      setLoadError(message);
+      setAnalysisState(review.id, {
+        status: "failed",
+        errorMessage: message
+      });
     }
   }
 
@@ -457,7 +561,8 @@ export function ReviewQueue(): JSX.Element {
         <QueueTable
           rows={filtered}
           activeRole={activeRole}
-          activeAnalysisId={activeAnalysisId}
+          activeAnalysisId={null}
+          analysisStates={analysisStates}
           isLoading={isLoading}
           loadingMessage={loadingMessage}
           canDeleteReviewHistory={canDeleteReviewHistory}

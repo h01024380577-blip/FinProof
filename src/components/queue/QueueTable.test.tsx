@@ -270,6 +270,59 @@ describe("QueueTable", () => {
     expect(screen.queryByText("시작 중")).not.toBeInTheDocument();
   });
 
+  it("renders independent analysis states for multiple queued rows", () => {
+    render(
+      <QueueTable
+        rows={[
+          { ...baseRow, id: "RC-2026-001", title: "첫 번째 분석" },
+          { ...baseRow, id: "RC-2026-002", title: "두 번째 분석" }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        analysisStates={{
+          "RC-2026-001": { status: "queued" },
+          "RC-2026-002": { status: "running" }
+        }}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(
+      within(screen.getByRole("row", { name: /첫 번째 분석/ })).getByRole("button", {
+        name: "대기중"
+      })
+    ).toBeDisabled();
+    expect(
+      within(screen.getByRole("row", { name: /두 번째 분석/ })).getByRole("button", {
+        name: "분석중"
+      })
+    ).toBeDisabled();
+  });
+
+  it("shows failed analysis rows as retryable with error detail", () => {
+    render(
+      <QueueTable
+        rows={[baseRow]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        analysisStates={{
+          [baseRow.id]: {
+            status: "failed",
+            errorMessage: "Cohere rerank failed: 400 Bad Request"
+          }
+        }}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "AI 분석 재시도" })).toBeInTheDocument();
+    expect(
+      screen.getByText("분석 실패: Cohere rerank failed: 400 Bad Request")
+    ).toBeInTheDocument();
+  });
+
   it("shows the analysis action in the work column before analysis and a completed note after analysis", () => {
     render(
       <QueueTable

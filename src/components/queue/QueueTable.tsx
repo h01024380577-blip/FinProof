@@ -60,6 +60,7 @@ export type QueueTableProps = {
   rows: ReviewSummary[];
   activeRole: RoleId;
   activeAnalysisId: string | null;
+  analysisStates?: QueueAnalysisStates;
   isLoading?: boolean;
   loadingMessage?: string;
   emptyMessage?: string;
@@ -71,6 +72,13 @@ export type QueueTableProps = {
   onStartAnalysis: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
+
+export type QueueAnalysisState = {
+  status: "queued" | "running" | "completed" | "failed";
+  errorMessage?: string;
+};
+
+export type QueueAnalysisStates = Record<string, QueueAnalysisState | undefined>;
 
 type PendingOpen = {
   review: ReviewSummary;
@@ -146,6 +154,7 @@ export function QueueTable({
   rows,
   activeRole,
   activeAnalysisId,
+  analysisStates = {},
   isLoading = false,
   loadingMessage = "심의 대기 목록을 불러오는 중입니다.",
   emptyMessage,
@@ -217,6 +226,7 @@ export function QueueTable({
 
       {rows.map((review) => {
         const waiting = isAnalysisWaiting(review.status);
+        const analysisState = analysisStates[review.id];
         const rowActions = actionsFor(review, activeRole);
         const canStart = rowActions.includes("start_analysis");
         const canOpen = rowActions.includes("open_workbench");
@@ -272,13 +282,26 @@ export function QueueTable({
                 <button
                   className="button button--small queue-row-action-button"
                   type="button"
-                  disabled={!canStart || activeAnalysisId === review.id}
+                  disabled={
+                    !canStart ||
+                    activeAnalysisId === review.id ||
+                    analysisState?.status === "queued" ||
+                    analysisState?.status === "running"
+                  }
                   onClick={() => onStartAnalysis(review)}
                 >
-                  {activeAnalysisId === review.id || review.status === "analysis_queued" ? (
+                  {analysisState?.status === "failed" ? (
+                    <>
+                      <PlayCircle size={15} aria-hidden="true" />
+                      AI 분석 재시도
+                    </>
+                  ) : activeAnalysisId === review.id ||
+                    analysisState?.status === "queued" ||
+                    analysisState?.status === "running" ||
+                    review.status === "analysis_queued" ? (
                     <>
                       <Loader2 className="action-spinner" size={15} aria-hidden="true" />
-                      분석중
+                      {analysisState?.status === "queued" ? "대기중" : "분석중"}
                     </>
                   ) : (
                     <>
@@ -287,6 +310,11 @@ export function QueueTable({
                     </>
                   )}
                 </button>
+              ) : null}
+              {waiting && analysisState?.status === "failed" ? (
+                <span className="queue-row-note">
+                  분석 실패{analysisState.errorMessage ? `: ${analysisState.errorMessage}` : ""}
+                </span>
               ) : null}
               {!waiting && review.status === "analysis_complete" ? (
                 <button
