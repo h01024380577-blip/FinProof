@@ -1174,7 +1174,7 @@ describe("ReviewDetailWorkspace tab URL sync", () => {
     render(<ReviewDetailWorkspace review={uploadOnlyReview} />);
 
     expect(screen.getByRole("tab", { name: "근거 자료" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("광고 원문 근거")).toBeInTheDocument();
+    expect(screen.queryByText("광고 원문 근거")).not.toBeInTheDocument();
     expect(screen.getByText("규정/내규 근거")).toBeInTheDocument();
     expect(screen.getByText("연결된 승인 지식문서 없음")).toBeInTheDocument();
   });

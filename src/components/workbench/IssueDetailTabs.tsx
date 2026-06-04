@@ -230,14 +230,6 @@ function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
 
   return (
     <div className="evidence-stack">
-      {adEvidence.length > 0 ? (
-        <EvidenceSection title="광고 원문 근거">
-          {adEvidence.map((evidence) => (
-            <EvidenceCard key={evidence.id} evidence={evidence} />
-          ))}
-        </EvidenceSection>
-      ) : null}
-
       <EvidenceSection title="규정/내규 근거">
         {regulatoryEvidence.length > 0 ? (
           regulatoryEvidence.map((evidence) => (

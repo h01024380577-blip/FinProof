@@ -225,7 +225,7 @@ describe("IssueDetailTabs", () => {
     expect(screen.queryByText("law")).not.toBeInTheDocument();
   });
 
-  it("separates uploaded ad evidence from missing regulatory evidence", () => {
+  it("shows only regulatory evidence classification for upload-only evidence", () => {
     render(
       <IssueDetailTabs
         issue={{
@@ -253,8 +253,8 @@ describe("IssueDetailTabs", () => {
       />
     );
 
-    expect(screen.getByText("광고 원문 근거")).toBeInTheDocument();
-    expect(screen.getByText("대출광고1.png")).toBeInTheDocument();
+    expect(screen.queryByText("광고 원문 근거")).not.toBeInTheDocument();
+    expect(screen.queryByText("대출광고1.png")).not.toBeInTheDocument();
     expect(screen.getByText("규정/내규 근거")).toBeInTheDocument();
     expect(screen.getByText("연결된 승인 지식문서 없음")).toBeInTheDocument();
     expect(
@@ -337,7 +337,7 @@ describe("IssueDetailTabs", () => {
     expect(screen.queryByText(/··/)).not.toBeInTheDocument();
   });
 
-  it("renders the cited source layout for completed issues that have no persisted evidence", () => {
+  it("renders the regulatory empty state for completed issues that have no persisted evidence", () => {
     render(
       <IssueDetailTabs
         issue={{
@@ -359,11 +359,15 @@ describe("IssueDetailTabs", () => {
       />
     );
 
-    expect(screen.getAllByText("AI 분석 결과")).toHaveLength(2);
-    expect(screen.getByText("참고 출처")).toBeInTheDocument();
-    expect(screen.getByText("판단 근거")).toBeInTheDocument();
+    expect(screen.getByText("규정/내규 근거")).toBeInTheDocument();
+    expect(screen.getByText("연결된 승인 지식문서 없음")).toBeInTheDocument();
+    expect(screen.queryByText("AI 분석 결과")).not.toBeInTheDocument();
+    expect(screen.queryByText("참고 출처")).not.toBeInTheDocument();
+    expect(screen.queryByText("판단 근거")).not.toBeInTheDocument();
     expect(
-      screen.getByText("최고 금리 표현이 확인되었지만 적용 조건이 함께 확인되지 않았습니다.")
+      screen.getByText(
+        "현재 이슈는 업로드 광고 표현을 기준으로 AI가 위험 신호를 판단했으며, 적용 규정/내규 근거는 리뷰어 확인이 필요합니다."
+      )
     ).toBeInTheDocument();
   });
 });
