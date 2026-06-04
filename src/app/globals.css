@@ -4078,6 +4078,34 @@ a.review-table__row:hover {
     minmax(84px, 0.64fr);
 }
 
+.history-row__status-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rejection-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.rejection-toggle:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
 .review-table--history .review-table__row--rejection-note {
   grid-template-columns: 1fr;
   min-height: 0;
