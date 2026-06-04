@@ -122,8 +122,7 @@ describe("IssueDetailTabs", () => {
             evidenceQuery: "대출 광고 승인 보장 금지 표현",
             suggestedCopyOriginalLanguage:
               "Apply in 3 minutes. Approval is subject to credit review.",
-            suggestedCopyKoreanMeaning:
-              "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음."
+            suggestedCopyKoreanMeaning: "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음."
           }
         }}
         activeTab="checklist"
@@ -147,7 +146,9 @@ describe("IssueDetailTabs", () => {
     expect(
       screen.getByText("Apply in 3 minutes. Approval is subject to credit review.")
     ).toBeInTheDocument();
-    expect(screen.queryByText("3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음.")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음.")
+    ).not.toBeInTheDocument();
   });
 
   it("formats evidence metadata in Korean and hides missing location fields", () => {
@@ -224,6 +225,45 @@ describe("IssueDetailTabs", () => {
     expect(screen.queryByText("law")).not.toBeInTheDocument();
   });
 
+  it("separates uploaded ad evidence from missing regulatory evidence", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          evidence: [
+            {
+              id: "evidence-uploaded-ad",
+              sourceType: "product_doc",
+              title: "대출광고1.png",
+              quoteSummary: "신용등급 무관 당일 심사! 즉시 승인!",
+              relevanceScore: 0.86
+            }
+          ]
+        }}
+        activeTab="evidence"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("광고 원문 근거")).toBeInTheDocument();
+    expect(screen.getByText("대출광고1.png")).toBeInTheDocument();
+    expect(screen.getByText("규정/내규 근거")).toBeInTheDocument();
+    expect(screen.getByText("연결된 승인 지식문서 없음")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "현재 이슈는 업로드 광고 표현을 기준으로 AI가 위험 신호를 판단했으며, 적용 규정/내규 근거는 리뷰어 확인이 필요합니다."
+      )
+    ).toBeInTheDocument();
+  });
+
   it("extracts an article reference from registered knowledge text when section metadata is absent", () => {
     render(
       <IssueDetailTabs
@@ -290,7 +330,9 @@ describe("IssueDetailTabs", () => {
     );
 
     expect(screen.getByText("금융규제 가이드라인")).toBeInTheDocument();
-    expect(screen.getByText("등록된 지식문서의 조항 본문을 기준으로 판단했습니다.")).toBeInTheDocument();
+    expect(
+      screen.getByText("등록된 지식문서의 조항 본문을 기준으로 판단했습니다.")
+    ).toBeInTheDocument();
     expect(screen.queryByText(/목 차/)).not.toBeInTheDocument();
     expect(screen.queryByText(/··/)).not.toBeInTheDocument();
   });
@@ -320,6 +362,8 @@ describe("IssueDetailTabs", () => {
     expect(screen.getAllByText("AI 분석 결과")).toHaveLength(2);
     expect(screen.getByText("참고 출처")).toBeInTheDocument();
     expect(screen.getByText("판단 근거")).toBeInTheDocument();
-    expect(screen.getByText("최고 금리 표현이 확인되었지만 적용 조건이 함께 확인되지 않았습니다.")).toBeInTheDocument();
+    expect(
+      screen.getByText("최고 금리 표현이 확인되었지만 적용 조건이 함께 확인되지 않았습니다.")
+    ).toBeInTheDocument();
   });
 });

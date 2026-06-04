@@ -1,6 +1,6 @@
 "use client";
 
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 import { LoaderCircle } from "lucide-react";
 import { Tabs } from "@/components/ui";
 import { RiskBadge } from "@/components/Badges";
@@ -163,7 +163,10 @@ function displayEvidenceQuote(evidence: Evidence): string {
     return "등록된 지식문서의 조항 본문을 기준으로 판단했습니다.";
   }
 
-  return evidence.quoteSummary.replace(/(?:\s*[·.]\s*){4,}/g, " ").replace(/\s+/g, " ").trim();
+  return evidence.quoteSummary
+    .replace(/(?:\s*[·.]\s*){4,}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function evidenceCitation(evidence: Evidence): string {
@@ -185,26 +188,80 @@ function fallbackEvidenceForIssue(issue: ReviewIssue): EvidenceDisplayItem {
   };
 }
 
+function isRegulatoryEvidence(evidence: Evidence) {
+  return evidence.sourceType === "law" || evidence.sourceType === "internal_policy";
+}
+
+function EvidenceCard({ evidence }: { evidence: EvidenceDisplayItem }): JSX.Element {
+  return (
+    <article className="evidence-card">
+      <span>{evidence.sourceLabel ?? evidenceSourceLabel(evidence.sourceType)}</span>
+      <div className="evidence-card__source">
+        <small>참고 출처</small>
+        <strong className="evidence-card__title">{evidenceCitation(evidence)}</strong>
+      </div>
+      <div className="evidence-card__reason">
+        <small>판단 근거</small>
+        <p className="evidence-card__quote">{displayEvidenceQuote(evidence)}</p>
+      </div>
+      {evidence.hideMetadata ? null : <small>{formatEvidenceMetadata(evidence)}</small>}
+    </article>
+  );
+}
+
+function EvidenceSection({ title, children }: { title: string; children: ReactNode }): JSX.Element {
+  return (
+    <section className="evidence-section" aria-label={title}>
+      <h4>{title}</h4>
+      <div className="evidence-section__body">{children}</div>
+    </section>
+  );
+}
+
 function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
   const evidenceItems: EvidenceDisplayItem[] =
     issue.evidence.length > 0 ? issue.evidence : [fallbackEvidenceForIssue(issue)];
+  const adEvidence = evidenceItems.filter((evidence) => evidence.sourceType === "product_doc");
+  const regulatoryEvidence = evidenceItems.filter(isRegulatoryEvidence);
+  const caseHistoryEvidence = evidenceItems.filter(
+    (evidence) => evidence.sourceType === "case_history"
+  );
+  const needsRegulatoryReview = adEvidence.length > 0 && regulatoryEvidence.length === 0;
 
   return (
     <div className="evidence-stack">
-      {evidenceItems.map((evidence) => (
-        <article key={evidence.id} className="evidence-card">
-          <span>{evidence.sourceLabel ?? evidenceSourceLabel(evidence.sourceType)}</span>
-          <div className="evidence-card__source">
-            <small>참고 출처</small>
-            <strong className="evidence-card__title">{evidenceCitation(evidence)}</strong>
-          </div>
-          <div className="evidence-card__reason">
-            <small>판단 근거</small>
-            <p className="evidence-card__quote">{displayEvidenceQuote(evidence)}</p>
-          </div>
-          {evidence.hideMetadata ? null : <small>{formatEvidenceMetadata(evidence)}</small>}
-        </article>
-      ))}
+      {adEvidence.length > 0 ? (
+        <EvidenceSection title="광고 원문 근거">
+          {adEvidence.map((evidence) => (
+            <EvidenceCard key={evidence.id} evidence={evidence} />
+          ))}
+        </EvidenceSection>
+      ) : null}
+
+      <EvidenceSection title="규정/내규 근거">
+        {regulatoryEvidence.length > 0 ? (
+          regulatoryEvidence.map((evidence) => (
+            <EvidenceCard key={evidence.id} evidence={evidence} />
+          ))
+        ) : (
+          <p className="evidence-empty-state">연결된 승인 지식문서 없음</p>
+        )}
+      </EvidenceSection>
+
+      {caseHistoryEvidence.length > 0 ? (
+        <EvidenceSection title="과거 심의 참고">
+          {caseHistoryEvidence.map((evidence) => (
+            <EvidenceCard key={evidence.id} evidence={evidence} />
+          ))}
+        </EvidenceSection>
+      ) : null}
+
+      {needsRegulatoryReview ? (
+        <p className="evidence-status-message">
+          현재 이슈는 업로드 광고 표현을 기준으로 AI가 위험 신호를 판단했으며, 적용 규정/내규 근거는
+          리뷰어 확인이 필요합니다.
+        </p>
+      ) : null}
     </div>
   );
 }
