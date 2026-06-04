@@ -20,15 +20,20 @@ const baseRow: ReviewSummary = {
 
 function queueTableMinimumWidth(): number {
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
-  const block =
-    css.match(/\.review-table--queue \.review-table__row \{(?<body>[\s\S]*?)\n\}/)?.groups?.body ??
-    "";
+  const block = queueGridCssBlock(css);
   const minTrackWidths = [...block.matchAll(/minmax\((\d+)px,/g)].map((match) => Number(match[1]));
   const gap = Number(block.match(/gap:\s*(\d+)px/)?.[1] ?? 12);
   const padding = block.match(/padding:\s*0\s+(\d+)px/);
   const horizontalPadding = padding ? Number(padding[1]) * 2 : 36;
 
   return minTrackWidths.reduce((sum, width) => sum + width, 0) + gap * 9 + horizontalPadding;
+}
+
+function queueGridCssBlock(css: string): string {
+  return (
+    css.match(/\.review-table--queue \.review-table__row \{(?<body>[\s\S]*?)\n\}/)?.groups?.body ??
+    ""
+  );
 }
 
 describe("QueueTable", () => {
@@ -79,6 +84,31 @@ describe("QueueTable", () => {
 
   it("keeps the queue grid narrow enough for a 1366px reviewer workspace", () => {
     expect(queueTableMinimumWidth()).toBeLessThanOrEqual(996);
+  });
+
+  it("keeps queue columns compact while reserving enough title width", () => {
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    const block = queueGridCssBlock(css);
+    const minTrackWidths = [...block.matchAll(/minmax\((\d+)px,/g)].map((match) =>
+      Number(match[1])
+    );
+    const gap = Number(block.match(/gap:\s*(\d+)px/)?.[1] ?? 12);
+    const padding = Number(block.match(/padding:\s*0\s+(\d+)px/)?.[1] ?? 12);
+
+    expect(gap).toBeLessThanOrEqual(5);
+    expect(padding).toBeLessThanOrEqual(8);
+    expect(minTrackWidths[1]).toBeGreaterThanOrEqual(240);
+  });
+
+  it("keeps queue text cells on one line with overflow ellipsis", () => {
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    const block =
+      css.match(
+        /\.review-table--queue \.review-table__row > :not\(\.queue-row-actions\)\[role="cell"\][\s\S]*?\{(?<body>[\s\S]*?)\n\}/
+      )?.groups?.body ?? "";
+
+    expect(block).toContain("white-space: nowrap");
+    expect(block).toContain("text-overflow: ellipsis");
   });
 
   it("does not expose a direct reviewer editor from the queue row", () => {
@@ -280,7 +310,9 @@ describe("QueueTable", () => {
     expect(queuedCells[9]).toHaveTextContent("분석중");
     expect(completedCells).toHaveLength(10);
     expect(completedCells[9]).toHaveClass("queue-row-actions--left");
-    expect(within(completedCells[9]).getByRole("button", { name: "검토하기" })).toBeInTheDocument();
+    expect(within(completedCells[9]).getByRole("button", { name: "검토하기" })).toHaveClass(
+      "queue-row-action-button"
+    );
   });
 
   it("opens the workbench via the 검토하기 action and reviewer confirmation", async () => {

@@ -35,6 +35,11 @@ type NotificationItem = {
   result?: "승인" | "반려";
 };
 
+type ReadNotifications = {
+  scopeKey: string;
+  ids: Set<string>;
+};
+
 type ReviewListResponse =
   | NotificationReview[]
   | { items?: NotificationReview[]; reviewCases?: NotificationReview[] };
@@ -137,25 +142,62 @@ export function NotificationCenter() {
   const roleContext = useRole() as NotificationRoleContext;
   const { activeRole, apiHeaders, currentUser } = roleContext;
   const isAuthenticated = roleContext.isAuthenticated === true;
+  const notificationScopeKey = `${activeRole}:${currentUser?.userId ?? ""}:${currentUser?.name ?? ""}`;
   const [reviews, setReviews] = useState<NotificationReview[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [readNotifications, setReadNotifications] = useState<ReadNotifications>(() => ({
+    scopeKey: "",
+    ids: new Set()
+  }));
   const [errorMessage, setErrorMessage] = useState("");
 
-  const loadReviews = useCallback(async () => {
-    if (!isAuthenticated) {
-      setReviews([]);
-      setErrorMessage("");
-      return;
-    }
+  const markNotificationsAsRead = useCallback(
+    (nextReviews: NotificationReview[]) => {
+      const nextNotifications = buildNotifications(nextReviews, activeRole, currentUser?.name);
 
-    try {
-      const nextReviews = await fetchNotificationReviews(apiHeaders);
-      setReviews(nextReviews);
-      setErrorMessage("");
-    } catch {
-      setErrorMessage("알림을 불러오지 못했습니다.");
-    }
-  }, [apiHeaders, isAuthenticated]);
+      if (nextNotifications.length === 0) {
+        return;
+      }
+
+      setReadNotifications((current) => {
+        const nextIds =
+          current.scopeKey === notificationScopeKey ? new Set(current.ids) : new Set<string>();
+        let changed = current.scopeKey !== notificationScopeKey;
+
+        for (const notification of nextNotifications) {
+          if (!nextIds.has(notification.id)) {
+            nextIds.add(notification.id);
+            changed = true;
+          }
+        }
+
+        return changed ? { scopeKey: notificationScopeKey, ids: nextIds } : current;
+      });
+    },
+    [activeRole, currentUser?.name, notificationScopeKey]
+  );
+
+  const loadReviews = useCallback(
+    async (options: { markAsRead?: boolean } = {}) => {
+      if (!isAuthenticated) {
+        setReviews([]);
+        setErrorMessage("");
+        return;
+      }
+
+      try {
+        const nextReviews = await fetchNotificationReviews(apiHeaders);
+        setReviews(nextReviews);
+        if (options.markAsRead) {
+          markNotificationsAsRead(nextReviews);
+        }
+        setErrorMessage("");
+      } catch {
+        setErrorMessage("알림을 불러오지 못했습니다.");
+      }
+    },
+    [apiHeaders, isAuthenticated, markNotificationsAsRead]
+  );
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -206,7 +248,11 @@ export function NotificationCenter() {
     () => (isAuthenticated ? buildNotifications(reviews, activeRole, currentUser?.name) : []),
     [activeRole, currentUser?.name, isAuthenticated, reviews]
   );
-  const notificationCount = notifications.length;
+  const readNotificationIds =
+    readNotifications.scopeKey === notificationScopeKey ? readNotifications.ids : new Set<string>();
+  const unreadNotificationCount = notifications.filter(
+    (notification) => !readNotificationIds.has(notification.id)
+  ).length;
 
   const handleToggle = () => {
     const nextIsOpen = !isOpen;
@@ -214,7 +260,8 @@ export function NotificationCenter() {
     setIsOpen(nextIsOpen);
 
     if (nextIsOpen) {
-      void loadReviews();
+      markNotificationsAsRead(reviews);
+      void loadReviews({ markAsRead: true });
     }
   };
 
@@ -230,9 +277,9 @@ export function NotificationCenter() {
         type="button"
       >
         <Bell size={19} aria-hidden="true" />
-        {notificationCount > 0 ? (
+        {unreadNotificationCount > 0 ? (
           <span className="notification-center__badge" aria-hidden="true">
-            {notificationCount}
+            {unreadNotificationCount}
           </span>
         ) : null}
       </button>
@@ -249,7 +296,7 @@ export function NotificationCenter() {
             <button
               aria-label="알림 새로고침"
               className="notification-center__refresh"
-              onClick={() => void loadReviews()}
+              onClick={() => void loadReviews({ markAsRead: true })}
               type="button"
             >
               <RefreshCw size={15} aria-hidden="true" />
@@ -258,11 +305,11 @@ export function NotificationCenter() {
 
           {errorMessage ? <p role="status">{errorMessage}</p> : null}
 
-          {notificationCount === 0 && !errorMessage ? (
+          {notifications.length === 0 && !errorMessage ? (
             <p className="notification-center__empty">새 알림이 없습니다.</p>
           ) : null}
 
-          {notificationCount > 0 ? (
+          {notifications.length > 0 ? (
             <ul className="notification-center__list">
               {notifications.map((notification) => (
                 <li className="notification-center__item" key={notification.id}>

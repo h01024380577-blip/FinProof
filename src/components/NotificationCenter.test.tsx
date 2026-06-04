@@ -211,6 +211,27 @@ describe("NotificationCenter", () => {
     expect(await screen.findByText("새 알림이 없습니다.")).toBeInTheDocument();
   });
 
+  it("clears the unread badge after the user opens the notification list", async () => {
+    mockReviewResponse([
+      review({
+        id: "rc-new-submitted",
+        title: "대출 광고 신규 요청",
+        requester: "마케팅 담당자 김지현",
+        status: "submitted"
+      })
+    ]);
+
+    render(<NotificationCenter />);
+
+    expect(await screen.findByText("1")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /알림/ }));
+
+    const popover = screen.getByRole("dialog", { name: "알림 목록" });
+    expect(within(popover).getByText("대출 광고 신규 요청")).toBeInTheDocument();
+    expect(screen.queryByText("1")).not.toBeInTheDocument();
+  });
+
   it("refreshes when opened, refreshes from the popover, and polls while authenticated", async () => {
     vi.useFakeTimers();
     mockReviewResponse([

@@ -1764,19 +1764,27 @@ a {
 }
 
 .review-table--queue .review-table__row {
-  gap: 8px;
-  padding: 0 12px;
+  gap: 5px;
+  padding: 0 8px;
   grid-template-columns:
     minmax(82px, 0.88fr)
-    minmax(164px, 1.55fr)
-    minmax(70px, 0.62fr)
-    minmax(78px, 0.66fr)
-    minmax(88px, 0.74fr)
-    minmax(88px, 0.72fr)
-    minmax(82px, 0.68fr)
-    minmax(84px, 0.7fr)
-    minmax(72px, 0.62fr)
-    minmax(68px, 0.58fr);
+    minmax(240px, 1.75fr)
+    minmax(66px, 0.54fr)
+    minmax(74px, 0.58fr)
+    minmax(82px, 0.66fr)
+    minmax(70px, 0.56fr)
+    minmax(78px, 0.6fr)
+    minmax(86px, 0.64fr)
+    minmax(62px, 0.5fr)
+    minmax(80px, 0.56fr);
+}
+
+.review-table--queue .review-table__row > :not(.queue-row-actions)[role="cell"],
+.review-table--queue .review-table__row--head > [role="columnheader"] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .review-table__row:first-child {
@@ -2031,6 +2039,12 @@ a.review-table__row:hover {
 
 .queue-row-actions .button {
   border-radius: 4px;
+}
+
+.queue-row-action-button {
+  min-width: 72px;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .reviewer-editor {

@@ -260,7 +260,7 @@ export function QueueTable({
             >
               {waiting ? (
                 <button
-                  className="button button--small"
+                  className="button button--small queue-row-action-button"
                   type="button"
                   disabled={!canStart || activeAnalysisId === review.id}
                   onClick={() => onStartAnalysis(review)}
@@ -280,7 +280,7 @@ export function QueueTable({
               ) : null}
               {!waiting && review.status === "analysis_complete" ? (
                 <button
-                  className="button button--small button--primary"
+                  className="button button--small button--primary queue-row-action-button"
                   type="button"
                   onClick={() => handleOpenReviewClick(review)}
                 >
@@ -289,7 +289,7 @@ export function QueueTable({
               ) : null}
               {!waiting && canViewAudit && review.status !== "analysis_complete" ? (
                 <button
-                  className="button button--small"
+                  className="button button--small queue-row-action-button"
                   type="button"
                   onClick={() => onOpenReview(review.id)}
                 >
