@@ -8,7 +8,7 @@ describe("analysis provider config", () => {
     expect(config.rag).toEqual({
       provider: "deterministic",
       topK: 4,
-      minScore: 0.72,
+      minScore: 0.55,
       maxContextChars: 6000
     });
     expect(config.rerank).toEqual({

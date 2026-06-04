@@ -71,7 +71,7 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
   const ragProvider =
     value(env, "FINPROOF_RAG_PROVIDER") === "postgres" ? "postgres" : "deterministic";
   const topK = positiveNumber(env, "FINPROOF_RAG_TOP_K", 4);
-  const minScore = positiveNumber(env, "FINPROOF_RAG_MIN_SCORE", 0.72);
+  const minScore = positiveNumber(env, "FINPROOF_RAG_MIN_SCORE", 0.55);
   const maxContextChars = positiveNumber(env, "FINPROOF_RAG_MAX_CONTEXT_CHARS", 6000);
   const rerankProviderValue = value(env, "FINPROOF_RERANK_PROVIDER");
   const rerankProvider =

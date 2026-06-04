@@ -168,6 +168,7 @@ export function createCohereReranker(
     provider: config.model,
     async rerank(input) {
       const { query, candidates } = input;
+      if (candidates.length === 0) return [];
       try {
         const response = await fetchImpl(COHERE_RERANK_ENDPOINT, {
           method: "POST",

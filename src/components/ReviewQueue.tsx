@@ -232,6 +232,7 @@ export function ReviewQueue(): JSX.Element {
         const { status } = body.reviewCase;
         const isTerminal =
           status === "analysis_complete" ||
+          status === "analysis_waiting" ||
           status === "under_review" ||
           status === "approved" ||
           status === "rejected" ||
