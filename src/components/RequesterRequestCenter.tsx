@@ -302,17 +302,17 @@ function DraftNote({ text }: { text: string }): JSX.Element {
         .map((line, i) => renderDraftLine(line, i))}
 
       {issues.map((block, i) => (
-        <details key={`issue-${i}`} className="draft-note__issue-block" open>
-          <summary className="draft-note__issue-summary">
+        <div key={`issue-${i}`} className="draft-note__issue-block">
+          <p className="draft-note__issue-summary">
             <span className="draft-note__issue-num">{block.num}</span>
             {block.title}
-          </summary>
+          </p>
           <div className="draft-note__issue-details">
             {block.details
               .filter((l) => l.kind !== "spacer")
               .map((line, j) => renderDraftLine(line, j))}
           </div>
-        </details>
+        </div>
       ))}
 
       {postamble.map((line, i) => renderDraftLine(line, i + 1000))}
@@ -323,6 +323,7 @@ function DraftNote({ text }: { text: string }): JSX.Element {
 function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.Element {
   const showDraft = review.status === "rejected" && Boolean(review.currentDraft?.trim());
   const { label, badgeStatus } = requesterTableStatus(review.status);
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
@@ -335,13 +336,24 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
         <span role="cell">{productLabels[review.productType]}</span>
         <span role="cell">{review.plannedPublishDate}</span>
         <span role="cell">{review.reviewer || "미배정"}</span>
-        <span role="cell">
+        <span role="cell" className="history-row__status-cell">
           <span className="status-badge" data-status={badgeStatus}>
             {label}
           </span>
+          {showDraft ? (
+            <button
+              type="button"
+              className="rejection-toggle"
+              aria-expanded={isOpen}
+              aria-label={isOpen ? "수정 요청 내용 접기" : "수정 요청 내용 펼치기"}
+              onClick={() => setIsOpen((o) => !o)}
+            >
+              {isOpen ? "▾" : "▸"}
+            </button>
+          ) : null}
         </span>
       </div>
-      {showDraft ? (
+      {showDraft && isOpen ? (
         <div className="review-table__row review-table__row--rejection-note" role="row">
           <div role="cell" className="request-history-rejection-note" aria-label="수정 요청">
             <strong>수정 요청</strong>

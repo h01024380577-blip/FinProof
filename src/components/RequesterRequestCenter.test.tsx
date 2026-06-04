@@ -1,4 +1,5 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { RequesterRequestCenter, RequesterRequestHistory } from "./RequesterRequestCenter";
 
@@ -202,6 +203,7 @@ describe("RequesterRequestCenter", () => {
   });
 
   it("loads only the logged-in requester's history and hides saved drafts except rejected results", async () => {
+    const user = userEvent.setup();
     const apiHeaders = setRole();
     const fetchMock = mockHistoryFetch();
     vi.stubGlobal("fetch", fetchMock);
@@ -241,6 +243,12 @@ describe("RequesterRequestCenter", () => {
 
     const rejectedRow = screen.getByRole("row", { name: "김서연 대출 배너" });
     expect(within(rejectedRow).getByText("반려")).toBeInTheDocument();
+
+    const toggleButton = within(rejectedRow).getByRole("button", {
+      name: "수정 요청 내용 펼치기"
+    });
+    await user.click(toggleButton);
+
     expect(screen.getByText("수정 요청")).toBeInTheDocument();
     expect(
       screen.getByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")

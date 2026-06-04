@@ -4113,7 +4113,6 @@ a.review-table__row:hover {
 
 .draft-note__issue-block {
   margin: 4px 0 2px;
-  border: none;
 }
 
 .draft-note__issue-summary {
@@ -4121,28 +4120,10 @@ a.review-table__row:hover {
   align-items: center;
   gap: 6px;
   padding: 4px 0;
-  cursor: pointer;
-  list-style: none;
+  margin: 0;
   color: var(--text);
   font-size: 0.84rem;
   font-weight: 700;
-  user-select: none;
-}
-
-.draft-note__issue-summary::-webkit-details-marker {
-  display: none;
-}
-
-.draft-note__issue-summary::after {
-  content: "▸";
-  margin-left: auto;
-  color: var(--muted);
-  font-size: 0.7rem;
-  flex-shrink: 0;
-}
-
-.draft-note__issue-block[open] > .draft-note__issue-summary::after {
-  content: "▾";
 }
 
 .draft-note__issue-details {
