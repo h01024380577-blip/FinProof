@@ -2790,11 +2790,18 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async recordAuditEvent(scope, input: AuditEventInput): Promise<AuditEvent> {
+      const actorUser = await prisma.user.findFirst({
+        where: {
+          id: scope.actorUserId,
+          tenantId: scope.tenantId
+        },
+        select: { id: true }
+      });
       const event = await prisma.auditLog.create({
         data: {
           id: `audit-${randomUUID()}`,
           tenantId: scope.tenantId,
-          userId: scope.actorUserId,
+          userId: actorUser?.id ?? null,
           action: input.action,
           targetType: input.targetType,
           targetId: input.targetId,
