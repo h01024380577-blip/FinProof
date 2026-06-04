@@ -194,7 +194,10 @@ describe("ReviewDetailWorkspace", () => {
   });
 
   it("shows a spinner while an uploaded promotional poster is loading", () => {
-    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => undefined))
+    );
     const uploadReview = {
       ...getReviewCaseById("rc-demo-deposit-001")!,
       id: "rc-upload-001",
@@ -597,10 +600,7 @@ describe("ReviewDetailWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "질문 보내기" }));
 
     expect(await screen.findByText(/18\. 금융규제 가이드라인 근거/)).toBeInTheDocument();
-    expect(container.querySelector(".chat-widget__panel")).toHaveAttribute(
-      "data-size",
-      "expanded"
-    );
+    expect(container.querySelector(".chat-widget__panel")).toHaveAttribute("data-size", "expanded");
     expect(container.querySelector(".chat-thread")).toHaveAttribute(
       "data-scroll-region",
       "chat-history"
@@ -1146,6 +1146,37 @@ describe("ReviewDetailWorkspace tab URL sync", () => {
   beforeEach(() => {
     replaceMock.mockClear();
     currentSearchParams = new URLSearchParams();
+  });
+
+  it("opens the evidence tab by default for upload-only evidence reviews", () => {
+    const baseReview = getReviewCaseById("rc-demo-deposit-001")!;
+    const uploadOnlyReview = {
+      ...baseReview,
+      id: "rc-upload-001",
+      issues: [
+        {
+          ...baseReview.issues[0],
+          id: "issue-rc-upload-001-001",
+          evidence: [
+            {
+              id: "evidence-uploaded-ad",
+              sourceType: "product_doc" as const,
+              title: "대출광고1.png",
+              quoteSummary: "신용등급 무관 당일 심사! 즉시 승인!",
+              relevanceScore: 0.86
+            }
+          ]
+        }
+      ],
+      files: []
+    };
+
+    render(<ReviewDetailWorkspace review={uploadOnlyReview} />);
+
+    expect(screen.getByRole("tab", { name: "근거 자료" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText("광고 원문 근거")).toBeInTheDocument();
+    expect(screen.getByText("규정/내규 근거")).toBeInTheDocument();
+    expect(screen.getByText("연결된 승인 지식문서 없음")).toBeInTheDocument();
   });
 
   it("calls router.replace with ?tab=evidence when 근거 자료 tab is clicked", async () => {
