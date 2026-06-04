@@ -4078,7 +4078,7 @@ a.review-table__row:hover {
     minmax(84px, 0.64fr);
 }
 
-.review-table__row--rejection-note {
+.review-table--history .review-table__row--rejection-note {
   grid-template-columns: 1fr;
   min-height: 0;
   padding: 0;
