@@ -586,12 +586,51 @@ function issueCreateData(reviewCaseId: string, issue: ReviewIssue) {
   };
 }
 
+function reviewCaseScopeWhere(scope: ReviewStoreScope): Prisma.ReviewCaseWhereInput {
+  return {
+    tenantId: scope.tenantId,
+    ...(scope.actorRole === "requester" ? { requesterId: scope.actorUserId } : {})
+  };
+}
+
+function demoUserEmailForActor(scope: ReviewStoreScope): string {
+  const safeUserId = scope.actorUserId
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  return `${safeUserId || "requester"}@finproof.local`;
+}
+
 export function createPrismaReviewStore(): ReviewStore {
   const prisma = getPrismaClient();
 
+  async function ensureDemoRequesterUser(scope: ReviewStoreScope) {
+    if (scope.actorRole !== "requester" || process.env.FINPROOF_AUTH_MODE === "jwt") {
+      return;
+    }
+
+    await prisma.user.upsert({
+      where: { id: scope.actorUserId },
+      update: {
+        name: scope.actorUserName?.trim() || "업로드 요청자",
+        role: "requester",
+        status: "active"
+      },
+      create: {
+        id: scope.actorUserId,
+        tenantId: scope.tenantId,
+        email: demoUserEmailForActor(scope),
+        name: scope.actorUserName?.trim() || "업로드 요청자",
+        role: "requester"
+      }
+    });
+  }
+
   async function getReviewCase(scope: ReviewStoreScope, id: string) {
     const row = await prisma.reviewCase.findFirst({
-      where: { id, tenantId: scope.tenantId },
+      where: { id, ...reviewCaseScopeWhere(scope) },
       include: reviewInclude
     });
 
@@ -603,7 +642,7 @@ export function createPrismaReviewStore(): ReviewStore {
       const page = Math.max(1, options.page ?? 1);
       const pageSize = Math.max(1, options.pageSize ?? 50);
       const where: Prisma.ReviewCaseWhereInput = {
-        tenantId: scope.tenantId,
+        ...reviewCaseScopeWhere(scope),
         status: options.status,
         productType: options.productType,
         affiliateId: options.affiliateId,
@@ -1904,6 +1943,8 @@ export function createPrismaReviewStore(): ReviewStore {
     },
 
     async createReviewCaseFromUploadedFiles(scope, input: CreateReviewCaseFromUploadedFilesInput) {
+      await ensureDemoRequesterUser(scope);
+
       const id = input.reviewCaseId ?? `rc-${randomUUID()}`;
       const affiliate = await prisma.affiliate.findFirst({
         where: { tenantId: scope.tenantId, name: input.affiliate },

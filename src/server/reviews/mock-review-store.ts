@@ -283,6 +283,9 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   );
   const cases = new Map(Array.from(samples, ([id, review]) => [id, clone(review)]));
   const caseTenants = new Map(Array.from(samples.keys()).map((id) => [id, "tenant-demo"]));
+  const caseRequesters = new Map(
+    Array.from(samples.keys()).map((id) => [id, "user-requester-demo"])
+  );
   const affiliateTenants = new Map([
     ["aff-gwangju-bank", "tenant-demo"],
     ["aff-jeonbuk-bank", "tenant-demo"]
@@ -492,7 +495,15 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   }
 
   function canAccessCase(scope: ReviewStoreScope, reviewCaseId: string): boolean {
-    return caseTenants.get(reviewCaseId) === scope.tenantId;
+    if (caseTenants.get(reviewCaseId) !== scope.tenantId) {
+      return false;
+    }
+
+    if (scope.actorRole === "requester") {
+      return caseRequesters.get(reviewCaseId) === scope.actorUserId;
+    }
+
+    return true;
   }
 
   function validAffiliateId(scope: ReviewStoreScope, affiliateId: string | undefined) {
@@ -653,6 +664,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
 
       cases.set(reviewCase.id, clone(reviewCase));
       caseTenants.set(reviewCase.id, scope.tenantId);
+      caseRequesters.set(reviewCase.id, scope.actorUserId);
 
       return {
         reviewCase: clone(reviewCase),
@@ -720,6 +732,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       reviewCase.missingMaterials = missingMaterialKeys(reviewCase);
       cases.set(id, clone(reviewCase));
       caseTenants.set(id, scope.tenantId);
+      caseRequesters.set(id, scope.actorUserId);
 
       return {
         reviewCase: clone(reviewCase),

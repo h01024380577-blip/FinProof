@@ -42,7 +42,15 @@ describe("RoleSwitcher", () => {
     await user.type(screen.getByLabelText("이름"), "홍길동");
 
     expect(screen.queryByLabelText("심의자 보안코드")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("요청자 코드")).toBeInTheDocument();
+    expect(screen.getByLabelText("요청자 코드")).toHaveAttribute("placeholder", "예: guest");
 
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("요청자 코드를 입력해 주세요.");
+    expect(screen.getByLabelText("active-role")).toHaveTextContent("reviewer");
+
+    await user.type(screen.getByLabelText("요청자 코드"), "kmu-marketing");
     await user.click(screen.getByRole("button", { name: "시작하기" }));
 
     expect(screen.getByRole("button", { name: "홍길동 요청자" })).toBeInTheDocument();
@@ -50,12 +58,51 @@ describe("RoleSwitcher", () => {
     expect(screen.getByLabelText("authenticated")).toHaveTextContent("true");
     expect(screen.getByLabelText("current-user")).toHaveTextContent("홍길동");
     expect(screen.getByLabelText("headers")).toHaveTextContent(
-      '"x-finproof-user-id":"user-requester-demo"'
+      '"x-finproof-user-id":"user-requester-kmu-marketing"'
     );
     expect(screen.queryByRole("radio", { name: "요청자" })).not.toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "심의자" })).not.toBeInTheDocument();
     expect(window.localStorage.getItem("finproof.demoSession")).toContain("홍길동");
-    expect(window.localStorage.getItem("finproof.demoSession")).toContain("user-requester-demo");
+    expect(window.localStorage.getItem("finproof.demoSession")).toContain(
+      "user-requester-kmu-marketing"
+    );
+    expect(window.localStorage.getItem("finproof.demoSession")).toContain("kmu-marketing");
+  });
+
+  it("keeps the same requester identity when the display name changes but the requester code matches", async () => {
+    const user = userEvent.setup();
+    render(
+      <RoleProvider initialRole="reviewer">
+        <RoleSwitcher />
+        <HeaderProbe />
+      </RoleProvider>
+    );
+
+    await user.click(screen.getByRole("button", { name: "로그인" }));
+    await user.click(screen.getByRole("radio", { name: "요청자" }));
+    await user.type(screen.getByLabelText("이름"), "홍길동");
+    await user.type(screen.getByLabelText("요청자 코드"), "kmu-marketing");
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    expect(screen.getByLabelText("headers")).toHaveTextContent(
+      '"x-finproof-user-id":"user-requester-kmu-marketing"'
+    );
+
+    await user.click(screen.getByRole("button", { name: "홍길동 요청자" }));
+    await user.click(screen.getByRole("menuitem", { name: "로그아웃" }));
+    await user.click(screen.getByRole("button", { name: "로그인" }));
+    await user.click(screen.getByRole("radio", { name: "요청자" }));
+    await user.type(screen.getByLabelText("이름"), "김지현");
+    await user.type(screen.getByLabelText("요청자 코드"), "kmu-marketing");
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    expect(screen.getByRole("button", { name: "김지현 요청자" })).toBeInTheDocument();
+    expect(screen.getByLabelText("headers")).toHaveTextContent(
+      '"x-finproof-user-id":"user-requester-kmu-marketing"'
+    );
+    expect(screen.getByLabelText("headers")).toHaveTextContent(
+      '"x-finproof-user-name":"%EA%B9%80%EC%A7%80%ED%98%84"'
+    );
   });
 
   it("requires admin as the reviewer security code", async () => {

@@ -82,8 +82,31 @@ function sourceTypeLabel(sourceType: RegulatorySource["sourceType"]): string {
   return labels[sourceType];
 }
 
+type RegulatoryChangedSectionView = RegulatoryChangeSet["changedSections"][number];
+
+function compactForComparison(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function isBodyLikeSectionTitle(value: string): boolean {
+  const compacted = compactForComparison(value);
+
+  if (compacted.length < 80) {
+    return false;
+  }
+
+  return /(?:\s(?:[1-9]|1[0-9]|20)\.\s|[①②③④⑤⑥⑦⑧⑨⑩]|<[^>]+\d{4}\.|\[[^\]]+\d{4}\.|제\d+조(?:의\d+)?(?:\(|\s)|\d+\)\s|[가-하]\.\s)/.test(
+    compacted
+  );
+}
+
 function readableRegulatoryText(value: string, maxLength = 220): string {
-  const compacted = value.replace(/\s+/g, " ").trim();
+  const compacted = value
+    .replace(/\r\n?/g, "\n")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/\n[^\S\n]+/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
   const trimmed =
     compacted.length > maxLength ? `${compacted.slice(0, maxLength).trim()}...` : compacted;
 
@@ -96,8 +119,47 @@ function readableRegulatoryText(value: string, maxLength = 220): string {
     .replace(/(?<!\d\.)\s+(?=제\d+조(?:의\d+)?(?:\(|\s|$))/g, "\n")
     .replace(/\s+(?=제\d+장(?:\s|$))/g, "\n")
     .replace(/(^|[^\d])\s+((?:[1-9]|1[0-9]|20)\.)\s+(?=[가-힣A-Za-z"“「제])/g, "$1\n$2 ")
+    .replace(/\s+(?=[가-하]\.\s+)/g, "\n")
+    .replace(/\s+(?=\d+\)\s+)/g, "\n")
     .replace(/\s+(?=다\.\s+그 밖)/g, "\n")
     .replace(/\n{3,}/g, "\n\n");
+}
+
+function isRawSourceText(value: string): boolean {
+  const compacted = compactForComparison(value);
+
+  if (compacted.length < 360) {
+    return false;
+  }
+
+  return /(?:version:|원본URL|발행기관|참고분류|제\d+조(?:의\d+)?(?:\(|\s)|[①②③④⑤⑥⑦⑧⑨⑩]|\d+\)\s|[가-하]\.\s|<[^>]+\d{4}\.|\[[^\]]+\d{4}\.)/.test(
+    compacted
+  );
+}
+
+function changedSectionDisplayTitle(section: RegulatoryChangedSectionView): string {
+  const title = section.title?.trim();
+  const sectionNumber = section.sectionNumber?.trim();
+
+  if (title && !isBodyLikeSectionTitle(title)) {
+    return title;
+  }
+
+  return sectionNumber || (title ? "변경 조항 본문" : "변경 섹션");
+}
+
+function changedSectionFallbackSummary(section: RegulatoryChangedSectionView): string {
+  return `${changedSectionDisplayTitle(section)} 변경사항이 감지되었습니다.`;
+}
+
+function changedSectionDisplayText(section: RegulatoryChangedSectionView): string {
+  const summary = section.diffSummary.trim();
+
+  if (!summary || isRawSourceText(summary)) {
+    return changedSectionFallbackSummary(section);
+  }
+
+  return summary;
 }
 
 function hasChangedContent(changeSet: RegulatoryChangeSet): boolean {
@@ -354,14 +416,16 @@ export function RegulatoryWatchDashboard(): JSX.Element {
 
                     {highlightedSections.length > 0 ? (
                       <div className="regulatory-change-card__sections">
-                        {highlightedSections.map((section) => (
-                          <div key={section.sectionId}>
-                            <strong>{section.title || section.sectionNumber || "변경 섹션"}</strong>
-                            <p title={section.diffSummary}>
-                              {readableRegulatoryText(section.diffSummary, 3000)}
-                            </p>
-                          </div>
-                        ))}
+                        {highlightedSections.map((section) => {
+                          const sectionText = changedSectionDisplayText(section);
+
+                          return (
+                            <div key={section.sectionId}>
+                              <strong>{changedSectionDisplayTitle(section)}</strong>
+                              <p title={sectionText}>{readableRegulatoryText(sectionText, 3000)}</p>
+                            </div>
+                          );
+                        })}
                         {changeSet.changedSections.length > highlightedSections.length ? (
                           <span>
                             외 {changeSet.changedSections.length - highlightedSections.length}개

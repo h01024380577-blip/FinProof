@@ -128,6 +128,45 @@ describe("mock review store", () => {
     });
   });
 
+  it("scopes requester lists and detail access by requester user id instead of display name", async () => {
+    const store = createMockReviewStore([]);
+    const marketingScope = {
+      ...scope,
+      actorUserId: "user-requester-kmu-marketing",
+      actorRole: "requester" as const,
+      actorUserName: "김지현"
+    };
+    const branchScope = {
+      ...scope,
+      actorUserId: "user-requester-branch-001",
+      actorRole: "requester" as const,
+      actorUserName: "김지현"
+    };
+
+    const marketingReview = await store.createReviewCaseFromUploadedFiles(marketingScope, {
+      title: "마케팅팀 업로드 건",
+      affiliate: "광주은행",
+      productType: "image_test",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "marketing-poster.png", type: "image/png", size: 2048 }]
+    });
+    const branchReview = await store.createReviewCaseFromUploadedFiles(branchScope, {
+      title: "영업점 업로드 건",
+      affiliate: "광주은행",
+      productType: "image_test",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-21",
+      files: [{ name: "branch-poster.png", type: "image/png", size: 2048 }]
+    });
+
+    const marketingList = await store.listReviewSummaries(marketingScope);
+
+    expect(marketingList.items.map((review) => review.id)).toEqual([marketingReview.reviewCase.id]);
+    await expect(store.getReviewCase(marketingScope, marketingReview.reviewCase.id)).resolves.toBeDefined();
+    await expect(store.getReviewCase(marketingScope, branchReview.reviewCase.id)).resolves.toBeUndefined();
+  });
+
   it("runs deterministic analysis and persists reviewer issue decisions", async () => {
     const store = createMockReviewStore();
     await store.createReviewCaseFromSamplePackage(scope, {

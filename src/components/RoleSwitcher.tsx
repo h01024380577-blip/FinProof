@@ -43,6 +43,7 @@ function RoleSessionControl({ context }: { context: RoleContextValue }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [loginRole, setLoginRole] = useState<DemoLoginRole>("requester");
   const [name, setName] = useState("");
+  const [requesterCode, setRequesterCode] = useState("");
   const [securityCode, setSecurityCode] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const currentUser = context.currentUser;
@@ -55,6 +56,7 @@ function RoleSessionControl({ context }: { context: RoleContextValue }) {
   function closeLogin() {
     setIsLoginOpen(false);
     setName("");
+    setRequesterCode("");
     setSecurityCode("");
     setFormError(null);
     setLoginRole("requester");
@@ -70,6 +72,11 @@ function RoleSessionControl({ context }: { context: RoleContextValue }) {
       return;
     }
 
+    if (loginRole === "requester" && requesterCode.trim().length === 0) {
+      setFormError("요청자 코드를 입력해 주세요.");
+      return;
+    }
+
     if (loginRole === "reviewer" && securityCode.trim().length === 0) {
       setFormError("심의자 보안코드를 입력해 주세요.");
       return;
@@ -80,7 +87,7 @@ function RoleSessionControl({ context }: { context: RoleContextValue }) {
       return;
     }
 
-    context.login({ name: trimmedName, role: loginRole });
+    context.login({ name: trimmedName, role: loginRole, requesterCode });
     closeLogin();
   }
 
@@ -146,6 +153,7 @@ function RoleSessionControl({ context }: { context: RoleContextValue }) {
                   checked={loginRole === role.id}
                   onChange={() => {
                     setLoginRole(role.id);
+                    setRequesterCode("");
                     setSecurityCode("");
                     setFormError(null);
                   }}
@@ -167,6 +175,22 @@ function RoleSessionControl({ context }: { context: RoleContextValue }) {
               }}
             />
           </label>
+          {loginRole === "requester" ? (
+            <label>
+              <span>요청자 코드</span>
+              <input
+                aria-label="요청자 코드"
+                type="text"
+                autoComplete="off"
+                placeholder="예: guest"
+                value={requesterCode}
+                onChange={(event) => {
+                  setRequesterCode(event.target.value);
+                  setFormError(null);
+                }}
+              />
+            </label>
+          ) : null}
           {loginRole === "reviewer" ? (
             <label>
               <span>심의자 보안코드</span>

@@ -15,11 +15,13 @@ export type DemoUser = {
   name: string;
   role: RoleId;
   userId: string;
+  requesterCode?: string;
 };
 
 export type DemoLoginInput = {
   name: string;
   role: RoleId;
+  requesterCode?: string;
   authToken?: string;
 };
 
@@ -62,6 +64,36 @@ function seededDemoUserIdForRole(role: RoleId) {
   return seededDemoUserIds[role];
 }
 
+function normalizeRequesterCode(code: string | undefined) {
+  const normalized = (code ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-")
+    .slice(0, 48);
+
+  return normalized || "demo";
+}
+
+function requesterUserIdFromCode(code: string | undefined) {
+  const normalizedCode = normalizeRequesterCode(code);
+
+  return normalizedCode === "demo" ? seededDemoUserIds.requester : `user-requester-${normalizedCode}`;
+}
+
+function requesterCodeFromStoredUser(currentUser: DemoUser) {
+  if (typeof currentUser.requesterCode === "string" && currentUser.requesterCode.trim()) {
+    return normalizeRequesterCode(currentUser.requesterCode);
+  }
+
+  if (currentUser.userId.startsWith("user-requester-")) {
+    return normalizeRequesterCode(currentUser.userId.replace(/^user-requester-/, ""));
+  }
+
+  return "demo";
+}
+
 function headerUserName(currentUser: DemoUser | null): string {
   return currentUser ? encodeURIComponent(currentUser.name) : "";
 }
@@ -90,10 +122,17 @@ function readStoredDemoUser() {
       return null;
     }
 
+    const requesterCode =
+      currentUser.role === "requester" ? requesterCodeFromStoredUser(currentUser) : undefined;
+
     return {
       name: currentUser.name.trim(),
       role: currentUser.role,
-      userId: seededDemoUserIdForRole(currentUser.role)
+      userId:
+        currentUser.role === "requester"
+          ? requesterUserIdFromCode(requesterCode)
+          : seededDemoUserIdForRole(currentUser.role),
+      ...(requesterCode ? { requesterCode } : {})
     };
   } catch {
     return null;
@@ -175,10 +214,16 @@ export function RoleProvider({
   const login = useCallback(
     (input: DemoLoginInput) => {
       const name = input.name.trim();
+      const requesterCode =
+        input.role === "requester" ? normalizeRequesterCode(input.requesterCode) : undefined;
       const nextUser = {
         name,
         role: input.role,
-        userId: seededDemoUserIdForRole(input.role)
+        userId:
+          input.role === "requester"
+            ? requesterUserIdFromCode(requesterCode)
+            : seededDemoUserIdForRole(input.role),
+        ...(requesterCode ? { requesterCode } : {})
       };
 
       setCurrentUser(nextUser);
@@ -208,7 +253,18 @@ export function RoleProvider({
         return previousUser;
       }
 
-      const nextUser = { ...previousUser, role, userId: seededDemoUserIdForRole(role) };
+      const { requesterCode: previousRequesterCode, ...userWithoutRequesterCode } = previousUser;
+      const requesterCode =
+        role === "requester" ? (previousRequesterCode ?? "demo") : undefined;
+      const nextUser = {
+        ...userWithoutRequesterCode,
+        role,
+        userId:
+          role === "requester"
+            ? requesterUserIdFromCode(requesterCode)
+            : seededDemoUserIdForRole(role),
+        ...(requesterCode ? { requesterCode } : {})
+      };
       persistDemoUser(nextUser);
 
       return nextUser;
@@ -216,9 +272,9 @@ export function RoleProvider({
   }, []);
 
   const apiHeaders = useCallback(
-    (extra: Record<string, string> = {}) => {
+    (extra: Record<string, string> = {}): Record<string, string> => {
       const token = authToken.trim();
-      const userHeaders = exposedCurrentUser
+      const userHeaders: Record<string, string> = exposedCurrentUser
         ? {
             "x-finproof-user-id": exposedCurrentUser.userId,
             "x-finproof-user-name": headerUserName(exposedCurrentUser)
