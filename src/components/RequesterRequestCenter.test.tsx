@@ -245,7 +245,7 @@ describe("RequesterRequestCenter", () => {
     expect(
       screen.getByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
     ).toBeInTheDocument();
-    expect(screen.getByText("버전 3")).toBeInTheDocument();
+    expect(screen.queryByText("버전 3")).not.toBeInTheDocument();
 
     const approvedRow = screen.getByRole("row", { name: "김서연 예금 앱푸시" });
     expect(within(approvedRow).getByText("승인")).toBeInTheDocument();
