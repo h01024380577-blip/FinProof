@@ -215,12 +215,6 @@ type DraftLine =
   | { kind: "plain"; text: string }
   | { kind: "spacer" };
 
-type IssueBlock = {
-  num: string;
-  title: string;
-  details: DraftLine[];
-};
-
 function parseDraftLine(raw: string): DraftLine {
   const line = raw.trim();
   if (!line) return { kind: "spacer" };
@@ -243,44 +237,17 @@ function parseDraftLine(raw: string): DraftLine {
   return { kind: "plain", text: line };
 }
 
-function groupDraftLines(lines: DraftLine[]): {
-  preamble: DraftLine[];
-  issues: IssueBlock[];
-  postamble: DraftLine[];
-} {
-  const preamble: DraftLine[] = [];
-  const issues: IssueBlock[] = [];
-  const postamble: DraftLine[] = [];
-  let phase: "preamble" | "issue" | "postamble" = "preamble";
-  let current: IssueBlock | null = null;
-
-  for (const line of lines) {
-    if (line.kind === "issue") {
-      phase = "issue";
-      current = { num: line.num, title: line.text, details: [] };
-      issues.push(current);
-      continue;
-    }
-    if (phase === "preamble") {
-      preamble.push(line);
-    } else if (phase === "issue" && current) {
-      if (line.kind === "section" && /^종합/.test(line.text)) {
-        phase = "postamble";
-        postamble.push(line);
-      } else {
-        current.details.push(line);
-      }
-    } else {
-      postamble.push(line);
-    }
-  }
-
-  return { preamble, issues, postamble };
-}
 
 function renderDraftLine(line: DraftLine, key: number): JSX.Element | null {
   if (line.kind === "spacer") return <div key={key} className="draft-note__gap" />;
   if (line.kind === "section") return <p key={key} className="draft-note__section">{line.text}</p>;
+  if (line.kind === "issue")
+    return (
+      <p key={key} className="draft-note__issue-heading">
+        <span className="draft-note__issue-num">{line.num}</span>
+        {line.text}
+      </p>
+    );
   if (line.kind === "bullet" || line.kind === "meta")
     return (
       <p key={key} className={`draft-note__kv draft-note__kv--${line.kind}`}>
@@ -293,29 +260,12 @@ function renderDraftLine(line: DraftLine, key: number): JSX.Element | null {
 
 function DraftNote({ text }: { text: string }): JSX.Element {
   const parsed = text.split("\n").map(parseDraftLine);
-  const { preamble, issues, postamble } = groupDraftLines(parsed);
 
   return (
     <div className="draft-note">
-      {preamble
+      {parsed
         .filter((l) => !(l.kind === "section" && l.text.startsWith("수정 요청 의견")))
         .map((line, i) => renderDraftLine(line, i))}
-
-      {issues.map((block, i) => (
-        <div key={`issue-${i}`} className="draft-note__issue-block">
-          <p className="draft-note__issue-summary">
-            <span className="draft-note__issue-num">{block.num}</span>
-            {block.title}
-          </p>
-          <div className="draft-note__issue-details">
-            {block.details
-              .filter((l) => l.kind !== "spacer")
-              .map((line, j) => renderDraftLine(line, j))}
-          </div>
-        </div>
-      ))}
-
-      {postamble.map((line, i) => renderDraftLine(line, i + 1000))}
     </div>
   );
 }

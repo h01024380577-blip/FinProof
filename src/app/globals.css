@@ -4139,24 +4139,15 @@ a.review-table__row:hover {
   letter-spacing: 0;
 }
 
-.draft-note__issue-block {
-  margin: 4px 0 2px;
-}
-
-.draft-note__issue-summary {
+.draft-note__issue-heading {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 0;
-  margin: 0;
+  margin: 8px 0 2px;
+  padding: 0;
   color: var(--text);
   font-size: 0.84rem;
   font-weight: 700;
-}
-
-.draft-note__issue-details {
-  margin-left: 24px;
-  padding-bottom: 6px;
 }
 
 .draft-note__issue-num {
