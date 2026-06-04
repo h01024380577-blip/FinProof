@@ -345,7 +345,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const reviewerCanMutate = canMutateReview(activeRole);
   const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
-  const [draft, setDraftState] = useState(review.currentDraft ?? "");
+  const [draft, setDraftState] = useState("");
   const latestDraftRef = useRef(draft);
   const [uploadedCreativeObject, setUploadedCreativeObject] = useState<{
     fileId: string;
@@ -354,7 +354,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [failedUploadedCreativeFileId, setFailedUploadedCreativeFileId] = useState<string | null>(
     null
   );
-  const [draftVersion, setDraftVersion] = useState(review.currentDraftVersion ?? 0);
+  const [draftVersion, setDraftVersion] = useState(0);
   const [question, setQuestion] = useState("");
   const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
   const [hasUnreadChatResponse, setHasUnreadChatResponse] = useState(false);
