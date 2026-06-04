@@ -27,6 +27,7 @@ function setRole(overrides: Partial<MockRoleValue> = {}) {
   const activeRole = overrides.activeRole ?? "requester";
   const apiHeaders = vi.fn((extra: Record<string, string> = {}) => ({
     "x-finproof-role": activeRole,
+    "x-finproof-user-id": roleMock.current.currentUser?.userId ?? "requester-kim",
     authorization: "Bearer requester.jwt",
     ...extra
   }));
@@ -118,7 +119,7 @@ function mockHistoryFetch() {
     if (url === "/api/v1/review-cases") {
       return {
         ok: true,
-        json: async () => ({ items: requesterHistoryRows })
+        json: async () => ({ items: requesterHistoryRows.slice(0, 3) })
       };
     }
 
@@ -238,32 +239,76 @@ describe("RequesterRequestCenter", () => {
     );
     expect(apiHeaders).toHaveBeenCalledTimes(2);
 
-    const rejectedCard = screen.getByRole("article", { name: "김서연 대출 배너" });
-    expect(within(rejectedCard).getByText("심의완료")).toBeInTheDocument();
-    expect(within(rejectedCard).getByText("반려")).toBeInTheDocument();
-    expect(within(rejectedCard).getByText("수정 요청")).toBeInTheDocument();
+    const rejectedRow = screen.getByRole("row", { name: "김서연 대출 배너" });
+    expect(within(rejectedRow).getByText("반려")).toBeInTheDocument();
+    expect(screen.getByText("수정 요청")).toBeInTheDocument();
     expect(
-      within(rejectedCard).getByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
+      screen.getByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
     ).toBeInTheDocument();
-    expect(within(rejectedCard).getByText("버전 3")).toBeInTheDocument();
+    expect(screen.getByText("버전 3")).toBeInTheDocument();
 
-    const approvedCard = screen.getByRole("article", { name: "김서연 예금 앱푸시" });
-    expect(within(approvedCard).getByText("심의완료")).toBeInTheDocument();
-    expect(within(approvedCard).getByText("승인")).toBeInTheDocument();
+    const approvedRow = screen.getByRole("row", { name: "김서연 예금 앱푸시" });
+    expect(within(approvedRow).getByText("승인")).toBeInTheDocument();
     expect(
-      within(approvedCard).queryByText(
-        "승인 건에 저장된 수정 요청 초안은 요청자 화면에서 숨겨야 합니다."
-      )
+      screen.queryByText("승인 건에 저장된 수정 요청 초안은 요청자 화면에서 숨겨야 합니다.")
     ).not.toBeInTheDocument();
-    expect(within(approvedCard).queryByText("수정 요청")).not.toBeInTheDocument();
 
-    const waitingCard = screen.getByRole("article", { name: "김서연 카드 상세페이지" });
-    expect(within(waitingCard).getByText("검토중")).toBeInTheDocument();
-    expect(within(waitingCard).getByText("판단 대기")).toBeInTheDocument();
+    const waitingRow = screen.getByRole("row", { name: "김서연 카드 상세페이지" });
+    expect(within(waitingRow).getByText("검토중")).toBeInTheDocument();
     expect(
-      within(waitingCard).queryByText("검토 중 초안도 최종 반려 전에는 숨겨야 합니다.")
+      screen.queryByText("검토 중 초안도 최종 반려 전에는 숨겨야 합니다.")
     ).not.toBeInTheDocument();
 
     expect(screen.queryByText("이민수 예금 배너")).not.toBeInTheDocument();
+  });
+
+  it("keeps requester history visible when the display name differs from the stored requester name", async () => {
+    setRole({
+      currentUser: {
+        name: "새 담당자",
+        role: "requester",
+        userId: "user-requester-kmu-marketing"
+      }
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/v1/review-cases") {
+        return {
+          ok: true,
+          json: async () => ({
+            items: [
+              {
+                id: "rc-code-owned-001",
+                title: "이전 담당자가 올린 카드 배너",
+                affiliate: "하나카드",
+                productType: "card",
+                plannedPublishDate: "2026-06-14",
+                status: "under_review",
+                highestRiskLevel: "caution",
+                requester: "퇴사자 김서연",
+                reviewer: "준법심의자 박민준"
+              }
+            ]
+          })
+        };
+      }
+
+      return {
+        ok: false,
+        json: async () => ({})
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<RequesterRequestHistory />);
+
+    expect(await screen.findByRole("row", { name: "이전 담당자가 올린 카드 배너" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "x-finproof-user-id": "user-requester-kmu-marketing"
+        })
+      })
+    );
   });
 });

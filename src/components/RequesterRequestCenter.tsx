@@ -30,24 +30,13 @@ type ReviewCaseResponse = {
 type RequestHistoryItem = ReviewSummary &
   Partial<Pick<ReviewCase, "currentDraft" | "currentDraftVersion">>;
 
-function isFinalDecision(status: ReviewCase["status"]): boolean {
-  return status === "approved" || status === "rejected";
-}
-
-function requesterStatusLabel(status: ReviewCase["status"]): "검토중" | "심의완료" {
-  return isFinalDecision(status) ? "심의완료" : "검토중";
-}
-
-function reviewResultLabel(status: ReviewCase["status"]): "승인" | "반려" | "판단 대기" {
-  if (status === "approved") return "승인";
-  if (status === "rejected") return "반려";
-  return "판단 대기";
-}
-
-function belongsToRequester(review: ReviewSummary, requesterName: string): boolean {
-  const requester = review.requester.trim();
-
-  return requester === requesterName || requester.includes(requesterName);
+function requesterTableStatus(status: ReviewCase["status"]): {
+  label: "검토중" | "승인" | "반려";
+  badgeStatus: "in-progress" | "approved" | "rejected";
+} {
+  if (status === "approved") return { label: "승인", badgeStatus: "approved" };
+  if (status === "rejected") return { label: "반려", badgeStatus: "rejected" };
+  return { label: "검토중", badgeStatus: "in-progress" };
 }
 
 function useRequesterAccess(): {
@@ -87,23 +76,21 @@ export function RequesterRequestCenter(): JSX.Element {
 }
 
 export function RequesterRequestHistory(): JSX.Element {
-  const { roleContext, requesterName, canUseRequesterCenter } = useRequesterAccess();
+  const { roleContext, canUseRequesterCenter } = useRequesterAccess();
 
   if (!canUseRequesterCenter) return <RequesterLoginRequired />;
 
   return (
     <div className="requester-request-center">
-      <RequesterHistoryPanel apiHeaders={roleContext.apiHeaders} requesterName={requesterName} />
+      <RequesterHistoryPanel apiHeaders={roleContext.apiHeaders} />
     </div>
   );
 }
 
 function RequesterHistoryPanel({
-  apiHeaders,
-  requesterName
+  apiHeaders
 }: {
   apiHeaders: (extra?: Record<string, string>) => Record<string, string>;
-  requesterName: string;
 }): JSX.Element {
   const [requests, setRequests] = useState<RequestHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,9 +115,7 @@ function RequesterHistoryPanel({
         }
 
         const body = (await response.json()) as ReviewCasesResponse;
-        const ownReviews = (body.items ?? body.reviewCases ?? []).filter((review) =>
-          belongsToRequester(review, requesterName)
-        );
+        const ownReviews = body.items ?? body.reviewCases ?? [];
         const detailedReviews = await Promise.all(
           ownReviews.map(async (review) => {
             if (review.status !== "rejected") {
@@ -181,7 +166,7 @@ function RequesterHistoryPanel({
     return () => {
       mounted = false;
     };
-  }, [apiHeaders, requesterName]);
+  }, [apiHeaders]);
 
   return (
     <section className="queue-panel" aria-label="요청 기록">
@@ -203,9 +188,18 @@ function RequesterHistoryPanel({
       ) : null}
 
       {!isLoading && !loadError && requests.length > 0 ? (
-        <div className="history-decision-tabs" aria-label="요청 기록 목록">
+        <div className="review-table review-table--history" role="grid" aria-label="요청 기록 목록">
+          <div className="review-table__row review-table__row--head" role="row">
+            <span role="columnheader">요청번호</span>
+            <span role="columnheader">제목</span>
+            <span role="columnheader">제휴사</span>
+            <span role="columnheader">상품유형</span>
+            <span role="columnheader">예정 발행일</span>
+            <span role="columnheader">담당자</span>
+            <span role="columnheader">심의 상태</span>
+          </div>
           {requests.map((review) => (
-            <RequesterHistoryCard key={review.id} review={review} />
+            <RequesterHistoryRow key={review.id} review={review} />
           ))}
         </div>
       ) : null}
@@ -213,35 +207,38 @@ function RequesterHistoryPanel({
   );
 }
 
-function RequesterHistoryCard({ review }: { review: RequestHistoryItem }): JSX.Element {
+function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.Element {
   const showDraft = review.status === "rejected" && Boolean(review.currentDraft?.trim());
+  const { label, badgeStatus } = requesterTableStatus(review.status);
 
   return (
-    <article className="kpi-card" aria-label={review.title}>
-      <div className="queue-row-actions">
-        <span className="queue-id">{review.id}</span>
-        <span className="status-badge" data-status={review.status}>
-          {requesterStatusLabel(review.status)}
+    <>
+      <div className="review-table__row" role="row" aria-label={review.title}>
+        <span className="queue-id" role="cell">
+          {review.id}
         </span>
-        <span className="status-badge" data-status={review.status}>
-          {reviewResultLabel(review.status)}
+        <strong role="cell">{review.title}</strong>
+        <span role="cell">{review.affiliate}</span>
+        <span role="cell">{productLabels[review.productType]}</span>
+        <span role="cell">{review.plannedPublishDate}</span>
+        <span role="cell">{review.reviewer || "미배정"}</span>
+        <span role="cell">
+          <span className="status-badge" data-status={badgeStatus}>
+            {label}
+          </span>
         </span>
       </div>
-      <h3>{review.title}</h3>
-      <p>
-        {review.affiliate} · {productLabels[review.productType]} · {review.plannedPublishDate}
-      </p>
-      <p>담당자: {review.reviewer || "미배정"}</p>
-
       {showDraft ? (
-        <section aria-label="수정 요청">
-          <div className="queue-row-actions">
-            <strong>수정 요청</strong>
-            <span className="queue-id">버전 {review.currentDraftVersion ?? 0}</span>
+        <div className="review-table__row review-table__row--rejection-note" role="row">
+          <div role="cell" className="request-history-rejection-note" aria-label="수정 요청">
+            <div className="queue-row-actions">
+              <strong>수정 요청</strong>
+              <span className="queue-id">버전 {review.currentDraftVersion ?? 0}</span>
+            </div>
+            <p>{review.currentDraft}</p>
           </div>
-          <p>{review.currentDraft}</p>
-        </section>
+        </div>
       ) : null}
-    </article>
+    </>
   );
 }

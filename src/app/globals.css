@@ -4067,13 +4067,49 @@ a.review-table__row:hover {
   line-height: 1.55;
 }
 
-.requester-request-center [aria-label="수정 요청"] {
+.review-table--history .review-table__row {
+  grid-template-columns:
+    minmax(110px, 0.85fr)
+    minmax(180px, 2fr)
+    minmax(72px, 0.6fr)
+    minmax(80px, 0.65fr)
+    minmax(96px, 0.75fr)
+    minmax(90px, 0.75fr)
+    minmax(84px, 0.64fr);
+}
+
+.review-table__row--rejection-note {
+  grid-template-columns: 1fr;
+  min-height: 0;
+  padding: 0;
+  background: #fff8f8;
+  border-top: 0;
+}
+
+.request-history-rejection-note {
   display: grid;
   gap: 8px;
-  padding: 12px;
-  border: 1px solid #f0d2d2;
-  border-radius: 8px;
-  background: #fff8f8;
+  padding: 10px 14px 12px;
+  border-top: 1px solid #f0d2d2;
+}
+
+.request-history-rejection-note p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.status-badge[data-status="approved"] {
+  border-color: #bfddcf;
+  background: var(--verified-bg);
+  color: var(--verified);
+}
+
+.status-badge[data-status="in-progress"] {
+  border-color: var(--line);
+  background: var(--surface-muted);
+  color: var(--muted);
 }
 
 @media (max-width: 760px) {
