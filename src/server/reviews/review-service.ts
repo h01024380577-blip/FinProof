@@ -94,6 +94,7 @@ function scopeFromContext(context: RequestContext): ReviewStoreScope {
   return {
     tenantId: context.tenantId,
     actorUserId: context.userId,
+    ...(context.userName ? { actorUserName: context.userName } : {}),
     actorRole: context.role,
     ipAddress: context.ipAddress
   };
@@ -140,11 +141,11 @@ function sortKnowledgeDocumentsForTracking(documents: KnowledgeDocument[]) {
   });
 }
 
-function knowledgeDocumentSourceText(
-  document: KnowledgeDocument,
-  chunks: { chunkText: string }[]
-) {
-  const chunkText = chunks.map((chunk) => chunk.chunkText.trim()).filter(Boolean).join("\n\n");
+function knowledgeDocumentSourceText(document: KnowledgeDocument, chunks: { chunkText: string }[]) {
+  const chunkText = chunks
+    .map((chunk) => chunk.chunkText.trim())
+    .filter(Boolean)
+    .join("\n\n");
 
   return [`# ${document.title}`, `version: ${document.version}`, chunkText]
     .filter(Boolean)
@@ -725,10 +726,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
           .filter((source) => sourceIds.includes(source.id))
           .map((source) => [source.id, source])
       );
-      const latestSnapshotsBySourceId = await store.listLatestRegulatorySnapshots(
-        scope,
-        sourceIds
-      );
+      const latestSnapshotsBySourceId = await store.listLatestRegulatorySnapshots(scope, sourceIds);
 
       for (const [sourceId, groupedDocuments] of documentGroups) {
         const sortedDocuments = sortKnowledgeDocumentsForTracking(groupedDocuments);

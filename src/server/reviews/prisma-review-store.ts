@@ -99,7 +99,6 @@ function dayBeforeDate(value: string): Date {
   return date;
 }
 
-
 function missingMaterialKeys(review: Pick<ReviewCase, "productType" | "files">): string[] {
   return getRequiredMaterialRows(review)
     .filter((row) => row.status === "missing")
@@ -890,10 +889,10 @@ export function createPrismaReviewStore(): ReviewStore {
           'kd."tenant_id" = $1',
           "kd.\"approval_status\" = 'approved'",
           effectiveOn
-            ? "(kd.\"lifecycle_status\" = 'active' OR (kd.\"lifecycle_status\" = 'superseded' AND kd.\"effective_to\" IS NOT NULL))"
+            ? '(kd."lifecycle_status" = \'active\' OR (kd."lifecycle_status" = \'superseded\' AND kd."effective_to" IS NOT NULL))'
             : "kd.\"lifecycle_status\" = 'active'",
           effectiveOn
-            ? "(ec.\"chunk_status\" = 'active' OR (ec.\"chunk_status\" = 'superseded' AND ec.\"effective_to\" IS NOT NULL))"
+            ? '(ec."chunk_status" = \'active\' OR (ec."chunk_status" = \'superseded\' AND ec."effective_to" IS NOT NULL))'
             : "ec.\"chunk_status\" = 'active'",
           'ec."embedding_vector" IS NOT NULL'
         ];
@@ -1955,7 +1954,7 @@ export function createPrismaReviewStore(): ReviewStore {
           highestRiskLevel: "info",
           requesterId: scope.actorUserId,
           reviewerId: null,
-          requesterName: "업로드 요청자",
+          requesterName: scope.actorUserName?.trim() || "업로드 요청자",
           reviewerName: "",
           promotionalCopy: "실제 업로드 자료 분석 대기",
           disclosure: uploadAnalysisNotice,

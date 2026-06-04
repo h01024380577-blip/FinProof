@@ -91,6 +91,43 @@ describe("mock review store", () => {
     );
   });
 
+  it("stores uploaded requester name from scope while keeping reviewer blank", async () => {
+    const store = createMockReviewStore();
+    const requesterScope = {
+      ...scope,
+      actorUserId: "user-requester-demo",
+      actorRole: "requester" as const,
+      actorUserName: "요청자 김지현"
+    };
+
+    const result = await store.createReviewCaseFromUploadedFiles(requesterScope, {
+      title: "실제 업로드 적금 홍보물",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [
+        {
+          name: "real-deposit-poster.png",
+          type: "image/png",
+          size: 2048
+        }
+      ]
+    });
+    const persisted = await store.getReviewCase(requesterScope, result.reviewCase.id);
+
+    expect(result.reviewCase).toMatchObject({
+      requester: "요청자 김지현",
+      reviewer: "",
+      status: "analysis_waiting"
+    });
+    expect(persisted).toMatchObject({
+      requester: "요청자 김지현",
+      reviewer: "",
+      status: "analysis_waiting"
+    });
+  });
+
   it("runs deterministic analysis and persists reviewer issue decisions", async () => {
     const store = createMockReviewStore();
     await store.createReviewCaseFromSamplePackage(scope, {

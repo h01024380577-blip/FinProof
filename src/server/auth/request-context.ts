@@ -5,6 +5,7 @@ import { InvalidAuthTokenError, verifyJwtSession } from "./jwt-session";
 export type RequestContext = {
   tenantId: string;
   userId: string;
+  userName?: string;
   role: RoleId;
   ipAddress?: string;
 };
@@ -17,6 +18,26 @@ function parseRole(value: string | null): RoleId {
 
 function firstForwardedIp(value: string | null): string | undefined {
   return value?.split(",")[0]?.trim() || undefined;
+}
+
+function optionalHeaderValue(value: string | null): string | undefined {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : undefined;
+}
+
+function demoUserName(value: string | null): string | undefined {
+  const raw = optionalHeaderValue(value);
+
+  if (!raw) {
+    return undefined;
+  }
+
+  try {
+    return optionalHeaderValue(decodeURIComponent(raw));
+  } catch {
+    return raw;
+  }
 }
 
 function getBearerToken(request: Request) {
@@ -56,6 +77,7 @@ export async function getRequestContext(request: Request): Promise<RequestContex
   }
 
   const role = parseRole(request.headers.get("x-finproof-role"));
+  const userName = demoUserName(request.headers.get("x-finproof-user-name"));
   const fallbackUserId =
     role === "requester"
       ? (process.env.FINPROOF_DEFAULT_REQUESTER_USER_ID ?? "user-requester-demo")
@@ -67,6 +89,7 @@ export async function getRequestContext(request: Request): Promise<RequestContex
       process.env.FINPROOF_DEFAULT_TENANT_ID ??
       "tenant-demo",
     userId: request.headers.get("x-finproof-user-id") ?? fallbackUserId,
+    ...(userName ? { userName } : {}),
     role,
     ipAddress: firstForwardedIp(request.headers.get("x-forwarded-for"))
   };

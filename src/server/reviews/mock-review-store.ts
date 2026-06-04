@@ -83,7 +83,6 @@ function inferContentType(fileName: string): string {
   return "application/octet-stream";
 }
 
-
 function missingMaterialKeys(review: Pick<ReviewCase, "productType" | "files">): string[] {
   return getRequiredMaterialRows(review)
     .filter((row) => row.status === "missing")
@@ -424,7 +423,10 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return true;
     }
 
-    return document.lifecycleStatus === "superseded" && Boolean(input.effectiveOn && document.effectiveTo);
+    return (
+      document.lifecycleStatus === "superseded" &&
+      Boolean(input.effectiveOn && document.effectiveTo)
+    );
   }
 
   function searchableChunkStatus(
@@ -661,7 +663,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     },
 
     async createReviewCaseFromUploadedFiles(
-      _scope: ReviewStoreScope,
+      scope: ReviewStoreScope,
       input: CreateReviewCaseFromUploadedFilesInput
     ): Promise<CreateReviewCaseResult> {
       let id = input.reviewCaseId;
@@ -703,7 +705,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         plannedPublishDate: input.plannedPublishDate,
         status: "analysis_waiting",
         highestRiskLevel: "info",
-        requester: "업로드 요청자",
+        requester: scope.actorUserName?.trim() || "업로드 요청자",
         reviewer: "",
         promotionalCopy: "실제 업로드 자료 분석 대기",
         disclosure: uploadAnalysisNotice,
@@ -717,7 +719,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
 
       reviewCase.missingMaterials = missingMaterialKeys(reviewCase);
       cases.set(id, clone(reviewCase));
-      caseTenants.set(id, _scope.tenantId);
+      caseTenants.set(id, scope.tenantId);
 
       return {
         reviewCase: clone(reviewCase),
@@ -1156,11 +1158,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         if (caseTenants.get(reviewCaseId) !== tenantId) continue;
 
         const updatedJobs = jobs.map((job) => {
-          if (
-            job.status === "running" &&
-            job.startedAt &&
-            new Date(job.startedAt) <= cutoff
-          ) {
+          if (job.status === "running" && job.startedAt && new Date(job.startedAt) <= cutoff) {
             count++;
             return {
               ...job,
@@ -1521,8 +1519,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return clone(
         Array.from(evidenceChunks.values())
           .filter(
-            (chunk) =>
-              chunk.tenantId === scope.tenantId && chunk.knowledgeDocumentId === documentId
+            (chunk) => chunk.tenantId === scope.tenantId && chunk.knowledgeDocumentId === documentId
           )
           .sort((left, right) => left.id.localeCompare(right.id))
       );

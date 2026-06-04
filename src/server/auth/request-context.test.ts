@@ -81,6 +81,20 @@ describe("request context", () => {
     });
   });
 
+  it("parses demo requester display name headers", async () => {
+    const context = await getRequestContext(
+      requestWithHeaders({
+        "x-finproof-role": "requester",
+        "x-finproof-user-name": encodeURIComponent("요청자 김지현")
+      })
+    );
+
+    expect(context).toMatchObject({
+      role: "requester",
+      userName: "요청자 김지현"
+    });
+  });
+
   it("rejects requester for reviewer-only operations", () => {
     expect(() => {
       requireRole(

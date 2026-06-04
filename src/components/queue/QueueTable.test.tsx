@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { QueueTable } from "./QueueTable";
 import type { ReviewSummary } from "@/domain/types";
 
@@ -16,6 +18,19 @@ const baseRow: ReviewSummary = {
   reviewer: "박심의"
 };
 
+function queueTableMinimumWidth(): number {
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  const block =
+    css.match(/\.review-table--queue \.review-table__row \{(?<body>[\s\S]*?)\n\}/)?.groups?.body ??
+    "";
+  const minTrackWidths = [...block.matchAll(/minmax\((\d+)px,/g)].map((match) => Number(match[1]));
+  const gap = Number(block.match(/gap:\s*(\d+)px/)?.[1] ?? 12);
+  const padding = block.match(/padding:\s*0\s+(\d+)px/);
+  const horizontalPadding = padding ? Number(padding[1]) * 2 : 36;
+
+  return minTrackWidths.reduce((sum, width) => sum + width, 0) + gap * 9 + horizontalPadding;
+}
+
 describe("QueueTable", () => {
   it("renders header and rows", () => {
     render(
@@ -29,6 +44,41 @@ describe("QueueTable", () => {
     );
     expect(screen.getByText("심의 ID")).toBeInTheDocument();
     expect(screen.getByText("RC-2026-001")).toBeInTheDocument();
+  });
+
+  it("shows the requester column between request department and status", () => {
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, requester: "마케팅 담당자 김지현" }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
+      "심의 ID",
+      "제목",
+      "상품군",
+      "요청 부서",
+      "요청자",
+      "상태",
+      "위험도",
+      "마감일",
+      "담당자",
+      "작업"
+    ]);
+
+    const rowCells = within(screen.getByRole("row", { name: /최고 연 5.0%/ })).getAllByRole("cell");
+    expect(rowCells).toHaveLength(10);
+    expect(rowCells[3]).toHaveTextContent("마케팅팀");
+    expect(rowCells[4]).toHaveTextContent("마케팅 담당자 김지현");
+    expect(rowCells[5]).toHaveTextContent("분석 대기");
+  });
+
+  it("keeps the queue grid narrow enough for a 1366px reviewer workspace", () => {
+    expect(queueTableMinimumWidth()).toBeLessThanOrEqual(996);
   });
 
   it("does not expose a direct reviewer editor from the queue row", () => {
@@ -46,7 +96,9 @@ describe("QueueTable", () => {
       />
     );
 
-    expect(screen.queryByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")
+    ).not.toBeInTheDocument();
     expect(screen.getByText("박심의")).toBeInTheDocument();
     expect(onSaveReviewer).not.toHaveBeenCalled();
     expect(onOpen).not.toHaveBeenCalled();
@@ -157,7 +209,9 @@ describe("QueueTable", () => {
       />
     );
 
-    expect(screen.queryByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("담당자: 최고 연 5.0% 적금 홍보물 심의")
+    ).not.toBeInTheDocument();
     expect(screen.getByText("미배정")).toBeInTheDocument();
     expect(screen.queryByText("준법심의자 박민준")).not.toBeInTheDocument();
   });
@@ -216,17 +270,17 @@ describe("QueueTable", () => {
       screen.getByRole("row", { name: /AI 분석 대기 중인 적금/ })
     ).getAllByRole("cell");
 
-    expect(waitingCells).toHaveLength(9);
-    expect(waitingCells[8]).toHaveClass("queue-row-actions--left");
+    expect(waitingCells).toHaveLength(10);
+    expect(waitingCells[9]).toHaveClass("queue-row-actions--left");
     expect(
-      within(waitingCells[8]).getByRole("button", { name: "AI 분석 시작" })
+      within(waitingCells[9]).getByRole("button", { name: "AI 분석 시작" })
     ).toBeInTheDocument();
-    expect(queuedCells).toHaveLength(9);
-    expect(queuedCells[8]).toHaveClass("queue-row-actions--left");
-    expect(queuedCells[8]).toHaveTextContent("분석중");
-    expect(completedCells).toHaveLength(9);
-    expect(completedCells[8]).toHaveClass("queue-row-actions--left");
-    expect(within(completedCells[8]).getByRole("button", { name: "검토하기" })).toBeInTheDocument();
+    expect(queuedCells).toHaveLength(10);
+    expect(queuedCells[9]).toHaveClass("queue-row-actions--left");
+    expect(queuedCells[9]).toHaveTextContent("분석중");
+    expect(completedCells).toHaveLength(10);
+    expect(completedCells[9]).toHaveClass("queue-row-actions--left");
+    expect(within(completedCells[9]).getByRole("button", { name: "검토하기" })).toBeInTheDocument();
   });
 
   it("opens the workbench via the 검토하기 action and reviewer confirmation", async () => {

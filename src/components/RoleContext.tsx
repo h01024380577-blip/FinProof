@@ -1,62 +1,266 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from "react";
 import type { RoleId } from "@/domain/types";
 
-type RoleContextValue = {
+export type DemoUser = {
+  name: string;
+  role: RoleId;
+  userId: string;
+};
+
+export type DemoLoginInput = {
+  name: string;
+  role: RoleId;
+  userId?: string;
+  authToken?: string;
+};
+
+type StoredDemoSession = {
+  currentUser: DemoUser;
+};
+
+export type RoleContextValue = {
+  currentUser: DemoUser | null;
+  isSessionReady: boolean;
+  isAuthenticated: boolean;
   activeRole: RoleId;
+  login: (input: DemoLoginInput) => DemoUser;
+  logout: () => void;
   setActiveRole: (role: RoleId) => void;
   authToken: string;
   setAuthToken: (token: string) => void;
   apiHeaders: (extra?: Record<string, string>) => Record<string, string>;
 };
 
+const demoSessionStorageKey = "finproof.demoSession";
+const authTokenStorageKey = "finproof.authToken";
+
 const RoleContext = createContext<RoleContextValue | null>(null);
+
+function isBrowser() {
+  return typeof window !== "undefined";
+}
+
+function isRoleId(role: unknown): role is RoleId {
+  return role === "requester" || role === "reviewer" || role === "compliance_admin";
+}
+
+function createDemoUserId(role: RoleId, name: string) {
+  const stableName = encodeURIComponent(name.trim()).replaceAll("%", "").toLowerCase().slice(0, 48);
+
+  return `demo-${role}-${stableName || "user"}`;
+}
+
+function headerUserName(currentUser: DemoUser | null): string {
+  return currentUser ? encodeURIComponent(currentUser.name) : "";
+}
+
+function readStoredDemoUser() {
+  if (!isBrowser()) {
+    return null;
+  }
+
+  const storedSession = window.localStorage.getItem(demoSessionStorageKey);
+
+  if (!storedSession) {
+    return null;
+  }
+
+  try {
+    const parsedSession = JSON.parse(storedSession) as Partial<StoredDemoSession>;
+    const currentUser = parsedSession.currentUser;
+
+    if (
+      !currentUser ||
+      typeof currentUser.name !== "string" ||
+      currentUser.name.trim().length === 0 ||
+      !isRoleId(currentUser.role)
+    ) {
+      return null;
+    }
+
+    return {
+      name: currentUser.name.trim(),
+      role: currentUser.role,
+      userId:
+        typeof currentUser.userId === "string" && currentUser.userId.trim().length > 0
+          ? currentUser.userId.trim()
+          : createDemoUserId(currentUser.role, currentUser.name)
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistDemoUser(currentUser: DemoUser | null) {
+  if (!isBrowser()) {
+    return;
+  }
+
+  if (currentUser) {
+    window.localStorage.setItem(demoSessionStorageKey, JSON.stringify({ currentUser }));
+  } else {
+    window.localStorage.removeItem(demoSessionStorageKey);
+  }
+}
 
 export function RoleProvider({
   children,
   initialRole = "reviewer",
   initialAuthToken = ""
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   initialRole?: RoleId;
   initialAuthToken?: string;
 }) {
-  const [activeRole, setActiveRole] = useState<RoleId>(initialRole);
-  const [authToken, setAuthTokenState] = useState(() => {
-    if (initialAuthToken || typeof window === "undefined") {
-      return initialAuthToken;
-    }
+  const [fallbackRole, setFallbackRole] = useState<RoleId>(initialRole);
+  const [currentUser, setCurrentUser] = useState<DemoUser | null>(null);
+  const [authToken, setAuthTokenState] = useState(initialAuthToken);
+  const [isSessionReady, setIsSessionReady] = useState(false);
+  const exposedCurrentUser = isSessionReady ? currentUser : null;
+  const isAuthenticated = exposedCurrentUser !== null;
+  const activeRole = exposedCurrentUser?.role ?? fallbackRole;
 
-    return window.localStorage.getItem("finproof.authToken") ?? "";
-  });
+  useEffect(() => {
+    let cancelled = false;
+
+    // Restore the demo session after the first hydration pass so role-specific links
+    // do not replace the server-rendered shell while React is still hydrating it.
+    const timer = window.setTimeout(() => {
+      if (cancelled) {
+        return;
+      }
+
+      const storedUser = readStoredDemoUser();
+
+      if (storedUser) {
+        setCurrentUser(storedUser);
+      }
+
+      if (!initialAuthToken && isBrowser()) {
+        setAuthTokenState(window.localStorage.getItem(authTokenStorageKey) ?? "");
+      }
+
+      setIsSessionReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [initialAuthToken]);
 
   const setAuthToken = useCallback((token: string) => {
     setAuthTokenState(token);
 
-    if (token.trim().length > 0) {
-      window.localStorage.setItem("finproof.authToken", token);
-    } else {
-      window.localStorage.removeItem("finproof.authToken");
+    if (!isBrowser()) {
+      return;
     }
+
+    if (token.trim().length > 0) {
+      window.localStorage.setItem(authTokenStorageKey, token);
+    } else {
+      window.localStorage.removeItem(authTokenStorageKey);
+    }
+  }, []);
+
+  const login = useCallback(
+    (input: DemoLoginInput) => {
+      const name = input.name.trim();
+      const nextUser = {
+        name,
+        role: input.role,
+        userId: input.userId?.trim() || createDemoUserId(input.role, name)
+      };
+
+      setCurrentUser(nextUser);
+      setIsSessionReady(true);
+      persistDemoUser(nextUser);
+
+      if (input.authToken !== undefined) {
+        setAuthToken(input.authToken);
+      }
+
+      return nextUser;
+    },
+    [setAuthToken]
+  );
+
+  const logout = useCallback(() => {
+    setCurrentUser(null);
+    setIsSessionReady(true);
+    persistDemoUser(null);
+    setAuthToken("");
+  }, [setAuthToken]);
+
+  const setActiveRole = useCallback((role: RoleId) => {
+    setFallbackRole(role);
+    setCurrentUser((previousUser) => {
+      if (!previousUser) {
+        return previousUser;
+      }
+
+      const nextUser = { ...previousUser, role };
+      persistDemoUser(nextUser);
+
+      return nextUser;
+    });
   }, []);
 
   const apiHeaders = useCallback(
     (extra: Record<string, string> = {}) => {
       const token = authToken.trim();
+      const userHeaders = exposedCurrentUser
+        ? {
+            "x-finproof-user-id": exposedCurrentUser.userId,
+            "x-finproof-user-name": headerUserName(exposedCurrentUser)
+          }
+        : {};
 
       return {
         "x-finproof-role": activeRole,
+        ...userHeaders,
         ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...extra
       };
     },
-    [activeRole, authToken]
+    [activeRole, authToken, exposedCurrentUser]
   );
 
   const value = useMemo(
-    () => ({ activeRole, setActiveRole, authToken, setAuthToken, apiHeaders }),
-    [activeRole, apiHeaders, authToken, setAuthToken]
+    () => ({
+      currentUser: exposedCurrentUser,
+      isSessionReady,
+      isAuthenticated,
+      activeRole,
+      login,
+      logout,
+      setActiveRole,
+      authToken,
+      setAuthToken,
+      apiHeaders
+    }),
+    [
+      activeRole,
+      apiHeaders,
+      authToken,
+      exposedCurrentUser,
+      isAuthenticated,
+      isSessionReady,
+      login,
+      logout,
+      setActiveRole,
+      setAuthToken
+    ]
   );
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;

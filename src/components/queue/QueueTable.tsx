@@ -178,6 +178,7 @@ export function QueueTable({
         <span role="columnheader">제목</span>
         <span role="columnheader">상품군</span>
         <span role="columnheader">요청 부서</span>
+        <span role="columnheader">요청자</span>
         <span role="columnheader">상태</span>
         <span role="columnheader">위험도</span>
         <span role="columnheader">마감일</span>
@@ -230,6 +231,7 @@ export function QueueTable({
             <strong role="cell">{review.title}</strong>
             <span role="cell">{productLabels[review.productType]}</span>
             <span role="cell">{requestDepartment(review)}</span>
+            <span role="cell">{review.requester || "미기재"}</span>
             <span role="cell">
               <StatusBadge status={review.status} />
             </span>

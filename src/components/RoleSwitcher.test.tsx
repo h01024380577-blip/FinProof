@@ -1,50 +1,60 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RoleProvider, useRole } from "./RoleContext";
 import { RoleSwitcher } from "./RoleSwitcher";
 
 function HeaderProbe() {
-  const { apiHeaders } = useRole();
-  const headers = apiHeaders();
+  const { activeRole, apiHeaders, currentUser, isAuthenticated, setAuthToken } = useRole();
+  const headers = apiHeaders({ "content-type": "application/json" });
 
-  return <output aria-label="headers">{headers["x-finproof-role"]}</output>;
+  return (
+    <section aria-label="session">
+      <output aria-label="active-role">{activeRole}</output>
+      <output aria-label="authenticated">{String(isAuthenticated)}</output>
+      <output aria-label="current-user">{currentUser?.name ?? "none"}</output>
+      <output aria-label="headers">{JSON.stringify(headers)}</output>
+      <button type="button" onClick={() => setAuthToken("reviewer.jwt")}>
+        토큰 설정
+      </button>
+    </section>
+  );
 }
 
 describe("RoleSwitcher", () => {
-  it("switches the active mock user role", async () => {
-    const user = userEvent.setup();
-    render(<RoleSwitcher />);
-
-    expect(screen.getByRole("button", { name: "심의자" })).toHaveAttribute("aria-pressed", "true");
-
-    await user.click(screen.getByRole("button", { name: "요청자" }));
-
-    expect(screen.getByRole("button", { name: "요청자" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("현재 역할: 요청자")).toBeInTheDocument();
+  beforeEach(() => {
+    window.localStorage.clear();
   });
 
-  it("changes API role headers by clicking role buttons and does not render JWT input", async () => {
+  it("logs in as a requester without requiring a security code", async () => {
     const user = userEvent.setup();
     render(
-      <RoleProvider>
+      <RoleProvider initialRole="reviewer">
         <RoleSwitcher />
         <HeaderProbe />
       </RoleProvider>
     );
 
-    expect(screen.queryByLabelText("Bearer JWT")).not.toBeInTheDocument();
-    expect(screen.queryByText("JWT")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "관리자" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("headers")).toHaveTextContent("reviewer");
+    expect(screen.getByRole("button", { name: "로그인" })).toBeInTheDocument();
+    expect(screen.getByLabelText("active-role")).toHaveTextContent("reviewer");
 
-    await user.click(screen.getByRole("button", { name: "요청자" }));
+    await user.click(screen.getByRole("button", { name: "로그인" }));
+    await user.click(screen.getByRole("radio", { name: "요청자" }));
+    await user.type(screen.getByLabelText("이름"), "홍길동");
 
-    expect(screen.getByRole("button", { name: "요청자" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("현재 역할: 요청자")).toBeInTheDocument();
-    expect(screen.getByLabelText("headers")).toHaveTextContent("requester");
+    expect(screen.queryByLabelText("심의자 보안코드")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    expect(screen.getByRole("button", { name: "홍길동 요청자" })).toBeInTheDocument();
+    expect(screen.getByLabelText("active-role")).toHaveTextContent("requester");
+    expect(screen.getByLabelText("authenticated")).toHaveTextContent("true");
+    expect(screen.getByLabelText("current-user")).toHaveTextContent("홍길동");
+    expect(screen.queryByRole("radio", { name: "요청자" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "심의자" })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("finproof.demoSession")).toContain("홍길동");
   });
 
-  it("requires a security code before switching from requester to reviewer", async () => {
+  it("requires a security code for reviewer login but accepts any non-empty value", async () => {
     const user = userEvent.setup();
     render(
       <RoleProvider initialRole="requester">
@@ -53,26 +63,94 @@ describe("RoleSwitcher", () => {
       </RoleProvider>
     );
 
-    expect(screen.getByLabelText("headers")).toHaveTextContent("requester");
-
-    await user.click(screen.getByRole("button", { name: "심의자" }));
+    await user.click(screen.getByRole("button", { name: "로그인" }));
+    await user.click(screen.getByRole("radio", { name: "심의자" }));
+    await user.type(screen.getByLabelText("이름"), "박민준");
 
     expect(screen.getByLabelText("심의자 보안코드")).toBeInTheDocument();
-    expect(screen.getByText("예시 보안코드: FP-REVIEW-2026")).toBeInTheDocument();
-    expect(screen.getByLabelText("headers")).toHaveTextContent("requester");
 
-    await user.type(screen.getByLabelText("심의자 보안코드"), "WRONG-CODE");
-    await user.click(screen.getByRole("button", { name: "확인" }));
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("보안코드가 일치하지 않습니다.");
-    expect(screen.getByLabelText("headers")).toHaveTextContent("requester");
+    expect(screen.getByRole("alert")).toHaveTextContent("심의자 보안코드를 입력해 주세요.");
+    expect(screen.getByLabelText("active-role")).toHaveTextContent("requester");
 
-    await user.clear(screen.getByLabelText("심의자 보안코드"));
-    await user.type(screen.getByLabelText("심의자 보안코드"), "FP-REVIEW-2026");
-    await user.click(screen.getByRole("button", { name: "확인" }));
+    await user.type(screen.getByLabelText("심의자 보안코드"), "demo-code");
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
 
-    expect(screen.getByLabelText("headers")).toHaveTextContent("reviewer");
-    expect(screen.getByText("현재 역할: 심의자")).toBeInTheDocument();
-    expect(screen.queryByLabelText("심의자 보안코드")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "박민준 심의자" })).toBeInTheDocument();
+    expect(screen.getByLabelText("active-role")).toHaveTextContent("reviewer");
+  });
+
+  it("shows the profile menu after login and logs out to the fallback role", async () => {
+    const user = userEvent.setup();
+    render(
+      <RoleProvider initialRole="requester">
+        <RoleSwitcher />
+        <HeaderProbe />
+      </RoleProvider>
+    );
+
+    await user.click(screen.getByRole("button", { name: "로그인" }));
+    await user.click(screen.getByRole("radio", { name: "심의자" }));
+    await user.type(screen.getByLabelText("이름"), "김심의");
+    await user.type(screen.getByLabelText("심의자 보안코드"), "1");
+    await user.click(screen.getByRole("button", { name: "시작하기" }));
+
+    await user.click(screen.getByRole("button", { name: "김심의 심의자" }));
+
+    const profileMenu = screen.getByRole("menu");
+    expect(profileMenu).toBeInTheDocument();
+    expect(within(profileMenu).getByText("김심의")).toBeInTheDocument();
+    expect(within(profileMenu).getByText("심의자")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("menuitem", { name: "로그아웃" }));
+
+    expect(screen.getByRole("button", { name: "로그인" })).toBeInTheDocument();
+    expect(screen.getByLabelText("active-role")).toHaveTextContent("requester");
+    expect(screen.getByLabelText("authenticated")).toHaveTextContent("false");
+    expect(screen.getByLabelText("current-user")).toHaveTextContent("none");
+    expect(window.localStorage.getItem("finproof.demoSession")).toBeNull();
+  });
+
+  it("builds API headers from the persisted demo session and auth token", async () => {
+    const user = userEvent.setup();
+
+    window.localStorage.setItem(
+      "finproof.demoSession",
+      JSON.stringify({
+        currentUser: {
+          name: "Existing Reviewer",
+          role: "reviewer",
+          userId: "demo-reviewer-existing"
+        }
+      })
+    );
+
+    render(
+      <RoleProvider initialRole="requester">
+        <RoleSwitcher />
+        <HeaderProbe />
+      </RoleProvider>
+    );
+
+    expect(
+      await screen.findByRole("button", { name: "Existing Reviewer 심의자" })
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("headers")).toHaveTextContent('"x-finproof-role":"reviewer"');
+    expect(screen.getByLabelText("headers")).toHaveTextContent(
+      '"x-finproof-user-id":"demo-reviewer-existing"'
+    );
+    expect(screen.getByLabelText("headers")).toHaveTextContent(
+      '"x-finproof-user-name":"Existing%20Reviewer"'
+    );
+    expect(screen.getByLabelText("headers")).toHaveTextContent('"content-type":"application/json"');
+    expect(screen.getByLabelText("headers")).not.toHaveTextContent("authorization");
+
+    await user.click(screen.getByRole("button", { name: "토큰 설정" }));
+
+    expect(screen.getByLabelText("headers")).toHaveTextContent(
+      '"authorization":"Bearer reviewer.jwt"'
+    );
+    expect(window.localStorage.getItem("finproof.authToken")).toBe("reviewer.jwt");
   });
 });

@@ -26,6 +26,7 @@ import type { AnalysisArtifacts } from "@/server/analysis/review-analysis-pipeli
 export type ReviewStoreScope = {
   tenantId: string;
   actorUserId: string;
+  actorUserName?: string;
   actorRole: RoleId;
   ipAddress?: string;
 };
@@ -343,10 +344,7 @@ export interface ReviewStore {
     jobId: string,
     errorMessage: string
   ): Promise<AnalysisJob | undefined>;
-  failStaleAnalysisJobs(
-    tenantId: string,
-    olderThanMs: number
-  ): Promise<number>;
+  failStaleAnalysisJobs(tenantId: string, olderThanMs: number): Promise<number>;
   getLatestAnalysisJob(
     scope: ReviewStoreScope,
     reviewCaseId: string

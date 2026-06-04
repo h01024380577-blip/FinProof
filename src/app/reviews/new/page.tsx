@@ -1,5 +1,5 @@
-import { SamplePackageSelector } from "@/components/SamplePackageSelector";
+import { RequesterRequestCenter } from "@/components/RequesterRequestCenter";
 
 export default function NewReviewPage() {
-  return <SamplePackageSelector />;
+  return <RequesterRequestCenter />;
 }

@@ -272,7 +272,11 @@ describe("review API routes", () => {
     const createResponse = await createPOST(
       new Request("http://localhost/api/v1/review-cases", {
         method: "POST",
-        headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+        headers: {
+          "content-type": `multipart/form-data; boundary=${boundary}`,
+          "x-finproof-role": "requester",
+          "x-finproof-user-name": encodeURIComponent("요청자 김지현")
+        },
         body: multipartBody
       })
     );
@@ -281,6 +285,7 @@ describe("review API routes", () => {
     expect(createResponse.status).toBe(201);
     expect(createBody.reviewCase).toMatchObject({
       id: "rc-upload-001",
+      requester: "요청자 김지현",
       status: "analysis_waiting",
       reviewer: "",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."

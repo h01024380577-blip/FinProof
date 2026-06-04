@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  Bell,
   BookOpenCheck,
   ChevronRight,
   ClipboardList,
@@ -12,7 +11,6 @@ import {
   PlusSquare,
   Radar,
   Settings,
-  UserCircle,
   type LucideIcon
 } from "lucide-react";
 import type { RoleId } from "@/domain/types";
@@ -20,6 +18,7 @@ import { RoleSwitcher } from "./RoleSwitcher";
 import { useRoleContext } from "./RoleContext";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { FinProofMark } from "./FinProofMark";
+import { NotificationCenter } from "./NotificationCenter";
 
 type NavigationItem = {
   href: string;
@@ -33,6 +32,12 @@ const navigation: NavigationItem[] = [
     href: "/reviews/new",
     label: "신규 요청",
     icon: PlusSquare,
+    roles: ["requester"]
+  },
+  {
+    href: "/reviews/history",
+    label: "요청 기록",
+    icon: History,
     roles: ["requester"]
   },
   {
@@ -65,16 +70,27 @@ function defaultHrefForRole(role: RoleId): string {
   return role === "requester" ? "/reviews/new" : "/reviews";
 }
 
+function matchesRouteSegment(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
 function canAccessPath(pathname: string, role: RoleId): boolean {
   if (pathname === "/") {
     return true;
   }
 
   if (role === "requester") {
-    return pathname.startsWith("/reviews/new");
+    return (
+      matchesRouteSegment(pathname, "/reviews/new") ||
+      matchesRouteSegment(pathname, "/reviews/history") ||
+      pathname.startsWith("/reviews/")
+    );
   }
 
-  if (pathname.startsWith("/reviews/new")) {
+  if (
+    matchesRouteSegment(pathname, "/reviews/new") ||
+    matchesRouteSegment(pathname, "/reviews/history")
+  ) {
     return false;
   }
 
@@ -86,8 +102,12 @@ function canAccessPath(pathname: string, role: RoleId): boolean {
 }
 
 function getBreadcrumb(pathname: string): string[] {
-  if (pathname.startsWith("/reviews/new")) {
+  if (matchesRouteSegment(pathname, "/reviews/new")) {
     return ["신규 요청", "신규 심의 요청"];
+  }
+
+  if (matchesRouteSegment(pathname, "/reviews/history")) {
+    return ["요청 기록", "내 요청 기록"];
   }
 
   if (pathname.startsWith("/knowledge-documents")) {
@@ -107,22 +127,43 @@ function getBreadcrumb(pathname: string): string[] {
   return ["FinProof Agent", "심의 대기 목록"];
 }
 
+function subscribeToHydration() {
+  return () => {};
+}
+
+function getHydratedSnapshot() {
+  return true;
+}
+
+function getServerHydrationSnapshot() {
+  return false;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const roleContext = useRoleContext();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const scope = searchParams.get("scope");
-  const activeRole = roleContext?.activeRole ?? "reviewer";
-  const visibleNavigation = navigation.filter((item) => item.roles.includes(activeRole));
+  const hasMounted = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydrationSnapshot
+  );
+  const canUseSession = hasMounted && (roleContext?.isSessionReady ?? false);
+  const activeRole = canUseSession ? (roleContext?.activeRole ?? "reviewer") : "reviewer";
+  const isAuthenticated = canUseSession ? (roleContext?.isAuthenticated ?? false) : false;
+  const visibleNavigation = isAuthenticated
+    ? navigation.filter((item) => item.roles.includes(activeRole))
+    : [];
   const defaultHref = defaultHrefForRole(activeRole);
   const breadcrumb = getBreadcrumb(pathname);
 
   useEffect(() => {
-    if (!canAccessPath(pathname, activeRole)) {
+    if (isAuthenticated && !canAccessPath(pathname, activeRole)) {
       router.replace(defaultHref);
     }
-  }, [activeRole, defaultHref, pathname, router]);
+  }, [activeRole, defaultHref, isAuthenticated, pathname, router]);
 
   if (pathname === "/") {
     return <ErrorBoundary>{children}</ErrorBoundary>;
@@ -148,8 +189,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 : item.href === "/reviews?scope=history"
                   ? pathname === "/reviews" && scope === "history"
                   : item.href === "/reviews/new"
-                    ? pathname.startsWith("/reviews/new")
-                    : pathname.startsWith(item.href);
+                    ? matchesRouteSegment(pathname, "/reviews/new")
+                    : matchesRouteSegment(pathname, item.href);
 
             return (
               <Link key={item.href} className="nav-link" data-active={isActive} href={item.href}>
@@ -172,27 +213,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="topbar__actions">
-            <button className="topbar__icon-button" type="button" aria-label="알림" title="알림">
-              <Bell size={19} aria-hidden="true" />
-            </button>
+            <NotificationCenter />
             <button className="topbar__icon-button" type="button" aria-label="설정" title="설정">
               <Settings size={19} aria-hidden="true" />
             </button>
-            <button
-              className="topbar__avatar"
-              type="button"
-              aria-label="사용자 메뉴"
-              title="사용자 메뉴"
-            >
-              <UserCircle size={21} aria-hidden="true" />
-            </button>
             <div className="topbar__role">
-              <RoleSwitcher />
+              {canUseSession ? (
+                <RoleSwitcher />
+              ) : (
+                <div className="role-switcher" aria-label="Demo user session">
+                  <button className="role-switcher__button" type="button">
+                    로그인
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
         <div className="workspace__content">
-          <ErrorBoundary>{children}</ErrorBoundary>
+          <ErrorBoundary>
+            {isAuthenticated ? (
+              children
+            ) : (
+              <section className="queue-panel auth-required-panel" aria-label="로그인 필요">
+                <p className="queue-empty-state">로그인 후 FinProof Agent를 이용해 주세요.</p>
+              </section>
+            )}
+          </ErrorBoundary>
         </div>
       </div>
     </div>
