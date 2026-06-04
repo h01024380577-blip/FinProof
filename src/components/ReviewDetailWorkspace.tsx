@@ -188,17 +188,6 @@ function getInitialSavedDecisions(review: ReviewCase): Record<string, SavedDecis
   );
 }
 
-function hasOnlyUploadedAdEvidence(review: ReviewCase): boolean {
-  return (
-    review.issues.length > 0 &&
-    review.issues.every(
-      (issue) =>
-        issue.evidence.length > 0 &&
-        issue.evidence.every((evidence) => evidence.sourceType === "product_doc")
-    )
-  );
-}
-
 function chatHistoryStorageKey(reviewCaseId: string): string {
   return `${CHAT_HISTORY_STORAGE_PREFIX}.${reviewCaseId}`;
 }
@@ -421,11 +410,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const pathname = usePathname();
   const rawTab = searchParams?.get("tab") ?? null;
   const initialTab: IssueDetailTabKey =
-    rawTab === "evidence" || rawTab === "opinion"
-      ? rawTab
-      : hasOnlyUploadedAdEvidence(review)
-        ? "evidence"
-        : "checklist";
+    rawTab === "evidence" || rawTab === "opinion" ? rawTab : "checklist";
   const [activeTab, setActiveTabState] = useState<IssueDetailTabKey>(initialTab);
 
   useEffect(() => {

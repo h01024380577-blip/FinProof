@@ -1151,7 +1151,7 @@ describe("ReviewDetailWorkspace tab URL sync", () => {
     currentSearchParams = new URLSearchParams();
   });
 
-  it("opens the evidence tab by default for upload-only evidence reviews", () => {
+  it("opens the checklist tab by default for upload-only evidence reviews", () => {
     const baseReview = getReviewCaseById("rc-demo-deposit-001")!;
     const uploadOnlyReview = {
       ...baseReview,
@@ -1176,10 +1176,13 @@ describe("ReviewDetailWorkspace tab URL sync", () => {
 
     render(<ReviewDetailWorkspace review={uploadOnlyReview} />);
 
-    expect(screen.getByRole("tab", { name: "근거 자료" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.queryByText("광고 원문 근거")).not.toBeInTheDocument();
-    expect(screen.getByText("규정/내규 근거")).toBeInTheDocument();
-    expect(screen.getByText("연결된 승인 지식문서 없음")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "체크리스트" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(screen.getByText("수정 제안")).toBeInTheDocument();
+    expect(screen.queryByText("규정/내규 근거")).not.toBeInTheDocument();
+    expect(screen.queryByText("연결된 승인 지식문서 없음")).not.toBeInTheDocument();
   });
 
   it("calls router.replace with ?tab=evidence when 근거 자료 tab is clicked", async () => {
