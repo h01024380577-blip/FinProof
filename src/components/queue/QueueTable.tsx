@@ -301,7 +301,7 @@ export function QueueTable({
               ) : null}
               {canDelete ? (
                 <button
-                  className="icon-button icon-button--small icon-button--danger"
+                  className="icon-button icon-button--small icon-button--danger queue-row-delete-button"
                   type="button"
                   aria-label={`심의 이력 삭제: ${review.title}`}
                   title="심의 이력 삭제"
@@ -309,9 +309,9 @@ export function QueueTable({
                   onClick={() => onDeleteReviewHistory?.(review)}
                 >
                   {isDeleting ? (
-                    <Loader2 className="action-spinner" size={16} aria-hidden="true" />
+                    <Loader2 className="action-spinner" size={20} aria-hidden="true" />
                   ) : (
-                    <Trash2 size={16} aria-hidden="true" />
+                    <Trash2 size={20} aria-hidden="true" />
                   )}
                 </button>
               ) : null}

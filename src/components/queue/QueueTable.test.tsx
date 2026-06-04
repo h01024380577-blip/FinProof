@@ -86,7 +86,7 @@ describe("QueueTable", () => {
     expect(queueTableMinimumWidth()).toBeLessThanOrEqual(996);
   });
 
-  it("keeps queue columns compact while reserving enough title width", () => {
+  it("keeps queue columns compact while reserving enough action width", () => {
     const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
     const block = queueGridCssBlock(css);
     const minTrackWidths = [...block.matchAll(/minmax\((\d+)px,/g)].map((match) =>
@@ -95,20 +95,27 @@ describe("QueueTable", () => {
     const gap = Number(block.match(/gap:\s*(\d+)px/)?.[1] ?? 12);
     const padding = Number(block.match(/padding:\s*0\s+(\d+)px/)?.[1] ?? 12);
 
-    expect(gap).toBeLessThanOrEqual(5);
+    expect(gap).toBeLessThanOrEqual(4);
     expect(padding).toBeLessThanOrEqual(8);
-    expect(minTrackWidths[1]).toBeGreaterThanOrEqual(240);
+    expect(minTrackWidths[1]).toBeLessThanOrEqual(210);
+    expect(minTrackWidths[9]).toBeGreaterThanOrEqual(114);
   });
 
-  it("keeps queue text cells on one line with overflow ellipsis", () => {
+  it("allows queue titles to wrap while keeping the other compact cells on one line", () => {
     const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
-    const block =
+    const compactCellBlock =
       css.match(
-        /\.review-table--queue \.review-table__row > :not\(\.queue-row-actions\)\[role="cell"\][\s\S]*?\{(?<body>[\s\S]*?)\n\}/
+        /\.review-table--queue \.review-table__row > :not\(\.queue-row-actions\):not\(strong\)\[role="cell"\][\s\S]*?\{(?<body>[\s\S]*?)\n\}/
+      )?.groups?.body ?? "";
+    const titleBlock =
+      css.match(
+        /\.review-table--queue \.review-table__row > strong\[role="cell"\][\s\S]*?\{(?<body>[\s\S]*?)\n\}/
       )?.groups?.body ?? "";
 
-    expect(block).toContain("white-space: nowrap");
-    expect(block).toContain("text-overflow: ellipsis");
+    expect(compactCellBlock).toContain("white-space: nowrap");
+    expect(compactCellBlock).toContain("text-overflow: ellipsis");
+    expect(titleBlock).toContain("white-space: normal");
+    expect(titleBlock).toContain("overflow-wrap: anywhere");
   });
 
   it("does not expose a direct reviewer editor from the queue row", () => {
@@ -356,6 +363,32 @@ describe("QueueTable", () => {
       expect.objectContaining({ id: "RC-2026-001" })
     );
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("uses a larger delete action in the queue history work column", () => {
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, status: "approved" }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        canDeleteReviewHistory
+        onDeleteReviewHistory={() => undefined}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    const deleteButton = screen.getByRole("button", {
+      name: "심의 이력 삭제: 최고 연 5.0% 적금 홍보물 심의"
+    });
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    const deleteButtonBlock =
+      css.match(/\.queue-row-delete-button[\s\S]*?\{(?<body>[\s\S]*?)\n\}/)?.groups?.body ?? "";
+
+    expect(deleteButton).toHaveClass("queue-row-delete-button");
+    expect(deleteButton.querySelector("svg")).toHaveAttribute("width", "20");
+    expect(deleteButtonBlock).toContain("width: 36px");
+    expect(deleteButtonBlock).toContain("height: 36px");
   });
 
   it("marks rejected history status with a rejected status tone", () => {
