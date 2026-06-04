@@ -207,6 +207,74 @@ function RequesterHistoryPanel({
   );
 }
 
+type DraftLine =
+  | { kind: "title"; text: string }
+  | { kind: "section"; text: string }
+  | { kind: "issue"; num: string; text: string }
+  | { kind: "bullet"; label: string; value: string }
+  | { kind: "meta"; label: string; value: string }
+  | { kind: "plain"; text: string }
+  | { kind: "spacer" };
+
+function parseDraftLine(raw: string): DraftLine {
+  const line = raw.trim();
+  if (!line) return { kind: "spacer" };
+
+  if (/^(주요\s|종합|수정 요청 의견)/.test(line)) return { kind: "section", text: line };
+
+  const issueMatch = /^(\d+)\.\s+(.+)/.exec(line);
+  if (issueMatch) return { kind: "issue", num: issueMatch[1], text: issueMatch[2] };
+
+  if (line.startsWith("- ")) {
+    const rest = line.slice(2);
+    const ci = rest.indexOf(": ");
+    if (ci > 0) return { kind: "bullet", label: rest.slice(0, ci), value: rest.slice(ci + 2) };
+    return { kind: "plain", text: rest };
+  }
+
+  const ci = line.indexOf(": ");
+  if (ci > 0 && ci < 14) return { kind: "meta", label: line.slice(0, ci), value: line.slice(ci + 2) };
+
+  return { kind: "plain", text: line };
+}
+
+function DraftNote({ text }: { text: string }): JSX.Element {
+  const parsed = text.split("\n").map(parseDraftLine);
+
+  return (
+    <div className="draft-note">
+      {parsed.map((line, i) => {
+        if (line.kind === "spacer") return <div key={i} className="draft-note__gap" />;
+        if (line.kind === "section")
+          return (
+            <p key={i} className="draft-note__section">
+              {line.text}
+            </p>
+          );
+        if (line.kind === "issue")
+          return (
+            <p key={i} className="draft-note__issue">
+              <span className="draft-note__issue-num">{line.num}</span>
+              {line.text}
+            </p>
+          );
+        if (line.kind === "bullet" || line.kind === "meta")
+          return (
+            <p key={i} className={`draft-note__kv draft-note__kv--${line.kind}`}>
+              <span className="draft-note__kv-label">{line.label}</span>
+              <span className="draft-note__kv-value">{line.value}</span>
+            </p>
+          );
+        return (
+          <p key={i} className="draft-note__plain">
+            {line.text}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.Element {
   const showDraft = review.status === "rejected" && Boolean(review.currentDraft?.trim());
   const { label, badgeStatus } = requesterTableStatus(review.status);
@@ -235,7 +303,7 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
               <strong>수정 요청</strong>
               <span className="queue-id">버전 {review.currentDraftVersion ?? 0}</span>
             </div>
-            <p>{review.currentDraft}</p>
+            <DraftNote text={review.currentDraft ?? ""} />
           </div>
         </div>
       ) : null}
