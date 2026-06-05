@@ -295,10 +295,10 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
               type="button"
               className="rejection-toggle"
               aria-expanded={isOpen}
-              aria-label={isOpen ? "수정 요청 내용 접기" : "수정 요청 내용 펼치기"}
+              aria-label={isOpen ? "반려사유 접기" : "반려사유 펼치기"}
               onClick={() => setIsOpen((o) => !o)}
             >
-              {isOpen ? "▾" : "▸"}
+              반려사유
             </button>
           ) : null}
         </span>

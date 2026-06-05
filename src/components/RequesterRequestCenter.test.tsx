@@ -245,8 +245,9 @@ describe("RequesterRequestCenter", () => {
     expect(within(rejectedRow).getByText("반려")).toBeInTheDocument();
 
     const toggleButton = within(rejectedRow).getByRole("button", {
-      name: "수정 요청 내용 펼치기"
+      name: "반려사유 펼치기"
     });
+    expect(toggleButton).toHaveTextContent("반려사유");
     await user.click(toggleButton);
 
     expect(screen.getByText("수정 요청")).toBeInTheDocument();
@@ -254,6 +255,7 @@ describe("RequesterRequestCenter", () => {
       screen.getByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
     ).toBeInTheDocument();
     expect(screen.queryByText("버전 3")).not.toBeInTheDocument();
+    expect(toggleButton).toHaveAccessibleName("반려사유 접기");
 
     const approvedRow = screen.getByRole("row", { name: "김서연 예금 앱푸시" });
     expect(within(approvedRow).getByText("승인")).toBeInTheDocument();

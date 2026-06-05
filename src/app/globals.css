@@ -4089,21 +4089,20 @@ a.review-table__row:hover {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 4px;
+  border: 0;
   background: transparent;
-  color: var(--muted);
-  font-size: 0.7rem;
+  color: var(--risk-reject);
+  font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .rejection-toggle:hover {
-  background: var(--surface-muted);
-  color: var(--text);
+  color: var(--risk-reject);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .review-table--history .review-table__row--rejection-note {
