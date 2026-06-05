@@ -4208,6 +4208,14 @@ a.review-table__row:hover {
   color: var(--verified);
 }
 
+.status-badge[data-status="approved"],
+.status-badge[data-status="rejected"] {
+  min-height: auto;
+  padding: 0;
+  border-width: 0;
+  background: transparent;
+}
+
 .status-badge[data-status="in-progress"] {
   border-color: var(--line);
   background: var(--surface-muted);
