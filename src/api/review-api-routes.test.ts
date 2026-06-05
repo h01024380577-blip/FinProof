@@ -584,7 +584,11 @@ describe("review API routes", () => {
 
   it("returns role-aware review list actions", async () => {
     await createPOST(
-      jsonRequest("/api/v1/review-cases", { samplePackageId: "rc-demo-deposit-001" })
+      jsonRoleRequest(
+        "/api/v1/review-cases",
+        { samplePackageId: "rc-demo-deposit-001" },
+        "requester"
+      )
     );
 
     const requesterResponse = await listGET(
