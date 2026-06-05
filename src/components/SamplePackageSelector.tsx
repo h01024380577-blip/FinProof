@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useState, type JSX } from "react";
+import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import JSZip from "jszip";
 import { getRequiredMaterialRows, type RequiredMaterialRow } from "@/domain/intake";
@@ -131,6 +132,7 @@ async function buildFilePreview(files: File[]): Promise<ReviewFile[]> {
 }
 
 export function SamplePackageSelector(): JSX.Element {
+  const router = useRouter();
   const roleContext = useRoleContext();
   const [meta, setMeta] = useState<IntakeMetaState>(initialMeta);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -243,6 +245,7 @@ export function SamplePackageSelector(): JSX.Element {
 
       setUploadResult((await response.json()) as UploadResult);
       setShowSubmissionNotice(true);
+      router.push("/reviews/history");
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "업로드 요청을 처리하지 못했습니다.");
     } finally {

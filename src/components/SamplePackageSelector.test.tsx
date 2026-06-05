@@ -1,6 +1,21 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SamplePackageSelector } from "./SamplePackageSelector";
+
+const navigationMock = vi.hoisted(() => ({
+  push: vi.fn()
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: navigationMock.push,
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn()
+  })
+}));
 
 function depositRequiredFiles(): File[] {
   return [
@@ -15,6 +30,7 @@ function depositRequiredFiles(): File[] {
 describe("SamplePackageSelector", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    navigationMock.push.mockClear();
     vi.useRealTimers();
   });
 
@@ -172,6 +188,7 @@ describe("SamplePackageSelector", () => {
     expect(screen.getByRole("status", { name: "심의 요청 등록 완료" })).toHaveTextContent(
       "심의 요청이 등록되었습니다."
     );
+    await waitFor(() => expect(navigationMock.push).toHaveBeenCalledWith("/reviews/history"));
     expect(screen.queryByRole("link", { name: "심의 대기 목록에서 확인" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "다른 요청 작성" })).not.toBeInTheDocument();
   });
