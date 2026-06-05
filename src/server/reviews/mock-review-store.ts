@@ -4,6 +4,7 @@ import {
   generateIssueBasedOpinionDraft,
   shouldReplaceStaleOpinionDraft
 } from "@/domain/chat";
+import { filterMatchedEvidence } from "@/domain/evidence";
 import { generateReviewReport } from "@/domain/reports";
 import { reviewCases } from "@/domain/reviews";
 import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
@@ -65,6 +66,20 @@ const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므�
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function filterIssueMatchedEvidence(issue: ReviewIssue): ReviewIssue {
+  return {
+    ...issue,
+    evidence: filterMatchedEvidence(issue.evidence)
+  };
+}
+
+function filterReviewMatchedEvidence(review: ReviewCase): ReviewCase {
+  return {
+    ...review,
+    issues: review.issues.map(filterIssueMatchedEvidence)
+  };
 }
 
 function inferContentType(fileName: string): string {
@@ -640,7 +655,9 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     async getReviewCase(scope: ReviewStoreScope, id) {
       const review = cases.get(id);
 
-      return review && canAccessCase(scope, id) ? clone(review) : undefined;
+      return review && canAccessCase(scope, id)
+        ? filterReviewMatchedEvidence(clone(review))
+        : undefined;
     },
 
     async isReviewCaseIdAvailable(_scope: ReviewStoreScope, id) {
@@ -1223,7 +1240,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         ? review.issues.filter((issue) => issue.riskLevel === options.riskLevel)
         : review.issues;
 
-      return clone(issues);
+      return clone(issues).map(filterIssueMatchedEvidence);
     },
 
     async getIssue(scope: ReviewStoreScope, reviewCaseId, issueId) {
@@ -1235,7 +1252,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
 
       const issue = review?.issues.find((candidate) => candidate.id === issueId);
 
-      return issue ? clone(issue) : undefined;
+      return issue ? filterIssueMatchedEvidence(clone(issue)) : undefined;
     },
 
     async getIssueEvidence(scope: ReviewStoreScope, issueId) {
@@ -1247,7 +1264,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         const issue = review.issues.find((candidate) => candidate.id === issueId);
 
         if (issue) {
-          return clone(issue.evidence);
+          return filterMatchedEvidence(clone(issue.evidence));
         }
       }
 

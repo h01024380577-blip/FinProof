@@ -130,13 +130,46 @@ describe("prisma review mappers", () => {
             evidenceQuery: "대출 광고 승인 보장 금지 표현",
             suggestedCopyOriginalLanguage:
               "Apply in 3 minutes. Approval is subject to credit review.",
-            suggestedCopyKoreanMeaning:
-              "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음."
+            suggestedCopyKoreanMeaning: "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음."
           },
           evidence: [{ id: "ev-deposit-product" }]
         }
       ]
     });
+  });
+
+  it("filters stored evidence below the matching threshold when mapping completed reviews", () => {
+    const mapped = toReviewCase({
+      ...row,
+      issues: [
+        {
+          ...row.issues[0],
+          evidence: [
+            ...row.issues[0].evidence,
+            {
+              id: "ev-low-relevance-policy",
+              sourceType: "internal_policy" as const,
+              documentId: "knowledge-low-relevance",
+              chunkId: "chunk-low-relevance-001",
+              version: "1.0.0",
+              effectiveFrom: new Date("2026-05-27T00:00:00.000Z"),
+              title: "금융규제 가이드라인",
+              page: null,
+              section: null,
+              quoteSummary: "관련도가 낮은 저장 근거",
+              relevanceScore: 0.03
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(mapped.issues[0].evidence).toEqual([
+      expect.objectContaining({
+        id: "ev-deposit-product",
+        relevanceScore: 0.87
+      })
+    ]);
   });
 
   it.each([
@@ -145,22 +178,19 @@ describe("prisma review mappers", () => {
     ["empty after filtering", [123]],
     ["empty string", [""]],
     ["whitespace string", ["   "]]
-  ])(
-    "does not map multilingual context when riskSignals is %s",
-    (_caseName, riskSignals) => {
-      const malformedRow = structuredClone(row);
-      const localizedRiskFinding = malformedRow.issues[0].agentFinding.outputSnapshot
-        .localizedRiskFinding as Record<string, unknown>;
+  ])("does not map multilingual context when riskSignals is %s", (_caseName, riskSignals) => {
+    const malformedRow = structuredClone(row);
+    const localizedRiskFinding = malformedRow.issues[0].agentFinding.outputSnapshot
+      .localizedRiskFinding as Record<string, unknown>;
 
-      if (riskSignals === undefined) {
-        delete localizedRiskFinding.riskSignals;
-      } else {
-        localizedRiskFinding.riskSignals = riskSignals;
-      }
-
-      expect(toReviewCase(malformedRow).issues[0].multilingualContext).toBeUndefined();
+    if (riskSignals === undefined) {
+      delete localizedRiskFinding.riskSignals;
+    } else {
+      localizedRiskFinding.riskSignals = riskSignals;
     }
-  );
+
+    expect(toReviewCase(malformedRow).issues[0].multilingualContext).toBeUndefined();
+  });
 
   it("maps a review summary row", () => {
     expect(toReviewSummary(row)).toEqual({

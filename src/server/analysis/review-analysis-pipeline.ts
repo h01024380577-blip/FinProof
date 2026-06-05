@@ -232,9 +232,7 @@ function errorMessage(error: unknown) {
 function minPdfTextChars() {
   const parsed = Number(process.env.FINPROOF_PDF_TEXT_MIN_CHARS?.trim());
 
-  return Number.isFinite(parsed) && parsed >= 0
-    ? Math.floor(parsed)
-    : DEFAULT_MIN_PDF_TEXT_CHARS;
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : DEFAULT_MIN_PDF_TEXT_CHARS;
 }
 
 function hasEnoughPdfText(text: string) {
@@ -806,8 +804,7 @@ function createLexicalRagRetriever(
 
       // Use candidates prefetched in parallel with OCR if available, otherwise fetch now
       const knowledgeCaseCandidates =
-        cachedKnowledgeCaseCandidates ??
-        (await fetchKnowledgeCaseCandidates(review, scope, query));
+        cachedKnowledgeCaseCandidates ?? (await fetchKnowledgeCaseCandidates(review, scope, query));
       cachedKnowledgeCaseCandidates = undefined;
 
       return [...productDocumentCandidates, ...knowledgeCaseCandidates];
@@ -1002,12 +999,13 @@ export function createReviewAnalysisPipeline({
         extractedDocuments: analysisDocuments,
         scope
       });
-      const evidenceCandidates = (
-        await reranker.rerank({
-          query,
-          candidates: retrievedCandidates
-        })
-      ).slice(0, config.rerank.topK);
+      const rerankedCandidates = await reranker.rerank({
+        query,
+        candidates: retrievedCandidates
+      });
+      const evidenceCandidates = rerankedCandidates
+        .filter((candidate) => candidate.relevanceScore >= config.rag.minScore)
+        .slice(0, config.rerank.topK);
       const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =
         multilingualSegments.length > 0
@@ -1049,9 +1047,9 @@ export function createReviewAnalysisPipeline({
           ? { multilingualAgentErrors: multilingualResult.errors }
           : {})
       };
-      const findings = buildAnalysisIssues(review, artifacts).map((issue) =>
-        issueToFinding(issue, agentFindings, review.id)
-      );
+      const findings = buildAnalysisIssues(review, artifacts, {
+        minEvidenceScore: config.rag.minScore
+      }).map((issue) => issueToFinding(issue, agentFindings, review.id));
 
       return {
         ...artifacts,

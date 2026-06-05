@@ -163,8 +163,12 @@ describe("mock review store", () => {
     const marketingList = await store.listReviewSummaries(marketingScope);
 
     expect(marketingList.items.map((review) => review.id)).toEqual([marketingReview.reviewCase.id]);
-    await expect(store.getReviewCase(marketingScope, marketingReview.reviewCase.id)).resolves.toBeDefined();
-    await expect(store.getReviewCase(marketingScope, branchReview.reviewCase.id)).resolves.toBeUndefined();
+    await expect(
+      store.getReviewCase(marketingScope, marketingReview.reviewCase.id)
+    ).resolves.toBeDefined();
+    await expect(
+      store.getReviewCase(marketingScope, branchReview.reviewCase.id)
+    ).resolves.toBeUndefined();
   });
 
   it("runs deterministic analysis and persists reviewer issue decisions", async () => {
@@ -338,6 +342,80 @@ describe("mock review store", () => {
         localizedFindingId: "risk-en-approval"
       })
     });
+  });
+
+  it("does not expose stored evidence below the matching threshold for completed reviews", async () => {
+    const store = createMockReviewStore();
+    await store.createReviewCaseFromUploadedFiles(scope, {
+      reviewCaseId: "rc-low-evidence-test",
+      title: "저관련도 근거 저장 케이스",
+      affiliate: "광주은행",
+      productType: "loan",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [
+        {
+          id: "file-loan-copy",
+          name: "loan-copy.txt",
+          type: "text/plain",
+          size: 1024
+        }
+      ]
+    });
+    await store.enqueueAnalysis(scope, "rc-low-evidence-test");
+    const claimedJob = await store.claimNextAnalysisJob(scope.tenantId, "worker-test");
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-05T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-loan-copy",
+          fileName: "loan-copy.txt",
+          text: "신청 즉시 100% 당일 승인",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [],
+      findings: [
+        {
+          agentType: "main",
+          issueType: "guarantee",
+          riskLevel: "reject_recommended",
+          title: "확정적 승인 보장 표현",
+          targetText: "신청 즉시 100% 당일 승인",
+          targetBbox: [0, 0, 0, 0],
+          description: "승인이 보장되는 것처럼 오인시킬 수 있습니다.",
+          suggestedAction: "reject",
+          suggestedCopy: "심사 결과에 따라 승인 여부가 달라질 수 있습니다.",
+          confidence: 0.86,
+          evidence: [
+            {
+              id: "ev-low-relevance-policy",
+              sourceType: "internal_policy",
+              documentId: "knowledge-low-relevance",
+              chunkId: "chunk-low-relevance-001",
+              title: "금융규제 가이드라인",
+              quoteSummary: "관련도가 낮은 저장 근거",
+              relevanceScore: 0.03
+            }
+          ]
+        }
+      ]
+    };
+
+    await store.persistAnalysisOutputs(scope, {
+      reviewCaseId: "rc-low-evidence-test",
+      jobId: claimedJob!.id,
+      artifacts
+    });
+
+    const review = await store.getReviewCase(scope, "rc-low-evidence-test");
+    const issues = await store.listIssues(scope, "rc-low-evidence-test");
+    const evidence = await store.getIssueEvidence(scope, review!.issues[0].id);
+
+    expect(review?.issues[0].evidence).toEqual([]);
+    expect(issues?.[0].evidence).toEqual([]);
+    expect(evidence).toEqual([]);
   });
 
   it("replaces stale pre-analysis opinion drafts with issue-based drafts after analysis output persistence", async () => {

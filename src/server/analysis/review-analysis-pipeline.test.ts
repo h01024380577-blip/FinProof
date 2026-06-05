@@ -411,7 +411,11 @@ describe("review analysis pipeline", () => {
 
     const provider = createGeminiOcrProvider(
       { GEMINI_API_KEY: "test-key", FINPROOF_OCR_TIMEOUT_MS: "5000" },
-      { async getReviewFileBody() { return pdfBytes; } },
+      {
+        async getReviewFileBody() {
+          return pdfBytes;
+        }
+      },
       fetchImpl
     );
 
@@ -450,7 +454,11 @@ describe("review analysis pipeline", () => {
     }));
     const provider = createGeminiOcrProvider(
       { GEMINI_API_KEY: "test-key", FINPROOF_OCR_MODEL: "gemini-2.5-pro" },
-      { async getReviewFileBody() { return pdfBytes; } },
+      {
+        async getReviewFileBody() {
+          return pdfBytes;
+        }
+      },
       fetchImpl
     );
 
@@ -801,6 +809,62 @@ describe("review analysis pipeline", () => {
       sourceType: "internal_policy",
       chunkId: "chunk-knowledge-001-001"
     });
+  });
+
+  it("drops reranked evidence candidates below the configured matching threshold", async () => {
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => [
+      {
+        id: "knowledge-evidence-low-rerank",
+        sourceType: "internal_policy" as const,
+        documentId: "knowledge-low-rerank",
+        chunkId: "chunk-knowledge-low-rerank-011",
+        title: "금융규제 가이드라인",
+        quoteSummary: "추천·보증 등의 내용은 실제 경험한 사실에 부합하여야 한다.",
+        relevanceScore: 0.88
+      }
+    ]);
+    const rerank = vi.fn(async ({ candidates }) =>
+      candidates.map((candidate) =>
+        candidate.id === "knowledge-evidence-low-rerank"
+          ? { ...candidate, relevanceScore: 0.03 }
+          : candidate
+      )
+    );
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence },
+      reranker: {
+        provider: "fixture-reranker",
+        rerank
+      },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "누구나 최고 연 5.0% 우대 조건 충족 시 적용됩니다.",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review, scope });
+
+    expect(artifacts.evidenceCandidates).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "knowledge-evidence-low-rerank",
+          relevanceScore: 0.03
+        })
+      ])
+    );
   });
 
   it("retrieves case history evidence from the review store when a scoped analysis runs", async () => {

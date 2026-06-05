@@ -146,6 +146,59 @@ describe("issue generation", () => {
     );
   });
 
+  it("does not attach model-selected evidence below the matching threshold", () => {
+    const review = getReviewCaseById("rc-demo-loan-001")!;
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-05T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "loan-copy.txt",
+          text: "신청 즉시 100% 당일 승인",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "knowledge-low-score-guideline",
+          sourceType: "internal_policy",
+          documentId: "knowledge-low-score-guideline",
+          chunkId: "chunk-low-score-guideline-011",
+          title: "금융규제 가이드라인",
+          quoteSummary: "추천·보증 등의 내용은 실제 경험한 사실에 부합하여야 한다.",
+          relevanceScore: 0.03
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-main-001",
+          agent: "main",
+          title: "확정적 승인 보장 표현",
+          issueType: "guarantee",
+          riskLevel: "reject_recommended",
+          targetText: "신청 즉시 100% 당일 승인",
+          description: "승인이 보장되는 것처럼 오인시킬 수 있습니다.",
+          suggestedAction: "reject",
+          suggestedCopy: "심사 결과에 따라 승인 여부가 달라질 수 있습니다.",
+          evidenceCandidateIds: ["knowledge-low-score-guideline"],
+          confidence: 0.86
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues[0].evidence).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          documentId: "knowledge-low-score-guideline",
+          relevanceScore: 0.03
+        })
+      ])
+    );
+  });
+
   it("uses registered knowledge evidence instead of case history for model subagent findings", () => {
     const review = getReviewCaseById("rc-demo-deposit-001")!;
     const artifacts: AnalysisArtifacts = {

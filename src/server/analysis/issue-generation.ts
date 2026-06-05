@@ -1,4 +1,5 @@
 import type { Evidence, ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
+import { MIN_MATCHED_EVIDENCE_SCORE } from "@/domain/evidence";
 import type { AnalysisArtifacts, RagEvidenceCandidate } from "./review-analysis-pipeline";
 
 const riskRank: Record<RiskLevel, number> = {
@@ -6,6 +7,11 @@ const riskRank: Record<RiskLevel, number> = {
   caution: 1,
   high: 2,
   reject_recommended: 3
+};
+const defaultMinEvidenceScore = MIN_MATCHED_EVIDENCE_SCORE;
+
+type BuildAnalysisIssuesOptions = {
+  minEvidenceScore?: number;
 };
 
 function normalizeText(value: string) {
@@ -19,10 +25,6 @@ function combinedArtifactText(artifacts: AnalysisArtifacts) {
       ...artifacts.evidenceCandidates.map((candidate) => candidate.quoteSummary)
     ].join(" ")
   );
-}
-
-function firstEvidenceCandidate(artifacts: AnalysisArtifacts): RagEvidenceCandidate | undefined {
-  return artifacts.evidenceCandidates[0];
 }
 
 function evidenceCandidateById(
@@ -53,10 +55,15 @@ function isNotCaseHistoryEvidence(candidate: RagEvidenceCandidate) {
   return candidate.sourceType !== "case_history";
 }
 
+function isReliableEvidenceCandidate(candidate: RagEvidenceCandidate, minEvidenceScore: number) {
+  return candidate.relevanceScore >= minEvidenceScore;
+}
+
 function isVisualCreativeUpload(file: ReviewCase["files"][number]) {
   const contentType = file.contentType?.split(";")[0]?.trim().toLowerCase() ?? "";
   const fileName = file.name.toLowerCase();
-  const hasVisualContentType = contentType.startsWith("image/") || contentType === "application/pdf";
+  const hasVisualContentType =
+    contentType.startsWith("image/") || contentType === "application/pdf";
   const hasVisualExtension = /\.(jpe?g|png|webp|gif|heic|heif|pdf)$/i.test(fileName);
 
   return file.fileType === "promotional_creative" && (hasVisualContentType || hasVisualExtension);
@@ -68,11 +75,18 @@ function isImageOnlyReview(review: ReviewCase) {
 
 function preferredEvidenceCandidate(
   artifacts: AnalysisArtifacts,
-  candidates: RagEvidenceCandidate[]
+  candidates: RagEvidenceCandidate[],
+  minEvidenceScore: number
 ): RagEvidenceCandidate | undefined {
+  const reliableCandidates = candidates.filter((candidate) =>
+    isReliableEvidenceCandidate(candidate, minEvidenceScore)
+  );
+  const reliableArtifactCandidates = artifacts.evidenceCandidates.filter((candidate) =>
+    isReliableEvidenceCandidate(candidate, minEvidenceScore)
+  );
   const registeredCandidates = [
-    ...candidates.filter(isRegisteredKnowledgeEvidence),
-    ...artifacts.evidenceCandidates.filter(isRegisteredKnowledgeEvidence)
+    ...reliableCandidates.filter(isRegisteredKnowledgeEvidence),
+    ...reliableArtifactCandidates.filter(isRegisteredKnowledgeEvidence)
   ];
   const articleCandidates = registeredCandidates.filter(
     (candidate) =>
@@ -83,17 +97,16 @@ function preferredEvidenceCandidate(
     (candidate) => !isTableOfContentsEvidence(candidate)
   );
   const nonCaseCandidates = [
-    ...candidates.filter(isNotCaseHistoryEvidence),
-    ...artifacts.evidenceCandidates.filter(isNotCaseHistoryEvidence)
+    ...reliableCandidates.filter(isNotCaseHistoryEvidence),
+    ...reliableArtifactCandidates.filter(isNotCaseHistoryEvidence)
   ].filter((candidate) => !isTableOfContentsEvidence(candidate));
 
   return (
     articleCandidates[0] ??
     usableRegisteredCandidates[0] ??
     nonCaseCandidates[0] ??
-    registeredCandidates[0] ??
-    candidates[0] ??
-    firstEvidenceCandidate(artifacts)
+    reliableCandidates[0] ??
+    reliableArtifactCandidates[0]
   );
 }
 
@@ -132,9 +145,10 @@ function fallbackEvidence(review: ReviewCase, artifacts: AnalysisArtifacts): Evi
 function issueEvidence(
   review: ReviewCase,
   artifacts: AnalysisArtifacts,
-  issueId: string
+  issueId: string,
+  minEvidenceScore: number
 ): Evidence[] {
-  const candidate = preferredEvidenceCandidate(artifacts, []);
+  const candidate = preferredEvidenceCandidate(artifacts, [], minEvidenceScore);
   const evidence = candidate
     ? candidateToEvidence(candidate, issueId, 0)
     : fallbackEvidence(review, artifacts);
@@ -182,7 +196,8 @@ function baseIssue({
   title,
   targetText,
   description,
-  suggestedCopy
+  suggestedCopy,
+  minEvidenceScore
 }: {
   review: ReviewCase;
   artifacts: AnalysisArtifacts;
@@ -193,6 +208,7 @@ function baseIssue({
   targetText: string;
   description: string;
   suggestedCopy: string;
+  minEvidenceScore: number;
 }): ReviewIssue {
   const issueId = `issue-${review.id}-${idSuffix}`;
 
@@ -209,17 +225,28 @@ function baseIssue({
     status: "open",
     description,
     suggestedCopy,
-    evidence: issueEvidence(review, artifacts, issueId)
+    evidence: issueEvidence(review, artifacts, issueId, minEvidenceScore)
   };
 }
 
-function issuesFromAgentFindings(review: ReviewCase, artifacts: AnalysisArtifacts): ReviewIssue[] {
+function issuesFromAgentFindings(
+  review: ReviewCase,
+  artifacts: AnalysisArtifacts,
+  minEvidenceScore: number
+): ReviewIssue[] {
   return (artifacts.agentFindings ?? []).map((finding) => {
     const issueId = `issue-${review.id}-${finding.id}`;
     const matchedEvidence = finding.evidenceCandidateIds
       .map((candidateId) => evidenceCandidateById(artifacts, candidateId))
-      .filter((candidate): candidate is RagEvidenceCandidate => Boolean(candidate));
-    const preferredEvidence = preferredEvidenceCandidate(artifacts, matchedEvidence);
+      .filter(
+        (candidate): candidate is RagEvidenceCandidate =>
+          Boolean(candidate) && isReliableEvidenceCandidate(candidate, minEvidenceScore)
+      );
+    const preferredEvidence = preferredEvidenceCandidate(
+      artifacts,
+      matchedEvidence,
+      minEvidenceScore
+    );
     const issueEvidence = preferredEvidence
       ? [candidateToEvidence(preferredEvidence, issueId, 0)]
       : [];
@@ -262,10 +289,12 @@ export function highestRiskLevelForIssues(
 
 export function buildAnalysisIssues(
   review: ReviewCase,
-  artifacts: AnalysisArtifacts
+  artifacts: AnalysisArtifacts,
+  options: BuildAnalysisIssuesOptions = {}
 ): ReviewIssue[] {
+  const minEvidenceScore = options.minEvidenceScore ?? defaultMinEvidenceScore;
   const text = combinedArtifactText(artifacts);
-  const issues: ReviewIssue[] = issuesFromAgentFindings(review, artifacts);
+  const issues: ReviewIssue[] = issuesFromAgentFindings(review, artifacts, minEvidenceScore);
   const rateClaimPattern = /(최고|최대).{0,20}([0-9]+(?:\.[0-9]+)?\s*%|연\s*[0-9])/;
   const conditionPattern = /(조건|우대|기본|세전|한도|충족|적용|대상|기간|고시)/;
   const absoluteClaimPattern = /(누구나|무조건|전원|100%|반드시|확정|보장)/;
@@ -281,7 +310,8 @@ export function buildAnalysisIssues(
         title: "본문 추출 결과 확인 필요",
         targetText: "본문 추출 실패",
         description: "업로드 자료에서 심의 가능한 본문이 추출되지 않았습니다.",
-        suggestedCopy: "OCR 가능한 원본 파일 또는 텍스트 원고를 추가 제출해 주세요."
+        suggestedCopy: "OCR 가능한 원본 파일 또는 텍스트 원고를 추가 제출해 주세요.",
+        minEvidenceScore
       })
     );
   }
@@ -299,7 +329,8 @@ export function buildAnalysisIssues(
         description:
           "최고/최대 금리 표현이 감지되었지만 우대 조건, 적용 한도, 세전 여부 등 소비자 오인 방지 정보가 함께 확인되지 않았습니다.",
         suggestedCopy:
-          "최고 금리 적용 조건, 기본 금리, 우대 항목, 적용 한도 및 세전/세후 기준을 본문 인접 영역에 명시해 주세요."
+          "최고 금리 적용 조건, 기본 금리, 우대 항목, 적용 한도 및 세전/세후 기준을 본문 인접 영역에 명시해 주세요.",
+        minEvidenceScore
       })
     );
   }
@@ -317,7 +348,8 @@ export function buildAnalysisIssues(
         description:
           "누구나, 무조건, 보장 등 절대적 표현은 실제 제한 조건이 있을 경우 소비자 오인 가능성이 큽니다.",
         suggestedCopy:
-          "가입 대상, 심사 조건, 우대 조건 등 제한 사항이 있는 경우 절대 표현을 완화하고 조건을 함께 표시해 주세요."
+          "가입 대상, 심사 조건, 우대 조건 등 제한 사항이 있는 경우 절대 표현을 완화하고 조건을 함께 표시해 주세요.",
+        minEvidenceScore
       })
     );
   }
@@ -333,7 +365,9 @@ export function buildAnalysisIssues(
         title: "필수 심의 자료 누락",
         targetText: review.missingMaterials.join(", "),
         description: `심의 필수 자료가 누락되었습니다: ${review.missingMaterials.join(", ")}`,
-        suggestedCopy: "누락 자료를 보완 제출하거나 제한된 자료 기준의 조건부 검토로 진행해 주세요."
+        suggestedCopy:
+          "누락 자료를 보완 제출하거나 제한된 자료 기준의 조건부 검토로 진행해 주세요.",
+        minEvidenceScore
       })
     );
   }

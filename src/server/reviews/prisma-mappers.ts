@@ -13,6 +13,7 @@ import type {
   ReviewIssue,
   ReviewSummary
 } from "@/domain/types";
+import { filterMatchedEvidence } from "@/domain/evidence";
 
 type PrismaFileRow = {
   id: string;
@@ -291,7 +292,7 @@ function toIssue(row: PrismaIssueRow): ReviewIssue {
     description: row.description,
     suggestedCopy: row.suggestedCopy,
     multilingualContext: multilingualContextFromSnapshot(row.agentFinding?.outputSnapshot),
-    evidence: row.evidence.map(toEvidence)
+    evidence: filterMatchedEvidence(row.evidence.map(toEvidence))
   };
 
   return issue;

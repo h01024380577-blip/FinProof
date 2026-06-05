@@ -4,6 +4,7 @@ import {
   generateIssueBasedOpinionDraft,
   shouldReplaceStaleOpinionDraft
 } from "@/domain/chat";
+import { filterMatchedEvidence } from "@/domain/evidence";
 import { getRequiredMaterialRows } from "@/domain/intake";
 import { generateReviewReport } from "@/domain/reports";
 import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
@@ -2706,21 +2707,25 @@ export function createPrismaReviewStore(): ReviewStore {
         include: { evidence: { orderBy: { id: "asc" } } }
       });
 
-      return issue?.evidence.map((evidence) => ({
-        id: evidence.id,
-        sourceType: evidence.sourceType,
-        documentId: evidence.documentId ?? undefined,
-        chunkId: evidence.chunkId ?? undefined,
-        version: evidence.version ?? undefined,
-        effectiveFrom: evidence.effectiveFrom
-          ? evidence.effectiveFrom.toISOString().slice(0, 10)
-          : undefined,
-        title: evidence.title,
-        page: evidence.page ?? undefined,
-        section: evidence.section ?? undefined,
-        quoteSummary: evidence.quoteSummary,
-        relevanceScore: evidence.relevanceScore
-      }));
+      return issue
+        ? filterMatchedEvidence(
+            issue.evidence.map((evidence) => ({
+              id: evidence.id,
+              sourceType: evidence.sourceType,
+              documentId: evidence.documentId ?? undefined,
+              chunkId: evidence.chunkId ?? undefined,
+              version: evidence.version ?? undefined,
+              effectiveFrom: evidence.effectiveFrom
+                ? evidence.effectiveFrom.toISOString().slice(0, 10)
+                : undefined,
+              title: evidence.title,
+              page: evidence.page ?? undefined,
+              section: evidence.section ?? undefined,
+              quoteSummary: evidence.quoteSummary,
+              relevanceScore: evidence.relevanceScore
+            }))
+          )
+        : undefined;
     },
 
     async saveIssueDecision(scope, input: SaveIssueDecisionInput) {
