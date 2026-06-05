@@ -232,6 +232,10 @@ export function QueueTable({
         const canOpen = rowActions.includes("open_workbench");
         const canViewAudit = rowActions.includes("view_audit");
         const openable = canOpen || canViewAudit;
+        const analysisFailed = waiting && analysisState?.status === "failed";
+        const analysisFailureText = analysisFailed
+          ? `분석 실패${analysisState.errorMessage ? `: ${analysisState.errorMessage}` : ""}`
+          : "";
         const canDelete =
           canDeleteReviewHistory &&
           isFinalizedHistoryStatus(review.status) &&
@@ -274,7 +278,7 @@ export function QueueTable({
             <span
               className={`queue-row-actions queue-row-actions--left${
                 canDelete ? " queue-row-actions--delete" : ""
-              }`}
+              }${analysisFailed ? " queue-row-actions--failed" : ""}`}
               role="cell"
               onClick={(event) => event.stopPropagation()}
             >
@@ -311,9 +315,13 @@ export function QueueTable({
                   )}
                 </button>
               ) : null}
-              {waiting && analysisState?.status === "failed" ? (
-                <span className="queue-row-note">
-                  분석 실패{analysisState.errorMessage ? `: ${analysisState.errorMessage}` : ""}
+              {analysisFailed ? (
+                <span
+                  className="queue-row-note queue-row-note--analysis-error"
+                  title={analysisFailureText}
+                  aria-label={analysisFailureText}
+                >
+                  {analysisFailureText}
                 </span>
               ) : null}
               {!waiting && review.status === "analysis_complete" ? (

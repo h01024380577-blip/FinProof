@@ -2036,11 +2036,18 @@ a.review-table__row:hover {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
+  min-width: 0;
 }
 
 .queue-row-actions--delete {
   justify-content: flex-start;
   padding-left: 0;
+}
+
+.queue-row-actions--failed {
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .queue-row-actions .button {
@@ -2050,6 +2057,19 @@ a.review-table__row:hover {
 .queue-row-action-button {
   min-width: 72px;
   justify-content: center;
+  white-space: nowrap;
+}
+
+.queue-row-note--analysis-error {
+  display: block;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-color: #e9aaa1;
+  background: var(--risk-reject-bg);
+  color: var(--risk-reject);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -4083,6 +4103,24 @@ a.review-table__row:hover {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.request-history-status {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.request-history-status[data-status="approved"] {
+  color: #00856a;
+}
+
+.request-history-status[data-status="rejected"] {
+  color: #b13a2d;
 }
 
 .history-row__action-cell {

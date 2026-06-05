@@ -3,6 +3,21 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { RequesterRequestCenter, RequesterRequestHistory } from "./RequesterRequestCenter";
 
+const navigationMock = vi.hoisted(() => ({
+  push: vi.fn()
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: navigationMock.push,
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    prefetch: vi.fn()
+  })
+}));
+
 type MockRoleId = "requester" | "reviewer" | "compliance_admin";
 type MockRoleValue = {
   activeRole: MockRoleId;
@@ -285,7 +300,10 @@ describe("RequesterRequestCenter", () => {
     ).not.toBeInTheDocument();
 
     const waitingRow = screen.getByRole("row", { name: "김서연 카드 상세페이지" });
-    expect(within(waitingRow).getByText("검토중")).toBeInTheDocument();
+    const waitingStatus = within(waitingRow).getByText("검토중");
+    expect(waitingStatus).toBeInTheDocument();
+    expect(waitingStatus).toHaveClass("request-history-status");
+    expect(waitingStatus).not.toHaveClass("status-badge");
     expect(
       screen.queryByText("검토 중 초안도 최종 반려 전에는 숨겨야 합니다.")
     ).not.toBeInTheDocument();

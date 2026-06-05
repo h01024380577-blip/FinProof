@@ -36,6 +36,13 @@ function queueGridCssBlock(css: string): string {
   );
 }
 
+function cssBlockFor(css: string, selector: string): string {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return (
+    css.match(new RegExp(`${escapedSelector} \\{(?<body>[\\s\\S]*?)\\n\\}`))?.groups?.body ?? ""
+  );
+}
+
 describe("QueueTable", () => {
   it("renders header and rows", () => {
     render(
@@ -300,7 +307,10 @@ describe("QueueTable", () => {
     ).toBeDisabled();
   });
 
-  it("shows failed analysis rows as retryable with error detail", () => {
+  it("shows failed analysis rows as retryable with a constrained error detail", () => {
+    const errorMessage =
+      "Unterminated fractional number in JSON at position 1234 (line 43 column 2)";
+
     render(
       <QueueTable
         rows={[baseRow]}
@@ -309,7 +319,7 @@ describe("QueueTable", () => {
         analysisStates={{
           [baseRow.id]: {
             status: "failed",
-            errorMessage: "Cohere rerank failed: 400 Bad Request"
+            errorMessage
           }
         }}
         onStartAnalysis={() => undefined}
@@ -317,10 +327,29 @@ describe("QueueTable", () => {
       />
     );
 
+    const row = screen.getByRole("row", { name: /최고 연 5.0%/ });
+    const actionCell = within(row).getAllByRole("cell")[9];
+    const errorNote = within(actionCell).getByText(`분석 실패: ${errorMessage}`);
+
     expect(screen.getByRole("button", { name: "AI 분석 재시도" })).toBeInTheDocument();
-    expect(
-      screen.getByText("분석 실패: Cohere rerank failed: 400 Bad Request")
-    ).toBeInTheDocument();
+    expect(actionCell).toHaveClass("queue-row-actions--failed");
+    expect(errorNote).toHaveClass("queue-row-note--analysis-error");
+    expect(errorNote).toHaveAttribute("title", `분석 실패: ${errorMessage}`);
+    expect(errorNote).toHaveAccessibleName(`분석 실패: ${errorMessage}`);
+  });
+
+  it("keeps failed analysis error text from expanding the queue action column", () => {
+    const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+    const failedActionBlock = cssBlockFor(css, ".queue-row-actions--failed");
+    const failedNoteBlock = cssBlockFor(css, ".queue-row-note--analysis-error");
+
+    expect(failedActionBlock).toContain("flex-direction: column");
+    expect(failedActionBlock).toContain("align-items: flex-start");
+    expect(failedActionBlock).toContain("min-width: 0");
+    expect(failedNoteBlock).toContain("max-width: 100%");
+    expect(failedNoteBlock).toContain("overflow: hidden");
+    expect(failedNoteBlock).toContain("text-overflow: ellipsis");
+    expect(failedNoteBlock).toContain("white-space: nowrap");
   });
 
   it("shows the analysis action in the work column before analysis and a completed note after analysis", () => {

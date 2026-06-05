@@ -32,11 +32,11 @@ type RequestHistoryItem = ReviewSummary &
 
 function requesterTableStatus(status: ReviewCase["status"]): {
   label: "검토중" | "승인" | "반려";
-  badgeStatus: "in-progress" | "approved" | "rejected";
+  statusTone: "in-progress" | "approved" | "rejected";
 } {
-  if (status === "approved") return { label: "승인", badgeStatus: "approved" };
-  if (status === "rejected") return { label: "반려", badgeStatus: "rejected" };
-  return { label: "검토중", badgeStatus: "in-progress" };
+  if (status === "approved") return { label: "승인", statusTone: "approved" };
+  if (status === "rejected") return { label: "반려", statusTone: "rejected" };
+  return { label: "검토중", statusTone: "in-progress" };
 }
 
 function useRequesterAccess(): {
@@ -282,7 +282,7 @@ function DraftNote({ text }: { text: string }): JSX.Element {
 
 function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.Element {
   const showDraft = review.status === "rejected" && Boolean(review.currentDraft?.trim());
-  const { label, badgeStatus } = requesterTableStatus(review.status);
+  const { label, statusTone } = requesterTableStatus(review.status);
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -296,7 +296,7 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
         <span role="cell">{productLabels[review.productType]}</span>
         <span role="cell">{review.plannedPublishDate}</span>
         <span role="cell" className="history-row__status-cell">
-          <span className="status-badge" data-status={badgeStatus}>
+          <span className="request-history-status" data-status={statusTone}>
             {label}
           </span>
         </span>
