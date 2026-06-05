@@ -109,4 +109,17 @@ describe("EC2 deployment artifacts", () => {
     expect(deployScript).toContain('sudo systemctl restart "$SERVICE_NAME"');
     expect(deployScript).toContain('sudo systemctl restart "$WORKER_SERVICE_NAME"');
   });
+
+  it("loads EC2 env files without shell-evaluating database URLs", () => {
+    const deployScript = buildEc2DeploymentArtifacts().find(
+      (artifact) => artifact.path === "ops/ec2/deploy.sh"
+    )?.content;
+
+    expect(deployScript).toBeDefined();
+    expect(deployScript).toContain('load_env_file "$RUNTIME_ENV"');
+    expect(deployScript).toContain('load_env_file "$RELEASE_ENV"');
+    expect(deployScript).toContain('export "$assignment"');
+    expect(deployScript).not.toContain('. "$RUNTIME_ENV"');
+    expect(deployScript).not.toContain('. "$RELEASE_ENV"');
+  });
 });
