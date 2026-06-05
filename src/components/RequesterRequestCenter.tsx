@@ -194,9 +194,10 @@ function RequesterHistoryPanel({
             <span role="columnheader">제목</span>
             <span role="columnheader">제휴사</span>
             <span role="columnheader">상품유형</span>
-            <span role="columnheader">예정 발행일</span>
+            <span role="columnheader">예정 게시일</span>
+            <span role="columnheader">상태</span>
             <span role="columnheader">담당자</span>
-            <span role="columnheader">심의 상태</span>
+            <span role="columnheader">작업</span>
           </div>
           {requests.map((review) => (
             <RequesterHistoryRow key={review.id} review={review} />
@@ -232,15 +233,20 @@ function parseDraftLine(raw: string): DraftLine {
   }
 
   const ci = line.indexOf(": ");
-  if (ci > 0 && ci < 14) return { kind: "meta", label: line.slice(0, ci), value: line.slice(ci + 2) };
+  if (ci > 0 && ci < 14)
+    return { kind: "meta", label: line.slice(0, ci), value: line.slice(ci + 2) };
 
   return { kind: "plain", text: line };
 }
 
-
 function renderDraftLine(line: DraftLine, key: number): JSX.Element | null {
   if (line.kind === "spacer") return <div key={key} className="draft-note__gap" />;
-  if (line.kind === "section") return <p key={key} className="draft-note__section">{line.text}</p>;
+  if (line.kind === "section")
+    return (
+      <p key={key} className="draft-note__section">
+        {line.text}
+      </p>
+    );
   if (line.kind === "issue")
     return (
       <p key={key} className="draft-note__issue-heading">
@@ -255,7 +261,11 @@ function renderDraftLine(line: DraftLine, key: number): JSX.Element | null {
         <span className="draft-note__kv-value">{line.value}</span>
       </p>
     );
-  return <p key={key} className="draft-note__plain">{line.text}</p>;
+  return (
+    <p key={key} className="draft-note__plain">
+      {line.text}
+    </p>
+  );
 }
 
 function DraftNote({ text }: { text: string }): JSX.Element {
@@ -285,11 +295,13 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
         <span role="cell">{review.affiliate}</span>
         <span role="cell">{productLabels[review.productType]}</span>
         <span role="cell">{review.plannedPublishDate}</span>
-        <span role="cell">{review.reviewer || "미배정"}</span>
         <span role="cell" className="history-row__status-cell">
           <span className="status-badge" data-status={badgeStatus}>
             {label}
           </span>
+        </span>
+        <span role="cell">{review.reviewer || "미배정"}</span>
+        <span role="cell" className="history-row__action-cell">
           {showDraft ? (
             <button
               type="button"
@@ -300,7 +312,11 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
             >
               반려사유
             </button>
-          ) : null}
+          ) : (
+            <span className="history-row__empty-action" aria-label="작업 없음">
+              -
+            </span>
+          )}
         </span>
       </div>
       {showDraft && isOpen ? (

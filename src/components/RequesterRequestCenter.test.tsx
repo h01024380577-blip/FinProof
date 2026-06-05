@@ -241,7 +241,28 @@ describe("RequesterRequestCenter", () => {
     );
     expect(apiHeaders).toHaveBeenCalledTimes(2);
 
+    const historyGrid = screen.getByRole("grid", { name: "요청 기록 목록" });
+    expect(
+      within(historyGrid)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent)
+    ).toEqual(["요청번호", "제목", "제휴사", "상품유형", "예정 게시일", "상태", "담당자", "작업"]);
+
     const rejectedRow = screen.getByRole("row", { name: "김서연 대출 배너" });
+    expect(
+      within(rejectedRow)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent)
+    ).toEqual([
+      "rc-own-rejected-001",
+      "김서연 대출 배너",
+      "하나은행",
+      "대출",
+      "2026-06-12",
+      "반려",
+      "준법심의자 박민준",
+      "반려사유"
+    ]);
     expect(within(rejectedRow).getByText("반려")).toBeInTheDocument();
 
     const toggleButton = within(rejectedRow).getByRole("button", {
@@ -311,7 +332,9 @@ describe("RequesterRequestCenter", () => {
 
     render(<RequesterRequestHistory />);
 
-    expect(await screen.findByRole("row", { name: "이전 담당자가 올린 카드 배너" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("row", { name: "이전 담당자가 올린 카드 배너" })
+    ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases",
       expect.objectContaining({

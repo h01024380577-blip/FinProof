@@ -4074,6 +4074,7 @@ a.review-table__row:hover {
     minmax(72px, 0.6fr)
     minmax(80px, 0.65fr)
     minmax(96px, 0.75fr)
+    minmax(64px, 0.5fr)
     minmax(90px, 0.75fr)
     minmax(84px, 0.64fr);
 }
@@ -4082,6 +4083,16 @@ a.review-table__row:hover {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.history-row__action-cell {
+  display: flex;
+  align-items: center;
+}
+
+.history-row__empty-action {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .rejection-toggle {
@@ -4214,6 +4225,14 @@ a.review-table__row:hover {
   padding: 0;
   border-width: 0;
   background: transparent;
+}
+
+.status-badge[data-status="approved"] {
+  color: #00856a;
+}
+
+.status-badge[data-status="rejected"] {
+  color: #b13a2d;
 }
 
 .status-badge[data-status="in-progress"] {
