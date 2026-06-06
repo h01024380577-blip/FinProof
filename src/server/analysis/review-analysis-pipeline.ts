@@ -416,9 +416,28 @@ async function extractStoredDocument(file: ReviewFile, fileBodyReader?: ReviewFi
     : undefined;
 }
 
-function documentsForAnalysis(documents: ExtractedDocument[]) {
+function isNonReviewUploadFile(file: ReviewFile | undefined) {
+  if (!file) {
+    return false;
+  }
+
+  const normalizedName = file.name.replace(/\s+/g, " ").trim();
+
+  return (
+    file.fileType === "package_archive" ||
+    file.fileType === "misc" ||
+    /(?:커버레터|cover\s*letter|제출\s*조건|확인서)/i.test(normalizedName)
+  );
+}
+
+function documentsForAnalysis(documents: ExtractedDocument[], review?: ReviewCase) {
+  const fileById = new Map(review?.files.map((file) => [file.id, file]) ?? []);
+
   return documents.filter(
-    (document) => document.provider !== "metadata-only" && document.text.trim().length > 0
+    (document) =>
+      document.provider !== "metadata-only" &&
+      document.text.trim().length > 0 &&
+      !isNonReviewUploadFile(fileById.get(document.fileId))
   );
 }
 
@@ -954,7 +973,7 @@ function createLexicalRagRetriever(
 
     async retrieve({ review, extractedDocuments, scope }) {
       const query = reviewRagQuery(review);
-      const searchableDocuments = documentsForAnalysis(extractedDocuments);
+      const searchableDocuments = documentsForAnalysis(extractedDocuments, review);
 
       const productDocumentCandidates = searchableDocuments
         .map((document, index) => ({
@@ -1157,7 +1176,7 @@ export function createReviewAnalysisPipeline({
         ocrProvider.extract({ review, files: review.files }),
         ragRetriever.prefetch?.({ review, scope })
       ]);
-      const analysisDocuments = documentsForAnalysis(extractedDocuments);
+      const analysisDocuments = documentsForAnalysis(extractedDocuments, review);
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.

@@ -124,7 +124,65 @@ describe("runMultilingualRiskTeam", () => {
       agent: "korean_compliance_mapping",
       issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
       targetText: "Guaranteed approval in 3 minutes",
-      suggestedCopy: "Approval may vary after review."
+      suggestedCopy: "승인은 심사 후 달라질 수 있습니다."
+    });
+  });
+
+  it("stores Korean-facing description and suggested copy for multilingual findings", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Representative rate: 4.10% p.a.",
+            literalTranslation: "대표 금리 연 4.10%",
+            complianceMeaning:
+              "Displaying a low headline rate without immediate qualifications can mislead consumers.",
+            riskCategory: "both",
+            riskSignals: ["headline_rate"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage:
+              "Final rate depends on credit assessment and eligibility.",
+            suggestedCopyKoreanMeaning:
+              "최종 금리는 개인별 신용도와 우대조건 충족 여부에 따라 달라질 수 있습니다.",
+            confidence: 0.9
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({
+        mappings: [
+          {
+            localizedFindingId: "seg-en-001",
+            issueType: "MULTILINGUAL_RATE_CONDITION",
+            koreanComplianceCategory: "최저금리 조건 고지",
+            koreanComplianceReason:
+              "최저금리 또는 대표금리 표현은 적용 조건을 인접하게 밝혀야 합니다.",
+            evidenceQuery: "최저금리 조건 고지",
+            suggestedAction: "change_request"
+          }
+        ]
+      })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Representative rate: 4.10% p.a."
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(result.agentFindings[0]).toMatchObject({
+      description: expect.stringContaining(
+        "최저금리 또는 대표금리 표현은 적용 조건을 인접하게 밝혀야 합니다."
+      ),
+      suggestedCopy: "최종 금리는 개인별 신용도와 우대조건 충족 여부에 따라 달라질 수 있습니다."
     });
   });
 
@@ -201,13 +259,12 @@ describe("runMultilingualRiskTeam", () => {
       "MULTILINGUAL_APPROVAL_GUARANTEE",
       "MULTILINGUAL_RATE_CONDITION"
     ]);
-    expect(result.agentFindings.map((finding) => finding.localizedRiskFinding?.riskSignals)).toEqual([
-      ["approval guarantee"],
-      ["lowest rate"]
-    ]);
+    expect(
+      result.agentFindings.map((finding) => finding.localizedRiskFinding?.riskSignals)
+    ).toEqual([["approval guarantee"], ["lowest rate"]]);
     expect(result.agentFindings.map((finding) => finding.suggestedCopy)).toEqual([
-      "Approval may vary after review.",
-      "Rate may vary by eligibility."
+      "승인은 심사 후 달라질 수 있습니다.",
+      "금리는 조건에 따라 달라질 수 있습니다."
     ]);
   });
 

@@ -52,14 +52,16 @@ const ENGLISH_FINANCIAL_AD_TERMS =
   /\b(approval|approved|guaranteed|guarantee|loan|rate|rates|fee|fees|screening|eligible|instant|lowest|hidden)\b/i;
 const LATIN_LETTER_COUNT_PATTERN = /[A-Za-z]/g;
 const LATIN_LETTER_PATTERN = /[A-Za-z]/;
+const REVIEW_PACKAGE_METADATA_PATTERN =
+  /\b(?:FinProof|productType|fileType|SamplePackageSelector|promotional_creative|copy_draft|product_description|rate_table|package_archive|POST|ZIP|src\/|\.tsx|\.ts)\b/i;
+const REVIEW_PACKAGE_METADATA_KOREAN_PATTERN =
+  /(제출\s*조건|필수\s*자료|파일\s*분류|신규\s*심의\s*요청|업로드\s*정책|누락\s*차단|분류\s*매핑|기준으로|확인합니다)/;
 const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
 const JAPANESE_HAN_AD_TERMS = /(審査|手数料|無料|金利|優遇)/;
 const HAN_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff]/;
 const HANGUL_PATTERN = /[\uac00-\ud7af]/;
-const NON_CJK_LATIN_SPAN_PATTERN =
-  /[^\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]+/gu;
-const CJK_SPAN_PATTERN =
-  /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff0-9０-９%％.．,，·・ー〜~]+/gu;
+const NON_CJK_LATIN_SPAN_PATTERN = /[^\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]+/gu;
+const CJK_SPAN_PATTERN = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff0-9０-９%％.．,，·・ー〜~]+/gu;
 
 type SegmentCounter = Record<SupportedReviewLanguage, number>;
 type DetectedLanguageSpan = {
@@ -100,6 +102,10 @@ export function segmentMultilingualDocuments(
 function segmentDraftsForLine(line: string) {
   const normalizedText = normalizeSegmentText(line);
   if (normalizedText.length === 0) {
+    return [];
+  }
+
+  if (isReviewPackageMetadataLine(normalizedText)) {
     return [];
   }
 
@@ -149,10 +155,9 @@ function segmentDraftsForLine(line: string) {
 }
 
 function detectedLanguageSpans(text: string): DetectedLanguageSpan[] {
-  return [
-    ...detectedLatinSpans(text),
-    ...detectedCjkSpans(text)
-  ].sort((left, right) => left.index - right.index);
+  return [...detectedLatinSpans(text), ...detectedCjkSpans(text)].sort(
+    (left, right) => left.index - right.index
+  );
 }
 
 function detectedLatinSpans(text: string): DetectedLanguageSpan[] {
@@ -218,6 +223,10 @@ function detectSupportedLanguage(text: string): SupportedReviewLanguage | undefi
 }
 
 function isEnglishSegment(text: string) {
+  if (isReviewPackageMetadataLine(text)) {
+    return false;
+  }
+
   if (ENGLISH_FINANCIAL_AD_TERMS.test(text)) {
     return true;
   }
@@ -237,6 +246,14 @@ function isJapaneseSegment(text: string) {
 
 function isKoreanOnlySegment(text: string) {
   return HANGUL_PATTERN.test(text) && !LATIN_LETTER_PATTERN.test(text) && !HAN_PATTERN.test(text);
+}
+
+function isReviewPackageMetadataLine(text: string) {
+  return (
+    HANGUL_PATTERN.test(text) &&
+    REVIEW_PACKAGE_METADATA_PATTERN.test(text) &&
+    REVIEW_PACKAGE_METADATA_KOREAN_PATTERN.test(text)
+  );
 }
 
 function normalizeSegmentText(text: string) {
@@ -259,7 +276,8 @@ function segmentConfidence(
   text: string,
   documentConfidence: number
 ) {
-  const detectedConfidence = language === "en" && ENGLISH_FINANCIAL_AD_TERMS.test(text) ? 0.94 : 0.9;
+  const detectedConfidence =
+    language === "en" && ENGLISH_FINANCIAL_AD_TERMS.test(text) ? 0.94 : 0.9;
 
   return Math.min(documentConfidence, detectedConfidence);
 }

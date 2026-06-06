@@ -343,6 +343,79 @@ describe("review analysis pipeline", () => {
     );
   });
 
+  it("does not route archive cover letters or submission check documents to review agents", async () => {
+    const subAgentOrchestrator: ReviewSubAgentOrchestrator = {
+      run: vi.fn(async () => [])
+    };
+    const provider = multilingualProviderReturning({});
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator,
+      ocrProvider: {
+        async extract() {
+          return [
+            {
+              fileId: "file-upload-creative",
+              fileName: "01_홍보물_시안_모바일배너.pdf",
+              text: "낮은 금리로 갈아타고 최대한도 3억원",
+              confidence: 0.94,
+              provider: "fixture-ocr"
+            },
+            {
+              fileId: "file-upload-submission-check",
+              fileName: "00_FinProof_제출조건_확인서.pdf",
+              text: [
+                "FinProof 요청 제출 조건 확인서 productType=loan 필수자료 및 파일 분류 매핑",
+                "SamplePackageSelector.tsx에서 fileType 기준으로 promotional_creative, rate_table을 확인합니다."
+              ].join("\n"),
+              confidence: 0.94,
+              provider: "fixture-ocr"
+            }
+          ];
+        }
+      }
+    });
+    const uploadReview: ReviewCase = {
+      ...review,
+      productType: "loan",
+      files: [
+        {
+          ...review.files[0],
+          id: "file-upload-creative",
+          name: "01_홍보물_시안_모바일배너.pdf",
+          fileType: "promotional_creative",
+          contentType: "application/pdf"
+        },
+        {
+          ...review.files[0],
+          id: "file-upload-submission-check",
+          name: "00_FinProof_제출조건_확인서.pdf",
+          fileType: "misc",
+          contentType: "application/pdf"
+        }
+      ]
+    };
+
+    const artifacts = await pipeline.run({ review: uploadReview });
+
+    expect(artifacts.extractedDocuments).toEqual([
+      expect.objectContaining({
+        fileId: "file-upload-creative",
+        fileName: "01_홍보물_시안_모바일배너.pdf"
+      })
+    ]);
+    expect(provider.calls).not.toContain("english_translator_risk");
+    expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extractedDocuments: [
+          expect.objectContaining({
+            fileId: "file-upload-creative"
+          })
+        ]
+      })
+    );
+  });
+
   it("does not route image metadata-only notices to review agents when image OCR text is unavailable", async () => {
     const subAgentOrchestrator: ReviewSubAgentOrchestrator = {
       run: vi.fn(async () => [])

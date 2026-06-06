@@ -108,4 +108,17 @@ describe("segmentMultilingualDocuments", () => {
       originalText: "혜택 문구: No hidden fees for every customer"
     });
   });
+
+  it("ignores Korean review package metadata lines with technical English tokens", () => {
+    expect(
+      segmentMultilingualDocuments([
+        document(
+          [
+            "FinProof 요청 제출 조건 확인서 productType=loan 필수자료 및 파일 분류 매핑",
+            "SamplePackageSelector.tsx에서 fileType 기준으로 promotional_creative, rate_table을 확인합니다."
+          ].join("\n")
+        )
+      ])
+    ).toEqual([]);
+  });
 });

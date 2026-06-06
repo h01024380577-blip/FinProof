@@ -426,7 +426,7 @@ function findingDescription(
     ? "연결 가능한 근거 후보가 없어 리뷰어 확인이 필요한 불충분 근거 상태입니다."
     : undefined;
 
-  return [finding.complianceMeaning, mapping.koreanComplianceReason, evidenceNote]
+  return [mapping.koreanComplianceReason, evidenceNote]
     .filter((part): part is string => Boolean(part))
     .join(" ");
 }
@@ -448,7 +448,7 @@ function agentFindingFromMapping(
     targetText: finding.originalText,
     description: findingDescription(finding, mapping, evidenceCandidateIds.length > 0),
     suggestedAction: findingSuggestedAction(finding, mapping),
-    suggestedCopy: finding.suggestedCopyOriginalLanguage,
+    suggestedCopy: finding.suggestedCopyKoreanMeaning || finding.suggestedCopyOriginalLanguage,
     evidenceCandidateIds,
     confidence: finding.confidence,
     localizedRiskFinding: finding,
