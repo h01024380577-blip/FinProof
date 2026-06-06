@@ -75,13 +75,14 @@ const queuePageSize = 10;
 
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 
-type HistoryDecision = "approved" | "rejected";
+type HistoryDecision = "all" | "approved" | "rejected";
 
 const historyDecisions: Array<{
   key: HistoryDecision;
   label: string;
-  tone: "success" | "danger";
+  tone: "primary" | "success" | "danger";
 }> = [
+  { key: "all", label: "전체 이력", tone: "primary" },
   { key: "approved", label: "승인 완료", tone: "success" },
   { key: "rejected", label: "반려 완료", tone: "danger" }
 ];
@@ -136,6 +137,7 @@ export function ReviewQueue(): JSX.Element {
 
   const historyDecisionCounts = useMemo(
     () => ({
+      all: reviews.filter((review) => isFinalizedReview(review.status)).length,
       approved: reviews.filter((review) => review.status === "approved").length,
       rejected: reviews.filter((review) => review.status === "rejected").length
     }),
@@ -171,7 +173,7 @@ export function ReviewQueue(): JSX.Element {
         setLoadError(null);
       }
       try {
-        const response = await fetch(reviewCasesUrl(page, filters), {
+        const response = await fetch(reviewCasesUrl(page, filters, scope), {
           headers: apiHeaders()
         });
         if (!response.ok) throw new Error(`${listLabel}을 불러오지 못했습니다.`);
@@ -197,7 +199,7 @@ export function ReviewQueue(): JSX.Element {
     return () => {
       mounted = false;
     };
-  }, [activeRole, apiHeaders, filters, listLabel, page]);
+  }, [activeRole, apiHeaders, filters, listLabel, page, scope]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent): void {
@@ -612,10 +614,15 @@ export function ReviewQueue(): JSX.Element {
   );
 }
 
-function reviewCasesUrl(page: number, filters: QueueFilterState): string {
+function reviewCasesUrl(
+  page: number,
+  filters: QueueFilterState,
+  scope: "active" | "history"
+): string {
   const params = new URLSearchParams();
+  const shouldApplyServerStatusFilter = scope === "active" && filters.status !== "all";
   const hasServerFilter =
-    filters.status !== "all" ||
+    shouldApplyServerStatusFilter ||
     filters.product !== "all" ||
     (filters.risk !== "all" && filters.risk !== "analysis_pending");
 
@@ -624,7 +631,7 @@ function reviewCasesUrl(page: number, filters: QueueFilterState): string {
     params.set("pageSize", String(queuePageSize));
   }
 
-  if (filters.status !== "all") {
+  if (shouldApplyServerStatusFilter) {
     params.set("status", filters.status);
   }
 

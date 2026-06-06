@@ -208,6 +208,10 @@ describe("ReviewQueue", () => {
     expect(screen.queryByRole("button", { name: "마감 임박 필터 적용" })).not.toBeInTheDocument();
 
     const historyTabs = screen.getByRole("tablist", { name: "심의 이력 구분" });
+    expect(within(historyTabs).getByRole("tab", { name: "전체 이력" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
     expect(within(historyTabs).getByRole("tab", { name: "승인 완료" })).toHaveAttribute(
       "aria-selected",
       "false"
@@ -216,6 +220,9 @@ describe("ReviewQueue", () => {
       "aria-selected",
       "false"
     );
+    expect(
+      within(within(historyTabs).getByRole("tab", { name: "전체 이력" })).getByText("2")
+    ).toBeInTheDocument();
     expect(
       within(within(historyTabs).getByRole("tab", { name: "승인 완료" })).getByText("1")
     ).toBeInTheDocument();
@@ -253,7 +260,7 @@ describe("ReviewQueue", () => {
   it("switches review history between approved and rejected decisions", async () => {
     const user = userEvent.setup();
     currentSearchParams = new URLSearchParams("scope=history");
-    const fetchMock = vi.fn().mockResolvedValueOnce({
+    const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
         reviewCases: [...reviewSummaries, completedReviewSummary, rejectedReviewSummary]
@@ -268,6 +275,10 @@ describe("ReviewQueue", () => {
 
     await user.selectOptions(screen.getByLabelText("상태"), "rejected");
 
+    expect(screen.getByRole("tab", { name: "전체 이력" })).toHaveAttribute(
+      "aria-selected",
+      "false"
+    );
     expect(screen.getByRole("tab", { name: "승인 완료" })).toHaveAttribute(
       "aria-selected",
       "false"
@@ -275,6 +286,11 @@ describe("ReviewQueue", () => {
     expect(screen.getByRole("tab", { name: "반려 완료" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("반려 완료된 신용대출 홍보물")).toBeInTheDocument();
     expect(screen.queryByText("승인 완료된 정기예금 홍보물")).not.toBeInTheDocument();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/review-cases");
+    expect(
+      within(screen.getByRole("tab", { name: "전체 이력" })).getByText("2")
+    ).toBeInTheDocument();
   });
 
   it("asks for confirmation before deleting a review history item", async () => {
