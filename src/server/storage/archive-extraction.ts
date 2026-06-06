@@ -1,6 +1,10 @@
 import path from "node:path";
 import JSZip from "jszip";
-import { validateUploadedFiles } from "@/domain/upload-policy";
+import {
+  normalizeUploadFileName,
+  shouldIgnoreArchiveEntry,
+  validateUploadedFiles
+} from "@/domain/upload-policy";
 
 export type UploadFileWithBody = {
   name: string;
@@ -57,7 +61,7 @@ function safeEntryName(entryName: string) {
 }
 
 function shouldSkipEntry(entryName: string) {
-  return entryName.startsWith("__MACOSX/") || entryName.split("/").some((part) => part === "");
+  return shouldIgnoreArchiveEntry(entryName);
 }
 
 async function expandZipFile(file: UploadFileWithBody): Promise<UploadFileWithBody[]> {
@@ -73,7 +77,7 @@ async function expandZipFile(file: UploadFileWithBody): Promise<UploadFileWithBo
       "unsafeOriginalName" in entry && typeof entry.unsafeOriginalName === "string"
         ? entry.unsafeOriginalName
         : entry.name;
-    const entryName = safeEntryName(originalEntryName);
+    const entryName = safeEntryName(normalizeUploadFileName(originalEntryName));
     const body = await entry.async("uint8array");
     const expandedFile = {
       name: `${file.name}/${entryName}`,

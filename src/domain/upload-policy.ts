@@ -51,7 +51,7 @@ const acceptedMimeTypesByExtension: Record<AllowedExtension, string[]> = {
 };
 
 function getExtension(fileName: string): AllowedExtension | undefined {
-  const extension = fileName.toLowerCase().split(".").pop() ?? "";
+  const extension = normalizeUploadFileName(fileName).toLowerCase().split(".").pop() ?? "";
 
   return uploadPolicy.allowedExtensions.includes(extension as AllowedExtension)
     ? (extension as AllowedExtension)
@@ -121,8 +121,22 @@ export type FileClassification = {
   confidence: number;
 };
 
+export function normalizeUploadFileName(fileName: string): string {
+  return fileName.normalize("NFC");
+}
+
+export function shouldIgnoreArchiveEntry(entryName: string): boolean {
+  const normalizedPath = normalizeUploadFileName(entryName).replaceAll("\\", "/");
+  const parts = normalizedPath.split("/");
+
+  return (
+    normalizedPath.startsWith("__MACOSX/") ||
+    parts.some((part) => part === "" || part === ".DS_Store" || part.startsWith("._"))
+  );
+}
+
 export function classifyUploadFileWithConfidence(file: UploadFileDescriptor): FileClassification {
-  const normalizedName = file.name.toLowerCase();
+  const normalizedName = normalizeUploadFileName(file.name).toLowerCase();
   const contentType = file.type;
 
   if (isArchive(file.name)) {

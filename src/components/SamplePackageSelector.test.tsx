@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import JSZip from "jszip";
 import { SamplePackageSelector } from "./SamplePackageSelector";
 
 const navigationMock = vi.hoisted(() => ({
@@ -25,6 +26,18 @@ function depositRequiredFiles(): File[] {
     new File(["rate"], "deposit-rate.csv", { type: "text/csv" }),
     new File(["checklist"], "deposit-checklist.txt", { type: "text/plain" })
   ];
+}
+
+async function zipUploadFile(entries: Record<string, string>): Promise<File> {
+  const zip = new JSZip();
+
+  for (const [name, content] of Object.entries(entries)) {
+    zip.file(name, content);
+  }
+
+  return new File([await zip.generateAsync({ type: "arraybuffer" })], "review-package.zip", {
+    type: "application/zip"
+  });
 }
 
 describe("SamplePackageSelector", () => {
@@ -337,6 +350,38 @@ describe("SamplePackageSelector", () => {
     );
 
     expect(screen.getByRole("button", { name: "심의 요청 제출" })).toBeEnabled();
+  });
+
+  it("previews decomposed Korean filenames in ZIP archives as loan required materials", async () => {
+    const user = userEvent.setup();
+
+    render(<SamplePackageSelector />);
+
+    await user.type(screen.getByLabelText("심의 요청 제목"), "대출 심의 패키지");
+    await user.type(screen.getByLabelText("계열사"), "광주은행");
+    await user.type(screen.getByLabelText("요청 부서"), "디지털마케팅팀");
+    await user.selectOptions(screen.getByLabelText("상품군"), "loan");
+    await user.type(screen.getByLabelText("게시 예정일"), "2026-06-20");
+    await user.upload(
+      screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)", {
+        selector: "input"
+      }),
+      await zipUploadFile({
+        ".DS_Store": "metadata",
+        ["01_홍보물_시안_모바일배너.pdf".normalize("NFD")]: "creative",
+        ["02_원문카피_전체문안.pdf".normalize("NFD")]: "copy",
+        ["03_상품설명서.pdf".normalize("NFD")]: "description",
+        ["04_금리표_및_수수료.pdf".normalize("NFD")]: "rates",
+        ["05_약관_대출조건_요약.pdf".normalize("NFD")]: "terms",
+        ["06_내부_체크리스트.pdf".normalize("NFD")]: "checklist"
+      })
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "심의 요청 제출" })).toBeEnabled()
+    );
+    expect(screen.queryByText((text) => text.includes(".DS_Store"))).not.toBeInTheDocument();
+    expect(screen.queryByText("52%")).not.toBeInTheDocument();
   });
 
   it("blocks too many real files before calling the API", async () => {

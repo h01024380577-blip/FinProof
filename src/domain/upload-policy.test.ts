@@ -112,6 +112,30 @@ describe("upload policy", () => {
     ).toEqual({ fileType: "promotional_creative", confidence: 0.87 });
   });
 
+  it("classifies decomposed Korean filenames from macOS ZIP archives", () => {
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "03_상품설명서.pdf".normalize("NFD"),
+        type: "application/pdf",
+        size: 1024
+      })
+    ).toEqual({ fileType: "product_description", confidence: 0.85 });
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "04_금리표_및_수수료.pdf".normalize("NFD"),
+        type: "application/pdf",
+        size: 1024
+      })
+    ).toEqual({ fileType: "rate_table", confidence: 0.91 });
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "06_내부_체크리스트.pdf".normalize("NFD"),
+        type: "application/pdf",
+        size: 1024
+      })
+    ).toEqual({ fileType: "checklist", confidence: 0.91 });
+  });
+
   it("summarizes the demo upload guardrails for the intake UI", () => {
     expect(formatUploadPolicySummary()).toBe(
       "PDF, PNG, JPG/JPEG, TXT, DOCX, XLSX, CSV, HTML, ZIP · 최대 10개 · 일반 파일 25MB, ZIP 100MB 이하"

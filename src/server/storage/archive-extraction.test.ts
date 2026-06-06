@@ -34,6 +34,29 @@ describe("archive upload extraction", () => {
     expect(files[1].sourceArchiveName).toBe("review-package.zip");
   });
 
+  it("skips macOS metadata entries when expanding review package archives", async () => {
+    const files = await expandArchiveUploads([
+      {
+        name: "review-package.zip",
+        type: "application/zip",
+        size: 4096,
+        body: await zipBody({
+          ".DS_Store": "metadata",
+          "__MACOSX/._poster.png": "resource fork",
+          "nested/._rate-table.csv": "resource fork",
+          "poster.png": "poster",
+          "nested/rate-table.csv": "rate,5.0"
+        })
+      }
+    ]);
+
+    expect(files.map((file) => file.name)).toEqual([
+      "review-package.zip",
+      "review-package.zip/poster.png",
+      "review-package.zip/nested/rate-table.csv"
+    ]);
+  });
+
   it("rejects ZIP entries with unsafe paths", async () => {
     await expect(
       expandArchiveUploads([

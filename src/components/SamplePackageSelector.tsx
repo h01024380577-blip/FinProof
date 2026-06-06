@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import JSZip from "jszip";
 import { getRequiredMaterialRows, type RequiredMaterialRow } from "@/domain/intake";
-import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
+import {
+  classifyUploadFileWithConfidence,
+  normalizeUploadFileName,
+  shouldIgnoreArchiveEntry
+} from "@/domain/upload-policy";
 import type { ProductType, ReviewFile } from "@/domain/types";
 import { IntakeClassificationPanel } from "./intake/IntakeClassificationPanel";
 import { IntakeMetaForm, type IntakeMetaState } from "./intake/IntakeMetaForm";
@@ -85,14 +89,16 @@ async function buildFilePreview(files: File[]): Promise<ReviewFile[]> {
       try {
         const zip = await JSZip.loadAsync(await file.arrayBuffer());
         for (const [entryPath, entry] of Object.entries(zip.files)) {
-          if (entry.dir || entryPath.startsWith("__MACOSX/")) continue;
-          const baseName = entryPath.split("/").filter(Boolean).pop() ?? entryPath;
+          if (entry.dir || shouldIgnoreArchiveEntry(entryPath)) continue;
+          const normalizedEntryPath = normalizeUploadFileName(entryPath);
+          const baseName =
+            normalizedEntryPath.split("/").filter(Boolean).pop() ?? normalizedEntryPath;
           const mime = mimeForName(baseName);
           const cls = classifyUploadFileWithConfidence({ name: baseName, type: mime, size: 0 });
           idSeq += 1;
           result.push({
             id: `local-file-${idSeq}`,
-            name: `${file.name}/${entryPath}`,
+            name: `${file.name}/${normalizedEntryPath}`,
             fileType: cls.fileType,
             classificationConfidence: cls.confidence,
             parseStatus: "pending",
@@ -114,7 +120,11 @@ async function buildFilePreview(files: File[]): Promise<ReviewFile[]> {
       }
     } else {
       const mime = file.type || mimeForName(file.name);
-      const cls = classifyUploadFileWithConfidence({ name: file.name, type: mime, size: file.size });
+      const cls = classifyUploadFileWithConfidence({
+        name: file.name,
+        type: mime,
+        size: file.size
+      });
       idSeq += 1;
       result.push({
         id: `local-file-${idSeq}`,
@@ -267,11 +277,7 @@ export function SamplePackageSelector(): JSX.Element {
       </div>
 
       {uploadResult && showSubmissionNotice ? (
-        <section
-          className="submission-notice"
-          role="status"
-          aria-label="심의 요청 등록 완료"
-        >
+        <section className="submission-notice" role="status" aria-label="심의 요청 등록 완료">
           <p>심의 요청이 등록되었습니다.</p>
         </section>
       ) : null}
