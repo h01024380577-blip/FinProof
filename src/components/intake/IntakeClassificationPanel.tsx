@@ -22,7 +22,10 @@ export type IntakeClassificationPanelProps = {
   isLoading?: boolean;
 };
 
-export function IntakeClassificationPanel({ files, isLoading = false }: IntakeClassificationPanelProps): JSX.Element {
+export function IntakeClassificationPanel({
+  files,
+  isLoading = false
+}: IntakeClassificationPanelProps): JSX.Element {
   return (
     <section className="panel panel--compact intake-check-panel">
       <div className="panel__header">
@@ -58,7 +61,10 @@ export function IntakeClassificationPanel({ files, isLoading = false }: IntakeCl
                 <span>{fileTypeLabels[file.fileType] ?? file.fileType}</span>
                 <strong className="classification-row__filename">{file.name}</strong>
               </div>
-              <em>{Math.round(file.classificationConfidence * 100)}%</em>
+              <div className="classification-row__confidence">
+                <span>분류 신뢰도</span>
+                <em>{Math.round(file.classificationConfidence * 100)}%</em>
+              </div>
             </article>
           ))
         ) : (

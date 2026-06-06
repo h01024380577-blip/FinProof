@@ -129,15 +129,12 @@ export function classifyUploadFileWithConfidence(file: UploadFileDescriptor): Fi
     return { fileType: "package_archive", confidence: 0.99 };
   }
 
-  // MIME type is a stronger signal than a keyword
-  if (contentType.startsWith("image/")) {
-    return { fileType: "promotional_creative", confidence: 0.97 };
-  }
-
   if (
     normalizedName.includes("poster") ||
     normalizedName.includes("banner") ||
     normalizedName.includes("creative") ||
+    normalizedName.includes("ad.") ||
+    normalizedName.includes("광고") ||
     normalizedName.includes("홍보물") ||
     normalizedName.includes("시안")
   ) {
@@ -178,6 +175,11 @@ export function classifyUploadFileWithConfidence(file: UploadFileDescriptor): Fi
 
   if (normalizedName.includes("url")) {
     return { fileType: "url_list", confidence: 0.78 };
+  }
+
+  // A generic image is usually the ad creative only after material keywords fail.
+  if (contentType.startsWith("image/")) {
+    return { fileType: "promotional_creative", confidence: 0.97 };
   }
 
   return { fileType: "misc", confidence: 0.52 };

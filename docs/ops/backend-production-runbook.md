@@ -55,6 +55,9 @@ STITCH_API_KEY=...
 FINPROOF_OCR_PROVIDER=http
 FINPROOF_OCR_ENDPOINT=https://...
 FINPROOF_OCR_API_KEY=...
+FINPROOF_PDFTOTEXT_PATH=/usr/bin/pdftotext
+FINPROOF_PDFTOPPM_PATH=/usr/bin/pdftoppm
+FINPROOF_OCR_PDF_RENDER_MAX_PAGES=3
 
 FINPROOF_RAG_PROVIDER=postgres
 FINPROOF_RAG_TOP_K=4
@@ -174,11 +177,19 @@ valid evidence is missed, raise `MIN_SCORE` when unrelated evidence appears, and
 When analysis starts, the backend stores OCR/RAG ingestion output in `AnalysisJob.artifacts`:
 
 - `extractedDocuments`: file-level OCR text, source storage key, confidence, and provider.
+- `extractionDiagnostics`: upload files that could not produce analyzable text and the reason
+  surfaced to reviewers.
 - `evidenceCandidates`: top lexical RAG candidates generated from extracted document text.
 
 `FINPROOF_OCR_PROVIDER=http` calls `FINPROOF_OCR_ENDPOINT` with review file metadata. Until the
 pgvector retrieval layer is added, `FINPROOF_RAG_PROVIDER=postgres` uses the same stored extracted
 document text and tuning knobs to generate lexical evidence candidates.
+
+Install Poppler on analysis hosts so uploaded PDFs can be read before OCR. `pdftotext` extracts
+searchable PDF text; when that text is missing or too short, `pdftoppm` renders the first
+`FINPROOF_OCR_PDF_RENDER_MAX_PAGES` pages to PNG and sends those page images to visual OCR. Leave
+`FINPROOF_PDFTOTEXT_PATH` and `FINPROOF_PDFTOPPM_PATH` unset only if the binaries are available on
+`PATH` or in common Linux/Homebrew locations.
 
 ## 6. Complete Auth Sessions
 

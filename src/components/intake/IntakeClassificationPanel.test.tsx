@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { IntakeClassificationPanel } from "./IntakeClassificationPanel";
+import { IntakeRequiredMaterialsPanel } from "./IntakeRequiredMaterialsPanel";
 
 describe("IntakeClassificationPanel", () => {
   it("renders the uploaded file list as a bounded scrollable list", () => {
@@ -41,5 +42,36 @@ describe("IntakeClassificationPanel", () => {
         "mira-guaranteed-return-review-uploadable.zip/product_description_mira_guaranteed_return.txt"
       )
     ).toHaveClass("classification-row__filename");
+  });
+
+  it("labels percentages as classification confidence, not OCR confidence", () => {
+    render(
+      <IntakeClassificationPanel
+        files={[
+          {
+            id: "file-1",
+            name: "poster-only.png",
+            fileType: "promotional_creative",
+            classificationConfidence: 0.97,
+            parseStatus: "pending"
+          }
+        ]}
+      />
+    );
+
+    expect(screen.getByText("분류 신뢰도")).toBeInTheDocument();
+    expect(screen.getByText("97%")).toBeInTheDocument();
+  });
+
+  it("shows missing-material rows with a concrete missing type reason", () => {
+    render(
+      <IntakeRequiredMaterialsPanel
+        rows={[{ label: "금리표", fileType: "rate_table", status: "missing" }]}
+        extraMissingMaterials={[]}
+      />
+    );
+
+    expect(screen.getByText("보완 필요")).toBeInTheDocument();
+    expect(screen.getByText("자료 유형 누락")).toBeInTheDocument();
   });
 });

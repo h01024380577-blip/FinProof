@@ -187,6 +187,104 @@ describe("review analysis pipeline", () => {
     }
   });
 
+  it("discovers pdftotext from PATH when FINPROOF_PDFTOTEXT_PATH is not configured", async () => {
+    const binDir = await mkdtemp(path.join(tmpdir(), "finproof-pdftotext-path-"));
+    const originalPath = process.env.PATH;
+    const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;
+    const fakePdfToText = path.join(binDir, "pdftotext");
+
+    await writeFile(
+      fakePdfToText,
+      [
+        "#!/bin/sh",
+        "printf '%s\\n' 'PDF PATH 추출 성공 최고 연 5.0% 우대 조건 충족 시 적용됩니다. 급여이체와 자동이체 조건을 모두 충족해야 하며 세전 기준입니다.'"
+      ].join("\n")
+    );
+    await chmod(fakePdfToText, 0o755);
+    process.env.PATH = `${binDir}${path.delimiter}${originalPath ?? ""}`;
+    delete process.env.FINPROOF_PDFTOTEXT_PATH;
+
+    try {
+      const pipeline = createReviewAnalysisPipeline({
+        fileBodyReader: {
+          async getReviewFileBody() {
+            return new TextEncoder().encode("%PDF-1.7 searchable pdf fixture");
+          }
+        }
+      });
+
+      const artifacts = await pipeline.run({
+        review: {
+          ...review,
+          files: [
+            {
+              ...review.files[0],
+              name: "ad.pdf",
+              storageProvider: "local",
+              storageKey: "local/rc-upload-001/file-upload-001/ad.pdf",
+              contentType: "application/pdf"
+            }
+          ]
+        }
+      });
+
+      expect(artifacts.extractedDocuments).toEqual([
+        expect.objectContaining({
+          provider: "local-pdf-text-extractor",
+          text: expect.stringContaining("PDF PATH 추출 성공")
+        })
+      ]);
+    } finally {
+      process.env.PATH = originalPath;
+      process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
+  it("preserves extraction diagnostics when uploaded PDF content is not analyzable", async () => {
+    const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;
+
+    process.env.FINPROOF_PDFTOTEXT_PATH = "/tmp/finproof-missing-pdftotext";
+
+    try {
+      const pipeline = createReviewAnalysisPipeline({
+        fileBodyReader: {
+          async getReviewFileBody() {
+            return new TextEncoder().encode("%PDF-1.7 scanned pdf fixture");
+          }
+        }
+      });
+
+      const artifacts = await pipeline.run({
+        review: {
+          ...review,
+          files: [
+            {
+              ...review.files[0],
+              name: "대출광고.pdf",
+              storageProvider: "local",
+              storageKey: "local/rc-upload-001/file-upload-001/loan-ad.pdf",
+              contentType: "application/pdf"
+            }
+          ]
+        }
+      });
+
+      expect(artifacts.extractedDocuments).toEqual([]);
+      expect(artifacts.extractionDiagnostics).toEqual([
+        expect.objectContaining({
+          fileId: "file-upload-001",
+          fileName: "대출광고.pdf",
+          provider: "metadata-only",
+          reason: "extraction_unavailable",
+          message: expect.stringContaining("현재 로컬 텍스트 추출 대상이 아니거나")
+        })
+      ]);
+    } finally {
+      process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
+    }
+  });
+
   it("does not route metadata-only notices to multilingual or domain agents when extracted text exists", async () => {
     const subAgentOrchestrator: ReviewSubAgentOrchestrator = {
       run: vi.fn(async () => [])
@@ -629,6 +727,89 @@ describe("review analysis pipeline", () => {
       ]);
     } finally {
       process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
+      await rm(binDir, { recursive: true, force: true });
+    }
+  });
+
+  it("renders image-only PDFs to page images before OpenAI OCR when pdftoppm is available", async () => {
+    const binDir = await mkdtemp(path.join(tmpdir(), "finproof-openai-pdf-render-"));
+    const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;
+    const originalPdfToPpmPath = process.env.FINPROOF_PDFTOPPM_PATH;
+    const fakePdfToText = path.join(binDir, "pdftotext");
+    const fakePdfToPpm = path.join(binDir, "pdftoppm");
+    const renderedPageBytes = "rendered pdf page image";
+    const pdfBytes = new TextEncoder().encode("%PDF-1.7 image-only");
+
+    await writeFile(fakePdfToText, ["#!/bin/sh", "printf '%s\\n' 'x'"].join("\n"));
+    await writeFile(
+      fakePdfToPpm,
+      [
+        "#!/bin/sh",
+        "last=",
+        'for arg in "$@"; do last="$arg"; done',
+        `printf '%s' '${renderedPageBytes}' > \"$last-1.png\"`
+      ].join("\n")
+    );
+    await chmod(fakePdfToText, 0o755);
+    await chmod(fakePdfToPpm, 0o755);
+    process.env.FINPROOF_PDFTOTEXT_PATH = fakePdfToText;
+    process.env.FINPROOF_PDFTOPPM_PATH = fakePdfToPpm;
+
+    try {
+      const fetchImpl = vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        async json() {
+          return {
+            output_text: JSON.stringify({ text: "렌더링된 PDF 페이지 문구", confidence: 0.9 })
+          };
+        }
+      }));
+      const provider = createOpenAiOcrProvider(
+        {
+          OPENAI_API_KEY: "sk-real",
+          FINPROOF_OCR_MODEL: "gpt-5-mini",
+          FINPROOF_PDFTOPPM_PATH: fakePdfToPpm
+        },
+        {
+          async getReviewFileBody() {
+            return pdfBytes;
+          }
+        },
+        fetchImpl
+      );
+
+      await provider.extract({
+        review,
+        files: [
+          {
+            ...review.files[0],
+            name: "poster.pdf",
+            contentType: "application/pdf",
+            storageKey: "s3://bucket/poster.pdf"
+          }
+        ]
+      });
+
+      const requestInit = fetchImpl.mock.calls[0]?.[1] as RequestInit;
+      const payload = JSON.parse(String(requestInit.body)) as {
+        input: { content: Array<Record<string, unknown>> }[];
+      };
+      expect(payload.input[0]?.content).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: "input_image",
+            image_url: `data:image/png;base64,${Buffer.from(renderedPageBytes).toString("base64")}`
+          })
+        ])
+      );
+      expect(payload.input[0]?.content).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ type: "input_file" })])
+      );
+    } finally {
+      process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
+      process.env.FINPROOF_PDFTOPPM_PATH = originalPdfToPpmPath;
       await rm(binDir, { recursive: true, force: true });
     }
   });

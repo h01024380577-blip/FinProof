@@ -43,7 +43,10 @@ export function IntakeRequiredMaterialsPanel({
             <div key={row.fileType} className="material-row" data-status="missing">
               <TriangleAlert size={16} aria-hidden="true" />
               <span>{row.label}</span>
-              <strong>보완 필요</strong>
+              <div className="material-row__status">
+                <strong>보완 필요</strong>
+                <em>자료 유형 누락</em>
+              </div>
             </div>
           ))
         ) : (

@@ -3744,10 +3744,18 @@ a.review-table__row:hover {
   background: var(--surface);
 }
 
-.classification-row div {
+.classification-row__body {
   flex: 1;
   display: grid;
   gap: 4px;
+}
+
+.classification-row__confidence {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .classification-row span,
@@ -3781,6 +3789,23 @@ a.review-table__row:hover {
 .material-row strong {
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.material-row__status {
+  margin-left: auto;
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.material-row__status strong {
+  margin-left: 0;
+}
+
+.material-row__status em {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-style: normal;
 }
 
 .missing-material-strip {
@@ -9830,7 +9855,8 @@ body:has(.landing-page)::before {
 }
 
 .classification-row svg,
-.classification-row em {
+.classification-row em,
+.classification-row__confidence {
   flex: 0 0 auto;
 }
 
@@ -9839,6 +9865,13 @@ body:has(.landing-page)::before {
   flex: 1;
   display: grid;
   gap: 4px;
+}
+
+.classification-row__confidence {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .classification-row span,
@@ -9883,6 +9916,23 @@ body:has(.landing-page)::before {
 .material-row strong {
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.material-row__status {
+  margin-left: auto;
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.material-row__status strong {
+  margin-left: 0;
+}
+
+.material-row__status em {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-style: normal;
 }
 
 .missing-material-strip {

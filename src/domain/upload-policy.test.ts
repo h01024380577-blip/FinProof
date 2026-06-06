@@ -1,5 +1,6 @@
 import {
   classifyUploadFile,
+  classifyUploadFileWithConfidence,
   formatUploadPolicySummary,
   validateUploadedFiles
 } from "./upload-policy";
@@ -75,6 +76,40 @@ describe("upload policy", () => {
         size: 1024
       })
     ).toBe("checklist");
+  });
+
+  it("uses material filename keywords before the generic image MIME signal", () => {
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "심의패키지_v3.zip/금리안내표.png",
+        type: "image/png",
+        size: 1024
+      })
+    ).toEqual({ fileType: "rate_table", confidence: 0.91 });
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "심의패키지_v3.zip/상품설명서.png",
+        type: "image/png",
+        size: 1024
+      })
+    ).toEqual({ fileType: "product_description", confidence: 0.85 });
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "심의패키지_v3.zip/체크리스트.png",
+        type: "image/png",
+        size: 1024
+      })
+    ).toEqual({ fileType: "checklist", confidence: 0.91 });
+  });
+
+  it("classifies advertisement PDFs as promotional creatives from Korean filename keywords", () => {
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "대출광고.pdf",
+        type: "application/pdf",
+        size: 1024
+      })
+    ).toEqual({ fileType: "promotional_creative", confidence: 0.87 });
   });
 
   it("summarizes the demo upload guardrails for the intake UI", () => {

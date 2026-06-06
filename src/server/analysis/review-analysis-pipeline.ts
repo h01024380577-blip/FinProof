@@ -35,7 +35,7 @@ import {
   type ReviewSubAgentOrchestrator
 } from "./review-subagents";
 import { execFile } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -47,6 +47,16 @@ export type ExtractedDocument = {
   text: string;
   confidence: number;
   provider: string;
+};
+
+export type ExtractionDiagnostic = {
+  fileId: string;
+  fileName: string;
+  storageKey?: string;
+  provider: string;
+  reason: "extraction_unavailable";
+  message: string;
+  confidence: number;
 };
 
 export type RagEvidenceCandidate = Evidence & {
@@ -72,6 +82,7 @@ export type AgentFindingCandidate = {
 export type AnalysisArtifacts = {
   generatedAt: string;
   extractedDocuments: ExtractedDocument[];
+  extractionDiagnostics?: ExtractionDiagnostic[];
   evidenceCandidates: RagEvidenceCandidate[];
   agentFindings?: AgentFinding[];
   findings?: AgentFindingCandidate[];
@@ -115,6 +126,7 @@ type OcrFetchLike = (
   status?: number;
   statusText?: string;
   json(): Promise<unknown>;
+  text?(): Promise<string>;
 }>;
 
 type ReviewAnalysisPipelineOptions = {
@@ -131,6 +143,13 @@ type ReviewAnalysisPipelineOptions = {
 
 const execFileAsync = promisify(execFile);
 const DEFAULT_MIN_PDF_TEXT_CHARS = 40;
+const DEFAULT_PDF_RENDER_MAX_PAGES = 3;
+
+type RenderedPdfPage = {
+  pageNumber: number;
+  mimeType: "image/png";
+  body: Uint8Array;
+};
 
 function textPreview(text: string, maxLength: number) {
   const normalized = text.replace(/\s+/g, " ").trim();
@@ -205,19 +224,37 @@ function decodeStoredText(file: ReviewFile, body: Uint8Array) {
 async function extractPdfText(body: Uint8Array) {
   const tempDir = await mkdtemp(path.join(tmpdir(), "finproof-pdf-"));
   const pdfPath = path.join(tempDir, "input.pdf");
-  const pdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH?.trim() || "/usr/bin/pdftotext";
+  const configuredPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH?.trim();
+  const pdfToTextCommands = configuredPdfToTextPath
+    ? [configuredPdfToTextPath, "pdftotext", "/usr/bin/pdftotext", "/opt/homebrew/bin/pdftotext"]
+    : [
+        "pdftotext",
+        "/usr/bin/pdftotext",
+        "/opt/homebrew/bin/pdftotext",
+        "/usr/local/bin/pdftotext"
+      ];
+  let lastError: unknown;
 
   try {
     await writeFile(pdfPath, body);
-    const { stdout } = await execFileAsync(pdfToTextPath, [pdfPath, "-"], {
-      timeout: 15_000,
-      maxBuffer: 10 * 1024 * 1024
-    });
-    const text = String(stdout).replace(/\s+/g, " ").trim();
 
-    return text.length > 0 ? text : undefined;
-  } catch (error) {
-    console.log(`[PDFTextExtractor] unavailable or failed: ${errorMessage(error)}`);
+    for (const pdfToTextCommand of pdfToTextCommands) {
+      try {
+        const { stdout } = await execFileAsync(pdfToTextCommand, [pdfPath, "-"], {
+          timeout: 15_000,
+          maxBuffer: 10 * 1024 * 1024
+        });
+        const text = String(stdout).replace(/\s+/g, " ").trim();
+
+        if (text.length > 0) {
+          return text;
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    console.log(`[PDFTextExtractor] unavailable or failed: ${errorMessage(lastError)}`);
 
     return undefined;
   } finally {
@@ -235,8 +272,82 @@ function minPdfTextChars() {
   return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : DEFAULT_MIN_PDF_TEXT_CHARS;
 }
 
+function maxPdfRenderPages(env: Record<string, string | undefined>) {
+  return positiveInteger(env, "FINPROOF_OCR_PDF_RENDER_MAX_PAGES", DEFAULT_PDF_RENDER_MAX_PAGES);
+}
+
 function hasEnoughPdfText(text: string) {
   return text.replace(/\s+/g, "").length >= minPdfTextChars();
+}
+
+function pdfToPpmCommands(env: Record<string, string | undefined>) {
+  const configuredPdfToPpmPath = env.FINPROOF_PDFTOPPM_PATH?.trim();
+  const fallbackCommands = [
+    "pdftoppm",
+    "/usr/bin/pdftoppm",
+    "/opt/homebrew/bin/pdftoppm",
+    "/usr/local/bin/pdftoppm"
+  ];
+
+  return configuredPdfToPpmPath ? [configuredPdfToPpmPath, ...fallbackCommands] : fallbackCommands;
+}
+
+function renderedPageNumber(fileName: string) {
+  const match = /^page-(\d+)\.png$/.exec(fileName);
+
+  return match ? Number(match[1]) : Number.NaN;
+}
+
+async function renderPdfPages(
+  body: Uint8Array,
+  env: Record<string, string | undefined>
+): Promise<RenderedPdfPage[]> {
+  const tempDir = await mkdtemp(path.join(tmpdir(), "finproof-pdf-render-"));
+  const pdfPath = path.join(tempDir, "input.pdf");
+  const outputPrefix = path.join(tempDir, "page");
+  const maxPages = maxPdfRenderPages(env);
+  let lastError: unknown;
+
+  try {
+    await writeFile(pdfPath, body);
+
+    for (const pdfToPpmCommand of pdfToPpmCommands(env)) {
+      try {
+        await execFileAsync(
+          pdfToPpmCommand,
+          ["-png", "-r", "180", "-f", "1", "-l", String(maxPages), pdfPath, outputPrefix],
+          {
+            timeout: 20_000,
+            maxBuffer: 10 * 1024 * 1024
+          }
+        );
+        const renderedFiles = (await readdir(tempDir))
+          .filter((fileName) => /^page-\d+\.png$/.test(fileName))
+          .sort((left, right) => renderedPageNumber(left) - renderedPageNumber(right))
+          .slice(0, maxPages);
+
+        if (renderedFiles.length > 0) {
+          return Promise.all(
+            renderedFiles.map(async (fileName) => ({
+              pageNumber: renderedPageNumber(fileName),
+              mimeType: "image/png" as const,
+              body: Uint8Array.from(await readFile(path.join(tempDir, fileName)))
+            }))
+          );
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (lastError) {
+      console.log(`[PDFRenderer] unavailable or failed: ${errorMessage(lastError)}`);
+    }
+
+    return [];
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
 }
 
 function metadataOnlyText(file: ReviewFile) {
@@ -309,6 +420,20 @@ function documentsForAnalysis(documents: ExtractedDocument[]) {
   return documents.filter(
     (document) => document.provider !== "metadata-only" && document.text.trim().length > 0
   );
+}
+
+function extractionDiagnosticsFrom(documents: ExtractedDocument[]): ExtractionDiagnostic[] {
+  return documents
+    .filter((document) => document.provider === "metadata-only")
+    .map((document) => ({
+      fileId: document.fileId,
+      fileName: document.fileName,
+      storageKey: document.storageKey,
+      provider: document.provider,
+      reason: "extraction_unavailable",
+      message: document.text,
+      confidence: document.confidence
+    }));
 }
 
 function createDeterministicOcrProvider(fileBodyReader?: ReviewFileBodyReader): OcrProvider {
@@ -470,19 +595,65 @@ function openAiOcrModel(env: Record<string, string | undefined>) {
   return configuredModel;
 }
 
-function openAiOcrContentPart(file: ReviewFile, mimeType: string, body: Uint8Array) {
+async function openAiOcrContentParts(
+  file: ReviewFile,
+  mimeType: string,
+  body: Uint8Array,
+  env: Record<string, string | undefined>
+) {
+  if (mimeType === "application/pdf") {
+    const renderedPages = await renderPdfPages(body, env);
+
+    if (renderedPages.length > 0) {
+      return renderedPages.map((page) => ({
+        type: "input_image",
+        image_url: `data:${page.mimeType};base64,${Buffer.from(page.body).toString("base64")}`
+      }));
+    }
+  }
+
   const dataUrl = `data:${mimeType};base64,${Buffer.from(body).toString("base64")}`;
 
-  return mimeType === "application/pdf"
-    ? {
-        type: "input_file",
-        filename: file.name,
-        file_data: dataUrl
+  return [
+    mimeType === "application/pdf"
+      ? {
+          type: "input_file",
+          filename: file.name,
+          file_data: dataUrl
+        }
+      : {
+          type: "input_image",
+          image_url: dataUrl
+        }
+  ];
+}
+
+async function geminiOcrInlineParts(
+  mimeType: string,
+  body: Uint8Array,
+  env: Record<string, string | undefined>
+) {
+  if (mimeType === "application/pdf") {
+    const renderedPages = await renderPdfPages(body, env);
+
+    if (renderedPages.length > 0) {
+      return renderedPages.map((page) => ({
+        inlineData: {
+          mimeType: page.mimeType,
+          data: Buffer.from(page.body).toString("base64")
+        }
+      }));
+    }
+  }
+
+  return [
+    {
+      inlineData: {
+        mimeType,
+        data: Buffer.from(body).toString("base64")
       }
-    : {
-        type: "input_image",
-        image_url: dataUrl
-      };
+    }
+  ];
 }
 
 export function createOpenAiOcrProvider(
@@ -550,7 +721,7 @@ export function createOpenAiOcrProvider(
                       type: "input_text",
                       text: `${openAiOcrInstruction()}\n\n${geminiOcrUserPrompt(review, file)}`
                     },
-                    openAiOcrContentPart(file, mimeType, body)
+                    ...(await openAiOcrContentParts(file, mimeType, body, env))
                   ]
                 }
               ],
@@ -653,12 +824,7 @@ export function createGeminiOcrProvider(
                     role: "user",
                     parts: [
                       { text: geminiOcrUserPrompt(review, file) },
-                      {
-                        inlineData: {
-                          mimeType,
-                          data: Buffer.from(body).toString("base64")
-                        }
-                      }
+                      ...(await geminiOcrInlineParts(mimeType, body, env))
                     ]
                   }
                 ],
@@ -670,7 +836,7 @@ export function createGeminiOcrProvider(
           );
 
           if (!response.ok) {
-            const errBody = await response.text().catch(() => "");
+            const errBody = (await response.text?.().catch(() => "")) ?? "";
             console.log(`[GeminiOCR] API error ${response.status}: ${errBody.slice(0, 200)}`);
             throw new Error(
               `Gemini OCR request failed: ${response.status ?? "unknown"} ${
@@ -992,6 +1158,7 @@ export function createReviewAnalysisPipeline({
         ragRetriever.prefetch?.({ review, scope })
       ]);
       const analysisDocuments = documentsForAnalysis(extractedDocuments);
+      const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.
       const retrievedCandidates = await ragRetriever.retrieve({
@@ -1034,6 +1201,7 @@ export function createReviewAnalysisPipeline({
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,
+        ...(extractionDiagnostics.length > 0 ? { extractionDiagnostics } : {}),
         evidenceCandidates,
         ...(agentFindings.length > 0 ? { agentFindings } : {}),
         ...(multilingualSegments.length > 0 ? { multilingualSegments } : {}),
