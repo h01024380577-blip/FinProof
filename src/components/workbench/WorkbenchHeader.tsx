@@ -16,6 +16,7 @@ export type WorkbenchHeaderProps = {
   reviewStatus: ReviewCase["status"];
   riskLevel: ReviewCase["highestRiskLevel"];
   productLabel: string;
+  requestDepartment?: string;
   requester: string;
   reviewer: string;
   deadline: string;
@@ -30,6 +31,7 @@ export function WorkbenchHeader({
   reviewStatus,
   riskLevel,
   productLabel,
+  requestDepartment: savedRequestDepartment,
   requester,
   reviewer,
   deadline,
@@ -39,7 +41,11 @@ export function WorkbenchHeader({
 }: WorkbenchHeaderProps): JSX.Element {
   const finalDecisionDisabled =
     !canMutate || isFinalizingReview || reviewStatus === "approved" || reviewStatus === "rejected";
-  const requestDepartment = requestDepartmentFor({ requester, productLabel });
+  const requestDepartment = requestDepartmentFor({
+    requestDepartment: savedRequestDepartment,
+    requester,
+    productLabel
+  });
 
   return (
     <section className="detail__header workbench-header" aria-label="심의 상세 요약">
@@ -113,12 +119,15 @@ export function WorkbenchHeader({
 }
 
 function requestDepartmentFor({
+  requestDepartment,
   requester,
   productLabel
 }: {
+  requestDepartment?: string;
   requester: string;
   productLabel: string;
 }): string {
+  if (requestDepartment?.trim()) return requestDepartment.trim();
   if (requester.includes("업로드")) return "디지털마케팅팀";
   if (productLabel === "카드") return "제휴마케팅팀";
   if (productLabel === "대출") return "리테일금융팀";

@@ -46,7 +46,8 @@ async function seedReviewCase(reviewCase: ReviewCase) {
     update: {
       title: reviewCase.title,
       status: reviewCase.status,
-      highestRiskLevel: reviewCase.highestRiskLevel
+      highestRiskLevel: reviewCase.highestRiskLevel,
+      requestDepartment: reviewCase.requestDepartment ?? ""
     },
     create: {
       id: reviewCase.id,
@@ -62,6 +63,7 @@ async function seedReviewCase(reviewCase: ReviewCase) {
       requesterId: "user-requester-demo",
       reviewerId: "user-reviewer-demo",
       requesterName: reviewCase.requester,
+      requestDepartment: reviewCase.requestDepartment ?? "",
       reviewerName: reviewCase.reviewer,
       promotionalCopy: reviewCase.promotionalCopy,
       disclosure: reviewCase.disclosure,

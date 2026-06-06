@@ -111,6 +111,7 @@ export type ReviewCase = {
   status: ReviewStatus;
   highestRiskLevel: RiskLevel;
   requester: string;
+  requestDepartment?: string;
   reviewer: string;
   promotionalCopy: string;
   disclosure: string;
@@ -134,6 +135,7 @@ export type ReviewSummary = Pick<
   | "status"
   | "highestRiskLevel"
   | "requester"
+  | "requestDepartment"
   | "reviewer"
 > & {
   availableActions?: ReviewAction[];

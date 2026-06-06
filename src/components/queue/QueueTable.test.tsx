@@ -89,6 +89,28 @@ describe("QueueTable", () => {
     expect(rowCells[5]).toHaveTextContent("분석 대기");
   });
 
+  it("shows the saved request department before product-based fallback", () => {
+    const loanRow = {
+      ...baseRow,
+      productType: "loan",
+      requestDepartment: "디지털마케팅팀"
+    } satisfies ReviewSummary;
+
+    render(
+      <QueueTable
+        rows={[loanRow]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    const rowCells = within(screen.getByRole("row", { name: /최고 연 5.0%/ })).getAllByRole("cell");
+    expect(rowCells[3]).toHaveTextContent("디지털마케팅팀");
+    expect(rowCells[3]).not.toHaveTextContent("리테일금융팀");
+  });
+
   it("keeps the queue grid narrow enough for a 1366px reviewer workspace", () => {
     expect(queueTableMinimumWidth()).toBeLessThanOrEqual(996);
   });

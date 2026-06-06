@@ -47,6 +47,7 @@ export type ReviewCaseMinAggregateOutputType = {
   requesterId: string | null
   reviewerId: string | null
   requesterName: string | null
+  requestDepartment: string | null
   reviewerName: string | null
   promotionalCopy: string | null
   disclosure: string | null
@@ -76,6 +77,7 @@ export type ReviewCaseMaxAggregateOutputType = {
   requesterId: string | null
   reviewerId: string | null
   requesterName: string | null
+  requestDepartment: string | null
   reviewerName: string | null
   promotionalCopy: string | null
   disclosure: string | null
@@ -106,6 +108,7 @@ export type ReviewCaseCountAggregateOutputType = {
   requesterId: number
   reviewerId: number
   requesterName: number
+  requestDepartment: number
   reviewerName: number
   promotionalCopy: number
   disclosure: number
@@ -146,6 +149,7 @@ export type ReviewCaseMinAggregateInputType = {
   requesterId?: true
   reviewerId?: true
   requesterName?: true
+  requestDepartment?: true
   reviewerName?: true
   promotionalCopy?: true
   disclosure?: true
@@ -175,6 +179,7 @@ export type ReviewCaseMaxAggregateInputType = {
   requesterId?: true
   reviewerId?: true
   requesterName?: true
+  requestDepartment?: true
   reviewerName?: true
   promotionalCopy?: true
   disclosure?: true
@@ -205,6 +210,7 @@ export type ReviewCaseCountAggregateInputType = {
   requesterId?: true
   reviewerId?: true
   requesterName?: true
+  requestDepartment?: true
   reviewerName?: true
   promotionalCopy?: true
   disclosure?: true
@@ -323,6 +329,7 @@ export type ReviewCaseGroupByOutputType = {
   requesterId: string
   reviewerId: string | null
   requesterName: string
+  requestDepartment: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -377,6 +384,7 @@ export type ReviewCaseWhereInput = {
   requesterId?: Prisma.StringFilter<"ReviewCase"> | string
   reviewerId?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   requesterName?: Prisma.StringFilter<"ReviewCase"> | string
+  requestDepartment?: Prisma.StringFilter<"ReviewCase"> | string
   reviewerName?: Prisma.StringFilter<"ReviewCase"> | string
   promotionalCopy?: Prisma.StringFilter<"ReviewCase"> | string
   disclosure?: Prisma.StringFilter<"ReviewCase"> | string
@@ -420,6 +428,7 @@ export type ReviewCaseOrderByWithRelationInput = {
   requesterId?: Prisma.SortOrder
   reviewerId?: Prisma.SortOrderInput | Prisma.SortOrder
   requesterName?: Prisma.SortOrder
+  requestDepartment?: Prisma.SortOrder
   reviewerName?: Prisma.SortOrder
   promotionalCopy?: Prisma.SortOrder
   disclosure?: Prisma.SortOrder
@@ -466,6 +475,7 @@ export type ReviewCaseWhereUniqueInput = Prisma.AtLeast<{
   requesterId?: Prisma.StringFilter<"ReviewCase"> | string
   reviewerId?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   requesterName?: Prisma.StringFilter<"ReviewCase"> | string
+  requestDepartment?: Prisma.StringFilter<"ReviewCase"> | string
   reviewerName?: Prisma.StringFilter<"ReviewCase"> | string
   promotionalCopy?: Prisma.StringFilter<"ReviewCase"> | string
   disclosure?: Prisma.StringFilter<"ReviewCase"> | string
@@ -509,6 +519,7 @@ export type ReviewCaseOrderByWithAggregationInput = {
   requesterId?: Prisma.SortOrder
   reviewerId?: Prisma.SortOrderInput | Prisma.SortOrder
   requesterName?: Prisma.SortOrder
+  requestDepartment?: Prisma.SortOrder
   reviewerName?: Prisma.SortOrder
   promotionalCopy?: Prisma.SortOrder
   disclosure?: Prisma.SortOrder
@@ -548,6 +559,7 @@ export type ReviewCaseScalarWhereWithAggregatesInput = {
   requesterId?: Prisma.StringWithAggregatesFilter<"ReviewCase"> | string
   reviewerId?: Prisma.StringNullableWithAggregatesFilter<"ReviewCase"> | string | null
   requesterName?: Prisma.StringWithAggregatesFilter<"ReviewCase"> | string
+  requestDepartment?: Prisma.StringWithAggregatesFilter<"ReviewCase"> | string
   reviewerName?: Prisma.StringWithAggregatesFilter<"ReviewCase"> | string
   promotionalCopy?: Prisma.StringWithAggregatesFilter<"ReviewCase"> | string
   disclosure?: Prisma.StringWithAggregatesFilter<"ReviewCase"> | string
@@ -575,6 +587,7 @@ export type ReviewCaseCreateInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -618,6 +631,7 @@ export type ReviewCaseUncheckedCreateInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -653,6 +667,7 @@ export type ReviewCaseUpdateInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -696,6 +711,7 @@ export type ReviewCaseUncheckedUpdateInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -735,6 +751,7 @@ export type ReviewCaseCreateManyInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -762,6 +779,7 @@ export type ReviewCaseUpdateManyMutationInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -793,6 +811,7 @@ export type ReviewCaseUncheckedUpdateManyInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -834,6 +853,7 @@ export type ReviewCaseCountOrderByAggregateInput = {
   requesterId?: Prisma.SortOrder
   reviewerId?: Prisma.SortOrder
   requesterName?: Prisma.SortOrder
+  requestDepartment?: Prisma.SortOrder
   reviewerName?: Prisma.SortOrder
   promotionalCopy?: Prisma.SortOrder
   disclosure?: Prisma.SortOrder
@@ -868,6 +888,7 @@ export type ReviewCaseMaxOrderByAggregateInput = {
   requesterId?: Prisma.SortOrder
   reviewerId?: Prisma.SortOrder
   requesterName?: Prisma.SortOrder
+  requestDepartment?: Prisma.SortOrder
   reviewerName?: Prisma.SortOrder
   promotionalCopy?: Prisma.SortOrder
   disclosure?: Prisma.SortOrder
@@ -897,6 +918,7 @@ export type ReviewCaseMinOrderByAggregateInput = {
   requesterId?: Prisma.SortOrder
   reviewerId?: Prisma.SortOrder
   requesterName?: Prisma.SortOrder
+  requestDepartment?: Prisma.SortOrder
   reviewerName?: Prisma.SortOrder
   promotionalCopy?: Prisma.SortOrder
   disclosure?: Prisma.SortOrder
@@ -1240,6 +1262,7 @@ export type ReviewCaseCreateWithoutTenantInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1281,6 +1304,7 @@ export type ReviewCaseUncheckedCreateWithoutTenantInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1349,6 +1373,7 @@ export type ReviewCaseScalarWhereInput = {
   requesterId?: Prisma.StringFilter<"ReviewCase"> | string
   reviewerId?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   requesterName?: Prisma.StringFilter<"ReviewCase"> | string
+  requestDepartment?: Prisma.StringFilter<"ReviewCase"> | string
   reviewerName?: Prisma.StringFilter<"ReviewCase"> | string
   promotionalCopy?: Prisma.StringFilter<"ReviewCase"> | string
   disclosure?: Prisma.StringFilter<"ReviewCase"> | string
@@ -1376,6 +1401,7 @@ export type ReviewCaseCreateWithoutAffiliateInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1417,6 +1443,7 @@ export type ReviewCaseUncheckedCreateWithoutAffiliateInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1478,6 +1505,7 @@ export type ReviewCaseCreateWithoutRequesterInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1519,6 +1547,7 @@ export type ReviewCaseUncheckedCreateWithoutRequesterInput = {
   highestRiskLevel?: $Enums.RiskLevel
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1564,6 +1593,7 @@ export type ReviewCaseCreateWithoutReviewerInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1605,6 +1635,7 @@ export type ReviewCaseUncheckedCreateWithoutReviewerInput = {
   highestRiskLevel?: $Enums.RiskLevel
   requesterId: string
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1682,6 +1713,7 @@ export type ReviewCaseCreateWithoutFilesInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1724,6 +1756,7 @@ export type ReviewCaseUncheckedCreateWithoutFilesInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1774,6 +1807,7 @@ export type ReviewCaseUpdateWithoutFilesInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1816,6 +1850,7 @@ export type ReviewCaseUncheckedUpdateWithoutFilesInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1850,6 +1885,7 @@ export type ReviewCaseCreateWithoutIssuesInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1892,6 +1928,7 @@ export type ReviewCaseUncheckedCreateWithoutIssuesInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -1942,6 +1979,7 @@ export type ReviewCaseUpdateWithoutIssuesInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -1984,6 +2022,7 @@ export type ReviewCaseUncheckedUpdateWithoutIssuesInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2018,6 +2057,7 @@ export type ReviewCaseCreateWithoutAnalysisJobsInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2060,6 +2100,7 @@ export type ReviewCaseUncheckedCreateWithoutAnalysisJobsInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2110,6 +2151,7 @@ export type ReviewCaseUpdateWithoutAnalysisJobsInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2152,6 +2194,7 @@ export type ReviewCaseUncheckedUpdateWithoutAnalysisJobsInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2186,6 +2229,7 @@ export type ReviewCaseCreateWithoutAgentRunsInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2228,6 +2272,7 @@ export type ReviewCaseUncheckedCreateWithoutAgentRunsInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2278,6 +2323,7 @@ export type ReviewCaseUpdateWithoutAgentRunsInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2320,6 +2366,7 @@ export type ReviewCaseUncheckedUpdateWithoutAgentRunsInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2354,6 +2401,7 @@ export type ReviewCaseCreateWithoutAgentFindingsInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2396,6 +2444,7 @@ export type ReviewCaseUncheckedCreateWithoutAgentFindingsInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2446,6 +2495,7 @@ export type ReviewCaseUpdateWithoutAgentFindingsInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2488,6 +2538,7 @@ export type ReviewCaseUncheckedUpdateWithoutAgentFindingsInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2522,6 +2573,7 @@ export type ReviewCaseCreateWithoutChatSessionsInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2564,6 +2616,7 @@ export type ReviewCaseUncheckedCreateWithoutChatSessionsInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2614,6 +2667,7 @@ export type ReviewCaseUpdateWithoutChatSessionsInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2656,6 +2710,7 @@ export type ReviewCaseUncheckedUpdateWithoutChatSessionsInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2690,6 +2745,7 @@ export type ReviewCaseCreateWithoutDraftVersionsInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2732,6 +2788,7 @@ export type ReviewCaseUncheckedCreateWithoutDraftVersionsInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2782,6 +2839,7 @@ export type ReviewCaseUpdateWithoutDraftVersionsInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2824,6 +2882,7 @@ export type ReviewCaseUncheckedUpdateWithoutDraftVersionsInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2858,6 +2917,7 @@ export type ReviewCaseCreateWithoutReportsInput = {
   status: $Enums.ReviewStatus
   highestRiskLevel?: $Enums.RiskLevel
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2900,6 +2960,7 @@ export type ReviewCaseUncheckedCreateWithoutReportsInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -2950,6 +3011,7 @@ export type ReviewCaseUpdateWithoutReportsInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -2992,6 +3054,7 @@ export type ReviewCaseUncheckedUpdateWithoutReportsInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3029,6 +3092,7 @@ export type ReviewCaseCreateManyTenantInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -3056,6 +3120,7 @@ export type ReviewCaseUpdateWithoutTenantInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3097,6 +3162,7 @@ export type ReviewCaseUncheckedUpdateWithoutTenantInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3135,6 +3201,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutTenantInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3165,6 +3232,7 @@ export type ReviewCaseCreateManyAffiliateInput = {
   requesterId: string
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -3192,6 +3260,7 @@ export type ReviewCaseUpdateWithoutAffiliateInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3233,6 +3302,7 @@ export type ReviewCaseUncheckedUpdateWithoutAffiliateInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3271,6 +3341,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutAffiliateInput = {
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3301,6 +3372,7 @@ export type ReviewCaseCreateManyRequesterInput = {
   highestRiskLevel?: $Enums.RiskLevel
   reviewerId?: string | null
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -3331,6 +3403,7 @@ export type ReviewCaseCreateManyReviewerInput = {
   highestRiskLevel?: $Enums.RiskLevel
   requesterId: string
   requesterName: string
+  requestDepartment?: string
   reviewerName: string
   promotionalCopy: string
   disclosure: string
@@ -3358,6 +3431,7 @@ export type ReviewCaseUpdateWithoutRequesterInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3399,6 +3473,7 @@ export type ReviewCaseUncheckedUpdateWithoutRequesterInput = {
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3437,6 +3512,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutRequesterInput = {
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3464,6 +3540,7 @@ export type ReviewCaseUpdateWithoutReviewerInput = {
   status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3505,6 +3582,7 @@ export type ReviewCaseUncheckedUpdateWithoutReviewerInput = {
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3543,6 +3621,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutReviewerInput = {
   highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
   requesterId?: Prisma.StringFieldUpdateOperationsInput | string
   requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
   reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
   promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
   disclosure?: Prisma.StringFieldUpdateOperationsInput | string
@@ -3668,6 +3747,7 @@ export type ReviewCaseSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   requesterId?: boolean
   reviewerId?: boolean
   requesterName?: boolean
+  requestDepartment?: boolean
   reviewerName?: boolean
   promotionalCopy?: boolean
   disclosure?: boolean
@@ -3712,6 +3792,7 @@ export type ReviewCaseSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   requesterId?: boolean
   reviewerId?: boolean
   requesterName?: boolean
+  requestDepartment?: boolean
   reviewerName?: boolean
   promotionalCopy?: boolean
   disclosure?: boolean
@@ -3747,6 +3828,7 @@ export type ReviewCaseSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   requesterId?: boolean
   reviewerId?: boolean
   requesterName?: boolean
+  requestDepartment?: boolean
   reviewerName?: boolean
   promotionalCopy?: boolean
   disclosure?: boolean
@@ -3782,6 +3864,7 @@ export type ReviewCaseSelectScalar = {
   requesterId?: boolean
   reviewerId?: boolean
   requesterName?: boolean
+  requestDepartment?: boolean
   reviewerName?: boolean
   promotionalCopy?: boolean
   disclosure?: boolean
@@ -3799,7 +3882,7 @@ export type ReviewCaseSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ReviewCaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "affiliateId" | "affiliateName" | "title" | "productType" | "channelType" | "plannedPublishDate" | "status" | "highestRiskLevel" | "requesterId" | "reviewerId" | "requesterName" | "reviewerName" | "promotionalCopy" | "disclosure" | "productDescription" | "missingMaterials" | "expectedDraft" | "currentDraft" | "currentDraftVersion" | "analysisNotice" | "submittedAt" | "analysisStartedAt" | "analysisCompletedAt" | "finalDecisionAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reviewCase"]>
+export type ReviewCaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "affiliateId" | "affiliateName" | "title" | "productType" | "channelType" | "plannedPublishDate" | "status" | "highestRiskLevel" | "requesterId" | "reviewerId" | "requesterName" | "requestDepartment" | "reviewerName" | "promotionalCopy" | "disclosure" | "productDescription" | "missingMaterials" | "expectedDraft" | "currentDraft" | "currentDraftVersion" | "analysisNotice" | "submittedAt" | "analysisStartedAt" | "analysisCompletedAt" | "finalDecisionAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reviewCase"]>
 export type ReviewCaseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   affiliate?: boolean | Prisma.ReviewCase$affiliateArgs<ExtArgs>
@@ -3858,6 +3941,7 @@ export type $ReviewCasePayload<ExtArgs extends runtime.Types.Extensions.Internal
     requesterId: string
     reviewerId: string | null
     requesterName: string
+    requestDepartment: string
     reviewerName: string
     promotionalCopy: string
     disclosure: string
@@ -4321,6 +4405,7 @@ export interface ReviewCaseFieldRefs {
   readonly requesterId: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly reviewerId: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly requesterName: Prisma.FieldRef<"ReviewCase", 'String'>
+  readonly requestDepartment: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly reviewerName: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly promotionalCopy: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly disclosure: Prisma.FieldRef<"ReviewCase", 'String'>

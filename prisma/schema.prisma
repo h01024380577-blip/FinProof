@@ -283,6 +283,7 @@ model ReviewCase {
   requesterId         String         @map("requester_id")
   reviewerId          String?        @map("reviewer_id")
   requesterName       String         @map("requester_name")
+  requestDepartment   String         @default("") @map("request_department")
   reviewerName        String         @map("reviewer_name")
   promotionalCopy     String         @map("promotional_copy")
   disclosure          String

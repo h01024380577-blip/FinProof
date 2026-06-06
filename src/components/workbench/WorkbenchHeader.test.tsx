@@ -58,6 +58,28 @@ describe("WorkbenchHeader", () => {
     expect(screen.getByText("위험")).toHaveAttribute("data-risk", "high");
   });
 
+  it("shows the saved request department before product-based fallback", () => {
+    const props = {
+      id: "RC-2026-001",
+      title: "대출 홍보물 심의",
+      reviewStatus: "approved" as const,
+      riskLevel: "info" as const,
+      productLabel: "대출",
+      requestDepartment: "디지털마케팅팀",
+      requester: "요청자 김지현",
+      reviewer: "박심의",
+      deadline: "2026-06-10",
+      canMutate: false,
+      isFinalizingReview: false,
+      onFinalizeReviewCase: () => undefined
+    } satisfies Parameters<typeof WorkbenchHeader>[0];
+
+    render(<WorkbenchHeader {...props} />);
+
+    expect(screen.getByText("디지털마케팅팀")).toBeInTheDocument();
+    expect(screen.queryByText("리테일금융팀")).not.toBeInTheDocument();
+  });
+
   it("fires final decision action when an approval or rejection button is clicked", async () => {
     const onFinalize = vi.fn();
     render(

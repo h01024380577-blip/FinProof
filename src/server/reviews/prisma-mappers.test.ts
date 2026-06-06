@@ -10,6 +10,7 @@ const row = {
   status: "analysis_complete" as const,
   highestRiskLevel: "high" as const,
   requesterName: "업로드 요청자",
+  requestDepartment: "디지털마케팅팀",
   reviewerName: "준법심의자 박민준",
   promotionalCopy: "최고 연 5.0%",
   disclosure: "우대 조건 있음",
@@ -202,6 +203,7 @@ describe("prisma review mappers", () => {
       status: "analysis_complete",
       highestRiskLevel: "high",
       requester: "업로드 요청자",
+      requestDepartment: "디지털마케팅팀",
       reviewer: "준법심의자 박민준"
     });
   });

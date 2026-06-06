@@ -1005,6 +1005,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         reviewStatus={reviewStatus}
         riskLevel={review.highestRiskLevel}
         productLabel={productLabels[review.productType]}
+        requestDepartment={review.requestDepartment}
         requester={review.requester}
         reviewer={review.reviewer}
         deadline={review.plannedPublishDate}

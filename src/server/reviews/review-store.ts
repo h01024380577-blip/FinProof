@@ -55,6 +55,7 @@ export type CreateReviewCaseFromUploadedFilesInput = {
   reviewCaseId?: string;
   title: string;
   affiliate: string;
+  requestDepartment?: string;
   productType: ProductType;
   channelType: string[];
   plannedPublishDate: string;

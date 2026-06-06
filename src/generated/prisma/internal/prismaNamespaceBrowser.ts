@@ -139,6 +139,7 @@ export const ReviewCaseScalarFieldEnum = {
   requesterId: 'requesterId',
   reviewerId: 'reviewerId',
   requesterName: 'requesterName',
+  requestDepartment: 'requestDepartment',
   reviewerName: 'reviewerName',
   promotionalCopy: 'promotionalCopy',
   disclosure: 'disclosure',

@@ -75,6 +75,7 @@ export type PrismaReviewCaseRow = {
   status: ReviewCase["status"];
   highestRiskLevel: ReviewCase["highestRiskLevel"];
   requesterName: string;
+  requestDepartment?: string | null;
   reviewerName: string;
   promotionalCopy: string;
   disclosure: string;
@@ -212,6 +213,10 @@ function dateOnlyString(value: Date): string {
   return value.toISOString().slice(0, 10);
 }
 
+function optionalTrimmedString(value: string | null | undefined): string | undefined {
+  return value?.trim() || undefined;
+}
+
 function jsonObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -309,6 +314,7 @@ export function toReviewCase(row: PrismaReviewCaseRow): ReviewCase {
     status: row.status,
     highestRiskLevel: row.highestRiskLevel,
     requester: row.requesterName,
+    requestDepartment: optionalTrimmedString(row.requestDepartment),
     reviewer: row.reviewerName,
     promotionalCopy: row.promotionalCopy,
     disclosure: row.disclosure,
@@ -333,6 +339,7 @@ export function toReviewSummary(row: PrismaReviewCaseRow): ReviewSummary {
     status: row.status,
     highestRiskLevel: row.highestRiskLevel,
     requester: row.requesterName,
+    requestDepartment: optionalTrimmedString(row.requestDepartment),
     reviewer: row.reviewerName
   };
 }

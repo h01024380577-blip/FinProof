@@ -50,6 +50,7 @@ function actionsFor(review: ReviewSummary, role: RoleId): ReviewAction[] {
 }
 
 function requestDepartment(review: ReviewSummary): string {
+  if (review.requestDepartment?.trim()) return review.requestDepartment.trim();
   if (review.requester.includes("업로드")) return "디지털마케팅팀";
   if (review.productType === "card") return "제휴마케팅팀";
   if (review.productType === "loan") return "리테일금융팀";

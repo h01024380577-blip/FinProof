@@ -67,6 +67,7 @@ export function getReviewSummaries(): ReviewSummary[] {
       status,
       highestRiskLevel,
       requester,
+      requestDepartment,
       reviewer
     }) => ({
       id,
@@ -77,6 +78,7 @@ export function getReviewSummaries(): ReviewSummary[] {
       status,
       highestRiskLevel,
       requester,
+      requestDepartment,
       reviewer
     })
   );

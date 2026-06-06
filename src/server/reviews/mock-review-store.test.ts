@@ -128,6 +128,49 @@ describe("mock review store", () => {
     });
   });
 
+  it("stores the uploaded request department for finalized review history", async () => {
+    const store = createMockReviewStore();
+    const requesterScope = {
+      ...scope,
+      actorUserId: "user-requester-demo",
+      actorRole: "requester" as const,
+      actorUserName: "요청자 김지현"
+    };
+
+    const uploadInput = {
+      title: "실제 업로드 대출 홍보물",
+      affiliate: "광주은행",
+      productType: "loan",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      requestDepartment: "디지털마케팅팀",
+      files: [
+        {
+          name: "real-loan-poster.png",
+          type: "image/png",
+          size: 2048
+        }
+      ]
+    } satisfies Parameters<typeof store.createReviewCaseFromUploadedFiles>[1];
+
+    const result = await store.createReviewCaseFromUploadedFiles(requesterScope, uploadInput);
+
+    await store.startAnalysis(scope, result.reviewCase.id);
+    const finalized = await store.updateReviewStatus(scope, result.reviewCase.id, "approved");
+    const history = await store.listReviewSummaries(scope, { status: "approved" });
+
+    expect(finalized?.requestDepartment).toBe("디지털마케팅팀");
+    expect(history.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: result.reviewCase.id,
+          requestDepartment: "디지털마케팅팀",
+          status: "approved"
+        })
+      ])
+    );
+  });
+
   it("scopes requester lists and detail access by requester user id instead of display name", async () => {
     const store = createMockReviewStore([]);
     const marketingScope = {

@@ -256,6 +256,10 @@ describe("review API routes", () => {
       "",
       "2026-06-20",
       `--${boundary}`,
+      'Content-Disposition: form-data; name="requestDepartment"',
+      "",
+      "디지털마케팅팀",
+      `--${boundary}`,
       'Content-Disposition: form-data; name="files"; filename="real-deposit-poster.png"',
       "Content-Type: image/png",
       "",
@@ -286,6 +290,7 @@ describe("review API routes", () => {
     expect(createBody.reviewCase).toMatchObject({
       id: "rc-upload-001",
       requester: "요청자 김지현",
+      requestDepartment: "디지털마케팅팀",
       status: "analysis_waiting",
       reviewer: "",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
@@ -319,6 +324,20 @@ describe("review API routes", () => {
       jobId: "job-rc-upload-001-001",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
+
+    const listResponse = await listGET(
+      roleRequest("/api/v1/review-cases?status=analysis_complete", "reviewer", "GET")
+    );
+    const listBody = await listResponse.json();
+
+    expect(listBody.reviewCases).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "rc-upload-001",
+          requestDepartment: "디지털마케팅팀"
+        })
+      ])
+    );
   });
 
   it("creates image-only test review cases without requiring document materials", async () => {

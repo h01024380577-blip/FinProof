@@ -131,6 +131,7 @@ function toSummary(review: ReviewCase): ReviewSummary {
     status: review.status,
     highestRiskLevel: review.highestRiskLevel,
     requester: review.requester,
+    requestDepartment: review.requestDepartment,
     reviewer: review.reviewer
   };
 }
@@ -735,6 +736,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         status: "analysis_waiting",
         highestRiskLevel: "info",
         requester: scope.actorUserName?.trim() || "업로드 요청자",
+        requestDepartment: input.requestDepartment?.trim() || undefined,
         reviewer: "",
         promotionalCopy: "실제 업로드 자료 분석 대기",
         disclosure: uploadAnalysisNotice,

@@ -1997,6 +1997,7 @@ export function createPrismaReviewStore(): ReviewStore {
           requesterId: scope.actorUserId,
           reviewerId: null,
           requesterName: scope.actorUserName?.trim() || "업로드 요청자",
+          requestDepartment: input.requestDepartment?.trim() || "",
           reviewerName: "",
           promotionalCopy: "실제 업로드 자료 분석 대기",
           disclosure: uploadAnalysisNotice,
