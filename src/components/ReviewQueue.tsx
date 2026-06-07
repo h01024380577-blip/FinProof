@@ -72,7 +72,6 @@ const defaultFilterState: QueueFilterState = {
 };
 const queuePageSize = 10;
 
-
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 
 type HistoryDecision = "all" | "approved" | "rejected";
@@ -128,8 +127,7 @@ export function ReviewQueue(): JSX.Element {
       inReview: scopedReviews.filter(
         (r) => r.status === "analysis_complete" || r.status === "under_review"
       ).length,
-      rejectRecommended: scopedReviews.filter((r) => r.highestRiskLevel === "reject_recommended")
-        .length,
+      highRisk: scopedReviews.filter((r) => r.highestRiskLevel === "high").length,
       dueSoon: scopedReviews.filter((r) => r.plannedPublishDate <= "2026-06-12").length
     }),
     [scopedReviews]
@@ -406,7 +404,8 @@ export function ReviewQueue(): JSX.Element {
         void pollForCompletion(review.id);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "분석 시작 요청을 처리하지 못했습니다.";
+      const message =
+        error instanceof Error ? error.message : "분석 시작 요청을 처리하지 못했습니다.";
 
       setLoadError(message);
       setAnalysisState(review.id, {
@@ -514,9 +513,7 @@ export function ReviewQueue(): JSX.Element {
       {scope === "active" ? (
         <QueueMetrics
           metrics={metrics}
-          onSelectRejectRecommended={() =>
-            setFilters((f) => ({ ...f, risk: "reject_recommended" }))
-          }
+          onSelectHighRisk={() => setFilters((f) => ({ ...f, risk: "high" }))}
           onSelectDueSoon={() => setFilters((f) => ({ ...f, status: "all", risk: "all" }))}
         />
       ) : null}

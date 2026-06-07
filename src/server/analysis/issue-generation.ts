@@ -1,13 +1,8 @@
 import type { Evidence, ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import { MIN_MATCHED_EVIDENCE_SCORE } from "@/domain/evidence";
 import type { AnalysisArtifacts, RagEvidenceCandidate } from "./review-analysis-pipeline";
+import { normalizeAiSuggestedAction, normalizeAnalysisRiskLevel, riskRank } from "./risk-policy";
 
-const riskRank: Record<RiskLevel, number> = {
-  info: 0,
-  caution: 1,
-  high: 2,
-  reject_recommended: 3
-};
 const defaultMinEvidenceScore = MIN_MATCHED_EVIDENCE_SCORE;
 
 type BuildAnalysisIssuesOptions = {
@@ -220,8 +215,7 @@ function baseIssue({
     targetText,
     targetBbox: [0, 0, 0, 0],
     sourceAgents: ["ocr", "rag", "rule-engine"],
-    suggestedAction:
-      riskLevel === "high" || riskLevel === "reject_recommended" ? "change_request" : "hold",
+    suggestedAction: riskLevel === "high" ? "change_request" : "hold",
     status: "open",
     description,
     suggestedCopy,
@@ -236,6 +230,7 @@ function issuesFromAgentFindings(
 ): ReviewIssue[] {
   return (artifacts.agentFindings ?? []).map((finding) => {
     const issueId = `issue-${review.id}-${finding.id}`;
+    const riskLevel = normalizeAnalysisRiskLevel(finding.riskLevel);
     const matchedEvidence = finding.evidenceCandidateIds
       .map((candidateId) => evidenceCandidateById(artifacts, candidateId))
       .filter(
@@ -254,12 +249,12 @@ function issuesFromAgentFindings(
     return {
       id: issueId,
       issueType: finding.issueType,
-      riskLevel: finding.riskLevel,
+      riskLevel,
       title: finding.title,
       targetText: finding.targetText,
       targetBbox: [0, 0, 0, 0] as [number, number, number, number],
       sourceAgents: [finding.agent],
-      suggestedAction: finding.suggestedAction,
+      suggestedAction: normalizeAiSuggestedAction(finding.suggestedAction),
       status: "open",
       description: finding.description,
       suggestedCopy: finding.suggestedCopy,

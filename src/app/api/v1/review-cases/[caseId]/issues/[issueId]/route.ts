@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
-import type { ReviewIssue, RiskLevel } from "@/domain/types";
+import type { ReviewIssue } from "@/domain/types";
 import { createReviewService } from "@/server/reviews/review-service";
 import {
   jsonError,
   jsonForbidden,
+  parseRiskLevel,
   readJsonBody,
   requestContext,
   type RouteContext
 } from "@/server/reviews/route-utils";
 
 type SaveDecisionRequest = {
-  reviewerRiskLevel?: RiskLevel;
+  reviewerRiskLevel?: string;
   finalAction?: ReviewIssue["finalAction"];
   reviewerComment?: string;
 };
@@ -26,13 +27,19 @@ export async function PATCH(
     return jsonError("reviewerRiskLevel and finalAction are required", 400);
   }
 
+  const reviewerRiskLevel = parseRiskLevel(body.reviewerRiskLevel);
+
+  if (!reviewerRiskLevel) {
+    return jsonError("reviewerRiskLevel is invalid", 400);
+  }
+
   let issue: ReviewIssue | undefined;
 
   try {
     issue = await createReviewService().saveIssueDecision(await requestContext(request), {
       reviewCaseId: caseId,
       issueId,
-      reviewerRiskLevel: body.reviewerRiskLevel,
+      reviewerRiskLevel,
       finalAction: body.finalAction,
       reviewerComment: body.reviewerComment ?? ""
     });

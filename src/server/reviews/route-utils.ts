@@ -67,12 +67,7 @@ export async function readJsonBody<T>(request: Request): Promise<T | undefined> 
 }
 
 export function parseRiskLevel(value: string | null): RiskLevel | undefined {
-  if (
-    value === "info" ||
-    value === "caution" ||
-    value === "high" ||
-    value === "reject_recommended"
-  ) {
+  if (value === "info" || value === "caution" || value === "high") {
     return value;
   }
 

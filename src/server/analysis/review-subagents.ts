@@ -1,8 +1,23 @@
 import type { RiskLevel, ReviewCase, ReviewIssue } from "@/domain/types";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
 import type { ModelRouteContext, ModelRouteTask } from "@/server/ai/model-router";
+import {
+  CASE_SEARCH_PROMPT,
+  CREATIVE_REVIEW_PROMPT,
+  EVIDENCE_VERIFICATION_PROMPT,
+  INTERNAL_POLICY_AGENT_PROMPT,
+  MAIN_COMPLIANCE_PROMPT,
+  PRODUCT_TERMS_PROMPT,
+  REGULATION_AGENT_PROMPT
+} from "@/server/ai/prompt-registry";
 import type { KoreanComplianceMapping, LocalizedRiskFinding } from "./multilingual";
 import type { ExtractedDocument, RagEvidenceCandidate } from "./review-analysis-pipeline";
+import {
+  analysisRiskLevels,
+  normalizeAiSuggestedAction,
+  normalizeAnalysisRiskLevel,
+  riskRank
+} from "./risk-policy";
 
 export type ReviewSubAgentId =
   | "main"
@@ -49,59 +64,45 @@ export type ReviewSubAgentOrchestrator = {
   }): Promise<AgentFinding[]>;
 };
 
-const riskRank: Record<RiskLevel, number> = {
-  info: 0,
-  caution: 1,
-  high: 2,
-  reject_recommended: 3
-};
-
 const domainSubAgents: ReviewSubAgentDefinition[] = [
   {
     id: "creative_review",
     task: "creative_review",
-    instructions:
-      "You are a Korean financial ad creative review agent. Find misleading benefit, rate, guarantee, urgency, and visual-copy claims. Return only JSON."
+    instructions: CREATIVE_REVIEW_PROMPT
   },
   {
     id: "product_terms",
     task: "product_terms",
-    instructions:
-      "You are a Korean financial product terms agent. Check whether advertised claims are supported by product terms, limits, eligibility, fees, rates, and conditions. Return only JSON."
+    instructions: PRODUCT_TERMS_PROMPT
   },
   {
     id: "regulation",
     task: "regulation_agent",
-    instructions:
-      "You are a Korean financial advertising regulation agent. Check supplied law, supervisory guideline, and regulatory evidence. Do not infer legal violations without evidence. Return only JSON."
+    instructions: REGULATION_AGENT_PROMPT
   },
   {
     id: "internal_policy",
     task: "internal_policy_agent",
-    instructions:
-      "You are a Korean financial institution internal review policy agent. Check supplied internal policy, checklist, prohibited expressions, and conservative review standards. Return only JSON."
+    instructions: INTERNAL_POLICY_AGENT_PROMPT
   }
 ];
 
 const evidenceVerificationAgent: ReviewSubAgentDefinition = {
   id: "evidence_verification",
   task: "evidence_verification",
-  instructions:
-    "You are an evidence verification agent. Validate whether prior issue findings are grounded in supplied documents and evidence ids. Return only JSON."
+  instructions: EVIDENCE_VERIFICATION_PROMPT
 };
 
 const caseSearchAgent: ReviewSubAgentDefinition = {
   id: "case_search",
   task: "case_search",
-  instructions:
-    "You are a Korean financial advertising case history search agent. Identify prior review cases that may be useful references for the current findings. Past cases are reference material only. Return only JSON."
+  instructions: CASE_SEARCH_PROMPT
 };
 
 const mainComplianceAgent: ReviewSubAgentDefinition = {
   id: "main",
   task: "main_compliance",
-  instructions:
-    "You are the senior Korean financial advertising compliance lead agent. Review every prior sub-agent finding, remove duplicates, resolve conflicts, and return the final evidence-bound issue findings with final riskLevel judgments. Use a conservative but not exaggerated risk level. Return only JSON."
+  instructions: MAIN_COMPLIANCE_PROMPT
 };
 
 function clampConfidence(value: unknown) {
@@ -113,24 +114,11 @@ function clampConfidence(value: unknown) {
 }
 
 function normalizeRiskLevel(value: unknown): RiskLevel {
-  if (
-    value === "info" ||
-    value === "caution" ||
-    value === "high" ||
-    value === "reject_recommended"
-  ) {
-    return value;
-  }
-
-  return "caution";
+  return normalizeAnalysisRiskLevel(value);
 }
 
 function normalizeAction(value: unknown): ReviewIssue["suggestedAction"] {
-  if (value === "approve" || value === "change_request" || value === "reject" || value === "hold") {
-    return value;
-  }
-
-  return "change_request";
+  return normalizeAiSuggestedAction(value);
 }
 
 function compactText(text: string, maxLength = 1600) {
@@ -293,16 +281,13 @@ function hasMaterialAgentConflict(findings: AgentFinding[]) {
 
   const riskValues = findings.map((finding) => riskRank[finding.riskLevel]);
   const riskSpread = Math.max(...riskValues) - Math.min(...riskValues);
-  const hasRejectRecommended = findings.some(
-    (finding) => finding.riskLevel === "reject_recommended"
-  );
   const highRiskAgents = new Set(
     findings
       .filter((finding) => riskRank[finding.riskLevel] >= riskRank.high)
       .map((finding) => finding.agent)
   );
 
-  return hasRejectRecommended || riskSpread >= 2 || highRiskAgents.size >= 2;
+  return riskSpread >= 2 || highRiskAgents.size >= 2;
 }
 
 function compactPriorFindings(findings: AgentFinding[]) {
@@ -393,8 +378,8 @@ function agentInput({
     outputSchema: {
       findings:
         "array of { title, issueType, riskLevel, targetText, description, suggestedAction, suggestedCopy, evidenceCandidateIds, confidence }",
-      allowedRiskLevels: ["info", "caution", "high", "reject_recommended"],
-      allowedSuggestedActions: ["approve", "change_request", "reject", "hold"]
+      allowedRiskLevels: analysisRiskLevels,
+      allowedSuggestedActions: ["approve", "change_request", "hold"]
     }
   });
 }
@@ -422,10 +407,7 @@ async function runAgent({
       ...baseRouteContext(input),
       ...routeContext
     },
-    instructions: `${agent.instructions}
-
-Return strict JSON only. Use the exact supplied evidenceCandidateIds. If there is no actionable issue, return [].
-Do not invent facts outside the uploaded documents.`,
+    instructions: agent.instructions,
     input: agentInput({ ...input, priorFindings }),
     fallback: "[]"
   });
@@ -499,8 +481,7 @@ export function createReviewSubAgentOrchestrator(
         priorFindings: findings,
         routeContext: {
           riskLevel: highestFindingRisk(findings),
-          agentConflict: hasMaterialAgentConflict(findings),
-          sensitiveOutput: findings.some((finding) => finding.riskLevel === "reject_recommended")
+          agentConflict: hasMaterialAgentConflict(findings)
         }
       });
 

@@ -1856,12 +1856,6 @@ a.review-table__row:hover {
   color: var(--risk-high);
 }
 
-.risk-badge[data-risk="reject_recommended"] {
-  border-color: #e9aaa1;
-  background: var(--risk-reject-bg);
-  color: var(--risk-reject);
-}
-
 .risk-badge--muted {
   border-color: var(--line);
   background: var(--surface-muted);
@@ -2366,16 +2360,6 @@ a.review-table__row:hover {
   box-shadow: 0 0 0 1px rgba(6, 76, 150, 0.18);
 }
 
-.issue-card[data-risk="reject_recommended"] {
-  border-color: #b45a4a;
-  background: linear-gradient(
-    135deg,
-    rgba(122, 39, 26, 0.16) 0%,
-    rgba(249, 225, 220, 0.96) 52%,
-    #fff8f6 100%
-  );
-}
-
 .issue-card[data-risk="high"] {
   border-color: #d95b52;
   background: linear-gradient(
@@ -2576,10 +2560,6 @@ a.review-table__row:hover {
 
 .highlight-box[data-risk="caution"] {
   color: var(--risk-caution);
-}
-
-.highlight-box[data-risk="reject_recommended"] {
-  color: var(--risk-reject);
 }
 
 .highlight-box[data-active="true"] {

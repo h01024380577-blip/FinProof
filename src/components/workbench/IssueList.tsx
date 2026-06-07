@@ -4,7 +4,7 @@ import { useMemo, useState, type CSSProperties, type JSX } from "react";
 import { riskLabels } from "@/domain/reviews";
 import type { ReviewIssue, RiskLevel } from "@/domain/types";
 
-const riskOrder: RiskLevel[] = ["reject_recommended", "high", "caution", "info"];
+const riskOrder: RiskLevel[] = ["high", "caution", "info"];
 
 function displayLength(value: string): number {
   return Array.from(value).reduce((total, character) => {

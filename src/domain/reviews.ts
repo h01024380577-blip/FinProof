@@ -26,8 +26,7 @@ export const roles: Array<{ id: RoleId; label: string; description: string }> = 
 export const riskLabels: Record<RiskLevel, string> = {
   info: "참고",
   caution: "주의",
-  high: "위험",
-  reject_recommended: "반려 권고"
+  high: "위험"
 };
 
 export const productLabels: Record<ProductType, string> = {
@@ -101,8 +100,7 @@ export function getIssueCounts(review: ReviewCase): Record<RiskLevel, number> {
     {
       info: 0,
       caution: 0,
-      high: 0,
-      reject_recommended: 0
+      high: 0
     }
   );
 }

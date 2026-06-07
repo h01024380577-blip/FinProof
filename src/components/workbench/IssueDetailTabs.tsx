@@ -281,7 +281,6 @@ function OpinionPanel({
         <option value="info">참고</option>
         <option value="caution">주의</option>
         <option value="high">위험</option>
-        <option value="reject_recommended">반려 권고</option>
       </select>
 
       <label htmlFor="reviewer-comment">심의자 메모</label>

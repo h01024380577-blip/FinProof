@@ -242,14 +242,14 @@ describe("mock review store", () => {
     const updatedIssue = await store.saveIssueDecision(scope, {
       reviewCaseId: "rc-demo-deposit-001",
       issueId: "issue-deposit-rate",
-      reviewerRiskLevel: "reject_recommended",
+      reviewerRiskLevel: "high",
       finalAction: "change_request",
       reviewerComment: "우대 조건 병기 필요"
     });
 
     expect(updatedIssue).toMatchObject({
       id: "issue-deposit-rate",
-      reviewerRiskLevel: "reject_recommended",
+      reviewerRiskLevel: "high",
       finalAction: "change_request",
       reviewerComment: "우대 조건 병기 필요"
     });
@@ -257,7 +257,7 @@ describe("mock review store", () => {
     const review = await store.getReviewCase(scope, "rc-demo-deposit-001");
 
     expect(review?.issues[0]).toMatchObject({
-      reviewerRiskLevel: "reject_recommended",
+      reviewerRiskLevel: "high",
       finalAction: "change_request",
       reviewerComment: "우대 조건 병기 필요"
     });
@@ -457,7 +457,15 @@ describe("mock review store", () => {
     const evidence = await store.getIssueEvidence(scope, review!.issues[0].id);
 
     expect(review?.issues[0].evidence).toEqual([]);
+    expect(review?.issues[0]).toMatchObject({
+      riskLevel: "high",
+      suggestedAction: "change_request"
+    });
     expect(issues?.[0].evidence).toEqual([]);
+    expect(issues?.[0]).toMatchObject({
+      riskLevel: "high",
+      suggestedAction: "change_request"
+    });
     expect(evidence).toEqual([]);
   });
 

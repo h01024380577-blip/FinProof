@@ -504,7 +504,7 @@ describe("QueueTable", () => {
             id: "RC-REJECTED-001",
             title: "반려 완료된 신용대출 홍보물",
             status: "rejected",
-            highestRiskLevel: "reject_recommended"
+            highestRiskLevel: "high"
           }
         ]}
         activeRole="reviewer"

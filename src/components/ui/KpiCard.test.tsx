@@ -13,8 +13,8 @@ describe("KpiCard", () => {
 
   it("renders as a button when onClick provided and fires it", async () => {
     const handler = vi.fn();
-    render(<KpiCard label="반려 권고" value={2} tone="danger" onClick={handler} />);
-    await userEvent.click(screen.getByRole("button", { name: /반려 권고/ }));
+    render(<KpiCard label="위험" value={2} tone="danger" onClick={handler} />);
+    await userEvent.click(screen.getByRole("button", { name: /위험/ }));
     expect(handler).toHaveBeenCalledOnce();
   });
 });

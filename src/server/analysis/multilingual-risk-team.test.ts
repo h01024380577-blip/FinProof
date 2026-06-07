@@ -46,15 +46,20 @@ function segment(
   };
 }
 
-function providerReturning(
-  outputs: Record<string, string | Error>
-): ModelProvider & { calls: string[] } {
+function providerReturning(outputs: Record<string, string | Error>): ModelProvider & {
+  calls: string[];
+  inputs: Array<Parameters<ModelProvider["generateText"]>[0]>;
+} {
   const calls: string[] = [];
+  const inputs: Array<Parameters<ModelProvider["generateText"]>[0]> = [];
 
   return {
     calls,
-    generateText: vi.fn(async ({ task }) => {
+    inputs,
+    generateText: vi.fn(async (input) => {
+      const { task } = input;
       calls.push(String(task));
+      inputs.push(input);
       const output = outputs[String(task)] ?? "[]";
 
       if (output instanceof Error) {
@@ -118,12 +123,26 @@ describe("runMultilingualRiskTeam", () => {
     });
 
     expect(provider.calls).toEqual(["english_translator_risk", "korean_compliance_mapping"]);
+    expect(
+      provider.inputs.find((input) => input.task === "english_translator_risk")?.instructions
+    ).toContain("Common Risk Policy");
+    expect(
+      provider.inputs.find((input) => input.task === "english_translator_risk")?.instructions
+    ).toContain('Never output "reject_recommended"');
+    expect(
+      provider.inputs.find((input) => input.task === "korean_compliance_mapping")?.instructions
+    ).toContain("FinProof korean_compliance_mapping agent");
+    expect(
+      provider.inputs.find((input) => input.task === "korean_compliance_mapping")?.instructions
+    ).toContain("Return strict JSON only as an object with a `mappings` array");
     expect(result.localizedRiskFindings).toHaveLength(1);
     expect(result.koreanComplianceMappings).toHaveLength(1);
     expect(result.agentFindings[0]).toMatchObject({
       agent: "korean_compliance_mapping",
       issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
       targetText: "Guaranteed approval in 3 minutes",
+      riskLevel: "high",
+      suggestedAction: "change_request",
       suggestedCopy: "승인은 심사 후 달라질 수 있습니다."
     });
   });

@@ -1118,7 +1118,7 @@ describe("review API routes", () => {
       jsonRequest(
         "/api/v1/review-cases/rc-demo-deposit-001/issues/issue-deposit-rate",
         {
-          reviewerRiskLevel: "reject_recommended",
+          reviewerRiskLevel: "high",
           finalAction: "change_request",
           reviewerComment: "우대 조건 병기 필요"
         },
@@ -1130,10 +1130,27 @@ describe("review API routes", () => {
 
     expect(decisionResponse.status).toBe(200);
     expect(decisionBody.issue).toMatchObject({
-      reviewerRiskLevel: "reject_recommended",
+      reviewerRiskLevel: "high",
       finalAction: "change_request",
       reviewerComment: "우대 조건 병기 필요"
     });
+
+    const legacyRiskResponse = await issuePATCH(
+      jsonRequest(
+        "/api/v1/review-cases/rc-demo-deposit-001/issues/issue-deposit-rate",
+        {
+          reviewerRiskLevel: "reject_recommended",
+          finalAction: "change_request",
+          reviewerComment: "legacy risk should be rejected"
+        },
+        "PATCH"
+      ),
+      params({ caseId: "rc-demo-deposit-001", issueId: "issue-deposit-rate" })
+    );
+    const legacyRiskBody = await legacyRiskResponse.json();
+
+    expect(legacyRiskResponse.status).toBe(400);
+    expect(legacyRiskBody.error.message).toContain("reviewerRiskLevel is invalid");
   });
 
   it("updates final review status through the finalize route", async () => {

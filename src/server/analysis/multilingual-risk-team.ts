@@ -1,5 +1,9 @@
 import type { ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import type { ModelProvider } from "@/server/ai/model-provider";
+import {
+  KOREAN_COMPLIANCE_MAPPING_PROMPT,
+  multilingualTranslatorRiskPrompt
+} from "@/server/ai/prompt-registry";
 import type {
   KoreanComplianceMapping,
   LocalizedRiskFinding,
@@ -9,6 +13,12 @@ import type {
 } from "./multilingual";
 import type { RagEvidenceCandidate } from "./review-analysis-pipeline";
 import type { AgentFinding, ReviewSubAgentId } from "./review-subagents";
+import {
+  analysisRiskLevels,
+  evidenceBoundRiskPolicy,
+  normalizeAiSuggestedAction,
+  normalizeAnalysisRiskLevel
+} from "./risk-policy";
 
 type LanguageAgentId =
   | "english_translator_risk"
@@ -109,16 +119,7 @@ function stringArray(value: unknown) {
 }
 
 function normalizeRiskLevel(value: unknown): RiskLevel {
-  if (
-    value === "info" ||
-    value === "caution" ||
-    value === "high" ||
-    value === "reject_recommended"
-  ) {
-    return value;
-  }
-
-  return "caution";
+  return normalizeAnalysisRiskLevel(value);
 }
 
 function normalizeRiskCategory(value: unknown): LocalizedRiskFinding["riskCategory"] {
@@ -130,11 +131,7 @@ function normalizeRiskCategory(value: unknown): LocalizedRiskFinding["riskCatego
 }
 
 function normalizeAction(value: unknown): ReviewIssue["suggestedAction"] {
-  if (value === "approve" || value === "change_request" || value === "reject" || value === "hold") {
-    return value;
-  }
-
-  return "change_request";
+  return normalizeAiSuggestedAction(value);
 }
 
 function errorMessage(error: unknown) {
@@ -181,6 +178,7 @@ function languageAgentInput(input: {
 }) {
   return JSON.stringify({
     review: reviewPayload(input.review),
+    riskPolicy: evidenceBoundRiskPolicy,
     segments: input.segments.map((segment) => ({
       id: segment.id,
       language: segment.language,
@@ -196,7 +194,7 @@ function languageAgentInput(input: {
       findings:
         "array of { id, segmentId, language, originalText, literalTranslation, complianceMeaning, riskCategory, riskSignals, riskLevelHint, suggestedCopyOriginalLanguage, suggestedCopyKoreanMeaning, confidence }. id must be unique per localized risk finding.",
       allowedRiskCategories: ["expression_risk", "compliance_risk", "both"],
-      allowedRiskLevelHints: ["info", "caution", "high", "reject_recommended"]
+      allowedRiskLevelHints: analysisRiskLevels
     }
   });
 }
@@ -208,12 +206,13 @@ function mappingAgentInput(input: {
 }) {
   return JSON.stringify({
     review: reviewPayload(input.review),
+    riskPolicy: evidenceBoundRiskPolicy,
     localizedRiskFindings: input.localizedRiskFindings,
     evidenceCandidates: evidencePayload(input.evidenceCandidates),
     outputSchema: {
       mappings:
         "array of { localizedFindingId, issueType, koreanComplianceCategory, koreanComplianceReason, evidenceQuery, suggestedAction }",
-      allowedSuggestedActions: ["approve", "change_request", "reject", "hold"]
+      allowedSuggestedActions: ["approve", "change_request", "hold"]
     }
   });
 }
@@ -395,16 +394,9 @@ function findingTitle(finding: LocalizedRiskFinding, mapping: KoreanComplianceMa
   return mapping.koreanComplianceCategory;
 }
 
-function findingRiskLevel(
-  finding: LocalizedRiskFinding,
-  mapping: KoreanComplianceMapping
-): RiskLevel {
+function findingRiskLevel(finding: LocalizedRiskFinding): RiskLevel {
   if (finding.confidence < 0.65) {
     return "caution";
-  }
-
-  if (mapping.suggestedAction === "reject") {
-    return "reject_recommended";
   }
 
   return finding.riskLevelHint;
@@ -443,7 +435,7 @@ function agentFindingFromMapping(
     id: `finding-korean_compliance_mapping-${String(index + 1).padStart(3, "0")}`,
     agent: "korean_compliance_mapping",
     issueType: mapping.issueType,
-    riskLevel: findingRiskLevel(finding, mapping),
+    riskLevel: findingRiskLevel(finding),
     title: findingTitle(finding, mapping),
     targetText: finding.originalText,
     description: findingDescription(finding, mapping, evidenceCandidateIds.length > 0),
@@ -482,7 +474,7 @@ export async function runMultilingualRiskTeam(input: {
         routeContext: {
           lowOcrConfidence: segments.some((segment) => segment.confidence < 0.82)
         },
-        instructions: `You are a multilingual financial ad translator risk agent for ${language}. Identify foreign-language financial advertising risk. Return strict JSON only.`,
+        instructions: multilingualTranslatorRiskPrompt(language),
         input: languageAgentInput({
           review: input.review,
           segments,
@@ -524,8 +516,7 @@ export async function runMultilingualRiskTeam(input: {
       routeContext: {
         evidenceCount: input.evidenceCandidates.length
       },
-      instructions:
-        "You are a Korean financial advertising compliance mapping agent. Map multilingual localized risks to Korean review issue types. Return strict JSON only.",
+      instructions: KOREAN_COMPLIANCE_MAPPING_PROMPT,
       input: mappingAgentInput({
         review: input.review,
         localizedRiskFindings,

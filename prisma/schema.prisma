@@ -48,7 +48,6 @@ enum RiskLevel {
   info
   caution
   high
-  reject_recommended
 }
 
 enum ReviewFileType {

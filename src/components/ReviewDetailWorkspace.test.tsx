@@ -359,7 +359,7 @@ describe("ReviewDetailWorkspace", () => {
         json: async () => ({
           issue: {
             id: "issue-deposit-rate",
-            reviewerRiskLevel: "reject_recommended",
+            reviewerRiskLevel: "high",
             reviewerComment: "우대 조건 병기 필요"
           }
         })
@@ -445,12 +445,13 @@ describe("ReviewDetailWorkspace", () => {
     );
 
     await openOpinionTab(user);
-    await user.selectOptions(screen.getByLabelText("심의자 위험도"), "reject_recommended");
+    expect(screen.queryByRole("option", { name: "반려 권고" })).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("심의자 위험도"), "high");
     changeTextField("심의자 메모", "우대 조건 병기 필요");
     await user.click(screen.getByRole("button", { name: "위험도 변경" }));
 
-    expect(await screen.findByText("저장된 판단: 반려 권고")).toBeInTheDocument();
-    expect(screen.getByText("저장된 판단: 반려 권고").closest(".saved-decision")).toHaveTextContent(
+    expect(await screen.findByText("저장된 판단: 위험")).toBeInTheDocument();
+    expect(screen.getByText("저장된 판단: 위험").closest(".saved-decision")).toHaveTextContent(
       "우대 조건 병기 필요"
     );
     expect(fetchMock).toHaveBeenCalledWith(
@@ -458,7 +459,7 @@ describe("ReviewDetailWorkspace", () => {
       expect.objectContaining({
         method: "PATCH",
         body: JSON.stringify({
-          reviewerRiskLevel: "reject_recommended",
+          reviewerRiskLevel: "high",
           finalAction: "change_request",
           reviewerComment: "우대 조건 병기 필요"
         })
@@ -780,8 +781,8 @@ describe("ReviewDetailWorkspace", () => {
       json: async () => ({
         issue: {
           id: "issue-loan-anyone",
-          reviewerRiskLevel: "reject_recommended",
-          finalAction: "reject",
+          reviewerRiskLevel: "high",
+          finalAction: "change_request",
           reviewerComment: "승인 속도 표현 반려 필요"
         }
       })
@@ -794,14 +795,14 @@ describe("ReviewDetailWorkspace", () => {
     changeTextField("심의자 메모", "승인 속도 표현 반려 필요");
     await user.click(screen.getByRole("button", { name: "위험도 변경" }));
 
-    expect(await screen.findByText("저장된 판단: 반려 권고")).toBeInTheDocument();
+    expect(await screen.findByText("저장된 판단: 위험")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-loan-001/issues/issue-loan-anyone",
       expect.objectContaining({
         method: "PATCH",
         body: JSON.stringify({
-          reviewerRiskLevel: "reject_recommended",
-          finalAction: "reject",
+          reviewerRiskLevel: "high",
+          finalAction: "change_request",
           reviewerComment: "승인 속도 표현 반려 필요"
         })
       })
@@ -938,7 +939,7 @@ describe("ReviewDetailWorkspace", () => {
             if (index === 1) {
               return {
                 ...issue,
-                reviewerRiskLevel: "reject_recommended",
+                reviewerRiskLevel: "high",
                 finalAction: "reject",
                 reviewerComment: "다른 이슈 반려"
               };

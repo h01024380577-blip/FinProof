@@ -57,7 +57,7 @@ const row = {
             complianceMeaning: "심사와 무관하게 승인 확정처럼 해석될 수 있음",
             riskCategory: "both",
             riskSignals: ["approval_guarantee"],
-            riskLevelHint: "reject_recommended",
+            riskLevelHint: "high",
             suggestedCopyOriginalLanguage:
               "Apply in 3 minutes. Approval is subject to credit review.",
             suggestedCopyKoreanMeaning:

@@ -32,7 +32,7 @@ describe("issue generation", () => {
           id: "finding-multilingual-001",
           agent: "korean_compliance_mapping",
           issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
-          riskLevel: "reject_recommended",
+          riskLevel: "high",
           title: "승인 보장 오인 표현",
           targetText: "Guaranteed approval in 3 minutes",
           description: "심사와 무관하게 승인이 확정되는 것처럼 해석될 수 있음",
@@ -49,7 +49,7 @@ describe("issue generation", () => {
             complianceMeaning: "심사와 무관하게 승인 확정처럼 해석될 수 있음",
             riskCategory: "both",
             riskSignals: ["approval_guarantee"],
-            riskLevelHint: "reject_recommended",
+            riskLevelHint: "high",
             suggestedCopyOriginalLanguage:
               "Apply in 3 minutes. Approval is subject to credit review.",
             suggestedCopyKoreanMeaning:
@@ -189,6 +189,10 @@ describe("issue generation", () => {
 
     const issues = buildAnalysisIssues(review, artifacts);
 
+    expect(issues[0]).toMatchObject({
+      riskLevel: "high",
+      suggestedAction: "change_request"
+    });
     expect(issues[0].evidence).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({

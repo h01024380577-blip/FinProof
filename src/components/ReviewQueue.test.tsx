@@ -66,7 +66,7 @@ const rejectedReviewSummary = {
   productType: "loan",
   plannedPublishDate: "2026-06-02",
   status: "rejected",
-  highestRiskLevel: "reject_recommended",
+  highestRiskLevel: "high",
   requester: "마케팅 담당자 최도윤",
   reviewer: "준법심의자 박민준",
   availableActions: ["view_audit"]
@@ -157,7 +157,7 @@ describe("ReviewQueue", () => {
     expect(await screen.findByText("심의 대기 목록")).toBeInTheDocument();
     expect(screen.getAllByText("분석 대기").length).toBeGreaterThan(0);
     expect(screen.getAllByText("검토 중").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("반려 권고").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("위험").length).toBeGreaterThan(0);
     expect(screen.getByText("마감 임박")).toBeInTheDocument();
     expect(screen.getByLabelText("검색")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "위험도" })).toBeInTheDocument();
@@ -323,7 +323,10 @@ describe("ReviewQueue", () => {
   it("deletes a confirmed review history item and removes it from the list", async () => {
     const user = userEvent.setup();
     currentSearchParams = new URLSearchParams("scope=history");
-    vi.stubGlobal("confirm", vi.fn(() => true));
+    vi.stubGlobal(
+      "confirm",
+      vi.fn(() => true)
+    );
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce({
@@ -567,7 +570,9 @@ describe("ReviewQueue", () => {
         })
       ).toBeInTheDocument();
     });
-    expect(screen.getByText("분석 실패: Cohere rerank failed: 400 Bad Request")).toBeInTheDocument();
+    expect(
+      screen.getByText("분석 실패: Cohere rerank failed: 400 Bad Request")
+    ).toBeInTheDocument();
   });
 
   it("uses backend pagination when the reviewer moves through queue pages", async () => {

@@ -9,6 +9,10 @@ import { generateReviewReport } from "@/domain/reports";
 import { reviewCases } from "@/domain/reviews";
 import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
 import { buildAnalysisIssues, highestRiskLevelForIssues } from "@/server/analysis/issue-generation";
+import {
+  normalizeAiSuggestedAction,
+  normalizeAnalysisRiskLevel
+} from "@/server/analysis/risk-policy";
 import type {
   AgentRun,
   ChatMessage,
@@ -224,13 +228,40 @@ function findingFromIssue(issue: ReviewIssue): AgentFindingCandidate {
   };
 }
 
+function normalizeFindingCandidate(finding: AgentFindingCandidate): AgentFindingCandidate {
+  const normalized: AgentFindingCandidate = {
+    ...finding,
+    riskLevel: normalizeAnalysisRiskLevel(finding.riskLevel),
+    suggestedAction: normalizeAiSuggestedAction(finding.suggestedAction)
+  };
+
+  if (finding.localizedRiskFinding) {
+    normalized.localizedRiskFinding = {
+      ...finding.localizedRiskFinding,
+      riskLevelHint: normalizeAnalysisRiskLevel(finding.localizedRiskFinding.riskLevelHint)
+    };
+  }
+
+  if (finding.koreanComplianceMapping) {
+    normalized.koreanComplianceMapping = {
+      ...finding.koreanComplianceMapping,
+      suggestedAction: normalizeAiSuggestedAction(finding.koreanComplianceMapping.suggestedAction)
+    };
+  }
+
+  return normalized;
+}
+
 function findingsFromArtifacts(
   review: ReviewCase,
   artifacts: AnalysisArtifacts
 ): AgentFindingCandidate[] {
-  return artifacts.findings && artifacts.findings.length > 0
-    ? artifacts.findings
-    : buildAnalysisIssues(review, artifacts).map(findingFromIssue);
+  const findings =
+    artifacts.findings && artifacts.findings.length > 0
+      ? artifacts.findings
+      : buildAnalysisIssues(review, artifacts).map(findingFromIssue);
+
+  return findings.map(normalizeFindingCandidate);
 }
 
 function paginatedSummaries(
@@ -1095,7 +1126,6 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
             })()
           : review.issues;
       const highestRiskLevel =
-        generatedIssues.find((issue) => issue.riskLevel === "reject_recommended")?.riskLevel ??
         generatedIssues.find((issue) => issue.riskLevel === "high")?.riskLevel ??
         generatedIssues.find((issue) => issue.riskLevel === "caution")?.riskLevel ??
         review.highestRiskLevel;

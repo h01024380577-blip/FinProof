@@ -25,6 +25,11 @@ import type {
 import { Prisma } from "@/generated/prisma/client";
 import { getPrismaClient } from "@/server/db/prisma";
 import { buildAnalysisIssues, highestRiskLevelForIssues } from "@/server/analysis/issue-generation";
+import {
+  normalizeAiSuggestedAction,
+  normalizeAnalysisRiskLevel,
+  riskRank
+} from "@/server/analysis/risk-policy";
 import type {
   AgentFindingCandidate,
   AnalysisArtifacts
@@ -365,16 +370,9 @@ function embeddingVectorFromMetadata(metadata: Record<string, unknown>): number[
     : undefined;
 }
 
-const riskPriority: Record<RiskLevel, number> = {
-  info: 0,
-  caution: 1,
-  high: 2,
-  reject_recommended: 3
-};
-
 function highestRiskLevelFrom(riskLevels: RiskLevel[], fallback: RiskLevel): RiskLevel {
   return riskLevels.reduce(
-    (highest, riskLevel) => (riskPriority[riskLevel] > riskPriority[highest] ? riskLevel : highest),
+    (highest, riskLevel) => (riskRank[riskLevel] > riskRank[highest] ? riskLevel : highest),
     fallback
   );
 }
@@ -458,13 +456,40 @@ function findingFromIssue(issue: ReviewIssue): AgentFindingCandidate {
   };
 }
 
+function normalizeFindingCandidate(finding: AgentFindingCandidate): AgentFindingCandidate {
+  const normalized: AgentFindingCandidate = {
+    ...finding,
+    riskLevel: normalizeAnalysisRiskLevel(finding.riskLevel),
+    suggestedAction: normalizeAiSuggestedAction(finding.suggestedAction)
+  };
+
+  if (finding.localizedRiskFinding) {
+    normalized.localizedRiskFinding = {
+      ...finding.localizedRiskFinding,
+      riskLevelHint: normalizeAnalysisRiskLevel(finding.localizedRiskFinding.riskLevelHint)
+    };
+  }
+
+  if (finding.koreanComplianceMapping) {
+    normalized.koreanComplianceMapping = {
+      ...finding.koreanComplianceMapping,
+      suggestedAction: normalizeAiSuggestedAction(finding.koreanComplianceMapping.suggestedAction)
+    };
+  }
+
+  return normalized;
+}
+
 function findingsFromArtifacts(
   review: ReviewCase,
   artifacts: AnalysisArtifacts
 ): AgentFindingCandidate[] {
-  return artifacts.findings && artifacts.findings.length > 0
-    ? artifacts.findings
-    : buildAnalysisIssues(review, artifacts).map(findingFromIssue);
+  const findings =
+    artifacts.findings && artifacts.findings.length > 0
+      ? artifacts.findings
+      : buildAnalysisIssues(review, artifacts).map(findingFromIssue);
+
+  return findings.map(normalizeFindingCandidate);
 }
 
 type AllowedEvidenceChunk = {

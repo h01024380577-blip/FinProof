@@ -1,4 +1,4 @@
-import type { ReviewIssue } from "@/domain/types";
+import type { ReviewIssue, RiskLevel } from "@/domain/types";
 import type { ExtractedDocument } from "./review-analysis-pipeline";
 
 export type SupportedReviewLanguage = "en" | "ja" | "zh";
@@ -23,7 +23,7 @@ export type LocalizedRiskFinding = {
   complianceMeaning: string;
   riskCategory: "expression_risk" | "compliance_risk" | "both";
   riskSignals: string[];
-  riskLevelHint: "info" | "caution" | "high" | "reject_recommended";
+  riskLevelHint: RiskLevel;
   suggestedCopyOriginalLanguage: string;
   suggestedCopyKoreanMeaning: string;
   confidence: number;

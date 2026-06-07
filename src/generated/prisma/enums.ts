@@ -61,8 +61,7 @@ export type ProductType = (typeof ProductType)[keyof typeof ProductType]
 export const RiskLevel = {
   info: 'info',
   caution: 'caution',
-  high: 'high',
-  reject_recommended: 'reject_recommended'
+  high: 'high'
 } as const
 
 export type RiskLevel = (typeof RiskLevel)[keyof typeof RiskLevel]

@@ -12,15 +12,13 @@ export type ReviewChatResponse = {
 const riskLabel: Record<ReviewIssue["riskLevel"], string> = {
   info: "참고",
   caution: "주의",
-  high: "위험",
-  reject_recommended: "반려 권고"
+  high: "위험"
 };
 
 const riskRank: Record<ReviewIssue["riskLevel"], number> = {
   info: 1,
   caution: 2,
-  high: 3,
-  reject_recommended: 4
+  high: 3
 };
 
 function compactLines(lines: Array<string | undefined>): string[] {

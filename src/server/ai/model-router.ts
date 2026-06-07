@@ -88,9 +88,7 @@ function value(env: Env, key: string): string | undefined {
 function nonGeminiModel(env: Env, key: string, fallback: string): string {
   const configuredModel = value(env, key);
 
-  return configuredModel && !/^gemini[-\w.]*/i.test(configuredModel)
-    ? configuredModel
-    : fallback;
+  return configuredModel && !/^gemini[-\w.]*/i.test(configuredModel) ? configuredModel : fallback;
 }
 
 export function getModelRoutingConfig(env: Env = process.env): ModelRoutingConfig {
@@ -118,7 +116,7 @@ export function getModelRoutingConfig(env: Env = process.env): ModelRoutingConfi
 }
 
 function isHighRisk(context: ModelRouteContext) {
-  return context.riskLevel === "high" || context.riskLevel === "reject_recommended";
+  return context.riskLevel === "high";
 }
 
 function lowEvidence(context: ModelRouteContext) {
@@ -135,9 +133,7 @@ function escalationReason(context: ModelRouteContext): string | undefined {
   }
 
   if (isHighRisk(context)) {
-    return context.riskLevel === "reject_recommended"
-      ? "risk_level_reject_recommended"
-      : "risk_level_high";
+    return "risk_level_high";
   }
 
   if (context.agentConflict) {

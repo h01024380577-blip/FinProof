@@ -11,6 +11,7 @@ import {
 import type { Evidence, ReviewCase, ReviewIssue } from "@/domain/types";
 import { createModelProvider, type ModelProvider } from "./model-provider";
 import type { ModelRouteContext } from "./model-router";
+import { OPINION_DRAFT_PROMPT, RAG_CHAT_PROMPT, REPORT_GENERATION_PROMPT } from "./prompt-registry";
 
 type AnswerQuestionInput = {
   review: ReviewCase;
@@ -126,8 +127,7 @@ export async function answerReviewQuestionWithModel(
       riskLevel: input.issue.riskLevel,
       ...(questionNeedsLegalInterpretation(input.question) ? { legalInterpretation: true } : {})
     },
-    instructions:
-      "Answer the financial advertising reviewer question in Korean. Stay evidence-bound. Use supplied approvedKnowledgeEvidence when it is relevant, and cite its title/section. Do not expose internal evidence identifiers such as approvedKnowledgeEvidence 008. Do not expose uploaded file names; refer to uploaded product_doc evidence as 업로드 자료. If evidence is missing, say what material is required.",
+    instructions: RAG_CHAT_PROMPT,
     input: JSON.stringify({
       review: reviewSummary(input.review),
       issue: issueWithKnowledgeEvidence,
@@ -154,8 +154,7 @@ export async function generateDraftWithModel(
   const result = await provider.generateText({
     task: "opinion_draft",
     routeContext: draftRouteContext(review, chatResponses),
-    instructions:
-      "Write a concise Korean financial advertising review opinion draft. Reflect every supplied review issue and suggested copy. Use only the supplied review, issues, evidence, and reviewer chat context. If analysis is complete and issues exist, do not mention OCR/RAG pre-analysis or evidence shortage unless the issue itself says so.",
+    instructions: OPINION_DRAFT_PROMPT,
     input: JSON.stringify({
       review: reviewSummary(review),
       issues: review.issues.map(issueSummary),
@@ -178,8 +177,7 @@ export async function generateReportWithModel(
     routeContext: {
       riskLevel: input.review.highestRiskLevel
     },
-    instructions:
-      "Write Korean markdown for a financial advertising review report. Preserve the same decision intent and evidence boundaries as the fallback.",
+    instructions: REPORT_GENERATION_PROMPT,
     input: JSON.stringify({
       review: reviewSummary(input.review),
       reportType: input.reportType,

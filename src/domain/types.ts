@@ -1,6 +1,6 @@
 export type RoleId = "requester" | "reviewer" | "compliance_admin";
 
-export type RiskLevel = "info" | "caution" | "high" | "reject_recommended";
+export type RiskLevel = "info" | "caution" | "high";
 
 export type ReviewStatus =
   | "draft"

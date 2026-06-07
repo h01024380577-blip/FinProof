@@ -39,9 +39,13 @@ describe("review AI service", () => {
       expect.objectContaining({
         task: "rag_chat",
         routeContext: { riskLevel: issue.riskLevel },
+        instructions: expect.stringContaining("FinProof rag_chat assistant"),
         input: expect.stringContaining(issue.evidence[0].quoteSummary),
         fallback: expect.any(String)
       })
+    );
+    expect(vi.mocked(provider.generateText).mock.calls[0]?.[0].instructions).toContain(
+      "Never expose internal evidence identifiers"
     );
   });
 
@@ -110,7 +114,9 @@ describe("review AI service", () => {
     );
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        input: expect.stringContaining("최고금리는 우대조건 및 적용대상과 함께 명확히 표시해야 합니다.")
+        input: expect.stringContaining(
+          "최고금리는 우대조건 및 적용대상과 함께 명확히 표시해야 합니다."
+        )
       })
     );
   });
@@ -173,9 +179,11 @@ describe("review AI service", () => {
         routeContext: expect.objectContaining({
           riskLevel: review.highestRiskLevel
         }),
+        instructions: expect.stringContaining("FinProof opinion_draft assistant"),
         fallback: expect.stringContaining(issue.title)
       })
     );
+    expect(call?.instructions).toContain("Reflect every supplied review issue");
     expect(call?.input).toContain(issue.title);
     expect(call?.input).toContain(issue.suggestedCopy);
   });
@@ -203,8 +211,12 @@ describe("review AI service", () => {
         task: "report_generation",
         routeContext: expect.objectContaining({
           riskLevel: review.highestRiskLevel
-        })
+        }),
+        instructions: expect.stringContaining("FinProof report_generation assistant")
       })
+    );
+    expect(vi.mocked(provider.generateText).mock.calls[0]?.[0].instructions).toContain(
+      "Treat fallback as the canonical source of truth"
     );
   });
 });

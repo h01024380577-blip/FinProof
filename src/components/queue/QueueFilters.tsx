@@ -36,7 +36,6 @@ const historyStatusOptions = [
 
 const riskOptions = [
   { value: "all", label: "위험도: 전체" },
-  { value: "reject_recommended", label: "반려 권고" },
   { value: "high", label: "위험" },
   { value: "caution", label: "주의" },
   { value: "info", label: "참고" },

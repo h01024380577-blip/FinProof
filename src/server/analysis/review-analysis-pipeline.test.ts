@@ -1246,6 +1246,7 @@ describe("review analysis pipeline", () => {
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
         task: "creative_review",
+        instructions: expect.stringContaining("FinProof creative_review agent"),
         routeContext: expect.objectContaining({
           riskLevel: "info"
         })
@@ -1253,22 +1254,32 @@ describe("review analysis pipeline", () => {
     );
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        task: "product_terms"
+        task: "creative_review",
+        instructions: expect.stringContaining("Shared Common Risk Policy")
       })
     );
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        task: "regulation_agent"
+        task: "product_terms",
+        instructions: expect.stringContaining("FinProof product_terms agent")
       })
     );
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        task: "internal_policy_agent"
+        task: "regulation_agent",
+        instructions: expect.stringContaining("FinProof regulation_agent")
       })
     );
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        task: "evidence_verification"
+        task: "internal_policy_agent",
+        instructions: expect.stringContaining("FinProof internal_policy_agent")
+      })
+    );
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: "evidence_verification",
+        instructions: expect.stringContaining("FinProof evidence_verification agent")
       })
     );
     expect(artifacts.agentFindings).toEqual([
@@ -1470,9 +1481,16 @@ describe("review analysis pipeline", () => {
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
         task: "main_compliance",
+        instructions: expect.stringContaining("FinProof main_compliance agent"),
         routeContext: expect.objectContaining({
           riskLevel: "high"
         })
+      })
+    );
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: "case_search",
+        instructions: expect.stringContaining("FinProof case_search agent")
       })
     );
     const mainComplianceInput = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.find(
@@ -1489,7 +1507,8 @@ describe("review analysis pipeline", () => {
     expect(artifacts.agentFindings).toEqual([
       expect.objectContaining({
         agent: "main",
-        riskLevel: "reject_recommended",
+        riskLevel: "high",
+        suggestedAction: "change_request",
         title: "팀장 검토: 최고 금리 표현 수정 필요"
       })
     ]);
@@ -1547,7 +1566,9 @@ describe("review analysis pipeline", () => {
         priorFindings: expect.arrayContaining([
           expect.objectContaining({
             agent: "korean_compliance_mapping",
-            targetText: "Guaranteed approval in 3 minutes"
+            targetText: "Guaranteed approval in 3 minutes",
+            riskLevel: "high",
+            suggestedAction: "change_request"
           })
         ])
       })

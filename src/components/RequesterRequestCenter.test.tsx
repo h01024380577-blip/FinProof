@@ -71,7 +71,7 @@ const requesterHistoryRows = [
     productType: "loan",
     plannedPublishDate: "2026-06-12",
     status: "rejected",
-    highestRiskLevel: "reject_recommended",
+    highestRiskLevel: "high",
     requester: "마케팅1팀 김서연",
     reviewer: "준법심의자 박민준"
   },
