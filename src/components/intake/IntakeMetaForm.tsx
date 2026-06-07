@@ -24,6 +24,20 @@ export type IntakeMetaFormProps = {
   onChange: (next: IntakeMetaState) => void;
 };
 
+const affiliateOptions = [
+  "JB금융지주",
+  "전북은행",
+  "광주은행",
+  "JB우리캐피탈",
+  "JB자산운용",
+  "JB인베스트먼트",
+  "프놈펜상업은행 (PPCBank)",
+  "JB증권 베트남 (JBSV)",
+  "JB프놈펜자산운용",
+  "JB캐피탈 미얀마",
+  "기타"
+];
+
 export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.Element {
   function patch(partial: Partial<IntakeMetaState>): void {
     onChange({ ...state, ...partial });
@@ -45,10 +59,16 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
         <span>계열사 *</span>
         <input
           aria-label="계열사"
-          placeholder="예: 하나은행"
+          list="affiliate-options"
+          placeholder="예: 광주은행 또는 직접 입력"
           value={state.affiliate}
           onChange={(event) => patch({ affiliate: event.target.value })}
         />
+        <datalist id="affiliate-options">
+          {affiliateOptions.map((affiliate) => (
+            <option key={affiliate} value={affiliate} />
+          ))}
+        </datalist>
       </label>
 
       <label className="intake-field">

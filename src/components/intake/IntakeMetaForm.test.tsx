@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { IntakeMetaForm, type IntakeMetaState } from "./IntakeMetaForm";
@@ -23,5 +23,35 @@ describe("IntakeMetaForm", () => {
 
     expect(onChange).toHaveBeenCalled();
     expect(onChange.mock.calls.at(-1)?.[0]).toEqual({ ...baseState, title: "A" });
+  });
+
+  it("offers JB affiliates from a dropdown while allowing a custom affiliate", async () => {
+    const onChange = vi.fn();
+    const { container } = render(<IntakeMetaForm state={baseState} onChange={onChange} />);
+
+    const affiliateInput = screen.getByLabelText("계열사");
+    expect(affiliateInput).toHaveAttribute("list", "affiliate-options");
+
+    const affiliateOptions = Array.from(
+      container.querySelectorAll<HTMLDataListElement>("#affiliate-options option")
+    ).map((option) => option.value);
+
+    expect(affiliateOptions).toEqual([
+      "JB금융지주",
+      "전북은행",
+      "광주은행",
+      "JB우리캐피탈",
+      "JB자산운용",
+      "JB인베스트먼트",
+      "프놈펜상업은행 (PPCBank)",
+      "JB증권 베트남 (JBSV)",
+      "JB프놈펜자산운용",
+      "JB캐피탈 미얀마",
+      "기타"
+    ]);
+
+    fireEvent.change(affiliateInput, { target: { value: "새 계열사" } });
+
+    expect(onChange.mock.calls.at(-1)?.[0]).toEqual({ ...baseState, affiliate: "새 계열사" });
   });
 });

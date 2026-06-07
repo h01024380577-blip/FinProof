@@ -74,7 +74,9 @@ describe("SamplePackageSelector", () => {
       screen.getByLabelText("심의 요청 제목")
     );
     expect(screen.getByLabelText("계열사")).toHaveValue("");
-    expect(screen.getByPlaceholderText("예: 하나은행")).toBe(screen.getByLabelText("계열사"));
+    expect(screen.getByPlaceholderText("예: 광주은행 또는 직접 입력")).toBe(
+      screen.getByLabelText("계열사")
+    );
     expect(screen.getByLabelText("요청 부서")).toHaveValue("");
     expect(screen.getByPlaceholderText("예: 디지털마케팅팀")).toBe(
       screen.getByLabelText("요청 부서")
