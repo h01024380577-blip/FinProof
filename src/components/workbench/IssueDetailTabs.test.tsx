@@ -225,7 +225,7 @@ describe("IssueDetailTabs", () => {
     expect(screen.queryByText("law")).not.toBeInTheDocument();
   });
 
-  it("shows only regulatory evidence classification for upload-only evidence", () => {
+  it("renders upload document evidence for upload-only evidence", () => {
     render(
       <IssueDetailTabs
         issue={{
@@ -253,8 +253,10 @@ describe("IssueDetailTabs", () => {
       />
     );
 
-    expect(screen.queryByText("광고 원문 근거")).not.toBeInTheDocument();
-    expect(screen.queryByText("대출광고1.png")).not.toBeInTheDocument();
+    expect(screen.getByText("업로드 자료 근거")).toBeInTheDocument();
+    expect(screen.getByText("대출광고1.png")).toBeInTheDocument();
+    expect(screen.getByText("신용등급 무관 당일 심사! 즉시 승인!")).toBeInTheDocument();
+    expect(screen.getByText("업로드 자료")).toBeInTheDocument();
     expect(screen.getByText("규정/내규 근거")).toBeInTheDocument();
     expect(screen.getByText("연결된 승인 지식문서 없음")).toBeInTheDocument();
     expect(

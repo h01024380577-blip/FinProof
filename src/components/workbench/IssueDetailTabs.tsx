@@ -176,18 +176,6 @@ function evidenceCitation(evidence: Evidence): string {
   return `${evidence.title}${location}`;
 }
 
-function fallbackEvidenceForIssue(issue: ReviewIssue): EvidenceDisplayItem {
-  return {
-    id: `${issue.id}-analysis-fallback-evidence`,
-    sourceType: "product_doc",
-    sourceLabel: "AI 분석 결과",
-    title: "AI 분석 결과",
-    quoteSummary: issue.description || issue.suggestedCopy || issue.targetText,
-    relevanceScore: issue.confidence ?? 1,
-    hideMetadata: true
-  };
-}
-
 function isRegulatoryEvidence(evidence: Evidence) {
   return evidence.sourceType === "law" || evidence.sourceType === "internal_policy";
 }
@@ -219,17 +207,25 @@ function EvidenceSection({ title, children }: { title: string; children: ReactNo
 }
 
 function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
-  const evidenceItems: EvidenceDisplayItem[] =
-    issue.evidence.length > 0 ? issue.evidence : [fallbackEvidenceForIssue(issue)];
+  const evidenceItems: EvidenceDisplayItem[] = issue.evidence;
   const adEvidence = evidenceItems.filter((evidence) => evidence.sourceType === "product_doc");
   const regulatoryEvidence = evidenceItems.filter(isRegulatoryEvidence);
   const caseHistoryEvidence = evidenceItems.filter(
     (evidence) => evidence.sourceType === "case_history"
   );
-  const needsRegulatoryReview = adEvidence.length > 0 && regulatoryEvidence.length === 0;
+  const needsRegulatoryReview =
+    regulatoryEvidence.length === 0 && (adEvidence.length > 0 || issue.evidence.length === 0);
 
   return (
     <div className="evidence-stack">
+      {adEvidence.length > 0 ? (
+        <EvidenceSection title="업로드 자료 근거">
+          {adEvidence.map((evidence) => (
+            <EvidenceCard key={evidence.id} evidence={evidence} />
+          ))}
+        </EvidenceSection>
+      ) : null}
+
       <EvidenceSection title="규정/내규 근거">
         {regulatoryEvidence.length > 0 ? (
           regulatoryEvidence.map((evidence) => (
