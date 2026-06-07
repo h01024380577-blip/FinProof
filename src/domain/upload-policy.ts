@@ -125,6 +125,12 @@ export function normalizeUploadFileName(fileName: string): string {
   return fileName.normalize("NFC");
 }
 
+function classificationFileName(fileName: string): string {
+  const normalizedPath = normalizeUploadFileName(fileName).replaceAll("\\", "/");
+
+  return normalizedPath.split("/").filter(Boolean).pop() ?? normalizedPath;
+}
+
 export function shouldIgnoreArchiveEntry(entryName: string): boolean {
   const normalizedPath = normalizeUploadFileName(entryName).replaceAll("\\", "/");
   const parts = normalizedPath.split("/");
@@ -136,10 +142,10 @@ export function shouldIgnoreArchiveEntry(entryName: string): boolean {
 }
 
 export function classifyUploadFileWithConfidence(file: UploadFileDescriptor): FileClassification {
-  const normalizedName = normalizeUploadFileName(file.name).toLowerCase();
+  const normalizedName = classificationFileName(file.name).toLowerCase();
   const contentType = file.type;
 
-  if (isArchive(file.name)) {
+  if (isArchive(normalizedName)) {
     return { fileType: "package_archive", confidence: 0.99 };
   }
 
@@ -163,7 +169,7 @@ export function classifyUploadFileWithConfidence(file: UploadFileDescriptor): Fi
     return { fileType: "checklist", confidence: 0.91 };
   }
 
-  if (normalizedName.includes("rate") || normalizedName.includes("금리")) {
+  if (/(^|[^a-z0-9])rate([^a-z0-9]|$)/.test(normalizedName) || normalizedName.includes("금리")) {
     return { fileType: "rate_table", confidence: 0.91 };
   }
 

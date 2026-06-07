@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import type { ProductType, ReviewStatus } from "@/domain/types";
-import { validateUploadedFiles } from "@/domain/upload-policy";
+import { getRequiredMaterialRows } from "@/domain/intake";
+import type { ProductType, ReviewFile, ReviewStatus } from "@/domain/types";
+import { classifyUploadFileWithConfidence, validateUploadedFiles } from "@/domain/upload-policy";
 import { createReviewService } from "@/server/reviews/review-service";
 import {
   jsonError,
@@ -13,7 +14,7 @@ import {
   type QueryParseResult
 } from "@/server/reviews/route-utils";
 import { sampleDataEnabled } from "@/server/reviews/sample-data";
-import { UnsafeArchiveError } from "@/server/storage/archive-extraction";
+import { expandArchiveUploads, UnsafeArchiveError } from "@/server/storage/archive-extraction";
 import { UnsafeUploadError } from "@/server/storage/upload-security";
 
 type CreateReviewRequest = {
@@ -185,6 +186,30 @@ function isUploadedFile(value: FormDataEntryValue): value is File {
   );
 }
 
+async function findMissingRequiredMaterialLabels(
+  productType: ProductType,
+  files: Array<{ name: string; type: string; size: number; body: Uint8Array }>
+): Promise<string[]> {
+  const expandedFiles = await expandArchiveUploads(files);
+  const classifiedFiles = expandedFiles.map<ReviewFile>((file, index) => {
+    const cls = classifyUploadFileWithConfidence(file);
+
+    return {
+      id: `server-preview-file-${index + 1}`,
+      name: file.name,
+      fileType: cls.fileType,
+      classificationConfidence: cls.confidence,
+      parseStatus: "pending",
+      contentType: file.type,
+      sizeBytes: file.size
+    };
+  });
+
+  return getRequiredMaterialRows({ productType, files: classifiedFiles })
+    .filter((row) => row.status === "missing")
+    .map((row) => row.label);
+}
+
 async function createFromMultipart(request: Request) {
   const formData = await request.formData();
   const productType = parseProductType(formData.get("productType"));
@@ -215,6 +240,28 @@ async function createFromMultipart(request: Request) {
 
   if (!validation.ok) {
     return jsonError(validation.errors.join(" "), 400);
+  }
+
+  let missingRequiredMaterialLabels: string[];
+
+  try {
+    missingRequiredMaterialLabels = await findMissingRequiredMaterialLabels(productType, files);
+  } catch (error) {
+    if (error instanceof UnsafeArchiveError) {
+      return jsonError(error.message, 400, "UNSAFE_ARCHIVE");
+    }
+
+    throw error;
+  }
+
+  if (missingRequiredMaterialLabels.length > 0) {
+    return jsonError(
+      `필수 심의 자료가 누락되었습니다: ${missingRequiredMaterialLabels.join(
+        ", "
+      )}. 누락 자료를 보완한 뒤 제출해 주세요.`,
+      400,
+      "MISSING_REQUIRED_MATERIALS"
+    );
   }
 
   const channelType = formData

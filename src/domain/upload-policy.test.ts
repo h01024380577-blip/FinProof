@@ -102,6 +102,23 @@ describe("upload policy", () => {
     ).toEqual({ fileType: "checklist", confidence: 0.91 });
   });
 
+  it("ignores ZIP archive and folder path keywords when classifying material files", () => {
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "borderline_01_lowrate_compliant.zip/borderline_01_lowrate/원문카피_borderline_01.txt",
+        type: "text/plain",
+        size: 1024
+      })
+    ).toEqual({ fileType: "copy_draft", confidence: 0.85 });
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "borderline_01_lowrate_compliant.zip/borderline_01_lowrate/상품설명서_borderline_01.txt",
+        type: "text/plain",
+        size: 1024
+      })
+    ).toEqual({ fileType: "product_description", confidence: 0.85 });
+  });
+
   it("classifies advertisement PDFs as promotional creatives from Korean filename keywords", () => {
     expect(
       classifyUploadFileWithConfidence({

@@ -265,10 +265,25 @@ describe("review API routes", () => {
       "",
       "poster",
       `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="real-deposit-copy.txt"',
+      "Content-Type: text/plain",
+      "",
+      "copy",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="real-deposit-product-description.txt"',
+      "Content-Type: text/plain",
+      "",
+      "description",
+      `--${boundary}`,
       'Content-Disposition: form-data; name="files"; filename="real-deposit-rate-table.xlsx"',
       "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "",
       "rate",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="real-deposit-checklist.txt"',
+      "Content-Type: text/plain",
+      "",
+      "checklist",
       `--${boundary}--`,
       ""
     ].join("\r\n");
@@ -303,12 +318,24 @@ describe("review API routes", () => {
           storageProvider: "local"
         }),
         expect.objectContaining({
+          name: "real-deposit-copy.txt",
+          fileType: "copy_draft"
+        }),
+        expect.objectContaining({
+          name: "real-deposit-product-description.txt",
+          fileType: "product_description"
+        }),
+        expect.objectContaining({
           name: "real-deposit-rate-table.xlsx",
           fileType: "rate_table"
+        }),
+        expect.objectContaining({
+          name: "real-deposit-checklist.txt",
+          fileType: "checklist"
         })
       ])
     );
-    expect(createBody.missingMaterials).toEqual(expect.arrayContaining(["internal_checklist"]));
+    expect(createBody.missingMaterials).toEqual([]);
 
     const analysisResponse = await analysisPOST(
       jsonRequest("/api/v1/review-cases/rc-upload-001/analysis/start", {}),
@@ -320,7 +347,7 @@ describe("review API routes", () => {
     expect(analysisBody).toMatchObject({
       reviewCaseId: "rc-upload-001",
       status: "analysis_complete",
-      issueCount: 1,
+      issueCount: 0,
       jobId: "job-rc-upload-001-001",
       analysisNotice: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
     });
@@ -338,6 +365,61 @@ describe("review API routes", () => {
         })
       ])
     );
+  });
+
+  it("rejects upload-backed review cases when server-side required materials are missing", async () => {
+    const boundary = "----finproof-upload-missing-materials-test";
+    const multipartBody = [
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="title"',
+      "",
+      "불완전한 적금 홍보물",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="affiliate"',
+      "",
+      "광주은행",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="productType"',
+      "",
+      "deposit",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="plannedPublishDate"',
+      "",
+      "2026-06-20",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="real-deposit-poster.png"',
+      "Content-Type: image/png",
+      "",
+      "poster",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="real-deposit-rate-table.xlsx"',
+      "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "",
+      "rate",
+      `--${boundary}--`,
+      ""
+    ].join("\r\n");
+
+    const createResponse = await createPOST(
+      new Request("http://localhost/api/v1/review-cases", {
+        method: "POST",
+        headers: {
+          "content-type": `multipart/form-data; boundary=${boundary}`,
+          "x-finproof-role": "requester"
+        },
+        body: multipartBody
+      })
+    );
+    const createBody = await createResponse.json();
+
+    expect(createResponse.status).toBe(400);
+    expect(createBody.error).toMatchObject({
+      code: "MISSING_REQUIRED_MATERIALS"
+    });
+    expect(createBody.error.message).toContain("필수 심의 자료가 누락되었습니다");
+    expect(createBody.error.message).toContain("원문 카피");
+    expect(createBody.error.message).toContain("상품 설명서");
+    expect(createBody.error.message).toContain("내부 체크리스트");
   });
 
   it("creates image-only test review cases without requiring document materials", async () => {
@@ -397,7 +479,7 @@ describe("review API routes", () => {
       `--${boundary}`,
       'Content-Disposition: form-data; name="title"',
       "",
-      "실제 업로드 대출 홍보물",
+      "실제 업로드 이미지 테스트 홍보물",
       `--${boundary}`,
       'Content-Disposition: form-data; name="affiliate"',
       "",
@@ -405,7 +487,7 @@ describe("review API routes", () => {
       `--${boundary}`,
       'Content-Disposition: form-data; name="productType"',
       "",
-      "loan",
+      "image_test",
       `--${boundary}`,
       'Content-Disposition: form-data; name="files"; filename="poster_mirae_loan.png"',
       "Content-Type: image/png",
@@ -842,6 +924,26 @@ describe("review API routes", () => {
       "Content-Type: image/png",
       "",
       "poster",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="copy.txt"',
+      "Content-Type: text/plain",
+      "",
+      "copy",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="product-description.txt"',
+      "Content-Type: text/plain",
+      "",
+      "description",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="rate-table.xlsx"',
+      "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "",
+      "rate",
+      `--${boundary}`,
+      'Content-Disposition: form-data; name="files"; filename="checklist.txt"',
+      "Content-Type: text/plain",
+      "",
+      "checklist",
       `--${boundary}--`,
       ""
     ].join("\r\n");
