@@ -93,7 +93,7 @@ Sub-agents (`review-subagents.ts`) split domain compliance checks; the complianc
 
 ### Multilingual analysis
 
-`src/server/analysis/multilingual.ts` adds `en | ja | zh` language detection to extracted documents. `multilingual-risk-team.ts` runs a parallel sub-agent team that produces `LocalizedRiskFinding`s — expression-level and compliance-level risks per language segment — which are then folded into `ReviewIssue`s by the main pipeline.
+`src/server/analysis/multilingual.ts` adds `en | vi | my | km` language detection to extracted documents. `multilingual-risk-team.ts` runs a conditional sub-agent team that produces `LocalizedRiskFinding`s — expression-level and compliance-level risks per language segment — which are then folded into `ReviewIssue`s by the main pipeline.
 
 ### API surface
 

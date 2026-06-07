@@ -29,66 +29,62 @@ describe("segmentMultilingualDocuments", () => {
     ]);
   });
 
-  it("detects Japanese and Chinese as separate supported languages", () => {
+  it("detects Vietnamese Myanmar and Khmer as separate supported languages", () => {
     const segments = segmentMultilingualDocuments([
-      document("最短3分で審査完了\n最低利率 无需审核")
+      document(
+        "Phê duyệt khoản vay trong 3 phút\nချေးငွေ အတည်ပြုချက် ၃ မိနစ်အတွင်း\nអនុម័តប្រាក់កម្ចីក្នុង ៣ នាទី"
+      )
     ]);
 
-    expect(segments.map((segment) => segment.language)).toEqual(["ja", "zh"]);
+    expect(segments.map((segment) => segment.language)).toEqual(["vi", "my", "km"]);
     expect(segments[0]).toMatchObject({
-      id: "seg-ja-001",
-      originalText: "最短3分で審査完了"
+      id: "seg-vi-001",
+      originalText: "Phê duyệt khoản vay trong 3 phút"
     });
     expect(segments[1]).toMatchObject({
-      id: "seg-zh-001",
-      originalText: "最低利率 无需审核"
+      id: "seg-my-001",
+      originalText: "ချေးငွေ အတည်ပြုချက် ၃ မိနစ်အတွင်း"
+    });
+    expect(segments[2]).toMatchObject({
+      id: "seg-km-001",
+      originalText: "អនុម័តប្រាក់កម្ចីក្នុង ៣ នាទី"
     });
   });
 
-  it("splits mixed English Japanese and Chinese copy on a collapsed OCR line", () => {
+  it("splits mixed English Vietnamese Myanmar and Khmer copy on a collapsed OCR line", () => {
     const segments = segmentMultilingualDocuments([
-      document("Guaranteed approval 最短3分で審査完了 最低利率 无需审核")
+      document(
+        "Guaranteed approval Phê duyệt khoản vay ချေးငွေ အတည်ပြုချက် អនុម័តប្រាក់កម្ចី"
+      )
     ]);
 
-    expect(segments.map((segment) => segment.language)).toEqual(["en", "ja", "zh"]);
+    expect(segments.map((segment) => segment.language)).toEqual(["en", "vi", "my", "km"]);
     expect(segments).toEqual([
       expect.objectContaining({
         id: "seg-en-001",
         originalText: "Guaranteed approval"
       }),
       expect.objectContaining({
-        id: "seg-ja-001",
-        originalText: "最短3分で審査完了"
+        id: "seg-vi-001",
+        originalText: "Phê duyệt khoản vay"
       }),
       expect.objectContaining({
-        id: "seg-zh-001",
-        originalText: "最低利率 无需审核"
+        id: "seg-my-001",
+        originalText: "ချေးငွေ အတည်ပြုချက်"
+      }),
+      expect.objectContaining({
+        id: "seg-km-001",
+        originalText: "អនុម័តប្រាក់កម្ចី"
       })
     ]);
   });
 
-  it("routes Han-only Japanese financial ad terms to Japanese", () => {
+  it("does not detect Japanese or Chinese as supported multilingual review languages", () => {
     const segments = segmentMultilingualDocuments([
       document("審査完了\n手数料無料\n金利優遇\n最低利率 无需审核")
     ]);
 
-    expect(segments.map((segment) => segment.language)).toEqual(["ja", "ja", "ja", "zh"]);
-    expect(segments[0]).toMatchObject({
-      id: "seg-ja-001",
-      originalText: "審査完了"
-    });
-    expect(segments[1]).toMatchObject({
-      id: "seg-ja-002",
-      originalText: "手数料無料"
-    });
-    expect(segments[2]).toMatchObject({
-      id: "seg-ja-003",
-      originalText: "金利優遇"
-    });
-    expect(segments[3]).toMatchObject({
-      id: "seg-zh-001",
-      originalText: "最低利率 无需审核"
-    });
+    expect(segments).toEqual([]);
   });
 
   it("skips Korean-only review copy", () => {

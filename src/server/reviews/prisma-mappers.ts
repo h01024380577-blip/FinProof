@@ -135,7 +135,7 @@ function requiredStringArray(value: unknown): string[] | undefined {
 }
 
 function supportedLanguage(value: unknown): MultilingualIssueContext["language"] | undefined {
-  return value === "en" || value === "ja" || value === "zh" ? value : undefined;
+  return value === "en" || value === "vi" || value === "my" || value === "km" ? value : undefined;
 }
 
 function riskCategory(value: unknown): MultilingualIssueContext["riskCategory"] | undefined {

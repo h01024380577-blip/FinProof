@@ -22,8 +22,9 @@ import {
 
 type LanguageAgentId =
   | "english_translator_risk"
-  | "japanese_translator_risk"
-  | "chinese_translator_risk";
+  | "vietnamese_translator_risk"
+  | "myanmar_translator_risk"
+  | "khmer_translator_risk";
 
 export type MultilingualRiskTeamResult = {
   localizedRiskFindings: LocalizedRiskFinding[];
@@ -34,8 +35,9 @@ export type MultilingualRiskTeamResult = {
 
 const languageAgents: Record<SupportedReviewLanguage, LanguageAgentId> = {
   en: "english_translator_risk",
-  ja: "japanese_translator_risk",
-  zh: "chinese_translator_risk"
+  vi: "vietnamese_translator_risk",
+  my: "myanmar_translator_risk",
+  km: "khmer_translator_risk"
 };
 
 function clampConfidence(value: unknown) {

@@ -154,8 +154,9 @@ function agentTypeFromSourceAgents(sourceAgents: string[]): AgentFindingCandidat
 
   if (
     sourceAgent === "english_translator_risk" ||
-    sourceAgent === "japanese_translator_risk" ||
-    sourceAgent === "chinese_translator_risk" ||
+    sourceAgent === "vietnamese_translator_risk" ||
+    sourceAgent === "myanmar_translator_risk" ||
+    sourceAgent === "khmer_translator_risk" ||
     sourceAgent === "korean_compliance_mapping"
   ) {
     return sourceAgent;

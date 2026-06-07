@@ -1,7 +1,7 @@
 import type { ReviewIssue, RiskLevel } from "@/domain/types";
 import type { ExtractedDocument } from "./review-analysis-pipeline";
 
-export type SupportedReviewLanguage = "en" | "ja" | "zh";
+export type SupportedReviewLanguage = "en" | "vi" | "my" | "km";
 
 export type MultilingualSegment = {
   id: string;
@@ -41,8 +41,9 @@ export type KoreanComplianceMapping = {
 export type MultilingualAgentError = {
   agentType:
     | "english_translator_risk"
-    | "japanese_translator_risk"
-    | "chinese_translator_risk"
+    | "vietnamese_translator_risk"
+    | "myanmar_translator_risk"
+    | "khmer_translator_risk"
     | "korean_compliance_mapping";
   language?: SupportedReviewLanguage;
   message: string;
@@ -50,18 +51,59 @@ export type MultilingualAgentError = {
 
 const ENGLISH_FINANCIAL_AD_TERMS =
   /\b(approval|approved|guaranteed|guarantee|loan|rate|rates|fee|fees|screening|eligible|instant|lowest|hidden)\b/i;
+const VIETNAMESE_FINANCIAL_AD_TERMS =
+  /\b(phê\s*duyệt|khoản\s*vay|lãi\s*suất|miễn\s*phí|ưu\s*đãi|thẻ\s*tín\s*dụng|ngân\s*hàng|vay|phí)\b/i;
+const ENGLISH_FINANCIAL_WORDS = new Set([
+  "approval",
+  "approved",
+  "guaranteed",
+  "guarantee",
+  "loan",
+  "rate",
+  "rates",
+  "fee",
+  "fees",
+  "screening",
+  "eligible",
+  "instant",
+  "lowest",
+  "hidden",
+  "customer",
+  "representative"
+]);
+const VIETNAMESE_FINANCIAL_WORDS = new Set([
+  "phe",
+  "duyet",
+  "khoan",
+  "vay",
+  "lai",
+  "suat",
+  "phi",
+  "mien",
+  "uu",
+  "dai",
+  "the",
+  "tin",
+  "dung",
+  "ngan",
+  "hang",
+  "tra",
+  "gop"
+]);
+const VIETNAMESE_MARKER_PATTERN =
+  /[ăâđêôơưĂÂĐÊÔƠƯàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ]/u;
 const LATIN_LETTER_COUNT_PATTERN = /[A-Za-z]/g;
-const LATIN_LETTER_PATTERN = /[A-Za-z]/;
 const REVIEW_PACKAGE_METADATA_PATTERN =
   /\b(?:FinProof|productType|fileType|SamplePackageSelector|promotional_creative|copy_draft|product_description|rate_table|package_archive|POST|ZIP|src\/|\.tsx|\.ts)\b/i;
 const REVIEW_PACKAGE_METADATA_KOREAN_PATTERN =
   /(제출\s*조건|필수\s*자료|파일\s*분류|신규\s*심의\s*요청|업로드\s*정책|누락\s*차단|분류\s*매핑|기준으로|확인합니다)/;
-const JAPANESE_KANA_PATTERN = /[\u3040-\u30ff]/;
-const JAPANESE_HAN_AD_TERMS = /(審査|手数料|無料|金利|優遇)/;
-const HAN_PATTERN = /[\u3400-\u4dbf\u4e00-\u9fff]/;
 const HANGUL_PATTERN = /[\uac00-\ud7af]/;
-const NON_CJK_LATIN_SPAN_PATTERN = /[^\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af]+/gu;
-const CJK_SPAN_PATTERN = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff0-9０-９%％.．,，·・ー〜~]+/gu;
+const LATIN_SPAN_PATTERN = /[\p{Script=Latin}\p{M}0-9０-９%％.．,，·'’/\-: ]+/gu;
+const LATIN_WORD_PATTERN = /[\p{Script=Latin}\p{M}]+/gu;
+const MYANMAR_CHAR_PATTERN = /[\u1000-\u109f\uaa60-\uaa7f\ua9e0-\ua9ff]/u;
+const KHMER_CHAR_PATTERN = /[\u1780-\u17ff\u19e0-\u19ff]/u;
+const MYANMAR_SPAN_PATTERN = /[\u1000-\u109f\uaa60-\uaa7f\ua9e0-\ua9ff0-9၀-၉%％.．,၊။·\- ]+/gu;
+const KHMER_SPAN_PATTERN = /[\u1780-\u17ff\u19e0-\u19ff0-9០-៩%％.．,។៕·\- ]+/gu;
 
 type SegmentCounter = Record<SupportedReviewLanguage, number>;
 type DetectedLanguageSpan = {
@@ -75,8 +117,9 @@ export function segmentMultilingualDocuments(
 ): MultilingualSegment[] {
   const counters: SegmentCounter = {
     en: 0,
-    ja: 0,
-    zh: 0
+    vi: 0,
+    my: 0,
+    km: 0
   };
   const segments: MultilingualSegment[] = [];
 
@@ -155,71 +198,176 @@ function segmentDraftsForLine(line: string) {
 }
 
 function detectedLanguageSpans(text: string): DetectedLanguageSpan[] {
-  return [...detectedLatinSpans(text), ...detectedCjkSpans(text)].sort(
+  return [
+    ...detectedLatinSpans(text),
+    ...detectedScriptSpans(text, MYANMAR_SPAN_PATTERN, MYANMAR_CHAR_PATTERN, "my"),
+    ...detectedScriptSpans(text, KHMER_SPAN_PATTERN, KHMER_CHAR_PATTERN, "km")
+  ].sort(
     (left, right) => left.index - right.index
   );
 }
 
 function detectedLatinSpans(text: string): DetectedLanguageSpan[] {
-  return [...text.matchAll(NON_CJK_LATIN_SPAN_PATTERN)]
+  return [...text.matchAll(LATIN_SPAN_PATTERN)].flatMap((match) =>
+    detectedLatinLanguageSpans(trimBoundaryPunctuation(match[0]), match.index ?? 0)
+  );
+}
+
+function detectedScriptSpans(
+  text: string,
+  pattern: RegExp,
+  charPattern: RegExp,
+  language: Extract<SupportedReviewLanguage, "my" | "km">
+): DetectedLanguageSpan[] {
+  return [...text.matchAll(pattern)]
     .map((match) => ({
       text: trimBoundaryPunctuation(match[0]),
       index: match.index ?? 0
     }))
-    .filter((span) => isEnglishSegment(span.text))
+    .filter((span) => span.text.length > 0 && charPattern.test(span.text))
     .map((span) => ({
-      language: "en" as const,
+      language,
       text: span.text,
       index: span.index
     }));
 }
 
-function detectedCjkSpans(text: string): DetectedLanguageSpan[] {
-  return [...text.matchAll(CJK_SPAN_PATTERN)]
-    .map((match) => ({
-      text: trimBoundaryPunctuation(match[0]),
-      index: match.index ?? 0
-    }))
-    .map((span): DetectedLanguageSpan | undefined => {
-      if (span.text.length === 0) {
-        return undefined;
+function detectedLatinLanguageSpans(text: string, offset: number): DetectedLanguageSpan[] {
+  if (text.length === 0) {
+    return [];
+  }
+
+  const detected: DetectedLanguageSpan[] = [];
+  let currentLanguage: Extract<SupportedReviewLanguage, "en" | "vi"> | undefined;
+  let currentStart: number | undefined;
+
+  for (const match of text.matchAll(LATIN_WORD_PATTERN)) {
+    const language = latinWordLanguage(match[0]);
+    const wordIndex = match.index ?? 0;
+
+    if (!language) {
+      continue;
+    }
+
+    if (!currentLanguage) {
+      currentLanguage = language;
+      currentStart = wordIndex;
+      continue;
+    }
+
+    if (language !== currentLanguage && currentStart !== undefined) {
+      const spanText = trimBoundaryPunctuation(text.slice(currentStart, wordIndex));
+
+      if (spanText.length > 0) {
+        detected.push({
+          language: currentLanguage,
+          text: spanText,
+          index: offset + currentStart
+        });
       }
 
-      if (isJapaneseSegment(span.text)) {
-        return {
-          language: "ja",
-          text: span.text,
-          index: span.index
-        };
-      }
+      currentLanguage = language;
+      currentStart = wordIndex;
+    }
+  }
 
-      if (HAN_PATTERN.test(span.text) && !isKoreanOnlySegment(span.text)) {
-        return {
-          language: "zh",
-          text: span.text,
-          index: span.index
-        };
-      }
+  if (currentLanguage && currentStart !== undefined) {
+    const spanText = trimBoundaryPunctuation(text.slice(currentStart));
 
-      return undefined;
-    })
-    .filter((span): span is DetectedLanguageSpan => Boolean(span));
+    if (spanText.length > 0) {
+      detected.push({
+        language: currentLanguage,
+        text: spanText,
+        index: offset + currentStart
+      });
+    }
+  }
+
+  if (detected.length > 0) {
+    return detected;
+  }
+
+  const language = detectLatinSupportedLanguage(text);
+
+  return language
+    ? [
+        {
+          language,
+          text,
+          index: offset
+        }
+      ]
+    : [];
 }
 
 function detectSupportedLanguage(text: string): SupportedReviewLanguage | undefined {
+  const latinLanguage = detectLatinSupportedLanguage(text);
+  if (latinLanguage) {
+    return latinLanguage;
+  }
+
+  if (MYANMAR_CHAR_PATTERN.test(text)) {
+    return "my";
+  }
+
+  if (KHMER_CHAR_PATTERN.test(text)) {
+    return "km";
+  }
+
+  return undefined;
+}
+
+function detectLatinSupportedLanguage(
+  text: string
+): Extract<SupportedReviewLanguage, "en" | "vi"> | undefined {
+  if (isReviewPackageMetadataLine(text)) {
+    return undefined;
+  }
+
+  if (isVietnameseSegment(text)) {
+    return "vi";
+  }
+
   if (isEnglishSegment(text)) {
     return "en";
   }
 
-  if (isJapaneseSegment(text)) {
-    return "ja";
+  return undefined;
+}
+
+function latinWordLanguage(word: string): Extract<SupportedReviewLanguage, "en" | "vi"> | undefined {
+  const folded = foldLatin(word);
+
+  if (VIETNAMESE_MARKER_PATTERN.test(word) || VIETNAMESE_FINANCIAL_WORDS.has(folded)) {
+    return "vi";
   }
 
-  if (HAN_PATTERN.test(text) && !JAPANESE_KANA_PATTERN.test(text) && !isKoreanOnlySegment(text)) {
-    return "zh";
+  if (ENGLISH_FINANCIAL_WORDS.has(folded)) {
+    return "en";
   }
 
   return undefined;
+}
+
+function foldLatin(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[đĐ]/g, "d")
+    .toLowerCase();
+}
+
+function isVietnameseSegment(text: string) {
+  if (VIETNAMESE_FINANCIAL_AD_TERMS.test(text)) {
+    return true;
+  }
+
+  const foldedText = foldLatin(text);
+  const vietnameseTermCount = foldedText
+    .split(/[^\p{Script=Latin}]+/u)
+    .filter((word) => VIETNAMESE_FINANCIAL_WORDS.has(word)).length;
+
+  return VIETNAMESE_MARKER_PATTERN.test(text) && vietnameseTermCount > 0;
 }
 
 function isEnglishSegment(text: string) {
@@ -238,14 +386,6 @@ function isEnglishSegment(text: string) {
 
   const letters = text.match(/[\p{L}]/gu)?.length ?? 0;
   return letters > 0 && latinLetters / letters >= 0.45;
-}
-
-function isJapaneseSegment(text: string) {
-  return JAPANESE_KANA_PATTERN.test(text) || JAPANESE_HAN_AD_TERMS.test(text);
-}
-
-function isKoreanOnlySegment(text: string) {
-  return HANGUL_PATTERN.test(text) && !LATIN_LETTER_PATTERN.test(text) && !HAN_PATTERN.test(text);
 }
 
 function isReviewPackageMetadataLine(text: string) {
@@ -277,7 +417,10 @@ function segmentConfidence(
   documentConfidence: number
 ) {
   const detectedConfidence =
-    language === "en" && ENGLISH_FINANCIAL_AD_TERMS.test(text) ? 0.94 : 0.9;
+    (language === "en" && ENGLISH_FINANCIAL_AD_TERMS.test(text)) ||
+    (language === "vi" && VIETNAMESE_FINANCIAL_AD_TERMS.test(text))
+      ? 0.94
+      : 0.9;
 
   return Math.min(documentConfidence, detectedConfidence);
 }

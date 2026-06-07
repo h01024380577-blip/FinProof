@@ -259,8 +259,9 @@ export const AgentType = {
   internal_policy: 'internal_policy',
   case_search: 'case_search',
   english_translator_risk: 'english_translator_risk',
-  japanese_translator_risk: 'japanese_translator_risk',
-  chinese_translator_risk: 'chinese_translator_risk',
+  vietnamese_translator_risk: 'vietnamese_translator_risk',
+  myanmar_translator_risk: 'myanmar_translator_risk',
+  khmer_translator_risk: 'khmer_translator_risk',
   korean_compliance_mapping: 'korean_compliance_mapping'
 } as const
 

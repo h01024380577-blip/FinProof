@@ -96,8 +96,9 @@ describe("model router", () => {
   it("routes language translator risk agents to default text unless confidence is low", () => {
     for (const task of [
       "english_translator_risk",
-      "japanese_translator_risk",
-      "chinese_translator_risk"
+      "vietnamese_translator_risk",
+      "myanmar_translator_risk",
+      "khmer_translator_risk"
     ] as const) {
       expect(selectModelRoute(task, {})).toEqual({
         task,
@@ -107,8 +108,8 @@ describe("model router", () => {
       });
     }
 
-    expect(selectModelRoute("japanese_translator_risk", { lowOcrConfidence: true })).toEqual({
-      task: "japanese_translator_risk",
+    expect(selectModelRoute("vietnamese_translator_risk", { lowOcrConfidence: true })).toEqual({
+      task: "vietnamese_translator_risk",
       provider: "openai",
       model: "gpt-5.4",
       modelTier: "escalation_text",

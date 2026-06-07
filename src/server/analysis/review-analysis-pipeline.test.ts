@@ -1575,52 +1575,72 @@ describe("review analysis pipeline", () => {
     );
   });
 
-  it("routes Japanese OCR text through the Japanese translator risk agent", async () => {
+  it("routes Vietnamese OCR text through the Vietnamese translator risk agent", async () => {
     const provider = multilingualProviderReturning({
-      japanese_translator_risk: "[]"
+      vietnamese_translator_risk: "[]"
     });
     const pipeline = createReviewAnalysisPipeline({
       modelProvider: provider,
       subAgentOrchestrator: emptySubAgentOrchestrator(),
-      ocrProvider: fixedOcrProvider("最短3分で審査完了")
+      ocrProvider: fixedOcrProvider("Phê duyệt khoản vay trong 3 phút")
     });
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["japanese_translator_risk"]);
+    expect(provider.calls).toEqual(["vietnamese_translator_risk"]);
   });
 
-  it("routes Chinese OCR text through the Chinese translator risk agent", async () => {
+  it("routes Myanmar OCR text through the Myanmar translator risk agent", async () => {
     const provider = multilingualProviderReturning({
-      chinese_translator_risk: "[]"
+      myanmar_translator_risk: "[]"
     });
     const pipeline = createReviewAnalysisPipeline({
       modelProvider: provider,
       subAgentOrchestrator: emptySubAgentOrchestrator(),
-      ocrProvider: fixedOcrProvider("最低利率 无需审核")
+      ocrProvider: fixedOcrProvider("ချေးငွေ အတည်ပြုချက် ၃ မိနစ်အတွင်း")
     });
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["chinese_translator_risk"]);
+    expect(provider.calls).toEqual(["myanmar_translator_risk"]);
   });
 
-  it("routes mixed English Japanese and Chinese OCR text through all multilingual agents and mapping", async () => {
+  it("routes Khmer OCR text through the Khmer translator risk agent", async () => {
+    const provider = multilingualProviderReturning({
+      khmer_translator_risk: "[]"
+    });
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator: emptySubAgentOrchestrator(),
+      ocrProvider: fixedOcrProvider("អនុម័តប្រាក់កម្ចីក្នុង ៣ នាទី")
+    });
+
+    await pipeline.run({ review });
+
+    expect(provider.calls).toEqual(["khmer_translator_risk"]);
+  });
+
+  it("routes mixed English Vietnamese Myanmar and Khmer OCR text through all multilingual agents and mapping", async () => {
     const provider = multilingualProviderReturning({
       english_translator_risk: localizedFindingOutput({
         segmentId: "seg-en-001",
         language: "en",
         originalText: "Guaranteed approval in 3 minutes"
       }),
-      japanese_translator_risk: localizedFindingOutput({
-        segmentId: "seg-ja-001",
-        language: "ja",
-        originalText: "最短3分で審査完了"
+      vietnamese_translator_risk: localizedFindingOutput({
+        segmentId: "seg-vi-001",
+        language: "vi",
+        originalText: "Phê duyệt khoản vay"
       }),
-      chinese_translator_risk: localizedFindingOutput({
-        segmentId: "seg-zh-001",
-        language: "zh",
-        originalText: "最低利率 无需审核"
+      myanmar_translator_risk: localizedFindingOutput({
+        segmentId: "seg-my-001",
+        language: "my",
+        originalText: "ချေးငွေ အတည်ပြုချက်"
+      }),
+      khmer_translator_risk: localizedFindingOutput({
+        segmentId: "seg-km-001",
+        language: "km",
+        originalText: "អនុម័តប្រាក់កម្ចី"
       }),
       korean_compliance_mapping: JSON.stringify({
         mappings: [
@@ -1633,20 +1653,28 @@ describe("review analysis pipeline", () => {
             suggestedAction: "reject"
           },
           {
-            localizedFindingId: "seg-ja-001",
-            issueType: "MULTILINGUAL_FAST_REVIEW",
-            koreanComplianceCategory: "다국어 심사 속도 표현",
-            koreanComplianceReason: "심사 완료 시점을 단정해 오인 가능성이 있습니다.",
-            evidenceQuery: "심사 완료 단정 금융광고",
+            localizedFindingId: "seg-vi-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "다국어 승인 표현",
+            koreanComplianceReason: "베트남어 문구가 승인 가능성을 단정적으로 전달할 수 있습니다.",
+            evidenceQuery: "베트남어 승인 표현 금융광고",
             suggestedAction: "change_request"
           },
           {
-            localizedFindingId: "seg-zh-001",
-            issueType: "MULTILINGUAL_NO_SCREENING",
-            koreanComplianceCategory: "다국어 무심사 표현",
-            koreanComplianceReason: "심사 없이 가능하다는 표현은 대출 조건 오인 위험이 있습니다.",
-            evidenceQuery: "무심사 대출 금융광고",
-            suggestedAction: "reject"
+            localizedFindingId: "seg-my-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "다국어 승인 표현",
+            koreanComplianceReason: "미얀마어 문구가 승인 가능성을 단정적으로 전달할 수 있습니다.",
+            evidenceQuery: "미얀마어 승인 표현 금융광고",
+            suggestedAction: "change_request"
+          },
+          {
+            localizedFindingId: "seg-km-001",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "다국어 승인 표현",
+            koreanComplianceReason: "크메르어 문구가 승인 가능성을 단정적으로 전달할 수 있습니다.",
+            evidenceQuery: "크메르어 승인 표현 금융광고",
+            suggestedAction: "change_request"
           }
         ]
       })
@@ -1655,7 +1683,7 @@ describe("review analysis pipeline", () => {
       modelProvider: provider,
       subAgentOrchestrator: emptySubAgentOrchestrator(),
       ocrProvider: fixedOcrProvider(
-        "Guaranteed approval in 3 minutes 最短3分で審査完了 最低利率 无需审核"
+        "Guaranteed approval in 3 minutes Phê duyệt khoản vay ချေးငွေ အတည်ပြုချက် អនុម័តប្រាក់កម្ចី"
       )
     });
 
@@ -1663,10 +1691,25 @@ describe("review analysis pipeline", () => {
 
     expect(provider.calls).toEqual([
       "english_translator_risk",
-      "japanese_translator_risk",
-      "chinese_translator_risk",
+      "vietnamese_translator_risk",
+      "myanmar_translator_risk",
+      "khmer_translator_risk",
       "korean_compliance_mapping"
     ]);
+  });
+
+  it("skips Japanese and Chinese OCR text because those languages are not supported", async () => {
+    const provider = multilingualProviderReturning({});
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      subAgentOrchestrator: emptySubAgentOrchestrator(),
+      ocrProvider: fixedOcrProvider("最短3分で審査完了 最低利率 无需审核")
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.multilingualSegments).toBeUndefined();
+    expect(provider.calls).toEqual([]);
   });
 
   it("keeps Korean-only OCR unchanged and skips multilingual model tasks", async () => {
@@ -1683,8 +1726,9 @@ describe("review analysis pipeline", () => {
     expect(provider.calls).not.toEqual(
       expect.arrayContaining([
         "english_translator_risk",
-        "japanese_translator_risk",
-        "chinese_translator_risk",
+        "vietnamese_translator_risk",
+        "myanmar_translator_risk",
+        "khmer_translator_risk",
         "korean_compliance_mapping"
       ])
     );
@@ -1884,7 +1928,7 @@ function localizedFindingOutput({
   originalText
 }: {
   segmentId: string;
-  language: "en" | "ja" | "zh";
+  language: "en" | "vi" | "my" | "km";
   originalText: string;
 }) {
   return JSON.stringify({

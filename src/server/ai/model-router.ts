@@ -15,8 +15,9 @@ export type ModelRouteTask =
   | "internal_policy_agent"
   | "case_search"
   | "english_translator_risk"
-  | "japanese_translator_risk"
-  | "chinese_translator_risk"
+  | "vietnamese_translator_risk"
+  | "myanmar_translator_risk"
+  | "khmer_translator_risk"
   | "korean_compliance_mapping"
   | "retrieval_query"
   | "evidence_verification"
@@ -224,8 +225,9 @@ export function selectModelRoute(
 
   if (
     task === "english_translator_risk" ||
-    task === "japanese_translator_risk" ||
-    task === "chinese_translator_risk"
+    task === "vietnamese_translator_risk" ||
+    task === "myanmar_translator_risk" ||
+    task === "khmer_translator_risk"
   ) {
     const reason = context.lowOcrConfidence ? "low_ocr_confidence" : escalationReason(context);
     return textRoute(task, reason ? "escalation_text" : "default_text", config, reason);

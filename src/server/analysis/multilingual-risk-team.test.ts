@@ -405,22 +405,22 @@ describe("runMultilingualRiskTeam", () => {
 
   it("continues when one language agent fails", async () => {
     const provider = providerReturning({
-      japanese_translator_risk: new Error("model timeout"),
-      chinese_translator_risk: JSON.stringify({ findings: [] })
+      myanmar_translator_risk: new Error("model timeout"),
+      khmer_translator_risk: JSON.stringify({ findings: [] })
     });
 
     const result = await runMultilingualRiskTeam({
       review,
       segments: [
         segment({
-          id: "seg-ja-001",
-          language: "ja",
-          originalText: "最短3分で審査完了"
+          id: "seg-my-001",
+          language: "my",
+          originalText: "ချေးငွေ အတည်ပြုချက် ၃ မိနစ်အတွင်း"
         }),
         segment({
-          id: "seg-zh-001",
-          language: "zh",
-          originalText: "最低利率 无需审核"
+          id: "seg-km-001",
+          language: "km",
+          originalText: "អនុម័តប្រាក់កម្ចីក្នុង ៣ នាទី"
         })
       ],
       evidenceCandidates,
@@ -429,12 +429,12 @@ describe("runMultilingualRiskTeam", () => {
 
     expect(result.errors).toEqual([
       {
-        agentType: "japanese_translator_risk",
-        language: "ja",
+        agentType: "myanmar_translator_risk",
+        language: "my",
         message: "model timeout"
       }
     ]);
-    expect(provider.calls).toEqual(["japanese_translator_risk", "chinese_translator_risk"]);
+    expect(provider.calls).toEqual(["myanmar_translator_risk", "khmer_translator_risk"]);
   });
 
   it("turns low confidence localized risk into a caution review-needed finding", async () => {

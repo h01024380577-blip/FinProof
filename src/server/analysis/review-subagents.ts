@@ -28,8 +28,9 @@ export type ReviewSubAgentId =
   | "evidence_verification"
   | "case_search"
   | "english_translator_risk"
-  | "japanese_translator_risk"
-  | "chinese_translator_risk"
+  | "vietnamese_translator_risk"
+  | "myanmar_translator_risk"
+  | "khmer_translator_risk"
   | "korean_compliance_mapping";
 
 export type AgentFinding = {

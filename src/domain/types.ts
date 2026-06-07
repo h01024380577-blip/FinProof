@@ -65,7 +65,7 @@ export type Evidence = {
 
 export type MultilingualIssueContext = {
   segmentId: string;
-  language: "en" | "ja" | "zh";
+  language: "en" | "vi" | "my" | "km";
   originalText: string;
   literalTranslation: string;
   complianceMeaning: string;
@@ -318,8 +318,9 @@ export type AgentType =
   | "internal_policy"
   | "case_search"
   | "english_translator_risk"
-  | "japanese_translator_risk"
-  | "chinese_translator_risk"
+  | "vietnamese_translator_risk"
+  | "myanmar_translator_risk"
+  | "khmer_translator_risk"
   | "korean_compliance_mapping";
 
 export type AgentRun = {
