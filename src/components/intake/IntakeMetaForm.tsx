@@ -1,6 +1,7 @@
 "use client";
 
-import type { JSX } from "react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useId, useRef, useState, type JSX } from "react";
 import type { ProductType } from "@/domain/types";
 
 export type IntakeChannelsState = {
@@ -38,6 +39,110 @@ const affiliateOptions = [
   "기타"
 ];
 
+type AffiliateComboboxProps = {
+  value: string;
+  onValueChange: (value: string) => void;
+};
+
+function AffiliateCombobox({ value, onValueChange }: AffiliateComboboxProps): JSX.Element {
+  const [isOpen, setIsOpen] = useState(false);
+  const inputId = useId();
+  const listboxId = useId();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    function closeOnOutsideClick(event: MouseEvent): void {
+      if (!wrapperRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick);
+  }, [isOpen]);
+
+  function chooseAffiliate(affiliate: string): void {
+    onValueChange(affiliate);
+    setIsOpen(false);
+    inputRef.current?.focus();
+  }
+
+  return (
+    <div className="intake-field">
+      <label htmlFor={inputId}>계열사 *</label>
+      <div className="affiliate-combobox" ref={wrapperRef}>
+        <input
+          id={inputId}
+          aria-autocomplete="list"
+          aria-controls={isOpen ? listboxId : undefined}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-label="계열사"
+          placeholder="예: 광주은행 또는 직접 입력"
+          ref={inputRef}
+          role="combobox"
+          value={value}
+          onChange={(event) => {
+            onValueChange(event.target.value);
+            setIsOpen(true);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setIsOpen(true);
+            }
+
+            if (event.key === "Escape") {
+              setIsOpen(false);
+            }
+          }}
+        />
+        <button
+          aria-label={isOpen ? "계열사 목록 닫기" : "계열사 목록 열기"}
+          aria-controls={listboxId}
+          aria-expanded={isOpen}
+          className="affiliate-combobox__toggle"
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
+        >
+          <ChevronDown size={18} aria-hidden="true" />
+        </button>
+
+        {isOpen ? (
+          <div
+            className="affiliate-combobox__menu affiliate-combobox__menu--arrow-aligned"
+            id={listboxId}
+            role="listbox"
+            aria-label="계열사 목록"
+          >
+            <div className="affiliate-combobox__options">
+              {affiliateOptions.map((affiliate) => (
+                <button
+                  aria-selected={value === affiliate}
+                  className="affiliate-combobox__option"
+                  key={affiliate}
+                  role="option"
+                  type="button"
+                  onClick={() => chooseAffiliate(affiliate)}
+                  onMouseDown={(event) => event.preventDefault()}
+                >
+                  {affiliate}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.Element {
   function patch(partial: Partial<IntakeMetaState>): void {
     onChange({ ...state, ...partial });
@@ -55,21 +160,10 @@ export function IntakeMetaForm({ state, onChange }: IntakeMetaFormProps): JSX.El
         />
       </label>
 
-      <label className="intake-field">
-        <span>계열사 *</span>
-        <input
-          aria-label="계열사"
-          list="affiliate-options"
-          placeholder="예: 광주은행 또는 직접 입력"
-          value={state.affiliate}
-          onChange={(event) => patch({ affiliate: event.target.value })}
-        />
-        <datalist id="affiliate-options">
-          {affiliateOptions.map((affiliate) => (
-            <option key={affiliate} value={affiliate} />
-          ))}
-        </datalist>
-      </label>
+      <AffiliateCombobox
+        value={state.affiliate}
+        onValueChange={(affiliate) => patch({ affiliate })}
+      />
 
       <label className="intake-field">
         <span>요청 부서 *</span>

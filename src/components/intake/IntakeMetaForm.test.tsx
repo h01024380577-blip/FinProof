@@ -25,16 +25,22 @@ describe("IntakeMetaForm", () => {
     expect(onChange.mock.calls.at(-1)?.[0]).toEqual({ ...baseState, title: "A" });
   });
 
-  it("offers JB affiliates from a dropdown while allowing a custom affiliate", async () => {
+  it("opens an arrow-aligned JB affiliate dropdown while allowing a custom affiliate", async () => {
+    const user = userEvent.setup();
     const onChange = vi.fn();
     const { container } = render(<IntakeMetaForm state={baseState} onChange={onChange} />);
 
     const affiliateInput = screen.getByLabelText("계열사");
-    expect(affiliateInput).toHaveAttribute("list", "affiliate-options");
+    expect(affiliateInput).toHaveAttribute("aria-autocomplete", "list");
+
+    await user.click(screen.getByRole("button", { name: "계열사 목록 열기" }));
+
+    const affiliateMenu = screen.getByRole("listbox", { name: "계열사 목록" });
+    expect(affiliateMenu).toHaveClass("affiliate-combobox__menu--arrow-aligned");
 
     const affiliateOptions = Array.from(
-      container.querySelectorAll<HTMLDataListElement>("#affiliate-options option")
-    ).map((option) => option.value);
+      container.querySelectorAll<HTMLButtonElement>(".affiliate-combobox__option")
+    ).map((option) => option.textContent);
 
     expect(affiliateOptions).toEqual([
       "JB금융지주",
@@ -49,6 +55,9 @@ describe("IntakeMetaForm", () => {
       "JB캐피탈 미얀마",
       "기타"
     ]);
+
+    await user.click(screen.getByRole("option", { name: "JB우리캐피탈" }));
+    expect(onChange.mock.calls.at(-1)?.[0]).toEqual({ ...baseState, affiliate: "JB우리캐피탈" });
 
     fireEvent.change(affiliateInput, { target: { value: "새 계열사" } });
 
