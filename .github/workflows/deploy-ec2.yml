@@ -50,25 +50,39 @@ jobs:
       - name: Sync release to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST || '13.220.96.110' }}
-          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
+          EC2_USER: ${{ secrets.EC2_USER }}
           EC2_APP_DIR: ${{ vars.EC2_APP_DIR || '/opt/finproof-agent/current' }}
         run: |
-          rsync -az --delete \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='.next' \
-            --exclude='.env' \
-            --exclude='security' \
-            --exclude='.finproof-uploads' \
-            -e "ssh -i ~/.ssh/finproof_agent" \
-            ./ "$EC2_USER@$EC2_HOST:$EC2_APP_DIR/"
+          users=()
+          if [ -n "$EC2_USER" ]; then
+            users+=("$EC2_USER")
+          fi
+          users+=("ec2-user" "ubuntu")
+
+          for user in "${users[@]}"; do
+            echo "Trying EC2 sync as $user@$EC2_HOST"
+            if rsync -az --delete \
+              --exclude='.git' \
+              --exclude='.github' \
+              --exclude='node_modules' \
+              --exclude='.next' \
+              --exclude='.env' \
+              --exclude='security' \
+              --exclude='.finproof-uploads' \
+              -e "ssh -i ~/.ssh/finproof_agent" \
+              ./ "$user@$EC2_HOST:$EC2_APP_DIR/"; then
+              echo "EC2_DEPLOY_USER=$user" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+
+          echo "Unable to sync release to EC2 with configured or default users." >&2
+          exit 1
 
       - name: Run EC2 deploy script
         env:
           EC2_HOST: ${{ secrets.EC2_HOST || '13.220.96.110' }}
-          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
           EC2_APP_DIR: ${{ vars.EC2_APP_DIR || '/opt/finproof-agent/current' }}
         run: |
-          ssh -i ~/.ssh/finproof_agent "$EC2_USER@$EC2_HOST" \
+          ssh -i ~/.ssh/finproof_agent "$EC2_DEPLOY_USER@$EC2_HOST" \
             "cd '$EC2_APP_DIR' && bash ops/ec2/deploy.sh"
