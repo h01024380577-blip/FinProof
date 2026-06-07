@@ -49,10 +49,10 @@ describe("IntakeMetaForm", () => {
       "JB우리캐피탈",
       "JB자산운용",
       "JB인베스트먼트",
-      "프놈펜상업은행 (PPCBank)",
-      "JB증권 베트남 (JBSV)",
-      "JB프놈펜자산운용",
-      "JB캐피탈 미얀마",
+      "PPCBank",
+      "JB Securities Vietnam",
+      "JB Capital Myanmar",
+      "JB PPAM",
       "기타"
     ]);
 

@@ -16,6 +16,23 @@ const prisma = new PrismaClient({
 
 const cases = sampleReviewCases as ReviewCase[];
 
+const affiliateSeeds = [
+  { id: "aff-gwangju-bank", code: "gwangju-bank", name: "광주은행" },
+  { id: "aff-jeonbuk-bank", code: "jeonbuk-bank", name: "전북은행" },
+  { id: "aff-ppc-bank", code: "ppc-bank", name: "PPCBank" },
+  {
+    id: "aff-jb-securities-vietnam",
+    code: "jb-securities-vietnam",
+    name: "JB Securities Vietnam"
+  },
+  { id: "aff-jb-capital-myanmar", code: "jb-capital-myanmar", name: "JB Capital Myanmar" },
+  { id: "aff-jb-ppam", code: "jb-ppam", name: "JB PPAM" }
+];
+
+const affiliateIdsByName = new Map(
+  affiliateSeeds.map((affiliate) => [affiliate.name, affiliate.id])
+);
+
 function inferContentType(fileName: string): string {
   if (fileName.endsWith(".png")) {
     return "image/png";
@@ -37,9 +54,7 @@ function plannedDate(value: string): Date {
 }
 
 async function seedReviewCase(reviewCase: ReviewCase) {
-  const affiliateId = reviewCase.affiliate.includes("광주")
-    ? "aff-gwangju-bank"
-    : "aff-jeonbuk-bank";
+  const affiliateId = affiliateIdsByName.get(reviewCase.affiliate) ?? "aff-jeonbuk-bank";
 
   await prisma.reviewCase.upsert({
     where: { id: reviewCase.id },
@@ -126,27 +141,18 @@ async function main() {
     create: { id: "tenant-demo", name: "FinProof Demo Tenant" }
   });
 
-  await prisma.affiliate.upsert({
-    where: { tenantId_code: { tenantId: "tenant-demo", code: "gwangju-bank" } },
-    update: { name: "광주은행" },
-    create: {
-      id: "aff-gwangju-bank",
-      tenantId: "tenant-demo",
-      code: "gwangju-bank",
-      name: "광주은행"
-    }
-  });
-
-  await prisma.affiliate.upsert({
-    where: { tenantId_code: { tenantId: "tenant-demo", code: "jeonbuk-bank" } },
-    update: { name: "전북은행" },
-    create: {
-      id: "aff-jeonbuk-bank",
-      tenantId: "tenant-demo",
-      code: "jeonbuk-bank",
-      name: "전북은행"
-    }
-  });
+  for (const affiliate of affiliateSeeds) {
+    await prisma.affiliate.upsert({
+      where: { tenantId_code: { tenantId: "tenant-demo", code: affiliate.code } },
+      update: { name: affiliate.name },
+      create: {
+        id: affiliate.id,
+        tenantId: "tenant-demo",
+        code: affiliate.code,
+        name: affiliate.name
+      }
+    });
+  }
 
   await prisma.user.upsert({
     where: { id: "user-requester-demo" },

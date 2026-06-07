@@ -142,7 +142,11 @@ function toSummary(review: ReviewCase): ReviewSummary {
 
 const affiliateIdsByName = new Map([
   ["광주은행", "aff-gwangju-bank"],
-  ["전북은행", "aff-jeonbuk-bank"]
+  ["전북은행", "aff-jeonbuk-bank"],
+  ["PPCBank", "aff-ppc-bank"],
+  ["JB Securities Vietnam", "aff-jb-securities-vietnam"],
+  ["JB Capital Myanmar", "aff-jb-capital-myanmar"],
+  ["JB PPAM", "aff-jb-ppam"]
 ]);
 
 function affiliateIdForReview(review: ReviewCase): string | undefined {
@@ -336,7 +340,11 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   );
   const affiliateTenants = new Map([
     ["aff-gwangju-bank", "tenant-demo"],
-    ["aff-jeonbuk-bank", "tenant-demo"]
+    ["aff-jeonbuk-bank", "tenant-demo"],
+    ["aff-ppc-bank", "tenant-demo"],
+    ["aff-jb-securities-vietnam", "tenant-demo"],
+    ["aff-jb-capital-myanmar", "tenant-demo"],
+    ["aff-jb-ppam", "tenant-demo"]
   ]);
   let uploadSequence = 1;
   let knowledgeSequence = 1;
