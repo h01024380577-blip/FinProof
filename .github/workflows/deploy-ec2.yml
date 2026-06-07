@@ -43,12 +43,14 @@ jobs:
           chmod 600 ~/.ssh/finproof_agent
 
       - name: Trust EC2 host
-        run: ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST || '13.220.96.110' }}
+        run: ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
       - name: Sync release to EC2
         env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST || '13.220.96.110' }}
+          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
           EC2_APP_DIR: ${{ vars.EC2_APP_DIR || '/opt/finproof-agent/current' }}
         run: |
           rsync -az --delete \
@@ -64,8 +66,8 @@ jobs:
 
       - name: Run EC2 deploy script
         env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_HOST: ${{ secrets.EC2_HOST || '13.220.96.110' }}
+          EC2_USER: ${{ secrets.EC2_USER || 'ec2-user' }}
           EC2_APP_DIR: ${{ vars.EC2_APP_DIR || '/opt/finproof-agent/current' }}
         run: |
           ssh -i ~/.ssh/finproof_agent "$EC2_USER@$EC2_HOST" \
