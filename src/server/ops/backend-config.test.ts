@@ -1,6 +1,8 @@
 import {
+  assertBackendDeploymentReady,
   assertBackendProductionReady,
   getBackendRuntimeConfig,
+  getBackendReadinessProfile,
   redactedBackendRuntimeConfig
 } from "./backend-config";
 
@@ -30,7 +32,49 @@ describe("backend runtime config", () => {
         "FINPROOF_STORAGE_ADAPTER=s3"
       ])
     );
+    expect(config.deploymentWarnings).toEqual(config.productionGaps);
+    expect(config.deploymentReady).toBe(true);
     expect(config.productionReady).toBe(false);
+  });
+
+  it("allows deployment readiness with deterministic local providers as warnings", () => {
+    const config = getBackendRuntimeConfig({});
+
+    expect(() => assertBackendDeploymentReady(config)).not.toThrow();
+    expect(config.deploymentReady).toBe(true);
+    expect(config.deploymentWarnings).toEqual(
+      expect.arrayContaining([
+        "FINPROOF_AUTH_MODE=jwt",
+        "FINPROOF_REVIEW_STORE=prisma",
+        "FINPROOF_MODEL_PROVIDER=router|openai",
+        "FINPROOF_STORAGE_ADAPTER=s3"
+      ])
+    );
+    expect(() => assertBackendProductionReady(config)).toThrow(
+      /Backend production readiness failed/
+    );
+  });
+
+  it("fails deployment readiness when a selected external provider is missing required config", () => {
+    const config = getBackendRuntimeConfig({
+      FINPROOF_UPLOAD_SCAN_PROVIDER: "http"
+    });
+
+    expect(config.deploymentReady).toBe(false);
+    expect(config.missing).toContain("FINPROOF_UPLOAD_SCAN_ENDPOINT");
+    expect(() => assertBackendDeploymentReady(config)).toThrow(
+      /Backend deployment readiness failed: FINPROOF_UPLOAD_SCAN_ENDPOINT/
+    );
+  });
+
+  it("reads the requested readiness profile from env", () => {
+    expect(getBackendReadinessProfile({})).toBe("deployment");
+    expect(getBackendReadinessProfile({ FINPROOF_READINESS_PROFILE: "deployment" })).toBe(
+      "deployment"
+    );
+    expect(getBackendReadinessProfile({ FINPROOF_READINESS_PROFILE: "production" })).toBe(
+      "production"
+    );
   });
 
   it("does not treat JWT-only configuration as production ready", () => {

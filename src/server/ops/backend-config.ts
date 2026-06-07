@@ -7,6 +7,8 @@ type ProviderState = {
   configured: boolean;
 };
 
+export type BackendReadinessProfile = "deployment" | "production";
+
 export type BackendRuntimeConfig = {
   auth: {
     mode: "demo" | "jwt";
@@ -43,6 +45,8 @@ export type BackendRuntimeConfig = {
   };
   secrets: Record<string, "set" | "missing">;
   missing: string[];
+  deploymentWarnings: string[];
+  deploymentReady: boolean;
   productionGaps: string[];
   productionReady: boolean;
 };
@@ -74,6 +78,10 @@ function requireProductionProvider(gaps: string[], condition: boolean, expected:
   if (condition && !gaps.includes(expected)) {
     gaps.push(expected);
   }
+}
+
+export function getBackendReadinessProfile(env: Env = process.env): BackendReadinessProfile {
+  return value(env, "FINPROOF_READINESS_PROFILE") === "production" ? "production" : "deployment";
 }
 
 export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeConfig {
@@ -231,10 +239,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     },
     model: {
       provider: modelProvider,
-      model:
-        modelProvider === "openai"
-            ? (value(env, "OPENAI_MODEL") ?? "gpt-5-mini")
-            : undefined,
+      model: modelProvider === "openai" ? (value(env, "OPENAI_MODEL") ?? "gpt-5-mini") : undefined,
       ...(modelProvider === "router" ? getModelRoutingConfig(env) : {}),
       configured:
         modelProvider === "deterministic" ||
@@ -302,6 +307,8 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       AWS_SECRET_ACCESS_KEY: secretState(env, "AWS_SECRET_ACCESS_KEY")
     },
     missing,
+    deploymentWarnings: productionGaps,
+    deploymentReady: missing.length === 0,
     productionGaps,
     productionReady: missing.length === 0 && productionGaps.length === 0
   };
@@ -323,6 +330,14 @@ export function assertBackendProductionReady(config = getBackendRuntimeConfig())
     const blockers = [...config.missing, ...config.productionGaps].join(", ");
 
     throw new Error(`Backend production readiness failed: ${blockers}`);
+  }
+
+  return config;
+}
+
+export function assertBackendDeploymentReady(config = getBackendRuntimeConfig()) {
+  if (!config.deploymentReady) {
+    throw new Error(`Backend deployment readiness failed: ${config.missing.join(", ")}`);
   }
 
   return config;

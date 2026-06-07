@@ -51,6 +51,7 @@ describe("EC2 deployment artifacts", () => {
     const releaseEnv = renderEc2ReleaseEnvExample();
 
     expect(runtimeEnv).toContain("DATABASE_URL=");
+    expect(runtimeEnv).toContain("FINPROOF_READINESS_PROFILE=deployment");
     expect(runtimeEnv).toContain("FINPROOF_AUTH_JWKS_URL=");
     expect(runtimeEnv).toContain("FINPROOF_AUTH_JWT_ISSUER=");
     expect(runtimeEnv).toContain("FINPROOF_AUTH_JWT_AUDIENCE=finproof-agent");

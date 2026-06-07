@@ -25,6 +25,7 @@ Set production variables in the runtime and release secret stores, not in git:
 
 ```bash
 FINPROOF_AUTH_MODE=jwt
+FINPROOF_READINESS_PROFILE=deployment
 # Preferred production auth: OIDC/JWKS.
 FINPROOF_AUTH_JWKS_URL=https://...
 FINPROOF_AUTH_JWT_ISSUER=https://...
@@ -89,7 +90,13 @@ Validate the process environment before starting traffic:
 
 ```bash
 npm run ops:readiness
+npm run ops:readiness:production
 ```
+
+`npm run ops:readiness` uses the `deployment` profile. It fails when the selected providers are
+missing required secrets or endpoints, but it only warns when the runtime is still using demo,
+mock, deterministic, or local-metadata providers. `npm run ops:readiness:production` uses the
+strict `production` profile and must pass before routing real production traffic.
 
 At runtime, compliance admins can call:
 

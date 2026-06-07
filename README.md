@@ -83,6 +83,7 @@ The configured EC2 key pair is `finproof-s3`; keep the local private key at
 Production mode is configured by environment variables rather than checked-in secrets:
 
 ```bash
+FINPROOF_READINESS_PROFILE=deployment
 FINPROOF_AUTH_MODE=jwt
 FINPROOF_REVIEW_STORE=prisma
 FINPROOF_MODEL_PROVIDER=router
@@ -104,9 +105,14 @@ npm run ops:ec2:plan
 npm run ops:ec2:write
 npm run ops:ci:write
 npm run ops:readiness
+npm run ops:readiness:production
 npm run ops:s3:plan
 npm run ops:s3:apply
 ```
+
+`npm run ops:readiness` verifies deployment health and reports non-production providers as
+warnings. `npm run ops:readiness:production` keeps the strict launch gate and fails until JWT,
+Prisma, AI/OCR/RAG, upload scanning, and S3 providers are all production-backed.
 
 `npm run ops:ec2:write` renders the EC2 `systemd` unit, runtime env example, release env example,
 analysis worker unit, and deploy script under `ops/ec2`.
