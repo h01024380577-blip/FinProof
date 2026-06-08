@@ -133,25 +133,43 @@ function extractJson(text: string): unknown {
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const candidate = fenced?.[1]?.trim() ?? trimmed;
 
-  try {
-    return JSON.parse(candidate);
-  } catch {
-    const arrayStart = candidate.indexOf("[");
-    const arrayEnd = candidate.lastIndexOf("]");
+  const parsed = parseJson(candidate);
 
-    if (arrayStart !== -1 && arrayEnd > arrayStart) {
-      return JSON.parse(candidate.slice(arrayStart, arrayEnd + 1));
+  if (parsed !== undefined) {
+    return parsed;
+  }
+
+  const arrayStart = candidate.indexOf("[");
+  const arrayEnd = candidate.lastIndexOf("]");
+
+  if (arrayStart !== -1 && arrayEnd > arrayStart) {
+    const arrayParsed = parseJson(candidate.slice(arrayStart, arrayEnd + 1));
+
+    if (arrayParsed !== undefined) {
+      return arrayParsed;
     }
+  }
 
-    const objectStart = candidate.indexOf("{");
-    const objectEnd = candidate.lastIndexOf("}");
+  const objectStart = candidate.indexOf("{");
+  const objectEnd = candidate.lastIndexOf("}");
 
-    if (objectStart !== -1 && objectEnd > objectStart) {
-      return JSON.parse(candidate.slice(objectStart, objectEnd + 1));
+  if (objectStart !== -1 && objectEnd > objectStart) {
+    const objectParsed = parseJson(candidate.slice(objectStart, objectEnd + 1));
+
+    if (objectParsed !== undefined) {
+      return objectParsed;
     }
   }
 
   return [];
+}
+
+function parseJson(candidate: string): unknown | undefined {
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    return undefined;
+  }
 }
 
 function rawFindings(parsed: unknown): unknown[] {

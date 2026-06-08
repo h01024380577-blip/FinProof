@@ -687,4 +687,28 @@ describe("runMultilingualRiskTeam", () => {
       }
     ]);
   });
+
+  it("treats malformed JSON fragments as empty agent output", async () => {
+    const provider = providerReturning({
+      english_translator_risk: '[{"segmentId":"seg-en-001","confidence":0.}]'
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes"
+        })
+      ],
+      evidenceCandidates,
+      provider
+    });
+
+    expect(result.localizedRiskFindings).toEqual([]);
+    expect(result.koreanComplianceMappings).toEqual([]);
+    expect(result.agentFindings).toEqual([]);
+    expect(result.errors).toEqual([]);
+  });
 });
