@@ -2,8 +2,10 @@ import type { ReviewCase } from "@/domain/types";
 import {
   createGeminiOcrProvider,
   createOpenAiOcrProvider,
-  createReviewAnalysisPipeline
+  createReviewAnalysisPipeline,
+  selectEvidenceCandidates
 } from "./review-analysis-pipeline";
+import type { RagEvidenceCandidate } from "./review-analysis-pipeline";
 import type { ModelProvider } from "@/server/ai/model-provider";
 import type { ReviewStoreScope } from "@/server/reviews";
 import type { ReviewSubAgentOrchestrator } from "./review-subagents";
@@ -1065,6 +1067,41 @@ describe("review analysis pipeline", () => {
     });
   });
 
+  it("builds the knowledge retrieval query from extracted document text, not only intake metadata", async () => {
+    // Uploaded cases carry placeholder intake metadata; the real ad content only exists
+    // in the OCR-extracted documents. Knowledge retrieval must query the extracted text.
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => []);
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "매일더함 자유적금 최고금리 연 4.50% 급여이체 우대조건",
+            confidence: 0.9,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    await pipeline.run({ review, scope });
+
+    expect(searchKnowledgeEvidence).toHaveBeenCalledWith(
+      scope,
+      expect.objectContaining({
+        query: expect.stringContaining("매일더함 자유적금")
+      })
+    );
+  });
+
   it("drops reranked evidence candidates below the configured matching threshold", async () => {
     const scope: ReviewStoreScope = {
       tenantId: "tenant-demo",
@@ -1949,3 +1986,67 @@ function localizedFindingOutput({
     ]
   });
 }
+
+function ragCandidate(overrides: Partial<RagEvidenceCandidate>): RagEvidenceCandidate {
+  return {
+    id: "candidate",
+    sourceType: "product_doc",
+    title: "제목",
+    quoteSummary: "요약",
+    relevanceScore: 0.7,
+    ...overrides
+  };
+}
+
+describe("selectEvidenceCandidates", () => {
+  it("drops candidates below the matching threshold (preserves 9800ef8 behavior)", () => {
+    const candidates: RagEvidenceCandidate[] = [
+      ragCandidate({ id: "product-high", sourceType: "product_doc", relevanceScore: 0.7 }),
+      ragCandidate({
+        id: "knowledge-low",
+        sourceType: "internal_policy",
+        relevanceScore: 0.03
+      })
+    ];
+
+    const selected = selectEvidenceCandidates(candidates, { minScore: 0.55, topK: 4 });
+
+    expect(selected.map((candidate) => candidate.id)).not.toContain("knowledge-low");
+  });
+
+  it("guarantees above-threshold knowledge evidence is not crowded out by product docs", () => {
+    // Uploaded package documents lexically overlap the ad copy and dominate the rerank,
+    // filling every topK slot. Knowledge-corpus evidence (the regulatory basis) must
+    // still earn a slot rather than being sliced out.
+    const candidates: RagEvidenceCandidate[] = [
+      ragCandidate({ id: "product-1", sourceType: "product_doc", relevanceScore: 0.76 }),
+      ragCandidate({ id: "product-2", sourceType: "product_doc", relevanceScore: 0.75 }),
+      ragCandidate({ id: "product-3", sourceType: "product_doc", relevanceScore: 0.73 }),
+      ragCandidate({ id: "product-4", sourceType: "product_doc", relevanceScore: 0.72 }),
+      ragCandidate({ id: "knowledge-1", sourceType: "internal_policy", relevanceScore: 0.6 }),
+      ragCandidate({ id: "law-1", sourceType: "law", relevanceScore: 0.58 })
+    ];
+
+    const selected = selectEvidenceCandidates(candidates, { minScore: 0.55, topK: 4 });
+
+    expect(selected).toHaveLength(4);
+    const knowledgeIds = selected
+      .filter(
+        (candidate) =>
+          candidate.sourceType === "internal_policy" || candidate.sourceType === "law"
+      )
+      .map((candidate) => candidate.id);
+    expect(knowledgeIds.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("does not reserve knowledge slots when no knowledge candidates exist", () => {
+    const candidates: RagEvidenceCandidate[] = [
+      ragCandidate({ id: "product-1", sourceType: "product_doc", relevanceScore: 0.76 }),
+      ragCandidate({ id: "product-2", sourceType: "product_doc", relevanceScore: 0.72 })
+    ];
+
+    const selected = selectEvidenceCandidates(candidates, { minScore: 0.55, topK: 4 });
+
+    expect(selected.map((candidate) => candidate.id)).toEqual(["product-1", "product-2"]);
+  });
+});

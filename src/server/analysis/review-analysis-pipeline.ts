@@ -176,6 +176,33 @@ function reviewRagQuery(review: ReviewCase): string {
   return [review.promotionalCopy, review.disclosure, review.productDescription].join(" ");
 }
 
+const MAX_RAG_QUERY_CHARS = 2000;
+
+/**
+ * Builds the query used for knowledge/case retrieval and reranking.
+ *
+ * Uploaded cases keep placeholder intake metadata (promotionalCopy / disclosure /
+ * productDescription are template defaults until a human edits them), so a query built
+ * from metadata alone never reflects the real ad. The actual content lives in the
+ * OCR-extracted documents, which are only available after extraction — so this enriches
+ * the metadata query with the extracted text. When no text was extracted it falls back
+ * to the metadata-only query.
+ */
+function analysisRagQuery(review: ReviewCase, documents: ExtractedDocument[]): string {
+  const metadataQuery = reviewRagQuery(review);
+  const extractedText = documents
+    .map((document) => document.text)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!extractedText) {
+    return metadataQuery;
+  }
+
+  return `${metadataQuery} ${extractedText}`.trim().slice(0, MAX_RAG_QUERY_CHARS);
+}
+
 function isTextLikeFile(file: ReviewFile) {
   const contentType = file.contentType?.toLowerCase() ?? "";
   const fileName = file.name.toLowerCase();
@@ -972,8 +999,8 @@ function createLexicalRagRetriever(
     },
 
     async retrieve({ review, extractedDocuments, scope }) {
-      const query = reviewRagQuery(review);
       const searchableDocuments = documentsForAnalysis(extractedDocuments, review);
+      const query = analysisRagQuery(review, searchableDocuments);
 
       const productDocumentCandidates = searchableDocuments
         .map((document, index) => ({
@@ -987,14 +1014,57 @@ function createLexicalRagRetriever(
         .filter((candidate) => candidate.relevanceScore >= config.rag.minScore)
         .sort((left, right) => right.relevanceScore - left.relevanceScore);
 
-      // Use candidates prefetched in parallel with OCR if available, otherwise fetch now
-      const knowledgeCaseCandidates =
-        cachedKnowledgeCaseCandidates ?? (await fetchKnowledgeCaseCandidates(review, scope, query));
+      // The prefetch (fired in parallel with OCR) can only use intake metadata. Reuse it
+      // only when extraction added no text; otherwise re-query with the enriched query so
+      // knowledge retrieval reflects the real ad content.
+      const canReusePrefetch =
+        cachedKnowledgeCaseCandidates !== undefined && query === reviewRagQuery(review);
+      const knowledgeCaseCandidates = canReusePrefetch
+        ? (cachedKnowledgeCaseCandidates as RagEvidenceCandidate[])
+        : await fetchKnowledgeCaseCandidates(review, scope, query);
       cachedKnowledgeCaseCandidates = undefined;
 
       return [...productDocumentCandidates, ...knowledgeCaseCandidates];
     }
   };
+}
+
+function isKnowledgeCorpusEvidence(candidate: RagEvidenceCandidate) {
+  return candidate.sourceType === "law" || candidate.sourceType === "internal_policy";
+}
+
+/**
+ * Selects the final evidence candidates from a reranked list.
+ *
+ * Reranking scores uploaded package documents (product_doc) very highly because
+ * they overlap the ad copy verbatim, which can fill every topK slot and crowd out
+ * knowledge-corpus evidence (the law / internal_policy basis for an issue). This
+ * reserves up to half of the topK slots for above-threshold knowledge evidence so
+ * the regulatory basis survives, while still honoring the matching threshold
+ * (candidates reranked below `minScore` are dropped) and the overall topK cap.
+ */
+export function selectEvidenceCandidates(
+  candidates: RagEvidenceCandidate[],
+  { minScore, topK }: { minScore: number; topK: number }
+): RagEvidenceCandidate[] {
+  const eligible = candidates.filter((candidate) => candidate.relevanceScore >= minScore);
+
+  if (eligible.length <= topK) {
+    return eligible;
+  }
+
+  const knowledgeCandidates = eligible.filter(isKnowledgeCorpusEvidence);
+  const reservedKnowledgeCount = Math.min(
+    knowledgeCandidates.length,
+    Math.max(1, Math.floor(topK / 2))
+  );
+  const reservedKnowledge = knowledgeCandidates.slice(0, reservedKnowledgeCount);
+  const reservedIds = new Set(reservedKnowledge.map((candidate) => candidate.id));
+  const remainder = eligible.filter((candidate) => !reservedIds.has(candidate.id));
+  const selectedIds = new Set([...reservedKnowledge, ...remainder].slice(0, topK).map((c) => c.id));
+
+  // Preserve the rerank ordering for display, but only over the guaranteed selection.
+  return eligible.filter((candidate) => selectedIds.has(candidate.id));
 }
 
 function defaultFileBodyReader(): ReviewFileBodyReader {
@@ -1190,9 +1260,10 @@ export function createReviewAnalysisPipeline({
         query,
         candidates: retrievedCandidates
       });
-      const evidenceCandidates = rerankedCandidates
-        .filter((candidate) => candidate.relevanceScore >= config.rag.minScore)
-        .slice(0, config.rerank.topK);
+      const evidenceCandidates = selectEvidenceCandidates(rerankedCandidates, {
+        minScore: config.rag.minScore,
+        topK: config.rerank.topK
+      });
       const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =
         multilingualSegments.length > 0
