@@ -17,6 +17,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     clearMocks: true,
-    restoreMocks: true
+    restoreMocks: true,
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.worktrees/**",
+      "**/.next/**"
+    ]
   }
 });

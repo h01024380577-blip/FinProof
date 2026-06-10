@@ -368,10 +368,13 @@ describe("QueueTable", () => {
     expect(failedActionBlock).toContain("flex-direction: column");
     expect(failedActionBlock).toContain("align-items: flex-start");
     expect(failedActionBlock).toContain("min-width: 0");
+    // 긴 에러 메시지는 컬럼을 넘치지 않도록 폭을 제한하고,
+    // 한 줄로 잘라 가독성을 해치는 대신 최대 3줄까지 줄바꿈하여 표시한다.
     expect(failedNoteBlock).toContain("max-width: 100%");
     expect(failedNoteBlock).toContain("overflow: hidden");
-    expect(failedNoteBlock).toContain("text-overflow: ellipsis");
-    expect(failedNoteBlock).toContain("white-space: nowrap");
+    expect(failedNoteBlock).toContain("-webkit-line-clamp: 3");
+    expect(failedNoteBlock).toContain("white-space: normal");
+    expect(failedNoteBlock).toContain("overflow-wrap: anywhere");
   });
 
   it("shows the analysis action in the work column before analysis and a completed note after analysis", () => {

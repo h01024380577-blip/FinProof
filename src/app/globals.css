@@ -2042,6 +2042,8 @@ a.review-table__row:hover {
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .queue-row-actions .button {
@@ -2054,17 +2056,27 @@ a.review-table__row:hover {
   white-space: nowrap;
 }
 
+.queue-row-actions--failed .queue-row-note--analysis-error,
 .queue-row-note--analysis-error {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   box-sizing: border-box;
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
-  border-color: #e9aaa1;
+  border: 1px solid #e9aaa1;
   background: var(--risk-reject-bg);
   color: var(--risk-reject);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.78rem;
 }
 
 .reviewer-editor {
