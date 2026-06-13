@@ -139,8 +139,8 @@ export function renderEc2RuntimeEnvExample() {
     FINPROOF_UPLOAD_SCAN_API_KEY=
 
     FINPROOF_STORAGE_ADAPTER=s3
-    FINPROOF_S3_BUCKET=finproof-s3
-    AWS_REGION=us-east-1
+    FINPROOF_S3_BUCKET=finproof-s3-seoul
+    AWS_REGION=ap-northeast-2
   `).replace(/^ {4}/gm, "");
 }
 

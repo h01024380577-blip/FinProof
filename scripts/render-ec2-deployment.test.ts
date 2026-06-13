@@ -79,8 +79,8 @@ describe("EC2 deployment artifacts", () => {
     expect(localEnvExample).toContain('FINPROOF_S3_BUCKET=""');
     expect(localEnvExample).toContain('AWS_REGION=""');
     expect(runtimeEnv).toContain("FINPROOF_STORAGE_ADAPTER=s3");
-    expect(runtimeEnv).toContain("FINPROOF_S3_BUCKET=finproof-s3");
-    expect(runtimeEnv).toContain("AWS_REGION=us-east-1");
+    expect(runtimeEnv).toContain("FINPROOF_S3_BUCKET=finproof-s3-seoul");
+    expect(runtimeEnv).toContain("AWS_REGION=ap-northeast-2");
     expect(releaseEnv).not.toContain("FINPROOF_STORAGE_ADAPTER");
     expect(releaseEnv).not.toContain("FINPROOF_S3_BUCKET");
     expect(releaseEnv).not.toContain("AWS_REGION");
