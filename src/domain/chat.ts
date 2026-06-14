@@ -1,4 +1,4 @@
-import type { Evidence, ReviewCase, ReviewIssue } from "./types";
+import type { Evidence, MultilingualIssueContext, ReviewCase, ReviewIssue } from "./types";
 
 export type ReviewChatResponse = {
   id: string;
@@ -9,10 +9,119 @@ export type ReviewChatResponse = {
   requiredMaterials: string[];
 };
 
-const riskLabel: Record<ReviewIssue["riskLevel"], string> = {
-  info: "참고",
-  caution: "주의",
-  high: "위험"
+/**
+ * Language the review opinion draft should be written in.
+ *
+ * "ko" is the default for purely Korean material. The other codes mirror the
+ * multilingual analysis pipeline's supported source languages so that, when a
+ * non-Korean ad segment is detected, the draft is written in that language.
+ */
+export type DraftLanguage = "ko" | MultilingualIssueContext["language"];
+
+type DraftLabels = {
+  heading: string;
+  subject: string;
+  productType: string;
+  publishDate: string;
+  keyIssues: string;
+  riskLevel: string;
+  targetText: string;
+  rationale: string;
+  suggestion: string;
+  references: string;
+  summaryHeading: string;
+  summaryBody: string;
+  risk: Record<ReviewIssue["riskLevel"], string>;
+  chatReflection: (evidenceTitles: string) => string;
+};
+
+const draftLabelsByLanguage: Record<DraftLanguage, DraftLabels> = {
+  ko: {
+    heading: "수정 요청 의견 초안",
+    subject: "심의 대상",
+    productType: "상품군",
+    publishDate: "게시 예정일",
+    keyIssues: "주요 검토 이슈",
+    riskLevel: "위험 수준",
+    targetText: "대상 문구",
+    rationale: "판단 근거",
+    suggestion: "수정 의견",
+    references: "참고 출처",
+    summaryHeading: "종합 의견:",
+    summaryBody: "위 이슈가 반영된 수정본 제출 후 재검토가 필요합니다.",
+    risk: { info: "참고", caution: "주의", high: "위험" },
+    chatReflection: (titles) =>
+      `채팅 반영: 선택 이슈 질의에서 확인한 근거(${titles})를 기준으로 우대 조건을 본문 또는 인접 고지에 명확히 표시하도록 요청합니다.`
+  },
+  en: {
+    heading: "Revision Request Opinion Draft",
+    subject: "Review subject",
+    productType: "Product type",
+    publishDate: "Planned publish date",
+    keyIssues: "Key review issues",
+    riskLevel: "Risk level",
+    targetText: "Target text",
+    rationale: "Assessment basis",
+    suggestion: "Suggested revision",
+    references: "References",
+    summaryHeading: "Overall opinion:",
+    summaryBody: "Please submit a revised version reflecting the issues above for re-review.",
+    risk: { info: "Info", caution: "Caution", high: "High" },
+    chatReflection: (titles) =>
+      `Chat context: Based on the evidence confirmed in the selected issue Q&A (${titles}), please clearly present the conditional benefit in the body text or an adjacent disclosure.`
+  },
+  vi: {
+    heading: "Bản nháp ý kiến yêu cầu chỉnh sửa",
+    subject: "Đối tượng thẩm định",
+    productType: "Loại sản phẩm",
+    publishDate: "Ngày dự kiến đăng",
+    keyIssues: "Các vấn đề thẩm định chính",
+    riskLevel: "Mức độ rủi ro",
+    targetText: "Nội dung liên quan",
+    rationale: "Cơ sở đánh giá",
+    suggestion: "Ý kiến chỉnh sửa",
+    references: "Nguồn tham khảo",
+    summaryHeading: "Ý kiến tổng hợp:",
+    summaryBody: "Vui lòng nộp bản chỉnh sửa phản ánh các vấn đề nêu trên để thẩm định lại.",
+    risk: { info: "Tham khảo", caution: "Lưu ý", high: "Rủi ro cao" },
+    chatReflection: (titles) =>
+      `Bối cảnh trò chuyện: Dựa trên căn cứ đã xác nhận trong phần hỏi đáp về vấn đề đã chọn (${titles}), vui lòng nêu rõ điều kiện ưu đãi trong nội dung chính hoặc phần công bố liền kề.`
+  },
+  my: {
+    heading: "ပြင်ဆင်ရန် တောင်းဆိုချက် သဘောထားမူကြမ်း",
+    subject: "စိစစ်သည့် အကြောင်းအရာ",
+    productType: "ထုတ်ကုန်အမျိုးအစား",
+    publishDate: "ထုတ်ဝေရန် စီစဉ်ထားသည့်ရက်",
+    keyIssues: "အဓိက စိစစ်ရန် ကိစ္စရပ်များ",
+    riskLevel: "အန္တရာယ်အဆင့်",
+    targetText: "သက်ဆိုင်သည့် စာသား",
+    rationale: "ဆုံးဖြတ်ချက် အခြေခံ",
+    suggestion: "ပြင်ဆင်ရန် အကြံပြုချက်",
+    references: "ကိုးကားချက်များ",
+    summaryHeading: "ခြုံငုံသဘောထား:",
+    summaryBody:
+      "အထက်ပါ ကိစ္စရပ်များကို ထည့်သွင်းပြင်ဆင်ထားသော မူကြမ်းကို ပြန်လည်စိစစ်ရန် တင်ပြပေးပါ။",
+    risk: { info: "သတင်းအချက်", caution: "သတိ", high: "မြင့်" },
+    chatReflection: (titles) =>
+      `စကားပြောအကြောင်းအရာ: ရွေးချယ်ထားသော ကိစ္စရပ် မေးခွန်းများတွင် အတည်ပြုထားသော အထောက်အထား (${titles}) ကို အခြေခံ၍ အကျိုးခံစားခွင့် အခြေအနေကို ပင်မစာသား သို့မဟုတ် ကပ်လျက်ထုတ်ဖော်ချက်တွင် ရှင်းလင်းစွာ ဖော်ပြပေးပါ။`
+  },
+  km: {
+    heading: "សេចក្តីព្រាងមតិស្នើសុំកែប្រែ",
+    subject: "កម្មវត្ថុនៃការត្រួតពិនិត្យ",
+    productType: "ប្រភេទផលិតផល",
+    publishDate: "កាលបរិច្ឆេទគ្រោងផ្សាយ",
+    keyIssues: "បញ្ហាត្រួតពិនិត្យសំខាន់ៗ",
+    riskLevel: "កម្រិតហានិភ័យ",
+    targetText: "អត្ថបទពាក់ព័ន្ធ",
+    rationale: "មូលដ្ឋានវាយតម្លៃ",
+    suggestion: "មតិកែប្រែ",
+    references: "ឯកសារយោង",
+    summaryHeading: "មតិរួម៖",
+    summaryBody: "សូមដាក់ស្នើកំណែដែលបានកែប្រែតាមបញ្ហាខាងលើ ដើម្បីធ្វើការត្រួតពិនិត្យឡើងវិញ។",
+    risk: { info: "ព័ត៌មាន", caution: "ប្រុងប្រយ័ត្ន", high: "ខ្ពស់" },
+    chatReflection: (titles) =>
+      `បរិបទជជែក៖ ផ្អែកលើភស្តុតាងដែលបានបញ្ជាក់ក្នុងសំណួរ-ចម្លើយនៃបញ្ហាដែលបានជ្រើសរើស (${titles}) សូមបង្ហាញលក្ខខណ្ឌអត្ថប្រយោជន៍ឱ្យបានច្បាស់នៅក្នុងអត្ថបទមេ ឬការបង្ហាញព័ត៌មាននៅជាប់គ្នា។`
+  }
 };
 
 const riskRank: Record<ReviewIssue["riskLevel"], number> = {
@@ -20,6 +129,54 @@ const riskRank: Record<ReviewIssue["riskLevel"], number> = {
   caution: 2,
   high: 3
 };
+
+/**
+ * Detects the dominant non-Korean language across analyzed issues.
+ *
+ * Each issue may carry a multilingualContext produced by the translator-risk
+ * agents. When one or more issues reference a non-Korean source language, the
+ * most frequent language wins (ties resolve to the earliest-detected language).
+ * Returns "ko" when no multilingual context is present.
+ */
+export function detectReviewDraftLanguage(review: ReviewCase): DraftLanguage {
+  const counts = new Map<DraftLanguage, number>();
+
+  for (const issue of review.issues) {
+    const language = issue.multilingualContext?.language;
+
+    if (language) {
+      counts.set(language, (counts.get(language) ?? 0) + 1);
+    }
+  }
+
+  let detected: DraftLanguage = "ko";
+  let highestCount = 0;
+
+  for (const [language, count] of counts) {
+    if (count > highestCount) {
+      detected = language;
+      highestCount = count;
+    }
+  }
+
+  return detected;
+}
+
+function localizedTargetText(issue: ReviewIssue, language: DraftLanguage): string {
+  if (language !== "ko" && issue.multilingualContext?.originalText) {
+    return issue.multilingualContext.originalText;
+  }
+
+  return issue.targetText;
+}
+
+function localizedSuggestion(issue: ReviewIssue, language: DraftLanguage): string {
+  if (language !== "ko" && issue.multilingualContext?.suggestedCopyOriginalLanguage) {
+    return issue.multilingualContext.suggestedCopyOriginalLanguage;
+  }
+
+  return issue.suggestedCopy;
+}
 
 function compactLines(lines: Array<string | undefined>): string[] {
   return lines.map((line) => line?.trim() ?? "").filter((line) => line.length > 0);
@@ -84,9 +241,9 @@ export function generateDraftWithChatContext(
     return baseDraft;
   }
 
-  return `${baseDraft}\n\n채팅 반영: 선택 이슈 질의에서 확인한 근거(${evidenceTitles.join(
-    ", "
-  )})를 기준으로 우대 조건을 본문 또는 인접 고지에 명확히 표시하도록 요청합니다.`;
+  const labels = draftLabelsByLanguage[detectReviewDraftLanguage(review)];
+
+  return `${baseDraft}\n\n${labels.chatReflection(evidenceTitles.join(", "))}`;
 }
 
 export function generateIssueBasedOpinionDraft(review: ReviewCase): string {
@@ -94,17 +251,19 @@ export function generateIssueBasedOpinionDraft(review: ReviewCase): string {
     return review.expectedDraft;
   }
 
+  const language = detectReviewDraftLanguage(review);
+  const labels = draftLabelsByLanguage[language];
   const issues = [...review.issues].sort(
     (left, right) => riskRank[right.riskLevel] - riskRank[left.riskLevel]
   );
   const lines = [
-    "수정 요청 의견 초안",
+    labels.heading,
     "",
-    `심의 대상: ${review.affiliate} ${review.title}`,
-    `상품군: ${review.productType}`,
-    `게시 예정일: ${review.plannedPublishDate}`,
+    `${labels.subject}: ${review.affiliate} ${review.title}`,
+    `${labels.productType}: ${review.productType}`,
+    `${labels.publishDate}: ${review.plannedPublishDate}`,
     "",
-    "주요 검토 이슈"
+    labels.keyIssues
   ];
 
   issues.forEach((issue, index) => {
@@ -112,18 +271,18 @@ export function generateIssueBasedOpinionDraft(review: ReviewCase): string {
     lines.push(
       "",
       `${index + 1}. ${issue.title}`,
-      `- 위험 수준: ${riskLabel[issue.riskLevel]}`,
-      `- 대상 문구: ${issue.targetText}`,
-      `- 판단 근거: ${issue.description}`,
-      `- 수정 의견: ${issue.suggestedCopy}`
+      `- ${labels.riskLevel}: ${labels.risk[issue.riskLevel]}`,
+      `- ${labels.targetText}: ${localizedTargetText(issue, language)}`,
+      `- ${labels.rationale}: ${issue.description}`,
+      `- ${labels.suggestion}: ${localizedSuggestion(issue, language)}`
     );
 
     if (evidenceSources.length > 0) {
-      lines.push(`- 참고 출처: ${evidenceSources.join(", ")}`);
+      lines.push(`- ${labels.references}: ${evidenceSources.join(", ")}`);
     }
   });
 
-  lines.push("", "종합 의견:", "위 이슈가 반영된 수정본 제출 후 재검토가 필요합니다.");
+  lines.push("", labels.summaryHeading, labels.summaryBody);
 
   return lines.join("\n");
 }

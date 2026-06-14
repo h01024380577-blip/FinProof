@@ -1,5 +1,6 @@
 import {
   answerReviewQuestion,
+  detectReviewDraftLanguage,
   generateDraftWithChatContext,
   type ReviewChatResponse
 } from "@/domain/chat";
@@ -44,6 +45,7 @@ function issueSummary(issue: ReviewIssue) {
     targetText: issue.targetText,
     description: issue.description,
     suggestedCopy: issue.suggestedCopy,
+    ...(issue.multilingualContext ? { multilingualContext: issue.multilingualContext } : {}),
     evidence: issue.evidence.map((evidence) => ({
       title: evidence.title,
       section: evidence.section,
@@ -151,12 +153,14 @@ export async function generateDraftWithModel(
   provider: ModelProvider = defaultModelProvider()
 ): Promise<string> {
   const fallback = generateDraftWithChatContext(review, chatResponses);
+  const targetLanguage = detectReviewDraftLanguage(review);
   const result = await provider.generateText({
     task: "opinion_draft",
     routeContext: draftRouteContext(review, chatResponses),
     instructions: OPINION_DRAFT_PROMPT,
     input: JSON.stringify({
       review: reviewSummary(review),
+      targetLanguage,
       issues: review.issues.map(issueSummary),
       chatResponses,
       fallback

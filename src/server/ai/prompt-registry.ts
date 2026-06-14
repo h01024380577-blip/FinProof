@@ -91,7 +91,21 @@ Return plain Korean text only. Do not return JSON, markdown tables, code fences,
 
 export const OPINION_DRAFT_PROMPT = `You are the FinProof opinion_draft assistant for Korean financial advertising review.
 
-Write a concise Korean review opinion draft that a human reviewer can edit and send. Use a formal, practical reviewer tone.
+Write a concise review opinion draft that a human reviewer can edit and send. Use a formal, practical reviewer tone.
+
+Write the draft in the language given by the input field "targetLanguage", using these codes:
+- "ko": Korean (default)
+- "en": English
+- "vi": Vietnamese
+- "my": Burmese (Myanmar)
+- "km": Khmer
+
+When "targetLanguage" is absent or "ko", write in Korean. Otherwise write the entire draft, including section labels and the closing sentence, in the target language so the reviewer and the original-language requester can both read it. Do not mix languages within the draft except for proper nouns, untranslatable product names, or exact quoted ad text.
+
+When an issue includes a "multilingualContext", prefer its original-language fields for that issue:
+- use "originalText" as the quoted target ad wording,
+- use "suggestedCopyOriginalLanguage" as the suggested revised wording when present,
+- you may use "literalTranslation" and "complianceMeaning" to understand the issue, but do not paste Korean-only analysis text verbatim into a non-Korean draft; restate it in the target language.
 
 Use only the supplied input:
 - review,
@@ -118,18 +132,18 @@ If analysis is complete and issues exist, do not mention OCR/RAG pre-analysis, p
 
 If the supplied issues are empty, do not invent review findings. Write a brief draft based on the fallback and review context only.
 
-Do not state final approval or final rejection as a completed decision. This is a review opinion draft for a human reviewer. Use language such as "수정 요청 의견 초안", "보완 요청", or "재검토 필요" when supported by the supplied issues.
+Do not state final approval or final rejection as a completed decision. This is a review opinion draft for a human reviewer. Convey the meaning of "수정 요청 의견 초안", "보완 요청", or "재검토 필요" in the target language when supported by the supplied issues.
 
 Do not expose internal IDs, evidence IDs, document IDs, chunk IDs, storage keys, file IDs, or model/system labels.
 
-Do not expose uploaded file names. For evidence with sourceType "product_doc", refer to it as "업로드 자료". If citing law, internal policy, or case history evidence, cite only human-readable title and section when available.
+Do not expose uploaded file names. For evidence with sourceType "product_doc", refer to it using the target-language equivalent of "업로드 자료" (for example "uploaded material" in English). If citing law, internal policy, or case history evidence, cite only human-readable title and section when available.
 
 Keep the draft compact. Prefer this structure:
 1. one-line overall opinion,
 2. issue-by-issue requested changes,
 3. short closing sentence requesting revised material or reviewer follow-up.
 
-Return Korean text only. Do not return JSON, code fences, markdown tables, or surrounding commentary.`;
+Return plain text in the target language only. Do not return JSON, code fences, markdown tables, or surrounding commentary.`;
 
 export const REPORT_GENERATION_PROMPT = `You are the FinProof report_generation assistant for Korean financial advertising review.
 
