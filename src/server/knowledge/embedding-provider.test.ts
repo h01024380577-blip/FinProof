@@ -43,6 +43,29 @@ describe("embedding provider", () => {
     });
   });
 
+  it("splits oversized chunk sets into multiple requests and preserves order", async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(init?.body as string) as { input: string[] };
+      return {
+        ok: true,
+        json: async () => ({
+          data: body.input.map((_text, index) => ({ embedding: [index] }))
+        })
+      };
+    });
+    const provider = createOpenAiEmbeddingProvider({ OPENAI_API_KEY: "sk-test" }, fetchMock);
+
+    // Each chunk is ~300k chars (~270k est. tokens), so no two fit in one request.
+    const huge = "가".repeat(300_000);
+    const result = await provider.embed([huge, huge, huge]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(result).toHaveLength(3);
+    fetchMock.mock.calls.forEach((call) => {
+      expect(JSON.parse(call[1]?.body as string).input).toHaveLength(1);
+    });
+  });
+
   it("uses the shared OpenAI key even when an embedding-specific key is present", async () => {
     const fetchMock = vi.fn(async () => ({
       ok: true,
@@ -101,5 +124,43 @@ describe("embedding provider", () => {
     expect(() => createOpenAiEmbeddingProvider({})).toThrow(
       "OPENAI_API_KEY is required when embeddings use OpenAI"
     );
+  });
+
+  it("surfaces the OpenAI error message and a key hint on 401 without retrying", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      statusText: "Unauthorized",
+      json: async () => ({}),
+      text: async () =>
+        JSON.stringify({ error: { message: "Incorrect API key provided: sk-***." } })
+    }));
+    const provider = createOpenAiEmbeddingProvider({ OPENAI_API_KEY: "sk-bad" }, fetchMock);
+
+    await expect(provider.embed(["근거 질의"])).rejects.toThrow(
+      /401 Unauthorized - Incorrect API key provided.*OPENAI_API_KEY/s
+    );
+    // 401 is not transient: it must fail on the first attempt only.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries transient 429 responses and then succeeds", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        statusText: "Too Many Requests",
+        json: async () => ({}),
+        text: async () => "rate limited"
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [{ embedding: [0.1, 0.2] }] })
+      });
+    const provider = createOpenAiEmbeddingProvider({ OPENAI_API_KEY: "sk-test" }, fetchMock);
+
+    await expect(provider.embed(["재시도"])).resolves.toEqual([[0.1, 0.2]]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

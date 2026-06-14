@@ -8,6 +8,7 @@ type FetchLike = (
   status?: number;
   statusText?: string;
   json(): Promise<unknown>;
+  text?(): Promise<string>;
 }>;
 
 export type EmbeddingProvider = {
@@ -78,6 +79,91 @@ function parseEmbeddingResponse(body: unknown): number[][] {
   return [];
 }
 
+type EmbeddingResponse = Awaited<ReturnType<FetchLike>>;
+
+const MAX_EMBEDDING_ATTEMPTS = 3;
+
+// OpenAI rejects requests over 300,000 tokens; keep a safety margin and stay
+// under the 2,048-input array cap. Korean text is token-dense, so estimate
+// conservatively (~0.9 tokens/char) when packing chunks into a request.
+const MAX_TOKENS_PER_REQUEST = 250_000;
+const MAX_INPUTS_PER_REQUEST = 2048;
+
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length * 0.9);
+}
+
+/** Split chunk texts into request-sized batches that stay under the API caps. */
+function batchByTokenBudget(texts: string[]): string[][] {
+  const batches: string[][] = [];
+  let current: string[] = [];
+  let currentTokens = 0;
+
+  for (const text of texts) {
+    const tokens = estimateTokens(text);
+    const wouldExceed =
+      current.length > 0 &&
+      (currentTokens + tokens > MAX_TOKENS_PER_REQUEST ||
+        current.length >= MAX_INPUTS_PER_REQUEST);
+
+    if (wouldExceed) {
+      batches.push(current);
+      current = [];
+      currentTokens = 0;
+    }
+
+    current.push(text);
+    currentTokens += tokens;
+  }
+
+  if (current.length > 0) {
+    batches.push(current);
+  }
+
+  return batches;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTransientStatus(status?: number): boolean {
+  return status === 408 || status === 429 || (typeof status === "number" && status >= 500);
+}
+
+async function readErrorDetail(response: EmbeddingResponse): Promise<string> {
+  try {
+    const body = (await response.text?.()) ?? "";
+    const trimmed = body.trim();
+
+    if (!trimmed) {
+      return "";
+    }
+
+    // Surface OpenAI's structured { error: { message } } when present.
+    try {
+      const parsed = JSON.parse(trimmed) as { error?: { message?: string } };
+      if (parsed.error?.message) {
+        return parsed.error.message;
+      }
+    } catch {
+      // Non-JSON body; fall through to the raw text.
+    }
+
+    return trimmed.slice(0, 300);
+  } catch {
+    return "";
+  }
+}
+
+function hintForStatus(status?: number): string {
+  if (status === 401 || status === 403) {
+    return " (OPENAI_API_KEY가 거부되었습니다. 키 값·만료·프로젝트 권한을 확인하고, 서버를 재시작해 최신 키를 적용하세요.)";
+  }
+
+  return "";
+}
+
 export function createHttpEmbeddingProvider(
   env: Env = process.env,
   fetchImpl: FetchLike = fetch
@@ -135,13 +221,10 @@ export function createOpenAiEmbeddingProvider(
     throw new Error("OPENAI_API_KEY is required when embeddings use OpenAI");
   }
 
-  return {
-    model,
-    async embed(texts) {
-      if (texts.length === 0) {
-        return [];
-      }
+  async function embedBatch(texts: string[]): Promise<number[][]> {
+    let lastError: Error | null = null;
 
+    for (let attempt = 1; attempt <= MAX_EMBEDDING_ATTEMPTS; attempt += 1) {
       const response = await fetchImpl(endpoint, {
         method: "POST",
         headers: {
@@ -154,18 +237,49 @@ export function createOpenAiEmbeddingProvider(
         })
       });
 
-      if (!response.ok) {
-        throw new Error(
-          `OpenAI embedding provider failed: ${response.status ?? "unknown"} ${
-            response.statusText ?? ""
-          }`.trim()
-        );
+      if (response.ok) {
+        const embeddings = parseEmbeddingResponse(await response.json());
+
+        if (embeddings.length !== texts.length) {
+          throw new Error("OpenAI embedding provider returned an unexpected embedding count");
+        }
+
+        return embeddings;
       }
 
-      const embeddings = parseEmbeddingResponse(await response.json());
+      const detail = await readErrorDetail(response);
+      const baseMessage = `OpenAI embedding provider failed: ${
+        response.status ?? "unknown"
+      } ${response.statusText ?? ""}`.trim();
+      lastError = new Error(
+        `${baseMessage}${detail ? ` - ${detail}` : ""}${hintForStatus(response.status)}`
+      );
 
-      if (embeddings.length !== texts.length) {
-        throw new Error("OpenAI embedding provider returned an unexpected embedding count");
+      // Only transient errors are worth retrying; auth/4xx errors will not self-resolve.
+      if (!isTransientStatus(response.status) || attempt === MAX_EMBEDDING_ATTEMPTS) {
+        throw lastError;
+      }
+
+      await sleep(250 * attempt);
+    }
+
+    throw lastError ?? new Error("OpenAI embedding provider failed");
+  }
+
+  return {
+    model,
+    async embed(texts) {
+      if (texts.length === 0) {
+        return [];
+      }
+
+      // Large documents produce more chunks than fit in one request; embed in
+      // token-budgeted batches and preserve input order in the result.
+      const batches = batchByTokenBudget(texts);
+      const embeddings: number[][] = [];
+
+      for (const batch of batches) {
+        embeddings.push(...(await embedBatch(batch)));
       }
 
       return embeddings;
