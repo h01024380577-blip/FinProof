@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:knowledge": "tsx scripts/seed-knowledge-documents.ts",
     "db:smoke": "tsx scripts/prisma-api-smoke.ts",
     "ops:readiness": "tsx scripts/check-backend-readiness.ts --profile deployment",
     "ops:readiness:production": "tsx scripts/check-backend-readiness.ts --profile production",
@@ -24,7 +25,9 @@
     "ops:ec2:plan": "tsx scripts/render-ec2-deployment.ts",
     "ops:ec2:write": "tsx scripts/render-ec2-deployment.ts --write",
     "ops:s3:plan": "tsx scripts/provision-s3.ts",
-    "ops:s3:apply": "tsx scripts/provision-s3.ts --execute"
+    "ops:s3:apply": "tsx scripts/provision-s3.ts --execute",
+    "db:seed:knowledge:law": "tsx scripts/seed-knowledge-law-api.ts",
+    "db:seed:knowledge:guides": "tsx scripts/seed-knowledge-guides.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
