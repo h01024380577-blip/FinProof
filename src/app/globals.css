@@ -1776,7 +1776,7 @@ a {
     minmax(78px, 0.6fr)
     minmax(86px, 0.64fr)
     minmax(62px, 0.5fr)
-    minmax(118px, 0.78fr);
+    minmax(172px, 1.18fr);
 }
 
 .review-table--queue .review-table__row > :not(.queue-row-actions):not(strong)[role="cell"],
@@ -2034,13 +2034,14 @@ a.review-table__row:hover {
 .queue-row-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 6px;
   min-width: 0;
 }
 
 .queue-row-actions--delete {
-  justify-content: flex-start;
+  justify-content: flex-end;
   padding-left: 0;
 }
 
@@ -2057,9 +2058,13 @@ a.review-table__row:hover {
 }
 
 .queue-row-action-button {
-  min-width: 72px;
+  min-width: 56px;
   justify-content: center;
   white-space: nowrap;
+}
+
+.review-table--queue .review-table__row--head > [role="columnheader"]:last-child {
+  text-align: right;
 }
 
 .queue-row-actions--failed .queue-row-note--analysis-error,

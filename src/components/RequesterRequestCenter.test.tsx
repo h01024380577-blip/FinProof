@@ -218,8 +218,7 @@ describe("RequesterRequestCenter", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("loads only the logged-in requester's history and hides saved drafts except rejected results", async () => {
-    const user = userEvent.setup();
+  it("loads the requester's history into a master–detail view and lazily shows the reviewer opinion for the selected action item", async () => {
     const apiHeaders = setRole();
     const fetchMock = mockHistoryFetch();
     vi.stubGlobal("fetch", fetchMock);
@@ -239,10 +238,12 @@ describe("RequesterRequestCenter", () => {
         })
       })
     );
+    // The default-selected action item (rejected) lazily fetches its opinion.
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-own-rejected-001",
       expect.any(Object)
     );
+    // Non-selected items are never fetched up front.
     expect(fetchMock).not.toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-own-approved-001",
       expect.any(Object)
@@ -257,60 +258,35 @@ describe("RequesterRequestCenter", () => {
     );
     expect(apiHeaders).toHaveBeenCalledTimes(2);
 
-    const historyGrid = screen.getByRole("grid", { name: "요청 기록 목록" });
-    expect(
-      within(historyGrid)
-        .getAllByRole("columnheader")
-        .map((header) => header.textContent)
-    ).toEqual(["요청번호", "제목", "제휴사", "상품유형", "예정 게시일", "상태", "담당자", "작업"]);
+    // The master list contains only the logged-in requester's three cases, as buttons.
+    expect(screen.getByRole("button", { name: /김서연 대출 배너/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /김서연 예금 앱푸시/ })).toBeInTheDocument();
+    const waitingItem = screen.getByRole("button", { name: /김서연 카드 상세페이지/ });
+    expect(waitingItem).toBeInTheDocument();
+    expect(screen.queryByText("이민수 예금 배너")).not.toBeInTheDocument();
 
-    const rejectedRow = screen.getByRole("row", { name: "김서연 대출 배너" });
-    expect(
-      within(rejectedRow)
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent)
-    ).toEqual([
-      "rc-own-rejected-001",
-      "김서연 대출 배너",
-      "하나은행",
-      "대출",
-      "2026-06-12",
-      "반려",
-      "준법심의자 박민준",
-      "반려사유재검토 요청"
-    ]);
-    expect(within(rejectedRow).getByText("반려")).toBeInTheDocument();
+    // The waiting (in-progress) case keeps the lightweight status badge styling.
+    const waitingBadge = within(waitingItem).getByText("검토중");
+    expect(waitingBadge).toHaveClass("request-history-status");
+    expect(waitingBadge).not.toHaveClass("status-badge");
 
-    const toggleButton = within(rejectedRow).getByRole("button", {
-      name: "반려사유 펼치기"
-    });
-    expect(toggleButton).toHaveTextContent("반려사유");
-    await user.click(toggleButton);
+    // The rejected case is selected by default; the stepper reflects the 반려 result.
+    expect(screen.getByRole("list", { name: "진행 단계: 반려" })).toBeInTheDocument();
 
-    const rejectionNote = screen.getByRole("cell", { name: "반려사유" });
-    expect(within(rejectionNote).getByText("반려사유")).toBeInTheDocument();
+    // The reviewer opinion is shown directly for the selected action item.
     expect(
-      screen.getByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
+      await screen.findByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
     ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "반려 사유" })).toBeInTheDocument();
     expect(screen.queryByText("버전 3")).not.toBeInTheDocument();
-    expect(toggleButton).toHaveAccessibleName("반려사유 접기");
 
-    const approvedRow = screen.getByRole("row", { name: "김서연 예금 앱푸시" });
-    expect(within(approvedRow).getByText("승인")).toBeInTheDocument();
+    // Drafts stored on non-rejected cases must never surface.
     expect(
       screen.queryByText("승인 건에 저장된 수정 요청 초안은 요청자 화면에서 숨겨야 합니다.")
     ).not.toBeInTheDocument();
-
-    const waitingRow = screen.getByRole("row", { name: "김서연 카드 상세페이지" });
-    const waitingStatus = within(waitingRow).getByText("검토중");
-    expect(waitingStatus).toBeInTheDocument();
-    expect(waitingStatus).toHaveClass("request-history-status");
-    expect(waitingStatus).not.toHaveClass("status-badge");
     expect(
       screen.queryByText("검토 중 초안도 최종 반려 전에는 숨겨야 합니다.")
     ).not.toBeInTheDocument();
-
-    expect(screen.queryByText("이민수 예금 배너")).not.toBeInTheDocument();
   });
 
   it("keeps requester history visible when the display name differs from the stored requester name", async () => {
@@ -353,7 +329,7 @@ describe("RequesterRequestCenter", () => {
     render(<RequesterRequestHistory />);
 
     expect(
-      await screen.findByRole("row", { name: "이전 담당자가 올린 카드 배너" })
+      await screen.findByRole("button", { name: /이전 담당자가 올린 카드 배너/ })
     ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases",
@@ -413,8 +389,7 @@ describe("RequesterRequestCenter", () => {
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the certificate when an approved case is expanded (심의필 happy path)", async () => {
-    const user = userEvent.setup();
+  it("renders the downloadable certificate for the selected approved case (심의필 happy path)", async () => {
     setRole();
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -468,12 +443,14 @@ describe("RequesterRequestCenter", () => {
 
     render(<RequesterRequestHistory />);
 
-    const approvedRow = await screen.findByRole("row", { name: "김서연 예금 앱푸시" });
-    await user.click(within(approvedRow).getByRole("button", { name: "심의필 보기" }));
-
-    expect(await screen.findByText("심의필번호 FP-2026-ABC123")).toBeInTheDocument();
+    // The approved case is the default selection, so its certificate loads immediately.
+    expect(await screen.findByText("FP-2026-ABC123")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "심의필" })).toBeInTheDocument();
     expect(screen.getByText("본 광고물은 관련 규정을 준수합니다.")).toBeInTheDocument();
     expect(screen.getByText("2026-06-20")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "심의필 PDF 다운로드" })
+    ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-own-approved-001/certificate",
       expect.objectContaining({

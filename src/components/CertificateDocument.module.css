@@ -1,0 +1,192 @@
+/* Watermarked 심의필 (certificate) document + PDF download.
+   html2canvas-safe: only hex/rgb colors are used here (no CSS custom properties),
+   so the captured node renders identically in the downloaded PDF. */
+
+.wrapper {
+  display: grid;
+  gap: 16px;
+}
+
+.stateText {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid #dbe1ea;
+  border-radius: 10px;
+  background: #f7f9fc;
+  color: #5b6472;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.stateError {
+  border-color: #f0d2cc;
+  background: #fbeeeb;
+  color: #8a2c1d;
+}
+
+/* ---- The paper-like, capturable document ---- */
+.printable {
+  position: relative;
+  overflow: hidden;
+  padding: 44px 46px 30px;
+  background: #ffffff;
+  border: 1px solid #d7dce6;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(3, 27, 78, 0.05),
+    0 12px 30px rgba(3, 27, 78, 0.08);
+  color: #1a2230;
+}
+
+.watermark {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  width: 64%;
+  max-width: 380px;
+  transform: translate(-50%, -50%);
+  opacity: 0.08;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.watermark svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 22px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #031b4e;
+}
+
+.logo {
+  display: block;
+  height: 28px;
+  width: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  color: #031b4e;
+}
+
+.numberRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid #cdd8ea;
+  border-radius: 999px;
+  background: #f3f7fd;
+  width: fit-content;
+}
+
+.numberLabel {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #0a367a;
+}
+
+.numberValue {
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #031b4e;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 22px;
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid #e3e8f1;
+  border-radius: 12px;
+  background: #fafbfe;
+}
+
+.metaLabel {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #5b6472;
+  white-space: nowrap;
+}
+
+.metaValue {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #1f2733;
+  word-break: break-word;
+}
+
+.body {
+  margin: 0;
+  padding: 4px 2px;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #232c3a;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 18px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid #e3e8f1;
+  font-size: 0.78rem;
+  color: #5b6472;
+}
+
+.footerItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.footerLabel {
+  font-weight: 800;
+  color: #0a367a;
+}
+
+/* ---- Download control ---- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.downloadError {
+  margin: 0;
+  margin-right: auto;
+  color: #b42318;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
