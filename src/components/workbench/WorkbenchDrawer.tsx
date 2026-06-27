@@ -44,10 +44,10 @@ export function WorkbenchDrawer({
           defaultActiveKey="draft"
           items={[
             { key: "draft", label: "의견 초안", panel: draftNode },
-            { key: "files", label: "파일", panel: filesNode },
             ...(certificateNode
               ? [{ key: "certificate", label: "심의필", panel: certificateNode }]
-              : [])
+              : []),
+            { key: "files", label: "파일", panel: filesNode }
           ]}
         />
       ) : null}

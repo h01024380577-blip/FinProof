@@ -1,10 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState, type JSX } from "react";
-import { Loader2, PlayCircle, Trash2, UserCheck } from "lucide-react";
+import { Fragment, useEffect, useRef, useState, type JSX } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
+  History,
+  Loader2,
+  PlayCircle,
+  Trash2,
+  UserCheck
+} from "lucide-react";
 import { RiskBadge, StatusBadge } from "@/components/Badges";
 import { statusLabels } from "@/domain/reviews";
-import type { ProductType, ReviewAction, ReviewCase, ReviewSummary, RoleId } from "@/domain/types";
+import type {
+  ProductType,
+  ReviewAction,
+  ReviewCase,
+  ReviewSummary,
+  ReviewVersion,
+  RoleId
+} from "@/domain/types";
 
 const productLabels: Record<ProductType, string> = {
   deposit: "예금/적금",
@@ -72,12 +88,88 @@ export type QueueTableProps = {
   emptyMessage?: string;
   canDeleteReviewHistory?: boolean;
   deletingReviewHistoryIds?: string[];
+  showVersionHistory?: boolean;
+  apiHeaders?: (extra?: Record<string, string>) => Record<string, string>;
   loggedInUser?: { name: string } | null;
   onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
   onDeleteReviewHistory?: (review: ReviewSummary) => void;
   onStartAnalysis: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
+
+type VersionsResponse = {
+  currentVersion: number;
+  versions: ReviewVersion[];
+};
+
+type VersionHistoryState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "loaded"; currentVersion: number; versions: ReviewVersion[] };
+
+function formatDecidedAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function QueueVersionTimeline({
+  versions,
+  currentVersion
+}: {
+  versions: ReviewVersion[];
+  currentVersion: number;
+}): JSX.Element {
+  const ordered = [...versions].sort((a, b) => a.versionNumber - b.versionNumber);
+
+  return (
+    <ol className="queue-version-history__list">
+      {ordered.map((version) => {
+        const isCurrent = version.versionNumber === currentVersion;
+        const opinion = version.opinionDraft?.trim() || version.reviewerComment?.trim() || "";
+
+        return (
+          <li key={version.id ?? version.versionNumber} className="queue-version-item">
+            <span className="queue-version-item__marker" aria-hidden="true" />
+            <div className="queue-version-item__body">
+              <div className="queue-version-item__head">
+                <span className="queue-version-item__number">v{version.versionNumber}</span>
+                <span
+                  className="queue-version-item__status"
+                  data-status={version.status}
+                >
+                  {statusLabels[version.status]}
+                </span>
+                {isCurrent ? (
+                  <span className="queue-version-item__current">현재</span>
+                ) : null}
+              </div>
+              <dl className="queue-version-item__meta">
+                <div>
+                  <dt>결정일</dt>
+                  <dd>{formatDecidedAt(version.decidedAt)}</dd>
+                </div>
+                <div>
+                  <dt>심의자</dt>
+                  <dd>{version.decidedByName || "-"}</dd>
+                </div>
+              </dl>
+              {opinion ? (
+                <pre className="queue-version-item__opinion">{opinion}</pre>
+              ) : null}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 export type QueueAnalysisState = {
   status: "queued" | "running" | "completed" | "failed";
@@ -166,6 +258,8 @@ export function QueueTable({
   emptyMessage,
   canDeleteReviewHistory = false,
   deletingReviewHistoryIds = [],
+  showVersionHistory = false,
+  apiHeaders,
   loggedInUser,
   onSaveReviewer,
   onDeleteReviewHistory,
@@ -173,6 +267,52 @@ export function QueueTable({
   onOpenReview
 }: QueueTableProps): JSX.Element {
   const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null);
+  const [expandedVersionIds, setExpandedVersionIds] = useState<Set<string>>(new Set());
+  const [versionHistory, setVersionHistory] = useState<Record<string, VersionHistoryState>>({});
+
+  async function loadVersionHistory(caseId: string): Promise<void> {
+    setVersionHistory((current) => ({ ...current, [caseId]: { status: "loading" } }));
+    try {
+      const response = await fetch(`/api/v1/review-cases/${caseId}/versions`, {
+        headers: apiHeaders?.() ?? {}
+      });
+      if (!response.ok) throw new Error("심의 버전 이력을 불러오지 못했습니다.");
+      const body = (await response.json()) as VersionsResponse;
+      setVersionHistory((current) => ({
+        ...current,
+        [caseId]: {
+          status: "loaded",
+          currentVersion: body.currentVersion,
+          versions: body.versions ?? []
+        }
+      }));
+    } catch (error) {
+      setVersionHistory((current) => ({
+        ...current,
+        [caseId]: {
+          status: "error",
+          message:
+            error instanceof Error ? error.message : "심의 버전 이력을 불러오지 못했습니다."
+        }
+      }));
+    }
+  }
+
+  function toggleVersionHistory(caseId: string): void {
+    setExpandedVersionIds((current) => {
+      const next = new Set(current);
+      if (next.has(caseId)) {
+        next.delete(caseId);
+      } else {
+        next.add(caseId);
+        // Lazy-fetch once and cache; re-expanding reuses the cached result.
+        if (!versionHistory[caseId]) {
+          void loadVersionHistory(caseId);
+        }
+      }
+      return next;
+    });
+  }
 
   function handleOpenReviewClick(review: ReviewSummary): void {
     if (loggedInUser) {
@@ -260,10 +400,14 @@ export function QueueTable({
           isFinalizedHistoryStatus(review.status) &&
           Boolean(onDeleteReviewHistory);
         const isDeleting = deletingReviewHistoryIds.includes(review.id);
+        const reviewCurrentVersion = review.currentVersion ?? 1;
+        const showVersionToggle = showVersionHistory && reviewCurrentVersion > 1;
+        const isVersionExpanded = expandedVersionIds.has(review.id);
+        const versionState = versionHistory[review.id];
 
         return (
+          <Fragment key={review.id}>
           <div
-            key={review.id}
             className="review-table__row"
             role="row"
             aria-label={`${review.title}`}
@@ -348,6 +492,7 @@ export function QueueTable({
                   type="button"
                   onClick={() => handleOpenReviewClick(review)}
                 >
+                  <ClipboardCheck size={15} aria-hidden="true" />
                   {failedStatus ? "직접검토" : "검토하기"}
                 </button>
               ) : null}
@@ -358,6 +503,22 @@ export function QueueTable({
                   onClick={() => onOpenReview(review.id)}
                 >
                   상세보기
+                </button>
+              ) : null}
+              {showVersionToggle ? (
+                <button
+                  className="button button--small queue-row-action-button queue-version-toggle"
+                  type="button"
+                  aria-expanded={isVersionExpanded}
+                  aria-label={`심의 버전 이력 v1~v${reviewCurrentVersion}`}
+                  onClick={() => toggleVersionHistory(review.id)}
+                >
+                  {isVersionExpanded ? (
+                    <ChevronDown size={15} aria-hidden="true" />
+                  ) : (
+                    <ChevronRight size={15} aria-hidden="true" />
+                  )}
+                  버전 이력 v1~v{reviewCurrentVersion}
                 </button>
               ) : null}
               {showStatusNote ? (
@@ -381,6 +542,34 @@ export function QueueTable({
               ) : null}
             </span>
           </div>
+          {showVersionToggle && isVersionExpanded ? (
+            <div className="queue-version-history" role="row">
+              <div className="queue-version-history__cell" role="cell">
+                <p className="queue-version-history__title">
+                  <History size={15} aria-hidden="true" />
+                  심의 버전 이력
+                </p>
+                {!versionState || versionState.status === "loading" ? (
+                  <p className="queue-version-history__note">
+                    <Loader2 className="action-spinner" size={15} aria-hidden="true" />
+                    심의 버전 이력을 불러오는 중입니다.
+                  </p>
+                ) : versionState.status === "error" ? (
+                  <p className="queue-version-history__note queue-version-history__note--error">
+                    {versionState.message}
+                  </p>
+                ) : versionState.versions.length === 0 ? (
+                  <p className="queue-version-history__note">표시할 버전 이력이 없습니다.</p>
+                ) : (
+                  <QueueVersionTimeline
+                    versions={versionState.versions}
+                    currentVersion={versionState.currentVersion}
+                  />
+                )}
+              </div>
+            </div>
+          ) : null}
+          </Fragment>
         );
       })}
     </div>

@@ -571,6 +571,8 @@ export function ReviewQueue(): JSX.Element {
           loadingMessage={loadingMessage}
           canDeleteReviewHistory={canDeleteReviewHistory}
           deletingReviewHistoryIds={deletingHistoryIds}
+          showVersionHistory={scope === "history"}
+          apiHeaders={apiHeaders}
           emptyMessage={
             scopedReviews.length > 0
               ? "검색 또는 필터 조건에 맞는 심의 건이 없습니다."
