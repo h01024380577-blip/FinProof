@@ -341,7 +341,12 @@ function RequesterHistoryPanel({ apiHeaders }: { apiHeaders: ApiHeaders }): JSX.
                     >
                       {label}
                     </span>
-                    <span className={styles.itemId}>{review.id}</span>
+                    <span className={styles.itemId}>
+                      {review.id}
+                      {(review.currentVersion ?? 1) > 1 ? (
+                        <span className="requeue-badge">재업로드 v{review.currentVersion}</span>
+                      ) : null}
+                    </span>
                   </button>
                 );
               })}
@@ -406,6 +411,11 @@ function RequesterRequestDetail({
           <span className="request-history-status" data-status={statusTone}>
             {label}
           </span>
+          {(review.currentVersion ?? 1) > 1 ? (
+            <span className="requeue-badge" title="수정본을 재업로드한 재심의 요청입니다">
+              재업로드 v{review.currentVersion}
+            </span>
+          ) : null}
         </div>
         <p className={styles.detailId}>{review.id}</p>
         <div className={styles.metaGrid}>
@@ -449,7 +459,7 @@ function RequesterRequestDetail({
         </section>
       ) : (
         <p className={styles.progressNote}>
-          AI 분석/심의가 진행 중입니다. 결과가 나오면 이 화면에서 바로 확인할 수 있어요.
+          심의가 진행 중입니다. 결과가 나오면 이 화면에서 바로 확인할 수 있어요.
         </p>
       )}
     </>
@@ -468,7 +478,7 @@ type StageInfo = {
   note: string | null;
 };
 
-const STEP_LABELS = ["제출", "AI 분석", "심의", "결과"] as const;
+const STEP_LABELS = ["제출", "심의", "결과"] as const;
 
 function deriveStage(status: ReviewStatus): StageInfo {
   switch (status) {
@@ -484,27 +494,20 @@ function deriveStage(status: ReviewStatus): StageInfo {
     case "parsing":
     case "analysis_waiting":
     case "analysis_queued":
-      return {
-        currentIndex: 1,
-        isFinal: false,
-        outcome: null,
-        stageLabel: "AI 분석 대기",
-        note: "제출이 완료되어 AI 분석을 준비하고 있어요."
-      };
     case "analysis_in_progress":
       return {
         currentIndex: 1,
         isFinal: false,
         outcome: null,
-        stageLabel: "AI 분석 진행 중",
-        note: "AI가 광고물을 분석하고 있어요."
+        stageLabel: "심의 대기",
+        note: "제출이 완료되어 심의를 준비하고 있어요."
       };
     // analysis_failed is presented neutrally to the requester — no alarming wording.
     case "analysis_failed":
     case "analysis_complete":
     case "under_review":
       return {
-        currentIndex: 2,
+        currentIndex: 1,
         isFinal: false,
         outcome: null,
         stageLabel: "심의 진행 중",
@@ -512,7 +515,7 @@ function deriveStage(status: ReviewStatus): StageInfo {
       };
     case "approved":
       return {
-        currentIndex: 3,
+        currentIndex: 2,
         isFinal: true,
         outcome: "approved",
         stageLabel: "승인 완료",
@@ -520,7 +523,7 @@ function deriveStage(status: ReviewStatus): StageInfo {
       };
     case "rejected":
       return {
-        currentIndex: 3,
+        currentIndex: 2,
         isFinal: true,
         outcome: "rejected",
         stageLabel: "반려",
@@ -528,7 +531,7 @@ function deriveStage(status: ReviewStatus): StageInfo {
       };
     case "change_requested":
       return {
-        currentIndex: 3,
+        currentIndex: 2,
         isFinal: true,
         outcome: "change",
         stageLabel: "수정 요청",
@@ -536,7 +539,7 @@ function deriveStage(status: ReviewStatus): StageInfo {
       };
     default:
       return {
-        currentIndex: 2,
+        currentIndex: 1,
         isFinal: false,
         outcome: null,
         stageLabel: "심의 진행 중",
@@ -561,7 +564,7 @@ function stepNodeContent(
   if (outcome === "rejected") return <X size={17} aria-hidden="true" />;
   if (outcome === "change") return <AlertTriangle size={16} aria-hidden="true" />;
   if (state === "complete") return <Check size={17} aria-hidden="true" />;
-  if (state === "active") return <Loader2 className="action-spinner" size={16} aria-hidden="true" />;
+  // 활성 단계는 무한 회전 스피너 대신 정적 단계 번호로 표시(요청기록 탭에서 스피너가 계속 돌지 않도록).
   return <span>{index + 1}</span>;
 }
 

@@ -205,7 +205,8 @@ describe("prisma review mappers", () => {
       highestRiskLevel: "high",
       requester: "업로드 요청자",
       requestDepartment: "디지털마케팅팀",
-      reviewer: "준법심의자 박민준"
+      reviewer: "준법심의자 박민준",
+      currentVersion: 1
     });
   });
 });

@@ -144,7 +144,8 @@ function toSummary(review: ReviewCase): ReviewSummary {
     highestRiskLevel: review.highestRiskLevel,
     requester: review.requester,
     requestDepartment: review.requestDepartment,
-    reviewer: review.reviewer
+    reviewer: review.reviewer,
+    currentVersion: review.currentVersion ?? 1
   };
 }
 

@@ -412,7 +412,8 @@ export function toReviewSummary(row: PrismaReviewCaseRow): ReviewSummary {
     highestRiskLevel: row.highestRiskLevel,
     requester: row.requesterName,
     requestDepartment: optionalTrimmedString(row.requestDepartment),
-    reviewer: row.reviewerName
+    reviewer: row.reviewerName,
+    currentVersion: row.currentVersion
   };
 }
 

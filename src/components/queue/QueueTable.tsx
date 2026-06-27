@@ -72,11 +72,9 @@ export type QueueTableProps = {
   emptyMessage?: string;
   canDeleteReviewHistory?: boolean;
   deletingReviewHistoryIds?: string[];
-  canIssueCertificate?: boolean;
   loggedInUser?: { name: string } | null;
   onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
   onDeleteReviewHistory?: (review: ReviewSummary) => void;
-  onIssueCertificate?: (review: ReviewSummary) => void;
   onStartAnalysis: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
@@ -168,11 +166,9 @@ export function QueueTable({
   emptyMessage,
   canDeleteReviewHistory = false,
   deletingReviewHistoryIds = [],
-  canIssueCertificate = false,
   loggedInUser,
   onSaveReviewer,
   onDeleteReviewHistory,
-  onIssueCertificate,
   onStartAnalysis,
   onOpenReview
 }: QueueTableProps): JSX.Element {
@@ -259,8 +255,6 @@ export function QueueTable({
         const showWorkbench = canOpen && (review.status === "analysis_complete" || failedStatus);
         const showAudit = !waiting && canViewAudit && review.status !== "analysis_complete";
         const showStatusNote = !waiting && !openable;
-        const showCertificate =
-          canIssueCertificate && review.status === "approved" && Boolean(onIssueCertificate);
         const canDelete =
           canDeleteReviewHistory &&
           isFinalizedHistoryStatus(review.status) &&
@@ -277,7 +271,14 @@ export function QueueTable({
             <span className="queue-id" role="cell">
               {review.id}
             </span>
-            <strong role="cell">{review.title}</strong>
+            <strong role="cell">
+              {review.title}
+              {(review.currentVersion ?? 1) > 1 ? (
+                <span className="requeue-badge" title="요청자가 수정본을 재업로드한 재심의 건입니다">
+                  재업로드 v{review.currentVersion}
+                </span>
+              ) : null}
+            </strong>
             <span role="cell">{productLabels[review.productType]}</span>
             <span role="cell">{requestDepartment(review)}</span>
             <span role="cell">{review.requester || "미기재"}</span>
@@ -357,15 +358,6 @@ export function QueueTable({
                   onClick={() => onOpenReview(review.id)}
                 >
                   상세보기
-                </button>
-              ) : null}
-              {showCertificate ? (
-                <button
-                  className="button button--small queue-row-action-button"
-                  type="button"
-                  onClick={() => onIssueCertificate?.(review)}
-                >
-                  심의필
                 </button>
               ) : null}
               {showStatusNote ? (

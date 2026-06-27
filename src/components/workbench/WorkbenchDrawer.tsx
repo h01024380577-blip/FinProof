@@ -7,12 +7,14 @@ import { Tabs } from "@/components/ui";
 export type WorkbenchDrawerProps = {
   draftNode: ReactNode;
   filesNode: ReactNode;
+  certificateNode?: ReactNode;
   defaultCollapsed?: boolean;
 };
 
 export function WorkbenchDrawer({
   draftNode,
   filesNode,
+  certificateNode,
   defaultCollapsed = false
 }: WorkbenchDrawerProps): JSX.Element {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -42,7 +44,10 @@ export function WorkbenchDrawer({
           defaultActiveKey="draft"
           items={[
             { key: "draft", label: "의견 초안", panel: draftNode },
-            { key: "files", label: "파일", panel: filesNode }
+            { key: "files", label: "파일", panel: filesNode },
+            ...(certificateNode
+              ? [{ key: "certificate", label: "심의필", panel: certificateNode }]
+              : [])
           ]}
         />
       ) : null}

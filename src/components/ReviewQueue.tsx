@@ -7,7 +7,6 @@ import type { ReviewCase, ReviewSummary } from "@/domain/types";
 import { QueueMetrics, type QueueMetricValues } from "./queue/QueueMetrics";
 import { QueueFilters, type QueueFilterState } from "./queue/QueueFilters";
 import { QueueTable, type QueueAnalysisState, type QueueAnalysisStates } from "./queue/QueueTable";
-import { CertificateEditorModal } from "./queue/CertificateEditorModal";
 import { useRole } from "./RoleContext";
 
 type ReviewCasesResponse = {
@@ -107,7 +106,6 @@ export function ReviewQueue(): JSX.Element {
   const [analysisStates, setAnalysisStates] = useState<QueueAnalysisStates>({});
   const pollingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const [deletingHistoryIds, setDeletingHistoryIds] = useState<string[]>([]);
-  const [certificateReview, setCertificateReview] = useState<ReviewSummary | null>(null);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -118,8 +116,6 @@ export function ReviewQueue(): JSX.Element {
   const listLabel = scope === "history" ? "심의 이력" : "심의 대기 목록";
   const loadingMessage = `${listLabel}을 불러오는 중입니다.`;
   const canDeleteReviewHistory =
-    scope === "history" && (activeRole === "reviewer" || activeRole === "compliance_admin");
-  const canIssueCertificate =
     scope === "history" && (activeRole === "reviewer" || activeRole === "compliance_admin");
 
   const scopedReviews = useMemo(
@@ -575,7 +571,6 @@ export function ReviewQueue(): JSX.Element {
           loadingMessage={loadingMessage}
           canDeleteReviewHistory={canDeleteReviewHistory}
           deletingReviewHistoryIds={deletingHistoryIds}
-          canIssueCertificate={canIssueCertificate}
           emptyMessage={
             scopedReviews.length > 0
               ? "검색 또는 필터 조건에 맞는 심의 건이 없습니다."
@@ -590,7 +585,6 @@ export function ReviewQueue(): JSX.Element {
           loggedInUser={isAuthenticated ? currentUser : null}
           onSaveReviewer={(review, reviewer) => void saveReviewer(review, reviewer)}
           onDeleteReviewHistory={(review) => void deleteReviewHistory(review)}
-          onIssueCertificate={(review) => setCertificateReview(review)}
           onStartAnalysis={(review) => void startAnalysis(review)}
           onOpenReview={(id) => router.push(`/reviews/${id}`)}
         />
@@ -618,16 +612,6 @@ export function ReviewQueue(): JSX.Element {
           </div>
         ) : null}
       </section>
-
-      {certificateReview ? (
-        <CertificateEditorModal
-          caseId={certificateReview.id}
-          title={certificateReview.title}
-          affiliateName={certificateReview.affiliate}
-          apiHeaders={apiHeaders}
-          onClose={() => setCertificateReview(null)}
-        />
-      ) : null}
     </div>
   );
 }

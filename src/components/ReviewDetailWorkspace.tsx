@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type JSX
+} from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   AlertTriangle,
@@ -24,6 +32,7 @@ import { IssueList } from "./workbench/IssueList";
 import { CreativeViewer } from "./workbench/CreativeViewer";
 import { IssueDetailTabs, type IssueDetailTabKey } from "./workbench/IssueDetailTabs";
 import { WorkbenchDrawer } from "./workbench/WorkbenchDrawer";
+import { CertificateEditor } from "./workbench/CertificateEditor";
 import { ManualIssueForm, type ManualIssueInput } from "./workbench/ManualIssueForm";
 import { VersionHistoryPanel } from "./workbench/VersionHistoryPanel";
 import styles from "./ReviewDetailWorkspace.module.css";
@@ -355,6 +364,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       },
     [roleContext, roleHeaders]
   );
+  const apiHeaders = useCallback(
+    (extra?: Record<string, string>) =>
+      roleContext?.apiHeaders(extra) ?? { ...roleHeaders, ...(extra ?? {}) },
+    [roleContext, roleHeaders]
+  );
   const reviewerCanMutate = canMutateReview(activeRole);
   const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
   const [manualIssues, setManualIssues] = useState<ReviewIssue[]>([]);
@@ -379,6 +393,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [manualIssueError, setManualIssueError] = useState<string | null>(null);
   const [draft, setDraftState] = useState("");
   const latestDraftRef = useRef(draft);
+  const [certificateBody, setCertificateBody] = useState("");
   const [uploadedCreativeObject, setUploadedCreativeObject] = useState<{
     fileId: string;
     url: string;
@@ -873,9 +888,21 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       return;
     }
 
-    const confirmed = window.confirm(
-      `이 심의를 ${finalDecisionConfirmPhrases[finalAction]} 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다.`
-    );
+    let confirmed: boolean;
+
+    if (finalAction === "reject" && draft.trim().length === 0) {
+      confirmed = window.confirm(
+        "수정 요청 의견을 작성하지 않았습니다. 의견 없이 반려하시겠습니까?"
+      );
+    } else if (finalAction === "approve" && certificateBody.trim().length === 0) {
+      confirmed = window.confirm(
+        "심의필을 작성하지 않았습니다. 심의필 없이 승인하시겠습니까?"
+      );
+    } else {
+      confirmed = window.confirm(
+        `이 심의를 ${finalDecisionConfirmPhrases[finalAction]} 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다.`
+      );
+    }
 
     if (!confirmed) {
       return;
@@ -901,6 +928,30 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
       setReviewStatus(body.reviewCase.status);
       setFinalizedNotice(`최종 상태가 ${statusLabels[body.reviewCase.status]}으로 저장되었습니다.`);
+
+      const trimmedCertificateBody = certificateBody.trim();
+
+      if (finalAction === "approve" && trimmedCertificateBody.length > 0) {
+        try {
+          const certificateResponse = await fetch(
+            `/api/v1/review-cases/${review.id}/certificate`,
+            {
+              method: "POST",
+              headers: jsonHeaders,
+              body: JSON.stringify({ body: trimmedCertificateBody })
+            }
+          );
+
+          if (!certificateResponse.ok) {
+            throw new Error("certificate issue failed");
+          }
+        } catch {
+          setInteractionError(
+            "승인은 완료되었으나 심의필 발급에 실패했습니다. 심의 이력에서 다시 시도해 주세요."
+          );
+        }
+      }
+
       router.push("/reviews?scope=history");
     } catch (error) {
       setInteractionError(
@@ -1180,6 +1231,19 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     </div>
   );
 
+  const certificatePanel = (
+    <CertificateEditor
+      caseId={review.id}
+      title={review.title}
+      affiliateName={review.affiliate}
+      reviewStatus={reviewStatus}
+      canMutate={reviewerCanMutate}
+      apiHeaders={apiHeaders}
+      body={certificateBody}
+      onBodyChange={setCertificateBody}
+    />
+  );
+
   const isAnalysisFailed = reviewStatus === "analysis_failed";
   const showVersionSelector = currentVersionNumber > 1;
   const selectedPastVersion =
@@ -1316,6 +1380,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             defaultCollapsed={activeRole === "requester"}
             draftNode={draftPanel}
             filesNode={filesPanel}
+            certificateNode={reviewerCanMutate ? certificatePanel : undefined}
           />
 
           {isManualIssueOpen ? (

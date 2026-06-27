@@ -180,6 +180,7 @@ export type ReviewSummary = Pick<
   | "requester"
   | "requestDepartment"
   | "reviewer"
+  | "currentVersion"
 > & {
   availableActions?: ReviewAction[];
 };

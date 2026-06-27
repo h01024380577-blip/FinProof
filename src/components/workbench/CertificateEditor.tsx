@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type JSX } from "react";
-import { LoaderCircle, X } from "lucide-react";
+import { useEffect, useState, type FormEvent, type JSX } from "react";
+import { LoaderCircle } from "lucide-react";
 import { productLabels } from "@/domain/reviews";
-import type { ReviewCertificate } from "@/domain/types";
-import styles from "./CertificateEditorModal.module.css";
+import type { ReviewCase, ReviewCertificate } from "@/domain/types";
+import styles from "./CertificateEditor.module.css";
 
-export type CertificateEditorModalProps = {
+export type CertificateEditorProps = {
   caseId: string;
   title: string;
   affiliateName: string;
+  reviewStatus: ReviewCase["status"];
+  canMutate: boolean;
   apiHeaders: (extra?: Record<string, string>) => Record<string, string>;
-  onClose: () => void;
+  body: string;
+  onBodyChange: (next: string) => void;
 };
 
 type CertificateResponse = {
@@ -46,20 +49,21 @@ function productLabel(productType: ReviewCertificate["metadata"]["productType"] 
   return productLabels[productType] ?? productType;
 }
 
-export function CertificateEditorModal({
+export function CertificateEditor({
   caseId,
   title,
   affiliateName,
+  reviewStatus,
+  canMutate,
   apiHeaders,
-  onClose
-}: CertificateEditorModalProps): JSX.Element {
+  body,
+  onBodyChange
+}: CertificateEditorProps): JSX.Element {
   const [isLoading, setIsLoading] = useState(true);
   const [certificate, setCertificate] = useState<ReviewCertificate | null>(null);
-  const [body, setBody] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -78,9 +82,8 @@ export function CertificateEditorModal({
         }
 
         if (response.status === 404) {
-          // 아직 발급되지 않은 케이스 — 본문은 비워두고 행 메타데이터를 사용한다.
+          // 아직 발급되지 않은 케이스 — 본문은 전달된 값을 유지하고 행 메타데이터를 사용한다.
           setCertificate(null);
-          setBody("");
           return;
         }
 
@@ -92,7 +95,7 @@ export function CertificateEditorModal({
 
         if (payload.certificate) {
           setCertificate(payload.certificate);
-          setBody(payload.certificate.body ?? "");
+          onBodyChange(payload.certificate.body ?? "");
         }
       } catch (loadError) {
         if (mounted) {
@@ -110,24 +113,9 @@ export function CertificateEditorModal({
     return () => {
       mounted = false;
     };
+    // onBodyChange is intentionally seeded once on mount; body stays lifted in the workspace.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiHeaders, caseId]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      textareaRef.current?.focus();
-    }
-  }, [isLoading]);
-
-  useEffect(() => {
-    function onKey(event: KeyboardEvent): void {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    }
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -167,7 +155,7 @@ export function CertificateEditorModal({
 
       if (payload.certificate) {
         setCertificate(payload.certificate);
-        setBody(payload.certificate.body ?? trimmed);
+        onBodyChange(payload.certificate.body ?? trimmed);
         setSuccessMessage(`심의필 ${payload.certificate.certificateNumber} 발급이 완료되었습니다.`);
       } else {
         setSuccessMessage("심의필 발급이 완료되었습니다.");
@@ -185,92 +173,85 @@ export function CertificateEditorModal({
   const displayTitle = metadata?.title ?? title;
   const displayAffiliate = metadata?.affiliateName ?? affiliateName;
   const certificateNumber = certificate?.certificateNumber ?? "미발급";
+  const isApproved = reviewStatus === "approved";
   const submitLabel = certificate ? "저장" : "발급";
+  const canIssue = isApproved && body.trim().length > 0 && canMutate;
 
   return (
-    <div className={styles.backdrop} role="presentation" onClick={onClose}>
-      <section
-        className={`panel ${styles.modal}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label="심의필 발급"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className={styles.header}>
-          <div>
-            <p className="eyebrow">심의필</p>
-            <h3>심의 완료 증명서</h3>
-          </div>
-          <button
-            className="icon-button icon-button--small"
-            type="button"
-            aria-label="심의필 발급 닫기"
-            onClick={onClose}
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
+    <div className="panel panel--compact drawer-support-panel">
+      <div className="panel__header">
+        <div>
+          <p className="eyebrow">심의필</p>
+          <h3>심의 완료 증명서</h3>
         </div>
+      </div>
 
-        {isLoading ? (
-          <p className={styles.loading}>
-            <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
-            심의필 정보를 불러오는 중입니다.
-          </p>
-        ) : (
-          <>
-            <dl className={styles.meta} aria-label="심의필 자동 메타데이터">
-              <div className={styles.metaRow}>
-                <dt>증명서 번호</dt>
-                <dd>{certificateNumber}</dd>
-              </div>
-              <div className={styles.metaRow}>
-                <dt>심의 건명</dt>
-                <dd>{displayTitle}</dd>
-              </div>
-              <div className={styles.metaRow}>
-                <dt>제휴사</dt>
-                <dd>{displayAffiliate || "-"}</dd>
-              </div>
-              {metadata ? (
-                <>
-                  <div className={styles.metaRow}>
-                    <dt>상품군</dt>
-                    <dd>{productLabel(metadata.productType)}</dd>
-                  </div>
-                  <div className={styles.metaRow}>
-                    <dt>승인일</dt>
-                    <dd>{formatDateTime(metadata.approvedAt)}</dd>
-                  </div>
-                  <div className={styles.metaRow}>
-                    <dt>심의자</dt>
-                    <dd>{metadata.reviewerName || "-"}</dd>
-                  </div>
-                </>
-              ) : null}
-              {certificate ? (
+      {isLoading ? (
+        <p className={styles.loading}>
+          <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
+          심의필 정보를 불러오는 중입니다.
+        </p>
+      ) : (
+        <>
+          <dl className={styles.meta} aria-label="심의필 자동 메타데이터">
+            <div className={styles.metaRow}>
+              <dt>증명서 번호</dt>
+              <dd>{certificateNumber}</dd>
+            </div>
+            <div className={styles.metaRow}>
+              <dt>심의 건명</dt>
+              <dd>{displayTitle}</dd>
+            </div>
+            <div className={styles.metaRow}>
+              <dt>제휴사</dt>
+              <dd>{displayAffiliate || "-"}</dd>
+            </div>
+            {metadata ? (
+              <>
                 <div className={styles.metaRow}>
-                  <dt>발급</dt>
-                  <dd>
-                    {certificate.issuedByName ? `${certificate.issuedByName} · ` : ""}
-                    {formatDateTime(certificate.issuedAt)}
-                  </dd>
+                  <dt>상품군</dt>
+                  <dd>{productLabel(metadata.productType)}</dd>
                 </div>
-              ) : null}
-            </dl>
+                <div className={styles.metaRow}>
+                  <dt>승인일</dt>
+                  <dd>{formatDateTime(metadata.approvedAt)}</dd>
+                </div>
+                <div className={styles.metaRow}>
+                  <dt>심의자</dt>
+                  <dd>{metadata.reviewerName || "-"}</dd>
+                </div>
+              </>
+            ) : null}
+            {certificate ? (
+              <div className={styles.metaRow}>
+                <dt>발급</dt>
+                <dd>
+                  {certificate.issuedByName ? `${certificate.issuedByName} · ` : ""}
+                  {formatDateTime(certificate.issuedAt)}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
 
+          {canMutate ? (
             <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
               <label className={styles.field}>
                 <span>심의 의견 · 부가 조건</span>
                 <textarea
-                  ref={textareaRef}
                   className={styles.textarea}
                   aria-label="심의 의견 본문"
                   value={body}
                   disabled={isSaving}
                   placeholder="심의 의견 및 부가 조건을 자유롭게 작성해 주세요."
-                  onChange={(event) => setBody(event.target.value)}
+                  onChange={(event) => onBodyChange(event.target.value)}
                 />
               </label>
+
+              {!isApproved ? (
+                <p className={styles.hint}>
+                  승인 후 심의필을 발급할 수 있습니다. (승인 시 작성한 내용이 자동 발급됩니다.)
+                </p>
+              ) : null}
 
               {error ? (
                 <p className="interaction-error" role="alert">
@@ -285,13 +266,10 @@ export function CertificateEditorModal({
               ) : null}
 
               <div className={styles.actions}>
-                <button className="button button--small" type="button" onClick={onClose}>
-                  닫기
-                </button>
                 <button
                   className="button button--small button--primary"
                   type="submit"
-                  disabled={isSaving || body.trim().length === 0}
+                  disabled={isSaving || !canIssue}
                 >
                   {isSaving ? (
                     <>
@@ -304,9 +282,11 @@ export function CertificateEditorModal({
                 </button>
               </div>
             </form>
-          </>
-        )}
-      </section>
+          ) : (
+            <p className={styles.readonlyBody}>{body.trim() || "발급된 심의필 본문이 없습니다."}</p>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -2034,14 +2034,14 @@ a.review-table__row:hover {
 .queue-row-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 4px 6px;
   min-width: 0;
 }
 
 .queue-row-actions--delete {
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding-left: 0;
 }
 
@@ -2063,8 +2063,20 @@ a.review-table__row:hover {
   white-space: nowrap;
 }
 
-.review-table--queue .review-table__row--head > [role="columnheader"]:last-child {
-  text-align: right;
+.requeue-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid #c7d8f5;
+  background: #eef4ff;
+  color: #1b4ca8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .queue-row-actions--failed .queue-row-note--analysis-error,

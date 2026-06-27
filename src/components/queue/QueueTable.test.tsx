@@ -544,40 +544,6 @@ describe("QueueTable", () => {
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ id: "RC-2026-001" }));
   });
 
-  it("offers a 심의필 action for approved history rows when certificates are enabled", async () => {
-    const onIssueCertificate = vi.fn();
-    render(
-      <QueueTable
-        rows={[{ ...baseRow, status: "approved" }]}
-        activeRole="reviewer"
-        activeAnalysisId={null}
-        canIssueCertificate
-        onIssueCertificate={onIssueCertificate}
-        onStartAnalysis={() => undefined}
-        onOpenReview={() => undefined}
-      />
-    );
-
-    await userEvent.click(screen.getByRole("button", { name: "심의필" }));
-    expect(onIssueCertificate).toHaveBeenCalledWith(expect.objectContaining({ id: "RC-2026-001" }));
-  });
-
-  it("hides the 심의필 action for non-approved or certificate-disabled rows", () => {
-    render(
-      <QueueTable
-        rows={[{ ...baseRow, status: "rejected" }]}
-        activeRole="reviewer"
-        activeAnalysisId={null}
-        canIssueCertificate
-        onIssueCertificate={() => undefined}
-        onStartAnalysis={() => undefined}
-        onOpenReview={() => undefined}
-      />
-    );
-
-    expect(screen.queryByRole("button", { name: "심의필" })).not.toBeInTheDocument();
-  });
-
   it("marks rejected history status with a rejected status tone", () => {
     render(
       <QueueTable

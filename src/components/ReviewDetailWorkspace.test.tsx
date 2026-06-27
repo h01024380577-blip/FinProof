@@ -864,7 +864,7 @@ describe("ReviewDetailWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "승인" }));
 
     expect(confirmMock).toHaveBeenCalledWith(
-      "이 심의를 승인으로 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다."
+      "심의필을 작성하지 않았습니다. 심의필 없이 승인하시겠습니까?"
     );
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-deposit-001/finalize",
@@ -892,10 +892,114 @@ describe("ReviewDetailWorkspace", () => {
     await user.click(screen.getByRole("button", { name: "반려" }));
 
     expect(confirmMock).toHaveBeenCalledWith(
-      "이 심의를 반려로 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다."
+      "수정 요청 의견을 작성하지 않았습니다. 의견 없이 반려하시겠습니까?"
     );
     expect(fetchMock).not.toHaveBeenCalled();
     expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("exposes the 심의필 authoring tab in the drawer for reviewers", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: "Review certificate not found" })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    const certificateTab = screen.getByRole("tab", { name: "심의필" });
+    expect(certificateTab).toBeInTheDocument();
+
+    await user.click(certificateTab);
+
+    expect(
+      await screen.findByRole("heading", { name: "심의 완료 증명서" })
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("심의 의견 본문")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "승인 후 심의필을 발급할 수 있습니다. (승인 시 작성한 내용이 자동 발급됩니다.)"
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("does not expose the 심의필 tab for requesters", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <RoleProvider initialRole="requester">
+        <ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />
+      </RoleProvider>
+    );
+
+    await user.click(screen.getByRole("button", { name: /드로어 펼치기/ }));
+
+    expect(screen.queryByRole("tab", { name: "심의필" })).not.toBeInTheDocument();
+  });
+
+  it("auto-issues the certificate after approving when a body was authored", async () => {
+    const user = userEvent.setup();
+    const confirmMock = vi.fn(() => true);
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/certificate") && init?.method === "POST") {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            certificate: { certificateNumber: "FP-2026-XYZ789", body: "심의필 본문" }
+          })
+        });
+      }
+      if (url.endsWith("/certificate")) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          json: async () => ({ error: "Review certificate not found" })
+        });
+      }
+      if (url.endsWith("/finalize")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            reviewCase: { id: "rc-demo-deposit-001", status: "approved" }
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+    vi.stubGlobal("confirm", confirmMock);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    await user.click(screen.getByRole("tab", { name: "심의필" }));
+    changeTextField("심의 의견 본문", "심의필 본문");
+
+    await user.click(screen.getByRole("button", { name: "승인" }));
+
+    expect(confirmMock).toHaveBeenCalledWith(
+      "이 심의를 승인으로 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다."
+    );
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-demo-deposit-001/certificate",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ body: "심의필 본문" })
+        })
+      );
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/finalize",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ finalAction: "approve" })
+      })
+    );
+    expect(pushMock).toHaveBeenCalledWith("/reviews?scope=history");
   });
 
   it("downloads the generated markdown report for the selected issue", async () => {
