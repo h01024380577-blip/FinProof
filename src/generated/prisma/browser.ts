@@ -38,6 +38,16 @@ export type User = Prisma.UserModel
  */
 export type ReviewCase = Prisma.ReviewCaseModel
 /**
+ * Model ReviewVersion
+ * 
+ */
+export type ReviewVersion = Prisma.ReviewVersionModel
+/**
+ * Model ReviewCertificate
+ * 
+ */
+export type ReviewCertificate = Prisma.ReviewCertificateModel
+/**
  * Model ReviewFile
  * 
  */

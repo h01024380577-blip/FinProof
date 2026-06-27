@@ -156,6 +156,7 @@ function parseReviewStatus(value: string | null): QueryParseResult<ReviewStatus>
     trimmed === "analysis_queued" ||
     trimmed === "analysis_in_progress" ||
     trimmed === "analysis_complete" ||
+    trimmed === "analysis_failed" ||
     trimmed === "under_review" ||
     trimmed === "change_requested" ||
     trimmed === "rejected" ||

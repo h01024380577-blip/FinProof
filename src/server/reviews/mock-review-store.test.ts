@@ -610,4 +610,263 @@ describe("mock review store", () => {
       ipAddress: "203.0.113.10"
     });
   });
+
+  it("marks the review case as analysis_failed when an analysis job fails", async () => {
+    const store = createMockReviewStore();
+    const created = await store.createReviewCaseFromUploadedFiles(scope, {
+      title: "분석 실패 케이스",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "poster.png", type: "image/png", size: 2048 }]
+    });
+    const caseId = created.reviewCase.id;
+    const queued = await store.enqueueAnalysis(scope, caseId);
+    const failed = await store.failAnalysisJob(scope, queued!.jobId, "OCR provider timeout");
+
+    expect(failed).toMatchObject({ status: "failed", errorMessage: "OCR provider timeout" });
+
+    const review = await store.getReviewCase(scope, caseId);
+
+    expect(review?.status).toBe("analysis_failed");
+  });
+
+  it("adds a manual issue and escalates the highest risk for direct review", async () => {
+    const store = createMockReviewStore();
+    const created = await store.createReviewCaseFromUploadedFiles(scope, {
+      title: "직접검토 케이스",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "poster.png", type: "image/png", size: 2048 }]
+    });
+    const caseId = created.reviewCase.id;
+
+    const issue = await store.createManualIssue(scope, caseId, {
+      riskLevel: "high",
+      title: "수기 지적",
+      targetText: "최고 연 5.0%",
+      description: "우대 조건 병기 필요",
+      suggestedAction: "change_request"
+    });
+
+    expect(issue).toMatchObject({
+      issueType: "manual_review",
+      riskLevel: "high",
+      title: "수기 지적",
+      targetText: "최고 연 5.0%",
+      targetBbox: [0, 0, 0, 0],
+      sourceAgents: ["manual"],
+      suggestedAction: "change_request",
+      status: "open",
+      evidence: []
+    });
+
+    const review = await store.getReviewCase(scope, caseId);
+
+    expect(review?.issues).toHaveLength(1);
+    expect(review?.highestRiskLevel).toBe("high");
+
+    await expect(
+      store.createManualIssue(scope, "missing-case", {
+        riskLevel: "caution",
+        title: "없음",
+        suggestedAction: "change_request"
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  it("upserts a review version snapshot each time a case is finalized", async () => {
+    const store = createMockReviewStore();
+    const created = await store.createReviewCaseFromUploadedFiles(scope, {
+      title: "버전 스냅샷 케이스",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "poster.png", type: "image/png", size: 2048 }]
+    });
+    const caseId = created.reviewCase.id;
+
+    await store.startAnalysis(scope, caseId);
+    await store.createManualIssue(scope, caseId, {
+      riskLevel: "caution",
+      title: "회차 지적",
+      suggestedAction: "change_request"
+    });
+    await store.saveOpinionDraft(scope, caseId, "1회차 의견서");
+    await store.updateReviewStatus(scope, caseId, "on_hold", { reviewerComment: "보류 사유" });
+
+    let versions = await store.listReviewVersions(scope, caseId);
+
+    expect(versions).toHaveLength(1);
+    expect(versions[0]).toMatchObject({
+      versionNumber: 1,
+      status: "on_hold",
+      reviewerComment: "보류 사유",
+      opinionDraft: "1회차 의견서",
+      decidedByUserId: "user-reviewer-demo"
+    });
+    expect(versions[0].issuesSnapshot).toHaveLength(1);
+    expect(versions[0].filesSnapshot.map((file) => file.name)).toEqual(["poster.png"]);
+
+    await store.updateReviewStatus(scope, caseId, "approved", { reviewerComment: "최종 승인" });
+
+    versions = await store.listReviewVersions(scope, caseId);
+
+    expect(versions).toHaveLength(1);
+    expect(versions[0]).toMatchObject({
+      versionNumber: 1,
+      status: "approved",
+      reviewerComment: "최종 승인"
+    });
+  });
+
+  it("creates a new review version on requester re-upload and resets the live case", async () => {
+    const store = createMockReviewStore();
+    const requesterScope = {
+      ...scope,
+      actorUserId: "user-requester-demo",
+      actorRole: "requester" as const,
+      actorUserName: "요청자 김지현"
+    };
+    const created = await store.createReviewCaseFromUploadedFiles(requesterScope, {
+      title: "재업로드 케이스",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "v1.png", type: "image/png", size: 2048 }]
+    });
+    const caseId = created.reviewCase.id;
+
+    await store.startAnalysis(scope, caseId);
+    await store.createManualIssue(scope, caseId, {
+      riskLevel: "high",
+      title: "1회차 지적",
+      suggestedAction: "change_request"
+    });
+    await store.saveOpinionDraft(scope, caseId, "1회차 의견서");
+    await store.updateReviewStatus(scope, caseId, "change_requested", {
+      reviewerComment: "수정 후 재제출 바랍니다"
+    });
+
+    const revised = await store.createReviewCaseRevision(requesterScope, caseId, {
+      files: [{ name: "v2.png", type: "image/png", size: 4096 }]
+    });
+
+    expect(revised).toMatchObject({
+      currentVersion: 2,
+      status: "analysis_waiting",
+      highestRiskLevel: "info",
+      issues: []
+    });
+    expect(revised?.currentDraft).toBeUndefined();
+    expect(revised?.files.map((file) => file.name)).toEqual(["v2.png"]);
+
+    const versions = await store.listReviewVersions(requesterScope, caseId);
+
+    expect(versions).toHaveLength(1);
+    expect(versions[0]).toMatchObject({
+      versionNumber: 1,
+      status: "change_requested",
+      reviewerComment: "수정 후 재제출 바랍니다",
+      opinionDraft: "1회차 의견서"
+    });
+    expect(versions[0].issuesSnapshot).toHaveLength(1);
+    expect(versions[0].filesSnapshot.map((file) => file.name)).toEqual(["v1.png"]);
+  });
+
+  it("guards revision uploads by review status and requester ownership", async () => {
+    const store = createMockReviewStore();
+    const requesterScope = {
+      ...scope,
+      actorUserId: "user-requester-owner",
+      actorRole: "requester" as const,
+      actorUserName: "소유 요청자"
+    };
+    const otherRequesterScope = {
+      ...scope,
+      actorUserId: "user-requester-other",
+      actorRole: "requester" as const,
+      actorUserName: "다른 요청자"
+    };
+    const created = await store.createReviewCaseFromUploadedFiles(requesterScope, {
+      title: "가드 케이스",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "v1.png", type: "image/png", size: 2048 }]
+    });
+    const caseId = created.reviewCase.id;
+
+    // analysis_waiting is not a revisable status.
+    await expect(
+      store.createReviewCaseRevision(requesterScope, caseId, {
+        files: [{ name: "v2.png", type: "image/png", size: 2048 }]
+      })
+    ).resolves.toBeUndefined();
+
+    await store.updateReviewStatus(scope, caseId, "rejected");
+
+    // A different requester does not own the case.
+    await expect(
+      store.createReviewCaseRevision(otherRequesterScope, caseId, {
+        files: [{ name: "v2.png", type: "image/png", size: 2048 }]
+      })
+    ).resolves.toBeUndefined();
+
+    const revised = await store.createReviewCaseRevision(requesterScope, caseId, {
+      files: [{ name: "v2.png", type: "image/png", size: 2048 }]
+    });
+
+    expect(revised).toMatchObject({ currentVersion: 2, status: "analysis_waiting" });
+  });
+
+  it("issues a stable review certificate and reads it back", async () => {
+    const store = createMockReviewStore();
+    const created = await store.createReviewCaseFromUploadedFiles(scope, {
+      title: "심의필 케이스",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "poster.png", type: "image/png", size: 2048 }]
+    });
+    const caseId = created.reviewCase.id;
+
+    await store.startAnalysis(scope, caseId);
+    await store.updateReviewStatus(scope, caseId, "approved");
+
+    const certificate = await store.issueReviewCertificate(scope, caseId, {
+      body: "본 광고물은 승인 조건을 충족합니다."
+    });
+    const expectedNumber = `FP-${new Date().getUTCFullYear()}-${caseId.slice(-6).toUpperCase()}`;
+
+    expect(certificate).toMatchObject({
+      reviewCaseId: caseId,
+      certificateNumber: expectedNumber,
+      body: "본 광고물은 승인 조건을 충족합니다.",
+      metadata: expect.objectContaining({
+        title: "심의필 케이스",
+        productType: "deposit",
+        affiliateName: "광주은행"
+      })
+    });
+
+    const reissued = await store.issueReviewCertificate(scope, caseId, {
+      body: "조건을 보완하여 재발급합니다."
+    });
+
+    expect(reissued?.certificateNumber).toBe(expectedNumber);
+    expect(reissued?.body).toBe("조건을 보완하여 재발급합니다.");
+
+    const fetched = await store.getReviewCertificate(scope, caseId);
+
+    expect(fetched?.body).toBe("조건을 보완하여 재발급합니다.");
+    await expect(store.getReviewCertificate(scope, "missing-case")).resolves.toBeUndefined();
+  });
 });

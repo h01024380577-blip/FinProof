@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState, type JSX } from "react";
+import { useCallback, useEffect, useState, type JSX } from "react";
 import { Loader2 } from "lucide-react";
 import { productLabels } from "@/domain/reviews";
-import type { ReviewCase, ReviewSummary, RoleId } from "@/domain/types";
+import type { ReviewCase, ReviewCertificate, ReviewSummary, RoleId } from "@/domain/types";
+import { RevisionUploadPanel } from "./RevisionUploadPanel";
 import { SamplePackageSelector } from "./SamplePackageSelector";
 import { useRole } from "./RoleContext";
+import styles from "./RevisionUploadPanel.module.css";
+
+type ApiHeaders = (extra?: Record<string, string>) => Record<string, string>;
 
 type RequesterUser = {
   name: string;
@@ -31,11 +35,13 @@ type RequestHistoryItem = ReviewSummary &
   Partial<Pick<ReviewCase, "currentDraft" | "currentDraftVersion">>;
 
 function requesterTableStatus(status: ReviewCase["status"]): {
-  label: "검토중" | "승인" | "반려";
-  statusTone: "in-progress" | "approved" | "rejected";
+  label: "검토중" | "승인" | "반려" | "수정 요청";
+  statusTone: "in-progress" | "approved" | "rejected" | "change-requested";
 } {
   if (status === "approved") return { label: "승인", statusTone: "approved" };
   if (status === "rejected") return { label: "반려", statusTone: "rejected" };
+  if (status === "change_requested")
+    return { label: "수정 요청", statusTone: "change-requested" };
   return { label: "검토중", statusTone: "in-progress" };
 }
 
@@ -87,14 +93,11 @@ export function RequesterRequestHistory(): JSX.Element {
   );
 }
 
-function RequesterHistoryPanel({
-  apiHeaders
-}: {
-  apiHeaders: (extra?: Record<string, string>) => Record<string, string>;
-}): JSX.Element {
+function RequesterHistoryPanel({ apiHeaders }: { apiHeaders: ApiHeaders }): JSX.Element {
   const [requests, setRequests] = useState<RequestHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -118,7 +121,9 @@ function RequesterHistoryPanel({
         const ownReviews = body.items ?? body.reviewCases ?? [];
         const detailedReviews = await Promise.all(
           ownReviews.map(async (review) => {
-            if (review.status !== "rejected") {
+            const needsOpinion =
+              review.status === "rejected" || review.status === "change_requested";
+            if (!needsOpinion) {
               return review;
             }
 
@@ -166,7 +171,11 @@ function RequesterHistoryPanel({
     return () => {
       mounted = false;
     };
-  }, [apiHeaders]);
+  }, [apiHeaders, refreshToken]);
+
+  const handleRefresh = useCallback((): void => {
+    setRefreshToken((token) => token + 1);
+  }, []);
 
   return (
     <section className="queue-panel" aria-label="요청 기록">
@@ -200,7 +209,12 @@ function RequesterHistoryPanel({
             <span role="columnheader">작업</span>
           </div>
           {requests.map((review) => (
-            <RequesterHistoryRow key={review.id} review={review} />
+            <RequesterHistoryRow
+              key={review.id}
+              review={review}
+              apiHeaders={apiHeaders}
+              onRefresh={handleRefresh}
+            />
           ))}
         </div>
       ) : null}
@@ -280,10 +294,29 @@ function DraftNote({ text }: { text: string }): JSX.Element {
   );
 }
 
-function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.Element {
-  const showDraft = review.status === "rejected" && Boolean(review.currentDraft?.trim());
+type HistoryPanel = "none" | "opinion" | "revision" | "certificate";
+
+function RequesterHistoryRow({
+  review,
+  apiHeaders,
+  onRefresh
+}: {
+  review: RequestHistoryItem;
+  apiHeaders: ApiHeaders;
+  onRefresh: () => void;
+}): JSX.Element {
   const { label, statusTone } = requesterTableStatus(review.status);
-  const [isOpen, setIsOpen] = useState(false);
+  const isRevisable = review.status === "change_requested" || review.status === "rejected";
+  const isApproved = review.status === "approved";
+  const opinionLabel = review.status === "rejected" ? "반려사유" : "수정요청 의견";
+  const hasOpinion = isRevisable && Boolean(review.currentDraft?.trim());
+  const [openPanel, setOpenPanel] = useState<HistoryPanel>("none");
+
+  function togglePanel(panel: HistoryPanel): void {
+    setOpenPanel((current) => (current === panel ? "none" : panel));
+  }
+
+  const hasActions = hasOpinion || isRevisable || isApproved;
 
   return (
     <>
@@ -301,17 +334,43 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
           </span>
         </span>
         <span role="cell">{review.reviewer || "미배정"}</span>
-        <span role="cell" className="history-row__action-cell">
-          {showDraft ? (
-            <button
-              type="button"
-              className="rejection-toggle"
-              aria-expanded={isOpen}
-              aria-label={isOpen ? "반려사유 접기" : "반려사유 펼치기"}
-              onClick={() => setIsOpen((o) => !o)}
-            >
-              반려사유
-            </button>
+        <span role="cell" className={`history-row__action-cell ${styles.actionCell}`}>
+          {hasActions ? (
+            <>
+              {hasOpinion ? (
+                <button
+                  type="button"
+                  className="rejection-toggle"
+                  aria-expanded={openPanel === "opinion"}
+                  aria-label={openPanel === "opinion" ? `${opinionLabel} 접기` : `${opinionLabel} 펼치기`}
+                  onClick={() => togglePanel("opinion")}
+                >
+                  {opinionLabel}
+                </button>
+              ) : null}
+              {isRevisable ? (
+                <button
+                  type="button"
+                  className="rejection-toggle"
+                  aria-expanded={openPanel === "revision"}
+                  aria-label={openPanel === "revision" ? "재검토 요청 접기" : "재검토 요청 펼치기"}
+                  onClick={() => togglePanel("revision")}
+                >
+                  재검토 요청
+                </button>
+              ) : null}
+              {isApproved ? (
+                <button
+                  type="button"
+                  className="rejection-toggle"
+                  aria-expanded={openPanel === "certificate"}
+                  aria-label={openPanel === "certificate" ? "심의필 접기" : "심의필 보기"}
+                  onClick={() => togglePanel("certificate")}
+                >
+                  심의필 보기
+                </button>
+              ) : null}
+            </>
           ) : (
             <span className="history-row__empty-action" aria-label="작업 없음">
               -
@@ -319,14 +378,159 @@ function RequesterHistoryRow({ review }: { review: RequestHistoryItem }): JSX.El
           )}
         </span>
       </div>
-      {showDraft && isOpen ? (
+
+      {openPanel === "opinion" && hasOpinion ? (
         <div className="review-table__row review-table__row--rejection-note" role="row">
-          <div role="cell" className="request-history-rejection-note" aria-label="수정 요청">
-            <strong>수정 요청</strong>
+          <div role="cell" className="request-history-rejection-note" aria-label={opinionLabel}>
+            <strong>{opinionLabel}</strong>
             <DraftNote text={review.currentDraft ?? ""} />
           </div>
         </div>
       ) : null}
+
+      {openPanel === "revision" && isRevisable ? (
+        <div className="review-table__row review-table__row--rejection-note" role="row">
+          <div role="cell" className="request-history-rejection-note" aria-label="재검토 요청">
+            <RevisionUploadPanel
+              caseId={review.id}
+              apiHeaders={apiHeaders}
+              onSuccess={onRefresh}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {openPanel === "certificate" && isApproved ? (
+        <div className="review-table__row review-table__row--rejection-note" role="row">
+          <div role="cell" className="request-history-rejection-note" aria-label="심의필">
+            <CertificateView caseId={review.id} apiHeaders={apiHeaders} />
+          </div>
+        </div>
+      ) : null}
     </>
+  );
+}
+
+function formatApprovedAt(value?: string): string {
+  if (!value) return "-";
+  const separatorIndex = value.indexOf("T");
+  return separatorIndex > 0 ? value.slice(0, separatorIndex) : value;
+}
+
+type CertificateState =
+  | { kind: "loading" }
+  | { kind: "ready"; certificate: ReviewCertificate }
+  | { kind: "not_issued" }
+  | { kind: "error"; message: string };
+
+function CertificateView({
+  caseId,
+  apiHeaders
+}: {
+  caseId: string;
+  apiHeaders: ApiHeaders;
+}): JSX.Element {
+  const [state, setState] = useState<CertificateState>({ kind: "loading" });
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCertificate(): Promise<void> {
+      if (mounted) setState({ kind: "loading" });
+
+      try {
+        const response = await fetch(
+          `/api/v1/review-cases/${encodeURIComponent(caseId)}/certificate`,
+          {
+            headers: apiHeaders()
+          }
+        );
+
+        if (!mounted) return;
+
+        if (response.status === 404) {
+          setState({ kind: "not_issued" });
+          return;
+        }
+
+        if (response.status === 403) {
+          setState({ kind: "error", message: "심의필을 볼 권한이 없습니다." });
+          return;
+        }
+
+        if (!response.ok) {
+          setState({ kind: "error", message: "심의필을 불러오지 못했습니다." });
+          return;
+        }
+
+        const body = (await response.json()) as { certificate?: ReviewCertificate };
+
+        if (!mounted) return;
+
+        if (!body.certificate) {
+          setState({ kind: "not_issued" });
+          return;
+        }
+
+        setState({ kind: "ready", certificate: body.certificate });
+      } catch {
+        if (mounted) {
+          setState({ kind: "error", message: "심의필을 불러오지 못했습니다." });
+        }
+      }
+    }
+
+    void loadCertificate();
+
+    return () => {
+      mounted = false;
+    };
+  }, [caseId, apiHeaders]);
+
+  if (state.kind === "loading") {
+    return (
+      <p className={styles.stateText} role="status">
+        <Loader2 className="action-spinner" size={16} aria-hidden="true" />
+        심의필을 불러오는 중입니다.
+      </p>
+    );
+  }
+
+  if (state.kind === "not_issued") {
+    return <p className={styles.stateText}>심의필 발급 전입니다.</p>;
+  }
+
+  if (state.kind === "error") {
+    return (
+      <p className={styles.stateText} role="alert">
+        {state.message}
+      </p>
+    );
+  }
+
+  const { certificate } = state;
+  const meta = certificate.metadata;
+
+  return (
+    <div className={styles.certCard}>
+      <div className={styles.certHeader}>
+        <span className={styles.certNumber}>심의필번호 {certificate.certificateNumber}</span>
+        <dl className={styles.certMeta}>
+          <dt className={styles.certMetaLabel}>케이스</dt>
+          <dd className={styles.certMetaValue}>{meta.title}</dd>
+          <dt className={styles.certMetaLabel}>상품유형</dt>
+          <dd className={styles.certMetaValue}>
+            {meta.productType ? productLabels[meta.productType] : "-"}
+          </dd>
+          <dt className={styles.certMetaLabel}>승인일</dt>
+          <dd className={styles.certMetaValue}>{formatApprovedAt(meta.approvedAt)}</dd>
+          <dt className={styles.certMetaLabel}>심의자</dt>
+          <dd className={styles.certMetaValue}>
+            {meta.reviewerName || certificate.issuedByName || "-"}
+          </dd>
+        </dl>
+      </div>
+      <div className={styles.certBody}>{certificate.body}</div>
+    </div>
   );
 }

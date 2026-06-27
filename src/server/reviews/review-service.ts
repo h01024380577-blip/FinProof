@@ -23,11 +23,13 @@ import type {
   CreateChatSessionInput,
   CreateDraftVersionInput,
   CreateKnowledgeDocumentInput,
+  CreateManualIssueInput,
   CreateRegulatorySourceInput,
   CreateReviewReportInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseFromUploadedFilesInput,
   FinalReviewStatus,
+  IssueReviewCertificateInput,
   KnowledgeEvidenceSearchInput,
   ListIssuesOptions,
   ListReviewSummariesOptions,
@@ -35,7 +37,8 @@ import type {
   ReviewStore,
   ReviewStoreScope,
   SaveIssueDecisionInput,
-  UpdateReviewReviewerInput
+  UpdateReviewReviewerInput,
+  UpdateReviewStatusOptions
 } from "./review-store";
 
 export type AnalysisStatusResponse = {
@@ -183,6 +186,10 @@ export function availableActionsFor(role: RoleId, status: ReviewStatus): ReviewA
     return ["start_analysis"];
   }
 
+  if (status === "analysis_failed" && (role === "reviewer" || role === "compliance_admin")) {
+    return ["start_analysis", "open_workbench", "view_audit"];
+  }
+
   if (status === "analysis_complete") {
     return ["open_workbench", "view_audit"];
   }
@@ -326,7 +333,12 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       const scope = scopeFromContext(context);
       const before = await store.getReviewCase(scope, reviewCaseId);
 
-      if (before && before.status !== "submitted" && before.status !== "analysis_waiting") {
+      if (
+        before &&
+        before.status !== "submitted" &&
+        before.status !== "analysis_waiting" &&
+        before.status !== "analysis_failed"
+      ) {
         throw new StateConflictError(`Cannot start analysis while review case is ${before.status}`);
       }
 
@@ -557,13 +569,14 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
     async updateReviewStatus(
       context: RequestContext,
       reviewCaseId: string,
-      status: FinalReviewStatus
+      status: FinalReviewStatus,
+      options: UpdateReviewStatusOptions = {}
     ) {
       requireRole(context, ["reviewer", "compliance_admin"], "finalize review");
 
       const scope = scopeFromContext(context);
       const before = await store.getReviewCase(scope, reviewCaseId);
-      const review = await store.updateReviewStatus(scope, reviewCaseId, status);
+      const review = await store.updateReviewStatus(scope, reviewCaseId, status, options);
 
       if (review) {
         await store.recordAuditEvent(scope, {
@@ -571,11 +584,165 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
           targetType: "review_case",
           targetId: reviewCaseId,
           beforeValue: before ? { status: before.status } : undefined,
-          afterValue: { status: review.status }
+          afterValue: { status: review.status, version: review.currentVersion }
         });
       }
 
       return review;
+    },
+
+    async createManualIssue(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: CreateManualIssueInput
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "create manual issue");
+
+      const scope = scopeFromContext(context);
+      const issue = await store.createManualIssue(scope, reviewCaseId, input);
+
+      if (issue) {
+        await store.recordAuditEvent(scope, {
+          action: "issue.manual.create",
+          targetType: "review_issue",
+          targetId: issue.id,
+          afterValue: {
+            reviewCaseId,
+            riskLevel: issue.riskLevel,
+            title: issue.title,
+            suggestedAction: issue.suggestedAction
+          }
+        });
+      }
+
+      return issue;
+    },
+
+    async createReviewCaseRevision(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: { files: Array<{ name: string; type: string; size: number; body: Uint8Array }> }
+    ) {
+      requireRole(context, ["requester"], "upload review revision");
+
+      const scope = scopeFromContext(context);
+      const before = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!before) {
+        return undefined;
+      }
+
+      if (before.status !== "change_requested" && before.status !== "rejected") {
+        throw new StateConflictError(
+          `Cannot upload a revision while review case is ${before.status}`
+        );
+      }
+
+      const nextVersion = before.currentVersion + 1;
+      const uploadFiles = await expandArchiveUploads(input.files);
+      const files = await Promise.all(
+        uploadFiles.map(async (file, index) => {
+          const fileId = `${reviewCaseId}-v${nextVersion}-file-upload-${String(index + 1).padStart(
+            3,
+            "0"
+          )}`;
+          const contentType = file.type || "application/octet-stream";
+          await uploadScanner.scanReviewFile({
+            reviewCaseId,
+            fileId,
+            fileName: file.name,
+            contentType,
+            sizeBytes: file.size,
+            body: file.body
+          });
+          const metadata = await storage.putReviewFile({
+            reviewCaseId,
+            fileId,
+            fileName: file.name,
+            contentType,
+            sizeBytes: file.size,
+            body: file.body
+          });
+
+          return {
+            id: fileId,
+            name: file.name,
+            type: metadata.contentType,
+            size: metadata.sizeBytes,
+            storageProvider: metadata.storageProvider,
+            storageKey: metadata.storageKey
+          };
+        })
+      );
+      const updated = await store.createReviewCaseRevision(scope, reviewCaseId, { files });
+
+      if (updated) {
+        await store.recordAuditEvent(scope, {
+          action: "review_case.revision_uploaded",
+          targetType: "review_case",
+          targetId: reviewCaseId,
+          beforeValue: { status: before.status, version: before.currentVersion },
+          afterValue: {
+            status: updated.status,
+            version: updated.currentVersion,
+            fileCount: updated.files.length
+          }
+        });
+      }
+
+      return updated;
+    },
+
+    async listReviewVersions(context: RequestContext, reviewCaseId: string) {
+      return store.listReviewVersions(scopeFromContext(context), reviewCaseId);
+    },
+
+    async issueReviewCertificate(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: IssueReviewCertificateInput
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "issue review certificate");
+
+      const scope = scopeFromContext(context);
+      const review = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!review) {
+        return undefined;
+      }
+
+      if (review.status !== "approved") {
+        throw new StateConflictError(
+          "Review certificate can only be issued for approved review cases"
+        );
+      }
+
+      const certificate = await store.issueReviewCertificate(scope, reviewCaseId, input);
+
+      if (certificate) {
+        await store.recordAuditEvent(scope, {
+          action: "review_case.certificate.issue",
+          targetType: "review_case",
+          targetId: reviewCaseId,
+          afterValue: { certificateNumber: certificate.certificateNumber }
+        });
+      }
+
+      return certificate;
+    },
+
+    async getReviewCertificate(context: RequestContext, reviewCaseId: string) {
+      const scope = scopeFromContext(context);
+
+      if (context.role === "requester") {
+        const review = await store.getReviewCase(scope, reviewCaseId);
+
+        if (!review || review.status !== "approved") {
+          return undefined;
+        }
+      }
+
+      return store.getReviewCertificate(scope, reviewCaseId);
     },
 
     async deleteReviewHistory(context: RequestContext, reviewCaseId: string) {

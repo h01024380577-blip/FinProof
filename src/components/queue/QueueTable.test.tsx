@@ -498,6 +498,86 @@ describe("QueueTable", () => {
     expect(deleteButtonBlock).toContain("height: 36px");
   });
 
+  it("renders retry, direct review, and audit actions for an analysis_failed row", () => {
+    render(
+      <QueueTable
+        rows={[
+          {
+            ...baseRow,
+            status: "analysis_failed",
+            availableActions: ["start_analysis", "open_workbench", "view_audit"]
+          }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    const row = screen.getByRole("row", { name: /최고 연 5.0%/ });
+    expect(within(row).getByRole("button", { name: "AI 분석 재시도" })).toBeEnabled();
+    expect(within(row).getByRole("button", { name: "직접검토" })).toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: "상세보기" })).toBeInTheDocument();
+    expect(within(row).getByText("분석 실패")).toHaveAttribute("data-status", "analysis_failed");
+  });
+
+  it("retries analysis from an analysis_failed row through the start handler", async () => {
+    const onStart = vi.fn();
+    render(
+      <QueueTable
+        rows={[
+          {
+            ...baseRow,
+            status: "analysis_failed",
+            availableActions: ["start_analysis", "open_workbench", "view_audit"]
+          }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={onStart}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "AI 분석 재시도" }));
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ id: "RC-2026-001" }));
+  });
+
+  it("offers a 심의필 action for approved history rows when certificates are enabled", async () => {
+    const onIssueCertificate = vi.fn();
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, status: "approved" }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        canIssueCertificate
+        onIssueCertificate={onIssueCertificate}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "심의필" }));
+    expect(onIssueCertificate).toHaveBeenCalledWith(expect.objectContaining({ id: "RC-2026-001" }));
+  });
+
+  it("hides the 심의필 action for non-approved or certificate-disabled rows", () => {
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, status: "rejected" }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        canIssueCertificate
+        onIssueCertificate={() => undefined}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "심의필" })).not.toBeInTheDocument();
+  });
+
   it("marks rejected history status with a rejected status tone", () => {
     render(
       <QueueTable

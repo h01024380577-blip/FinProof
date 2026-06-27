@@ -34,6 +34,7 @@ export const ReviewStatus = {
   analysis_queued: 'analysis_queued',
   analysis_in_progress: 'analysis_in_progress',
   analysis_complete: 'analysis_complete',
+  analysis_failed: 'analysis_failed',
   under_review: 'under_review',
   change_requested: 'change_requested',
   rejected: 'rejected',

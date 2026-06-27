@@ -388,6 +388,8 @@ export const ModelName = {
   Affiliate: 'Affiliate',
   User: 'User',
   ReviewCase: 'ReviewCase',
+  ReviewVersion: 'ReviewVersion',
+  ReviewCertificate: 'ReviewCertificate',
   ReviewFile: 'ReviewFile',
   ReviewIssue: 'ReviewIssue',
   Evidence: 'Evidence',
@@ -420,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "affiliate" | "user" | "reviewCase" | "reviewFile" | "reviewIssue" | "evidence" | "analysisJob" | "knowledgeDocument" | "evidenceChunk" | "agentRun" | "agentFinding" | "chatSession" | "chatMessage" | "draftVersion" | "reviewReport" | "regulatorySource" | "regulatorySnapshot" | "regulatoryChangeSet" | "qualityGateResult" | "auditLog"
+    modelProps: "tenant" | "affiliate" | "user" | "reviewCase" | "reviewVersion" | "reviewCertificate" | "reviewFile" | "reviewIssue" | "evidence" | "analysisJob" | "knowledgeDocument" | "evidenceChunk" | "agentRun" | "agentFinding" | "chatSession" | "chatMessage" | "draftVersion" | "reviewReport" | "regulatorySource" | "regulatorySnapshot" | "regulatoryChangeSet" | "qualityGateResult" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -717,6 +719,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ReviewCaseCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ReviewCaseCountAggregateOutputType> | number
+        }
+      }
+    }
+    ReviewVersion: {
+      payload: Prisma.$ReviewVersionPayload<ExtArgs>
+      fields: Prisma.ReviewVersionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ReviewVersionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ReviewVersionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>
+        }
+        findFirst: {
+          args: Prisma.ReviewVersionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ReviewVersionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>
+        }
+        findMany: {
+          args: Prisma.ReviewVersionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>[]
+        }
+        create: {
+          args: Prisma.ReviewVersionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>
+        }
+        createMany: {
+          args: Prisma.ReviewVersionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ReviewVersionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>[]
+        }
+        delete: {
+          args: Prisma.ReviewVersionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>
+        }
+        update: {
+          args: Prisma.ReviewVersionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>
+        }
+        deleteMany: {
+          args: Prisma.ReviewVersionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ReviewVersionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ReviewVersionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>[]
+        }
+        upsert: {
+          args: Prisma.ReviewVersionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewVersionPayload>
+        }
+        aggregate: {
+          args: Prisma.ReviewVersionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateReviewVersion>
+        }
+        groupBy: {
+          args: Prisma.ReviewVersionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReviewVersionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ReviewVersionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReviewVersionCountAggregateOutputType> | number
+        }
+      }
+    }
+    ReviewCertificate: {
+      payload: Prisma.$ReviewCertificatePayload<ExtArgs>
+      fields: Prisma.ReviewCertificateFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ReviewCertificateFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ReviewCertificateFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>
+        }
+        findFirst: {
+          args: Prisma.ReviewCertificateFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ReviewCertificateFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>
+        }
+        findMany: {
+          args: Prisma.ReviewCertificateFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>[]
+        }
+        create: {
+          args: Prisma.ReviewCertificateCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>
+        }
+        createMany: {
+          args: Prisma.ReviewCertificateCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ReviewCertificateCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>[]
+        }
+        delete: {
+          args: Prisma.ReviewCertificateDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>
+        }
+        update: {
+          args: Prisma.ReviewCertificateUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>
+        }
+        deleteMany: {
+          args: Prisma.ReviewCertificateDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ReviewCertificateUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ReviewCertificateUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>[]
+        }
+        upsert: {
+          args: Prisma.ReviewCertificateUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ReviewCertificatePayload>
+        }
+        aggregate: {
+          args: Prisma.ReviewCertificateAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateReviewCertificate>
+        }
+        groupBy: {
+          args: Prisma.ReviewCertificateGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReviewCertificateGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ReviewCertificateCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ReviewCertificateCountAggregateOutputType> | number
         }
       }
     }
@@ -2075,6 +2225,7 @@ export const ReviewCaseScalarFieldEnum = {
   expectedDraft: 'expectedDraft',
   currentDraft: 'currentDraft',
   currentDraftVersion: 'currentDraftVersion',
+  currentVersion: 'currentVersion',
   analysisNotice: 'analysisNotice',
   submittedAt: 'submittedAt',
   analysisStartedAt: 'analysisStartedAt',
@@ -2085,6 +2236,40 @@ export const ReviewCaseScalarFieldEnum = {
 } as const
 
 export type ReviewCaseScalarFieldEnum = (typeof ReviewCaseScalarFieldEnum)[keyof typeof ReviewCaseScalarFieldEnum]
+
+
+export const ReviewVersionScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  versionNumber: 'versionNumber',
+  status: 'status',
+  reviewerComment: 'reviewerComment',
+  opinionDraft: 'opinionDraft',
+  issuesSnapshot: 'issuesSnapshot',
+  filesSnapshot: 'filesSnapshot',
+  decidedByUserId: 'decidedByUserId',
+  decidedByName: 'decidedByName',
+  decidedAt: 'decidedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ReviewVersionScalarFieldEnum = (typeof ReviewVersionScalarFieldEnum)[keyof typeof ReviewVersionScalarFieldEnum]
+
+
+export const ReviewCertificateScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  certificateNumber: 'certificateNumber',
+  body: 'body',
+  metadata: 'metadata',
+  issuedByUserId: 'issuedByUserId',
+  issuedByName: 'issuedByName',
+  issuedAt: 'issuedAt',
+  updatedAt: 'updatedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ReviewCertificateScalarFieldEnum = (typeof ReviewCertificateScalarFieldEnum)[keyof typeof ReviewCertificateScalarFieldEnum]
 
 
 export const ReviewFileScalarFieldEnum = {
@@ -3042,6 +3227,8 @@ export type GlobalOmitConfig = {
   affiliate?: Prisma.AffiliateOmit
   user?: Prisma.UserOmit
   reviewCase?: Prisma.ReviewCaseOmit
+  reviewVersion?: Prisma.ReviewVersionOmit
+  reviewCertificate?: Prisma.ReviewCertificateOmit
   reviewFile?: Prisma.ReviewFileOmit
   reviewIssue?: Prisma.ReviewIssueOmit
   evidence?: Prisma.EvidenceOmit

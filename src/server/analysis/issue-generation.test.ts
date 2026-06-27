@@ -349,7 +349,8 @@ describe("issue generation", () => {
       missingMaterials: [],
       files: [],
       issues: [],
-      expectedDraft: ""
+      expectedDraft: "",
+      currentVersion: 1
     };
     const artifacts: AnalysisArtifacts = {
       generatedAt: "2026-06-02T00:00:00.000Z",
@@ -427,7 +428,8 @@ describe("issue generation", () => {
         }
       ],
       issues: [],
-      expectedDraft: ""
+      expectedDraft: "",
+      currentVersion: 1
     };
     const artifacts: AnalysisArtifacts = {
       generatedAt: "2026-06-02T00:00:00.000Z",

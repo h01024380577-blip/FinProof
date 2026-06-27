@@ -27,9 +27,11 @@ import type {
   RegulatorySnapshot,
   RegulatorySource,
   ReviewCase,
+  ReviewCertificate,
   ReviewFile,
   ReviewIssue,
   ReviewSummary,
+  ReviewVersion,
   RiskLevel
 } from "@/domain/types";
 import type {
@@ -45,6 +47,7 @@ import type {
   CreateDraftVersionInput,
   CreateKnowledgeDocumentChunkInput,
   CreateKnowledgeDocumentInput,
+  CreateManualIssueInput,
   CreateRegulatoryChangeSetInput,
   CreateRegulatorySnapshotInput,
   CreateRegulatorySourceInput,
@@ -52,6 +55,9 @@ import type {
   CreateReviewCaseFromUploadedFilesInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseResult,
+  CreateReviewCaseRevisionInput,
+  FinalReviewStatus,
+  IssueReviewCertificateInput,
   ListReviewSummariesOptions,
   RegulatoryChangeSetListOptions,
   ListAuditEventsOptions,
@@ -63,7 +69,8 @@ import type {
   ReviewStoreScope,
   ClaimAnalysisJobResult,
   SaveIssueDecisionInput,
-  UpdateReviewReviewerInput
+  UpdateReviewReviewerInput,
+  UpdateReviewStatusOptions
 } from "./review-store";
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
@@ -115,6 +122,7 @@ function defaultExpectedDraft(productType: ProductType): string {
 function withStorageMetadata(review: ReviewCase): ReviewCase {
   return {
     ...review,
+    currentVersion: review.currentVersion ?? 1,
     files: review.files.map<ReviewFile>((file) => ({
       ...file,
       storageProvider: "sample",
@@ -366,6 +374,9 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   const chatMessages = new Map<string, ChatMessage[]>();
   const draftVersions = new Map<string, DraftVersion[]>();
   const reviewReports = new Map<string, PersistedReviewReport[]>();
+  const reviewVersions = new Map<string, ReviewVersion[]>();
+  const reviewCertificates = new Map<string, ReviewCertificate>();
+  const manualIssueSequences = new Map<string, number>();
   const agentRuns = new Map<string, AgentRun>();
   const agentFindings = new Map<
     string,
@@ -384,6 +395,52 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
 
   function nowIso() {
     return new Date().toISOString();
+  }
+
+  function certificateNumberFor(reviewCaseId: string, isoDate: string): string {
+    const year = new Date(isoDate).getUTCFullYear();
+
+    return `FP-${year}-${reviewCaseId.slice(-6).toUpperCase()}`;
+  }
+
+  function recordReviewVersionSnapshot(
+    scope: ReviewStoreScope,
+    review: ReviewCase,
+    status: FinalReviewStatus,
+    reviewerComment: string | undefined
+  ): void {
+    const versions = reviewVersions.get(review.id) ?? [];
+    const versionNumber = review.currentVersion;
+    const now = nowIso();
+    const existingIndex = versions.findIndex(
+      (version) => version.versionNumber === versionNumber
+    );
+    const snapshot: ReviewVersion = {
+      id: `review-version-${review.id}-v${versionNumber}`,
+      reviewCaseId: review.id,
+      versionNumber,
+      status,
+      reviewerComment,
+      opinionDraft: review.currentDraft,
+      issuesSnapshot: clone(review.issues),
+      filesSnapshot: review.files.map((file) => ({
+        id: file.id,
+        name: file.name,
+        fileType: file.fileType
+      })),
+      decidedByUserId: scope.actorUserId,
+      decidedByName: scope.actorUserName,
+      decidedAt: now,
+      createdAt: existingIndex === -1 ? now : versions[existingIndex].createdAt
+    };
+
+    if (existingIndex === -1) {
+      reviewVersions.set(review.id, [...versions, snapshot]);
+    } else {
+      const updated = [...versions];
+      updated[existingIndex] = snapshot;
+      reviewVersions.set(review.id, updated);
+    }
   }
 
   function deterministicKnowledgeChunkId(documentId: string): string {
@@ -785,6 +842,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         files,
         issues: [],
         expectedDraft: defaultExpectedDraft(input.productType),
+        currentVersion: 1,
         analysisNotice: uploadAnalysisNotice
       };
 
@@ -1211,7 +1269,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         if (review) {
           cases.set(reviewCaseId, {
             ...review,
-            status: "analysis_waiting"
+            status: "analysis_failed"
           });
         }
 
@@ -1251,7 +1309,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         if (newlyFailed.length > 0) {
           const review = cases.get(reviewCaseId);
           if (review) {
-            cases.set(reviewCaseId, { ...review, status: "analysis_waiting" });
+            cases.set(reviewCaseId, { ...review, status: "analysis_failed" });
           }
         }
       }
@@ -1357,6 +1415,45 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return clone(updatedIssue);
     },
 
+    async createManualIssue(
+      scope: ReviewStoreScope,
+      reviewCaseId,
+      input: CreateManualIssueInput
+    ): Promise<ReviewIssue | undefined> {
+      const review = cases.get(reviewCaseId);
+
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      const sequence = (manualIssueSequences.get(reviewCaseId) ?? 0) + 1;
+      manualIssueSequences.set(reviewCaseId, sequence);
+
+      const issue: ReviewIssue = {
+        id: `issue-${reviewCaseId}-manual-${String(sequence).padStart(3, "0")}`,
+        issueType: input.issueType?.trim() || "manual_review",
+        riskLevel: input.riskLevel,
+        title: input.title,
+        targetText: input.targetText ?? "",
+        targetBbox: [0, 0, 0, 0],
+        sourceAgents: ["manual"],
+        suggestedAction: input.suggestedAction,
+        status: "open",
+        description: input.description ?? "",
+        suggestedCopy: input.suggestedCopy ?? "",
+        evidence: []
+      };
+      const issues = [...review.issues, issue];
+
+      cases.set(reviewCaseId, {
+        ...review,
+        issues,
+        highestRiskLevel: highestRiskLevelForIssues(review.highestRiskLevel, issues)
+      });
+
+      return clone(issue);
+    },
+
     async saveOpinionDraft(scope: ReviewStoreScope, reviewCaseId, draft) {
       const review = cases.get(reviewCaseId);
 
@@ -1395,7 +1492,12 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return clone(updatedReview);
     },
 
-    async updateReviewStatus(scope: ReviewStoreScope, reviewCaseId, status) {
+    async updateReviewStatus(
+      scope: ReviewStoreScope,
+      reviewCaseId,
+      status,
+      options: UpdateReviewStatusOptions = {}
+    ) {
       const review = cases.get(reviewCaseId);
 
       if (!review || !canAccessCase(scope, reviewCaseId)) {
@@ -1408,8 +1510,128 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       };
 
       cases.set(reviewCaseId, updatedReview);
+      recordReviewVersionSnapshot(scope, updatedReview, status, options.reviewerComment);
 
       return clone(updatedReview);
+    },
+
+    async createReviewCaseRevision(
+      scope: ReviewStoreScope,
+      reviewCaseId,
+      input: CreateReviewCaseRevisionInput
+    ): Promise<ReviewCase | undefined> {
+      const review = cases.get(reviewCaseId);
+
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      if (review.status !== "change_requested" && review.status !== "rejected") {
+        return undefined;
+      }
+
+      const nextVersion = review.currentVersion + 1;
+      const files = input.files.map<ReviewFile>((file, index) => {
+        const contentType = file.type || inferContentType(file.name);
+        const cls = classifyUploadFileWithConfidence({ ...file, type: contentType });
+
+        return {
+          id:
+            file.id ??
+            `${reviewCaseId}-v${nextVersion}-file-upload-${String(index + 1).padStart(3, "0")}`,
+          name: file.name,
+          fileType: cls.fileType,
+          classificationConfidence: cls.confidence,
+          parseStatus: "pending",
+          storageProvider: file.storageProvider ?? "local",
+          storageKey: file.storageKey ?? `local/${reviewCaseId}/${file.name}`,
+          contentType,
+          sizeBytes: file.size
+        };
+      });
+      const revisedReview: ReviewCase = {
+        ...review,
+        files,
+        issues: [],
+        currentDraft: undefined,
+        currentDraftVersion: undefined,
+        highestRiskLevel: "info",
+        currentVersion: nextVersion,
+        status: "analysis_waiting",
+        missingMaterials: []
+      };
+
+      revisedReview.missingMaterials = missingMaterialKeys(revisedReview);
+      cases.set(reviewCaseId, revisedReview);
+
+      return clone(revisedReview);
+    },
+
+    async listReviewVersions(
+      scope: ReviewStoreScope,
+      reviewCaseId
+    ): Promise<ReviewVersion[]> {
+      if (!canAccessCase(scope, reviewCaseId)) {
+        return [];
+      }
+
+      return clone(
+        [...(reviewVersions.get(reviewCaseId) ?? [])].sort(
+          (left, right) => left.versionNumber - right.versionNumber
+        )
+      );
+    },
+
+    async issueReviewCertificate(
+      scope: ReviewStoreScope,
+      reviewCaseId,
+      input: IssueReviewCertificateInput
+    ): Promise<ReviewCertificate | undefined> {
+      const review = cases.get(reviewCaseId);
+
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      const now = nowIso();
+      const existing = reviewCertificates.get(reviewCaseId);
+      const approvedAt = existing?.metadata.approvedAt ?? now;
+      const certificate: ReviewCertificate = {
+        id: existing?.id ?? `review-certificate-${reviewCaseId}`,
+        reviewCaseId,
+        certificateNumber:
+          existing?.certificateNumber ?? certificateNumberFor(reviewCaseId, approvedAt),
+        body: input.body,
+        metadata: {
+          title: review.title,
+          productType: review.productType,
+          affiliateName: review.affiliate,
+          reviewerName: review.reviewer,
+          approvedAt
+        },
+        issuedByUserId: scope.actorUserId,
+        issuedByName: scope.actorUserName,
+        issuedAt: existing?.issuedAt ?? now,
+        updatedAt: now,
+        createdAt: existing?.createdAt ?? now
+      };
+
+      reviewCertificates.set(reviewCaseId, certificate);
+
+      return clone(certificate);
+    },
+
+    async getReviewCertificate(
+      scope: ReviewStoreScope,
+      reviewCaseId
+    ): Promise<ReviewCertificate | undefined> {
+      if (!canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      const certificate = reviewCertificates.get(reviewCaseId);
+
+      return certificate ? clone(certificate) : undefined;
     },
 
     async deleteReviewCase(scope: ReviewStoreScope, reviewCaseId) {

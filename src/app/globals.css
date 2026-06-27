@@ -1874,6 +1874,12 @@ a.review-table__row:hover {
   color: var(--risk-reject);
 }
 
+.status-badge[data-status="analysis_failed"] {
+  border-color: #e9c79a;
+  background: #fdf3e6;
+  color: #a9651b;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

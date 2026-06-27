@@ -26,6 +26,7 @@ enum ReviewStatus {
   analysis_queued
   analysis_in_progress
   analysis_complete
+  analysis_failed
   under_review
   change_requested
   rejected
@@ -292,6 +293,7 @@ model ReviewCase {
   expectedDraft       String         @map("expected_draft")
   currentDraft        String?        @map("current_draft")
   currentDraftVersion Int            @default(0) @map("current_draft_version")
+  currentVersion      Int            @default(1) @map("current_version")
   analysisNotice      String?        @map("analysis_notice")
   submittedAt         DateTime?      @map("submitted_at")
   analysisStartedAt   DateTime?      @map("analysis_started_at")
@@ -311,10 +313,48 @@ model ReviewCase {
   chatSessions        ChatSession[]
   draftVersions       DraftVersion[]
   reports             ReviewReport[]
+  versions            ReviewVersion[]
+  certificate         ReviewCertificate?
 
   @@index([tenantId, status, updatedAt])
   @@index([affiliateId, productType, status])
   @@map("review_cases")
+}
+
+model ReviewVersion {
+  id              String       @id
+  reviewCaseId    String       @map("review_case_id")
+  versionNumber   Int          @map("version_number")
+  status          ReviewStatus
+  reviewerComment String?      @map("reviewer_comment")
+  opinionDraft    String?      @map("opinion_draft")
+  issuesSnapshot  Json         @map("issues_snapshot")
+  filesSnapshot   Json         @map("files_snapshot")
+  decidedByUserId String       @map("decided_by_user_id")
+  decidedByName   String?      @map("decided_by_name")
+  decidedAt       DateTime     @map("decided_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  reviewCase      ReviewCase   @relation(fields: [reviewCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewCaseId, versionNumber])
+  @@index([reviewCaseId, versionNumber])
+  @@map("review_versions")
+}
+
+model ReviewCertificate {
+  id                String     @id
+  reviewCaseId      String     @unique @map("review_case_id")
+  certificateNumber String     @map("certificate_number")
+  body              String
+  metadata          Json
+  issuedByUserId    String     @map("issued_by_user_id")
+  issuedByName      String?    @map("issued_by_name")
+  issuedAt          DateTime   @default(now()) @map("issued_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  reviewCase        ReviewCase @relation(fields: [reviewCaseId], references: [id], onDelete: Cascade)
+
+  @@map("review_certificates")
 }
 
 model ReviewFile {

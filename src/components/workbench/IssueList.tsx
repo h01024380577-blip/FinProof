@@ -27,13 +27,17 @@ export type IssueListProps = {
   selectedIssueId?: string;
   onSelectIssue: (issueId: string) => void;
   analysisNotice?: string;
+  canAddManualIssue?: boolean;
+  onAddManualIssue?: () => void;
 };
 
 export function IssueList({
   issues,
   selectedIssueId,
   onSelectIssue,
-  analysisNotice
+  analysisNotice,
+  canAddManualIssue = false,
+  onAddManualIssue
 }: IssueListProps): JSX.Element {
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
   const visible = useMemo(
@@ -45,6 +49,15 @@ export function IssueList({
     <aside className="issue-panel">
       <div className="issue-panel__heading">
         <h3>이슈 목록 ({issues.length})</h3>
+        {canAddManualIssue && onAddManualIssue ? (
+          <button
+            className="button button--small"
+            type="button"
+            onClick={onAddManualIssue}
+          >
+            이슈 직접 추가
+          </button>
+        ) : null}
       </div>
 
       <div className="filter-row" aria-label="Risk filters">

@@ -19,6 +19,7 @@ const row = {
   expectedDraft: "수정 요청 초안",
   currentDraft: "현재 초안",
   currentDraftVersion: 2,
+  currentVersion: 1,
   analysisNotice: null,
   files: [
     {

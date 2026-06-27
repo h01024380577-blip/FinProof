@@ -16,9 +16,11 @@ import type {
   RegulatorySource,
   RoleId,
   ReviewCase,
+  ReviewCertificate,
   ReviewFile,
   ReviewIssue,
   ReviewSummary,
+  ReviewVersion,
   RiskLevel
 } from "@/domain/types";
 import type { AnalysisArtifacts } from "@/server/analysis/review-analysis-pipeline";
@@ -127,6 +129,28 @@ export type SaveIssueDecisionInput = {
 export type UpdateReviewReviewerInput = {
   reviewCaseId: string;
   reviewer: string;
+};
+
+export type UpdateReviewStatusOptions = {
+  reviewerComment?: string;
+};
+
+export type CreateManualIssueInput = {
+  issueType?: string;
+  riskLevel: RiskLevel;
+  title: string;
+  targetText?: string;
+  description?: string;
+  suggestedAction: ReviewIssue["suggestedAction"];
+  suggestedCopy?: string;
+};
+
+export type CreateReviewCaseRevisionInput = {
+  files: UploadedFileInput[];
+};
+
+export type IssueReviewCertificateInput = {
+  body: string;
 };
 
 export type FinalReviewStatus = Extract<
@@ -365,6 +389,11 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     input: SaveIssueDecisionInput
   ): Promise<ReviewIssue | undefined>;
+  createManualIssue(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: CreateManualIssueInput
+  ): Promise<ReviewIssue | undefined>;
   saveOpinionDraft(
     scope: ReviewStoreScope,
     reviewCaseId: string,
@@ -377,8 +406,27 @@ export interface ReviewStore {
   updateReviewStatus(
     scope: ReviewStoreScope,
     reviewCaseId: string,
-    status: FinalReviewStatus
+    status: FinalReviewStatus,
+    options?: UpdateReviewStatusOptions
   ): Promise<ReviewCase | undefined>;
+  createReviewCaseRevision(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: CreateReviewCaseRevisionInput
+  ): Promise<ReviewCase | undefined>;
+  listReviewVersions(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<ReviewVersion[]>;
+  issueReviewCertificate(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: IssueReviewCertificateInput
+  ): Promise<ReviewCertificate | undefined>;
+  getReviewCertificate(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<ReviewCertificate | undefined>;
   deleteReviewCase(scope: ReviewStoreScope, reviewCaseId: string): Promise<ReviewCase | undefined>;
   recordAuditEvent(scope: ReviewStoreScope, input: AuditEventInput): Promise<AuditEvent>;
   listAuditEvents(scope: ReviewStoreScope, options?: ListAuditEventsOptions): Promise<AuditEvent[]>;

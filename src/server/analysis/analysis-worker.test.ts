@@ -99,9 +99,9 @@ describe("analysis worker", () => {
     expect(latest?.status).toBe("failed");
     expect(latest?.errorMessage).toMatch(/stale/);
 
-    // Verify the case was also reset so it can be re-queued
+    // Verify the case was marked as failed so it can be retried or directly reviewed
     const reviewCase = await store.getReviewCase(scope, "rc-demo-deposit-001");
-    expect(reviewCase?.status).toBe("analysis_waiting");
+    expect(reviewCase?.status).toBe("analysis_failed");
   });
 
   it("uses the configured storage adapter when building the default pipeline", async () => {

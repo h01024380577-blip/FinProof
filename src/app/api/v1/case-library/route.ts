@@ -136,6 +136,7 @@ function isReviewStatus(value: string): value is ReviewStatus {
     value === "analysis_queued" ||
     value === "analysis_in_progress" ||
     value === "analysis_complete" ||
+    value === "analysis_failed" ||
     value === "under_review" ||
     value === "change_requested" ||
     value === "rejected" ||

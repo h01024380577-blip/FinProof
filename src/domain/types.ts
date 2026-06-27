@@ -10,12 +10,18 @@ export type ReviewStatus =
   | "analysis_queued"
   | "analysis_in_progress"
   | "analysis_complete"
+  | "analysis_failed"
   | "under_review"
   | "change_requested"
   | "rejected"
   | "approved"
   | "on_hold"
   | "archived";
+
+export type FinalReviewStatus = Extract<
+  ReviewStatus,
+  "approved" | "change_requested" | "rejected" | "on_hold"
+>;
 
 export type ReviewAction = "start_analysis" | "open_workbench" | "view_audit";
 
@@ -122,7 +128,44 @@ export type ReviewCase = {
   expectedDraft: string;
   currentDraft?: string;
   currentDraftVersion?: number;
+  currentVersion: number;
   analysisNotice?: string;
+};
+
+export type ReviewVersion = {
+  id: string;
+  reviewCaseId: string;
+  versionNumber: number;
+  status: FinalReviewStatus;
+  reviewerComment?: string;
+  opinionDraft?: string;
+  issuesSnapshot: ReviewIssue[];
+  filesSnapshot: Array<Pick<ReviewFile, "id" | "name" | "fileType">>;
+  decidedByUserId: string;
+  decidedByName?: string;
+  decidedAt: string;
+  createdAt: string;
+};
+
+export type ReviewCertificateMetadata = {
+  title: string;
+  productType: ProductType;
+  affiliateName: string;
+  reviewerName: string;
+  approvedAt: string;
+};
+
+export type ReviewCertificate = {
+  id: string;
+  reviewCaseId: string;
+  certificateNumber: string;
+  body: string;
+  metadata: ReviewCertificateMetadata;
+  issuedByUserId: string;
+  issuedByName?: string;
+  issuedAt: string;
+  updatedAt: string;
+  createdAt: string;
 };
 
 export type ReviewSummary = Pick<

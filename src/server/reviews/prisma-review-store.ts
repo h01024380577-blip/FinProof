@@ -17,9 +17,11 @@ import type {
   PersistedReviewReport,
   QualityGateResult,
   ReviewCase,
+  ReviewCertificate,
   ReviewFile,
   ReviewIssue,
   ReviewSummary,
+  ReviewVersion,
   RiskLevel
 } from "@/domain/types";
 import { Prisma } from "@/generated/prisma/client";
@@ -42,7 +44,9 @@ import {
   toRegulatorySnapshot,
   toRegulatorySource,
   toReviewCase,
+  toReviewCertificate,
   toReviewSummary,
+  toReviewVersion,
   type PrismaReviewCaseRow
 } from "./prisma-mappers";
 import type {
@@ -54,6 +58,7 @@ import type {
   CreateDraftVersionInput,
   CreateKnowledgeDocumentChunkInput,
   CreateKnowledgeDocumentInput,
+  CreateManualIssueInput,
   CreateRegulatoryChangeSetInput,
   CreateRegulatorySnapshotInput,
   CreateRegulatorySourceInput,
@@ -61,8 +66,10 @@ import type {
   CreateReviewCaseFromUploadedFilesInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseResult,
+  CreateReviewCaseRevisionInput,
   CaseHistoryEvidenceSearchInput,
   FinalReviewStatus,
+  IssueReviewCertificateInput,
   ListAuditEventsOptions,
   ListIssuesOptions,
   ListReviewSummariesOptions,
@@ -72,7 +79,8 @@ import type {
   ReviewSummaryPage,
   ReviewStoreScope,
   SaveIssueDecisionInput,
-  UpdateReviewReviewerInput
+  UpdateReviewReviewerInput,
+  UpdateReviewStatusOptions
 } from "./review-store";
 
 const reviewInclude = {
@@ -628,6 +636,51 @@ function demoUserEmailForActor(scope: ReviewStoreScope): string {
     .slice(0, 80);
 
   return `${safeUserId || "requester"}@finproof.local`;
+}
+
+function certificateNumberFor(reviewCaseId: string, date: Date): string {
+  return `FP-${date.getUTCFullYear()}-${reviewCaseId.slice(-6).toUpperCase()}`;
+}
+
+async function recordReviewVersionSnapshot(
+  tx: Prisma.TransactionClient,
+  scope: ReviewStoreScope,
+  review: ReviewCase,
+  status: FinalReviewStatus,
+  reviewerComment: string | undefined,
+  decidedAt: Date
+): Promise<void> {
+  const versionNumber = review.currentVersion;
+  const data = {
+    status,
+    reviewerComment: reviewerComment ?? null,
+    opinionDraft: review.currentDraft ?? null,
+    issuesSnapshot: review.issues as unknown as Prisma.InputJsonValue,
+    filesSnapshot: review.files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      fileType: file.fileType
+    })) as unknown as Prisma.InputJsonValue,
+    decidedByUserId: scope.actorUserId,
+    decidedByName: scope.actorUserName ?? null,
+    decidedAt
+  };
+
+  await tx.reviewVersion.upsert({
+    where: {
+      reviewCaseId_versionNumber: {
+        reviewCaseId: review.id,
+        versionNumber
+      }
+    },
+    create: {
+      id: `review-version-${review.id}-v${versionNumber}`,
+      reviewCaseId: review.id,
+      versionNumber,
+      ...data
+    },
+    update: data
+  });
 }
 
 export function createPrismaReviewStore(): ReviewStore {
@@ -2664,7 +2717,7 @@ export function createPrismaReviewStore(): ReviewStore {
         await tx.reviewCase.update({
           where: { id: job.reviewCaseId },
           data: {
-            status: "analysis_waiting"
+            status: "analysis_failed"
           }
         });
 
@@ -2692,7 +2745,7 @@ export function createPrismaReviewStore(): ReviewStore {
         ),
         reset AS (
           UPDATE review_cases
-          SET status = 'analysis_waiting', updated_at = now()
+          SET status = 'analysis_failed', updated_at = now()
           WHERE id IN (SELECT review_case_id FROM stale)
         )
         SELECT COUNT(*) AS count FROM stale
@@ -2783,6 +2836,68 @@ export function createPrismaReviewStore(): ReviewStore {
       return review?.issues.find((candidate) => candidate.id === input.issueId);
     },
 
+    async createManualIssue(
+      scope,
+      reviewCaseId,
+      input: CreateManualIssueInput
+    ): Promise<ReviewIssue | undefined> {
+      return prisma.$transaction(async (tx) => {
+        const reviewRowValue = await tx.reviewCase.findFirst({
+          where: { id: reviewCaseId, tenantId: scope.tenantId },
+          include: reviewInclude
+        });
+
+        if (!reviewRowValue) {
+          return undefined;
+        }
+
+        const reviewCase = toReviewCase(reviewRow(reviewRowValue));
+        const issue: ReviewIssue = {
+          id: `issue-${reviewCaseId}-manual-${randomUUID()}`,
+          issueType: input.issueType?.trim() || "manual_review",
+          riskLevel: input.riskLevel,
+          title: input.title,
+          targetText: input.targetText ?? "",
+          targetBbox: [0, 0, 0, 0],
+          sourceAgents: ["manual"],
+          suggestedAction: input.suggestedAction,
+          status: "open",
+          description: input.description ?? "",
+          suggestedCopy: input.suggestedCopy ?? "",
+          evidence: []
+        };
+
+        await tx.reviewIssue.create({
+          data: {
+            id: issue.id,
+            reviewCaseId,
+            issueType: issue.issueType,
+            riskLevel: issue.riskLevel,
+            title: issue.title,
+            targetText: issue.targetText,
+            targetBbox: issue.targetBbox as Prisma.InputJsonValue,
+            sourceAgents: issue.sourceAgents as Prisma.InputJsonValue,
+            suggestedAction: issue.suggestedAction,
+            status: issue.status,
+            description: issue.description,
+            suggestedCopy: issue.suggestedCopy
+          }
+        });
+
+        await tx.reviewCase.update({
+          where: { id: reviewCaseId },
+          data: {
+            highestRiskLevel: highestRiskLevelForIssues(reviewCase.highestRiskLevel, [
+              ...reviewCase.issues,
+              issue
+            ])
+          }
+        });
+
+        return issue;
+      });
+    },
+
     async saveOpinionDraft(scope, reviewCaseId, draft) {
       const review = await prisma.reviewCase.findFirst({
         where: { id: reviewCaseId, tenantId: scope.tenantId }
@@ -2824,25 +2939,217 @@ export function createPrismaReviewStore(): ReviewStore {
       return toReviewCase(reviewRow(updated));
     },
 
-    async updateReviewStatus(scope, reviewCaseId, status: FinalReviewStatus) {
+    async updateReviewStatus(
+      scope,
+      reviewCaseId,
+      status: FinalReviewStatus,
+      options: UpdateReviewStatusOptions = {}
+    ) {
+      return prisma.$transaction(async (tx) => {
+        const review = await tx.reviewCase.findFirst({
+          where: { id: reviewCaseId, tenantId: scope.tenantId },
+          select: { id: true }
+        });
+
+        if (!review) {
+          return undefined;
+        }
+
+        const decidedAt = new Date();
+        const updated = await tx.reviewCase.update({
+          where: { id: reviewCaseId },
+          data: {
+            status,
+            finalDecisionAt: decidedAt
+          },
+          include: reviewInclude
+        });
+        const reviewCase = toReviewCase(reviewRow(updated));
+
+        await recordReviewVersionSnapshot(
+          tx,
+          scope,
+          reviewCase,
+          status,
+          options.reviewerComment,
+          decidedAt
+        );
+
+        return reviewCase;
+      });
+    },
+
+    async createReviewCaseRevision(
+      scope,
+      reviewCaseId,
+      input: CreateReviewCaseRevisionInput
+    ): Promise<ReviewCase | undefined> {
+      return prisma.$transaction(async (tx) => {
+        const reviewRowValue = await tx.reviewCase.findFirst({
+          where: { id: reviewCaseId, ...reviewCaseScopeWhere(scope) },
+          include: reviewInclude
+        });
+
+        if (!reviewRowValue) {
+          return undefined;
+        }
+
+        const reviewCase = toReviewCase(reviewRow(reviewRowValue));
+
+        if (reviewCase.status !== "change_requested" && reviewCase.status !== "rejected") {
+          return undefined;
+        }
+
+        const nextVersion = reviewCase.currentVersion + 1;
+        const files = input.files.map((file, index) => {
+          const contentType = file.type || "application/octet-stream";
+          const cls = classifyUploadFileWithConfidence({ ...file, type: contentType });
+
+          return {
+            id:
+              file.id ??
+              `${reviewCaseId}-v${nextVersion}-file-upload-${String(index + 1).padStart(3, "0")}`,
+            originalFilename: file.name,
+            fileType: cls.fileType,
+            classificationConfidence: cls.confidence,
+            parseStatus: "pending" as const,
+            storageProvider: file.storageProvider ?? "local",
+            storageKey: file.storageKey ?? `local/${reviewCaseId}/${file.name}`,
+            contentType,
+            sizeBytes: BigInt(file.size)
+          };
+        });
+        const missingMaterials = missingMaterialKeys({
+          productType: reviewCase.productType,
+          files: files.map((file) => ({
+            id: file.id,
+            name: file.originalFilename,
+            fileType: file.fileType,
+            classificationConfidence: file.classificationConfidence,
+            parseStatus: file.parseStatus,
+            storageProvider: file.storageProvider as ReviewFile["storageProvider"],
+            storageKey: file.storageKey,
+            contentType: file.contentType,
+            sizeBytes: Number(file.sizeBytes)
+          }))
+        });
+
+        await tx.evidence.deleteMany({ where: { issue: { reviewCaseId } } });
+        await tx.reviewIssue.deleteMany({ where: { reviewCaseId } });
+        await tx.reviewFile.deleteMany({ where: { reviewCaseId } });
+
+        const updated = await tx.reviewCase.update({
+          where: { id: reviewCaseId },
+          data: {
+            status: "analysis_waiting",
+            highestRiskLevel: "info",
+            currentDraft: null,
+            currentDraftVersion: 0,
+            currentVersion: { increment: 1 },
+            analysisStartedAt: null,
+            analysisCompletedAt: null,
+            finalDecisionAt: null,
+            analysisNotice: uploadAnalysisNotice,
+            missingMaterials,
+            files: { create: files }
+          },
+          include: reviewInclude
+        });
+
+        return toReviewCase(reviewRow(updated));
+      }, longWriteTransactionOptions);
+    },
+
+    async listReviewVersions(scope, reviewCaseId): Promise<ReviewVersion[]> {
       const review = await prisma.reviewCase.findFirst({
-        where: { id: reviewCaseId, tenantId: scope.tenantId }
+        where: { id: reviewCaseId, ...reviewCaseScopeWhere(scope) },
+        select: { id: true }
       });
 
       if (!review) {
-        return undefined;
+        return [];
       }
 
-      const updated = await prisma.reviewCase.update({
-        where: { id: reviewCaseId },
-        data: {
-          status,
-          finalDecisionAt: new Date()
-        },
-        include: reviewInclude
+      const rows = await prisma.reviewVersion.findMany({
+        where: { reviewCaseId },
+        orderBy: { versionNumber: "asc" }
       });
 
-      return toReviewCase(reviewRow(updated));
+      return rows.map(toReviewVersion);
+    },
+
+    async issueReviewCertificate(
+      scope,
+      reviewCaseId,
+      input: IssueReviewCertificateInput
+    ): Promise<ReviewCertificate | undefined> {
+      return prisma.$transaction(async (tx) => {
+        const review = await tx.reviewCase.findFirst({
+          where: { id: reviewCaseId, tenantId: scope.tenantId },
+          select: {
+            id: true,
+            title: true,
+            productType: true,
+            affiliateName: true,
+            reviewerName: true,
+            finalDecisionAt: true
+          }
+        });
+
+        if (!review) {
+          return undefined;
+        }
+
+        const existing = await tx.reviewCertificate.findUnique({
+          where: { reviewCaseId }
+        });
+        const now = new Date();
+        const existingApprovedAt = existing
+          ? toReviewCertificate(existing).metadata.approvedAt
+          : "";
+        const approvedAt = existingApprovedAt || (review.finalDecisionAt ?? now).toISOString();
+        const certificateNumber =
+          existing?.certificateNumber ??
+          certificateNumberFor(reviewCaseId, new Date(approvedAt));
+        const metadata = {
+          title: review.title,
+          productType: review.productType,
+          affiliateName: review.affiliateName,
+          reviewerName: review.reviewerName,
+          approvedAt
+        } as unknown as Prisma.InputJsonValue;
+        const certificate = await tx.reviewCertificate.upsert({
+          where: { reviewCaseId },
+          create: {
+            id: `review-certificate-${reviewCaseId}`,
+            reviewCaseId,
+            certificateNumber,
+            body: input.body,
+            metadata,
+            issuedByUserId: scope.actorUserId,
+            issuedByName: scope.actorUserName ?? null
+          },
+          update: {
+            body: input.body,
+            metadata,
+            issuedByUserId: scope.actorUserId,
+            issuedByName: scope.actorUserName ?? null
+          }
+        });
+
+        return toReviewCertificate(certificate);
+      });
+    },
+
+    async getReviewCertificate(scope, reviewCaseId): Promise<ReviewCertificate | undefined> {
+      const certificate = await prisma.reviewCertificate.findFirst({
+        where: {
+          reviewCaseId,
+          reviewCase: { ...reviewCaseScopeWhere(scope) }
+        }
+      });
+
+      return certificate ? toReviewCertificate(certificate) : undefined;
     },
 
     async deleteReviewCase(scope, reviewCaseId) {

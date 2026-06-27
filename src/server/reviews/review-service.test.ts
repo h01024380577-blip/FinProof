@@ -89,6 +89,17 @@ describe("review service", () => {
       "view_audit"
     ]);
     expect(availableActionsFor("reviewer", "change_requested")).toEqual(["view_audit"]);
+    expect(availableActionsFor("requester", "analysis_failed")).toEqual([]);
+    expect(availableActionsFor("reviewer", "analysis_failed")).toEqual([
+      "start_analysis",
+      "open_workbench",
+      "view_audit"
+    ]);
+    expect(availableActionsFor("compliance_admin", "analysis_failed")).toEqual([
+      "start_analysis",
+      "open_workbench",
+      "view_audit"
+    ]);
   });
 
   it("returns not-started analysis status before a job exists", async () => {

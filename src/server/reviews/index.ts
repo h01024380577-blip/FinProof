@@ -45,11 +45,15 @@ export type {
   CreateDraftVersionInput,
   CreateKnowledgeDocumentChunkInput,
   CreateKnowledgeDocumentInput,
+  CreateManualIssueInput,
   CreateRegulatoryChangeSetInput,
   CreateRegulatorySnapshotInput,
   CreateRegulatorySourceInput,
   CreateReviewReportInput,
   CreateReviewCaseResult,
+  CreateReviewCaseRevisionInput,
+  FinalReviewStatus,
+  IssueReviewCertificateInput,
   ListIssuesOptions,
   ListReviewSummariesOptions,
   KnowledgeEvidenceSearchInput,
@@ -57,6 +61,7 @@ export type {
   ReviewSummaryPage,
   ReviewStoreScope,
   ReviewStore,
-  SaveIssueDecisionInput
+  SaveIssueDecisionInput,
+  UpdateReviewStatusOptions
 } from "./review-store";
 export { createMockReviewStore, createPrismaReviewStore };

@@ -42,7 +42,8 @@ const review: ReviewCase = {
     }
   ],
   issues: [],
-  expectedDraft: "검토 필요"
+  expectedDraft: "검토 필요",
+  currentVersion: 1
 };
 
 describe("review analysis pipeline", () => {

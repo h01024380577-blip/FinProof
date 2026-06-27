@@ -1144,6 +1144,153 @@ describe("ReviewDetailWorkspace", () => {
     });
     expect(screen.queryByText(/저장된 판단/)).not.toBeInTheDocument();
   });
+
+  it("adds a manual issue from the direct-review workbench", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        issue: {
+          id: "issue-manual-1",
+          issueType: "manual",
+          riskLevel: "high",
+          title: "직접 추가한 이슈",
+          targetText: "누구나 즉시 승인",
+          targetBbox: [0, 0, 0, 0],
+          sourceAgents: ["manual"],
+          suggestedAction: "reject",
+          status: "open",
+          description: "근거 없는 단정 표현",
+          suggestedCopy: "",
+          evidence: []
+        }
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const base = getReviewCaseById("rc-demo-deposit-001")!;
+    render(
+      <ReviewDetailWorkspace review={{ ...base, status: "analysis_complete", issues: [], files: [] }} />
+    );
+
+    await user.click(screen.getByRole("button", { name: "이슈 직접 추가" }));
+    await user.type(screen.getByLabelText("이슈 제목"), "직접 추가한 이슈");
+    await user.selectOptions(screen.getByLabelText("이슈 위험도"), "high");
+    await user.selectOptions(screen.getByLabelText("제안 조치"), "reject");
+    await user.click(screen.getByRole("button", { name: "이슈 추가" }));
+
+    expect(await screen.findByRole("button", { name: /직접 추가한 이슈/ })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/issues",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          title: "직접 추가한 이슈",
+          riskLevel: "high",
+          suggestedAction: "reject"
+        })
+      })
+    );
+  });
+
+  it("shows the AI-failure banner with the failure reason and retries analysis", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: "failed", errorMessage: "OCR 단계에서 시간 초과" })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ status: "analysis_queued" })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const base = getReviewCaseById("rc-demo-deposit-001")!;
+    render(
+      <ReviewDetailWorkspace review={{ ...base, status: "analysis_failed", issues: [], files: [] }} />
+    );
+
+    expect(screen.getByText("AI 분석 실패 — 직접검토 모드")).toBeInTheDocument();
+    expect(await screen.findByText("OCR 단계에서 시간 초과")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "AI 분석 재시도" }));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/analysis/status",
+      expect.objectContaining({
+        headers: expect.objectContaining({ "x-finproof-role": "reviewer" })
+      })
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-demo-deposit-001/analysis/start",
+      expect.objectContaining({ method: "POST" })
+    );
+    await waitFor(() => {
+      expect(screen.queryByText("AI 분석 실패 — 직접검토 모드")).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders a read-only snapshot when a past review version is selected", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        currentVersion: 2,
+        versions: [
+          {
+            id: "rv-1",
+            reviewCaseId: "rc-demo-deposit-001",
+            versionNumber: 1,
+            status: "change_requested",
+            reviewerComment: "1회차 수정 코멘트",
+            opinionDraft: "1회차 의견서 본문",
+            issuesSnapshot: [
+              {
+                id: "issue-v1-1",
+                issueType: "claim",
+                riskLevel: "high",
+                title: "1회차 지적 이슈",
+                targetText: "최고 연 5.0% 적금!",
+                targetBbox: [0, 0, 0, 0],
+                sourceAgents: ["compliance-lead"],
+                suggestedAction: "change_request",
+                status: "open",
+                description: "설명",
+                suggestedCopy: "수정 문구",
+                evidence: []
+              }
+            ],
+            filesSnapshot: [
+              { id: "f-v1", name: "v1-poster.png", fileType: "promotional_creative" }
+            ],
+            decidedByUserId: "user-reviewer-demo",
+            decidedByName: "박심의",
+            decidedAt: "2026-06-20T01:00:00.000Z",
+            createdAt: "2026-06-20T01:00:00.000Z"
+          }
+        ]
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const base = getReviewCaseById("rc-demo-deposit-001")!;
+    render(<ReviewDetailWorkspace review={{ ...base, currentVersion: 2, files: [] }} />);
+
+    expect(screen.getByRole("group", { name: "심의 버전 선택" })).toBeInTheDocument();
+    expect(screen.getByText(/이슈 목록/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "v1" }));
+
+    expect(await screen.findByText("1회차 심의 결과")).toBeInTheDocument();
+    expect(screen.getByText("1회차 수정 코멘트")).toBeInTheDocument();
+    expect(screen.getByText("1회차 의견서 본문")).toBeInTheDocument();
+    expect(screen.getByText("1회차 지적 이슈")).toBeInTheDocument();
+    expect(screen.getByText("v1-poster.png")).toBeInTheDocument();
+    expect(screen.queryByText(/이슈 목록 \(/)).not.toBeInTheDocument();
+  });
 });
 
 describe("ReviewDetailWorkspace tab URL sync", () => {

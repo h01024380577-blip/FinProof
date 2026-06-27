@@ -36,8 +36,13 @@ function isFinalizedHistoryStatus(status: ReviewCase["status"]): boolean {
 }
 
 function fallbackActionsFor(role: RoleId, status: ReviewCase["status"]): ReviewAction[] {
-  if (status === "analysis_waiting" && (role === "reviewer" || role === "compliance_admin")) {
-    return ["start_analysis"];
+  if (
+    (status === "analysis_waiting" || status === "analysis_failed") &&
+    (role === "reviewer" || role === "compliance_admin")
+  ) {
+    return status === "analysis_failed"
+      ? ["start_analysis", "open_workbench", "view_audit"]
+      : ["start_analysis"];
   }
   if (canOpenWorkbench(status)) {
     return status === "analysis_complete" ? ["open_workbench", "view_audit"] : ["view_audit"];
@@ -67,9 +72,11 @@ export type QueueTableProps = {
   emptyMessage?: string;
   canDeleteReviewHistory?: boolean;
   deletingReviewHistoryIds?: string[];
+  canIssueCertificate?: boolean;
   loggedInUser?: { name: string } | null;
   onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
   onDeleteReviewHistory?: (review: ReviewSummary) => void;
+  onIssueCertificate?: (review: ReviewSummary) => void;
   onStartAnalysis: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
@@ -161,9 +168,11 @@ export function QueueTable({
   emptyMessage,
   canDeleteReviewHistory = false,
   deletingReviewHistoryIds = [],
+  canIssueCertificate = false,
   loggedInUser,
   onSaveReviewer,
   onDeleteReviewHistory,
+  onIssueCertificate,
   onStartAnalysis,
   onOpenReview
 }: QueueTableProps): JSX.Element {
@@ -227,16 +236,31 @@ export function QueueTable({
 
       {rows.map((review) => {
         const waiting = isAnalysisWaiting(review.status);
+        const failedStatus = review.status === "analysis_failed";
         const analysisState = analysisStates[review.id];
         const rowActions = actionsFor(review, activeRole);
         const canStart = rowActions.includes("start_analysis");
         const canOpen = rowActions.includes("open_workbench");
         const canViewAudit = rowActions.includes("view_audit");
         const openable = canOpen || canViewAudit;
-        const analysisFailed = waiting && analysisState?.status === "failed";
-        const analysisFailureText = analysisFailed
-          ? `분석 실패${analysisState.errorMessage ? `: ${analysisState.errorMessage}` : ""}`
+        const activelyAnalyzing =
+          activeAnalysisId === review.id ||
+          analysisState?.status === "queued" ||
+          analysisState?.status === "running" ||
+          review.status === "analysis_queued";
+        const analysisFailed =
+          !activelyAnalyzing && (failedStatus || analysisState?.status === "failed");
+        const analysisFailureText = analysisState?.errorMessage
+          ? `분석 실패: ${analysisState.errorMessage}`
           : "";
+        // analysis_failed surfaces all three actions (재시도 + 직접검토 + 상세보기); a still-waiting
+        // row that the poller marked failed keeps only the retry affordance.
+        const showStartButton = waiting || failedStatus;
+        const showWorkbench = canOpen && (review.status === "analysis_complete" || failedStatus);
+        const showAudit = !waiting && canViewAudit && review.status !== "analysis_complete";
+        const showStatusNote = !waiting && !openable;
+        const showCertificate =
+          canIssueCertificate && review.status === "approved" && Boolean(onIssueCertificate);
         const canDelete =
           canDeleteReviewHistory &&
           isFinalizedHistoryStatus(review.status) &&
@@ -283,27 +307,19 @@ export function QueueTable({
               role="cell"
               onClick={(event) => event.stopPropagation()}
             >
-              {waiting ? (
+              {showStartButton ? (
                 <button
                   className="button button--small queue-row-action-button"
                   type="button"
-                  disabled={
-                    !canStart ||
-                    activeAnalysisId === review.id ||
-                    analysisState?.status === "queued" ||
-                    analysisState?.status === "running"
-                  }
+                  disabled={!canStart || activelyAnalyzing}
                   onClick={() => onStartAnalysis(review)}
                 >
-                  {analysisState?.status === "failed" ? (
+                  {analysisFailed ? (
                     <>
                       <PlayCircle size={15} aria-hidden="true" />
                       AI 분석 재시도
                     </>
-                  ) : activeAnalysisId === review.id ||
-                    analysisState?.status === "queued" ||
-                    analysisState?.status === "running" ||
-                    review.status === "analysis_queued" ? (
+                  ) : activelyAnalyzing ? (
                     <>
                       <Loader2 className="action-spinner" size={15} aria-hidden="true" />
                       {analysisState?.status === "queued" ? "대기중" : "분석중"}
@@ -316,7 +332,7 @@ export function QueueTable({
                   )}
                 </button>
               ) : null}
-              {analysisFailed ? (
+              {analysisFailed && analysisFailureText ? (
                 <span
                   className="queue-row-note queue-row-note--analysis-error"
                   title={analysisFailureText}
@@ -325,16 +341,16 @@ export function QueueTable({
                   {analysisFailureText}
                 </span>
               ) : null}
-              {!waiting && review.status === "analysis_complete" ? (
+              {showWorkbench ? (
                 <button
                   className="button button--small button--primary queue-row-action-button"
                   type="button"
                   onClick={() => handleOpenReviewClick(review)}
                 >
-                  검토하기
+                  {failedStatus ? "직접검토" : "검토하기"}
                 </button>
               ) : null}
-              {!waiting && canViewAudit && review.status !== "analysis_complete" ? (
+              {showAudit ? (
                 <button
                   className="button button--small queue-row-action-button"
                   type="button"
@@ -343,7 +359,16 @@ export function QueueTable({
                   상세보기
                 </button>
               ) : null}
-              {!waiting && !openable ? (
+              {showCertificate ? (
+                <button
+                  className="button button--small queue-row-action-button"
+                  type="button"
+                  onClick={() => onIssueCertificate?.(review)}
+                >
+                  심의필
+                </button>
+              ) : null}
+              {showStatusNote ? (
                 <span className="queue-row-note">{statusLabels[review.status]}</span>
               ) : null}
               {canDelete ? (

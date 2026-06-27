@@ -55,6 +55,8 @@ export const ModelName = {
   Affiliate: 'Affiliate',
   User: 'User',
   ReviewCase: 'ReviewCase',
+  ReviewVersion: 'ReviewVersion',
+  ReviewCertificate: 'ReviewCertificate',
   ReviewFile: 'ReviewFile',
   ReviewIssue: 'ReviewIssue',
   Evidence: 'Evidence',
@@ -148,6 +150,7 @@ export const ReviewCaseScalarFieldEnum = {
   expectedDraft: 'expectedDraft',
   currentDraft: 'currentDraft',
   currentDraftVersion: 'currentDraftVersion',
+  currentVersion: 'currentVersion',
   analysisNotice: 'analysisNotice',
   submittedAt: 'submittedAt',
   analysisStartedAt: 'analysisStartedAt',
@@ -158,6 +161,40 @@ export const ReviewCaseScalarFieldEnum = {
 } as const
 
 export type ReviewCaseScalarFieldEnum = (typeof ReviewCaseScalarFieldEnum)[keyof typeof ReviewCaseScalarFieldEnum]
+
+
+export const ReviewVersionScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  versionNumber: 'versionNumber',
+  status: 'status',
+  reviewerComment: 'reviewerComment',
+  opinionDraft: 'opinionDraft',
+  issuesSnapshot: 'issuesSnapshot',
+  filesSnapshot: 'filesSnapshot',
+  decidedByUserId: 'decidedByUserId',
+  decidedByName: 'decidedByName',
+  decidedAt: 'decidedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ReviewVersionScalarFieldEnum = (typeof ReviewVersionScalarFieldEnum)[keyof typeof ReviewVersionScalarFieldEnum]
+
+
+export const ReviewCertificateScalarFieldEnum = {
+  id: 'id',
+  reviewCaseId: 'reviewCaseId',
+  certificateNumber: 'certificateNumber',
+  body: 'body',
+  metadata: 'metadata',
+  issuedByUserId: 'issuedByUserId',
+  issuedByName: 'issuedByName',
+  issuedAt: 'issuedAt',
+  updatedAt: 'updatedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type ReviewCertificateScalarFieldEnum = (typeof ReviewCertificateScalarFieldEnum)[keyof typeof ReviewCertificateScalarFieldEnum]
 
 
 export const ReviewFileScalarFieldEnum = {
