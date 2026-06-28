@@ -287,6 +287,16 @@ describe("review service", () => {
               }
             ]
           };
+        },
+        async extractOnly({ review }) {
+          return review.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "최고 연 5.0% 우대금리 조건 추출",
+            confidence: 0.92,
+            provider: "fixture-ocr"
+          }));
         }
       }
     });
@@ -357,6 +367,16 @@ describe("review service", () => {
               }
             ]
           };
+        },
+        async extractOnly({ review }) {
+          return review.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "최고 연 5.0% 금리를 누구나 받을 수 있는 적금 상품입니다.",
+            confidence: 0.93,
+            provider: "fixture-ocr"
+          }));
         }
       }
     });

@@ -27,6 +27,7 @@ enum ReviewStatus {
   analysis_in_progress
   analysis_complete
   analysis_failed
+  re_review_pending
   under_review
   change_requested
   rejected
@@ -330,6 +331,7 @@ model ReviewVersion {
   opinionDraft    String?      @map("opinion_draft")
   issuesSnapshot  Json         @map("issues_snapshot")
   filesSnapshot   Json         @map("files_snapshot")
+  documentsSnapshot Json?      @map("documents_snapshot")
   decidedByUserId String       @map("decided_by_user_id")
   decidedByName   String?      @map("decided_by_name")
   decidedAt       DateTime     @map("decided_at")
@@ -346,6 +348,9 @@ model ReviewCertificate {
   reviewCaseId      String     @unique @map("review_case_id")
   certificateNumber String     @map("certificate_number")
   body              String
+  validFrom         String?    @map("valid_from")
+  validUntil        String?    @map("valid_until")
+  remarks           String?
   metadata          Json
   issuedByUserId    String     @map("issued_by_user_id")
   issuedByName      String?    @map("issued_by_name")

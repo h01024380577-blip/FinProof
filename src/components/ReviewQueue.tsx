@@ -51,6 +51,12 @@ function fallbackActionsFor(
       : (["start_analysis"] as const);
   }
   if (
+    status === "re_review_pending" &&
+    (role === "reviewer" || role === "compliance_admin")
+  ) {
+    return ["open_workbench", "view_audit"] as const;
+  }
+  if (
     status === "analysis_complete" ||
     status === "under_review" ||
     status === "change_requested" ||

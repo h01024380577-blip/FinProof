@@ -48,6 +48,7 @@ export const statusLabels: Record<ReviewCase["status"], string> = {
   analysis_in_progress: "AI 분석 중",
   analysis_complete: "AI 분석 완료",
   analysis_failed: "분석 실패",
+  re_review_pending: "재검토 대기",
   under_review: "심의 중",
   change_requested: "수정 요청",
   rejected: "반려",

@@ -69,6 +69,7 @@ export type ReviewVersionCountAggregateOutputType = {
   opinionDraft: number
   issuesSnapshot: number
   filesSnapshot: number
+  documentsSnapshot: number
   decidedByUserId: number
   decidedByName: number
   decidedAt: number
@@ -120,6 +121,7 @@ export type ReviewVersionCountAggregateInputType = {
   opinionDraft?: true
   issuesSnapshot?: true
   filesSnapshot?: true
+  documentsSnapshot?: true
   decidedByUserId?: true
   decidedByName?: true
   decidedAt?: true
@@ -222,6 +224,7 @@ export type ReviewVersionGroupByOutputType = {
   opinionDraft: string | null
   issuesSnapshot: runtime.JsonValue
   filesSnapshot: runtime.JsonValue
+  documentsSnapshot: runtime.JsonValue | null
   decidedByUserId: string
   decidedByName: string | null
   decidedAt: Date
@@ -260,6 +263,7 @@ export type ReviewVersionWhereInput = {
   opinionDraft?: Prisma.StringNullableFilter<"ReviewVersion"> | string | null
   issuesSnapshot?: Prisma.JsonFilter<"ReviewVersion">
   filesSnapshot?: Prisma.JsonFilter<"ReviewVersion">
+  documentsSnapshot?: Prisma.JsonNullableFilter<"ReviewVersion">
   decidedByUserId?: Prisma.StringFilter<"ReviewVersion"> | string
   decidedByName?: Prisma.StringNullableFilter<"ReviewVersion"> | string | null
   decidedAt?: Prisma.DateTimeFilter<"ReviewVersion"> | Date | string
@@ -276,6 +280,7 @@ export type ReviewVersionOrderByWithRelationInput = {
   opinionDraft?: Prisma.SortOrderInput | Prisma.SortOrder
   issuesSnapshot?: Prisma.SortOrder
   filesSnapshot?: Prisma.SortOrder
+  documentsSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   decidedByUserId?: Prisma.SortOrder
   decidedByName?: Prisma.SortOrderInput | Prisma.SortOrder
   decidedAt?: Prisma.SortOrder
@@ -296,6 +301,7 @@ export type ReviewVersionWhereUniqueInput = Prisma.AtLeast<{
   opinionDraft?: Prisma.StringNullableFilter<"ReviewVersion"> | string | null
   issuesSnapshot?: Prisma.JsonFilter<"ReviewVersion">
   filesSnapshot?: Prisma.JsonFilter<"ReviewVersion">
+  documentsSnapshot?: Prisma.JsonNullableFilter<"ReviewVersion">
   decidedByUserId?: Prisma.StringFilter<"ReviewVersion"> | string
   decidedByName?: Prisma.StringNullableFilter<"ReviewVersion"> | string | null
   decidedAt?: Prisma.DateTimeFilter<"ReviewVersion"> | Date | string
@@ -312,6 +318,7 @@ export type ReviewVersionOrderByWithAggregationInput = {
   opinionDraft?: Prisma.SortOrderInput | Prisma.SortOrder
   issuesSnapshot?: Prisma.SortOrder
   filesSnapshot?: Prisma.SortOrder
+  documentsSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   decidedByUserId?: Prisma.SortOrder
   decidedByName?: Prisma.SortOrderInput | Prisma.SortOrder
   decidedAt?: Prisma.SortOrder
@@ -335,6 +342,7 @@ export type ReviewVersionScalarWhereWithAggregatesInput = {
   opinionDraft?: Prisma.StringNullableWithAggregatesFilter<"ReviewVersion"> | string | null
   issuesSnapshot?: Prisma.JsonWithAggregatesFilter<"ReviewVersion">
   filesSnapshot?: Prisma.JsonWithAggregatesFilter<"ReviewVersion">
+  documentsSnapshot?: Prisma.JsonNullableWithAggregatesFilter<"ReviewVersion">
   decidedByUserId?: Prisma.StringWithAggregatesFilter<"ReviewVersion"> | string
   decidedByName?: Prisma.StringNullableWithAggregatesFilter<"ReviewVersion"> | string | null
   decidedAt?: Prisma.DateTimeWithAggregatesFilter<"ReviewVersion"> | Date | string
@@ -349,6 +357,7 @@ export type ReviewVersionCreateInput = {
   opinionDraft?: string | null
   issuesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId: string
   decidedByName?: string | null
   decidedAt: Date | string
@@ -365,6 +374,7 @@ export type ReviewVersionUncheckedCreateInput = {
   opinionDraft?: string | null
   issuesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId: string
   decidedByName?: string | null
   decidedAt: Date | string
@@ -379,6 +389,7 @@ export type ReviewVersionUpdateInput = {
   opinionDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   decidedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   decidedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -395,6 +406,7 @@ export type ReviewVersionUncheckedUpdateInput = {
   opinionDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   decidedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   decidedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -410,6 +422,7 @@ export type ReviewVersionCreateManyInput = {
   opinionDraft?: string | null
   issuesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId: string
   decidedByName?: string | null
   decidedAt: Date | string
@@ -424,6 +437,7 @@ export type ReviewVersionUpdateManyMutationInput = {
   opinionDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   decidedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   decidedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -439,6 +453,7 @@ export type ReviewVersionUncheckedUpdateManyInput = {
   opinionDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   decidedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   decidedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -469,6 +484,7 @@ export type ReviewVersionCountOrderByAggregateInput = {
   opinionDraft?: Prisma.SortOrder
   issuesSnapshot?: Prisma.SortOrder
   filesSnapshot?: Prisma.SortOrder
+  documentsSnapshot?: Prisma.SortOrder
   decidedByUserId?: Prisma.SortOrder
   decidedByName?: Prisma.SortOrder
   decidedAt?: Prisma.SortOrder
@@ -559,6 +575,7 @@ export type ReviewVersionCreateWithoutReviewCaseInput = {
   opinionDraft?: string | null
   issuesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId: string
   decidedByName?: string | null
   decidedAt: Date | string
@@ -573,6 +590,7 @@ export type ReviewVersionUncheckedCreateWithoutReviewCaseInput = {
   opinionDraft?: string | null
   issuesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId: string
   decidedByName?: string | null
   decidedAt: Date | string
@@ -617,6 +635,7 @@ export type ReviewVersionScalarWhereInput = {
   opinionDraft?: Prisma.StringNullableFilter<"ReviewVersion"> | string | null
   issuesSnapshot?: Prisma.JsonFilter<"ReviewVersion">
   filesSnapshot?: Prisma.JsonFilter<"ReviewVersion">
+  documentsSnapshot?: Prisma.JsonNullableFilter<"ReviewVersion">
   decidedByUserId?: Prisma.StringFilter<"ReviewVersion"> | string
   decidedByName?: Prisma.StringNullableFilter<"ReviewVersion"> | string | null
   decidedAt?: Prisma.DateTimeFilter<"ReviewVersion"> | Date | string
@@ -631,6 +650,7 @@ export type ReviewVersionCreateManyReviewCaseInput = {
   opinionDraft?: string | null
   issuesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId: string
   decidedByName?: string | null
   decidedAt: Date | string
@@ -645,6 +665,7 @@ export type ReviewVersionUpdateWithoutReviewCaseInput = {
   opinionDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   decidedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   decidedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -659,6 +680,7 @@ export type ReviewVersionUncheckedUpdateWithoutReviewCaseInput = {
   opinionDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   decidedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   decidedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -673,6 +695,7 @@ export type ReviewVersionUncheckedUpdateManyWithoutReviewCaseInput = {
   opinionDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   issuesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   filesSnapshot?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  documentsSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   decidedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   decidedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   decidedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -690,6 +713,7 @@ export type ReviewVersionSelect<ExtArgs extends runtime.Types.Extensions.Interna
   opinionDraft?: boolean
   issuesSnapshot?: boolean
   filesSnapshot?: boolean
+  documentsSnapshot?: boolean
   decidedByUserId?: boolean
   decidedByName?: boolean
   decidedAt?: boolean
@@ -706,6 +730,7 @@ export type ReviewVersionSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   opinionDraft?: boolean
   issuesSnapshot?: boolean
   filesSnapshot?: boolean
+  documentsSnapshot?: boolean
   decidedByUserId?: boolean
   decidedByName?: boolean
   decidedAt?: boolean
@@ -722,6 +747,7 @@ export type ReviewVersionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   opinionDraft?: boolean
   issuesSnapshot?: boolean
   filesSnapshot?: boolean
+  documentsSnapshot?: boolean
   decidedByUserId?: boolean
   decidedByName?: boolean
   decidedAt?: boolean
@@ -738,13 +764,14 @@ export type ReviewVersionSelectScalar = {
   opinionDraft?: boolean
   issuesSnapshot?: boolean
   filesSnapshot?: boolean
+  documentsSnapshot?: boolean
   decidedByUserId?: boolean
   decidedByName?: boolean
   decidedAt?: boolean
   createdAt?: boolean
 }
 
-export type ReviewVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "reviewCaseId" | "versionNumber" | "status" | "reviewerComment" | "opinionDraft" | "issuesSnapshot" | "filesSnapshot" | "decidedByUserId" | "decidedByName" | "decidedAt" | "createdAt", ExtArgs["result"]["reviewVersion"]>
+export type ReviewVersionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "reviewCaseId" | "versionNumber" | "status" | "reviewerComment" | "opinionDraft" | "issuesSnapshot" | "filesSnapshot" | "documentsSnapshot" | "decidedByUserId" | "decidedByName" | "decidedAt" | "createdAt", ExtArgs["result"]["reviewVersion"]>
 export type ReviewVersionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
 }
@@ -769,6 +796,7 @@ export type $ReviewVersionPayload<ExtArgs extends runtime.Types.Extensions.Inter
     opinionDraft: string | null
     issuesSnapshot: runtime.JsonValue
     filesSnapshot: runtime.JsonValue
+    documentsSnapshot: runtime.JsonValue | null
     decidedByUserId: string
     decidedByName: string | null
     decidedAt: Date
@@ -1205,6 +1233,7 @@ export interface ReviewVersionFieldRefs {
   readonly opinionDraft: Prisma.FieldRef<"ReviewVersion", 'String'>
   readonly issuesSnapshot: Prisma.FieldRef<"ReviewVersion", 'Json'>
   readonly filesSnapshot: Prisma.FieldRef<"ReviewVersion", 'Json'>
+  readonly documentsSnapshot: Prisma.FieldRef<"ReviewVersion", 'Json'>
   readonly decidedByUserId: Prisma.FieldRef<"ReviewVersion", 'String'>
   readonly decidedByName: Prisma.FieldRef<"ReviewVersion", 'String'>
   readonly decidedAt: Prisma.FieldRef<"ReviewVersion", 'DateTime'>

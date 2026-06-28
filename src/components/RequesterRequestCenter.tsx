@@ -513,6 +513,14 @@ function deriveStage(status: ReviewStatus): StageInfo {
         stageLabel: "심의 진행 중",
         note: "심의자가 검토하고 있어요."
       };
+    case "re_review_pending":
+      return {
+        currentIndex: 1,
+        isFinal: false,
+        outcome: null,
+        stageLabel: "재검토 진행 중",
+        note: "수정본이 접수되어 심의자가 재검토하고 있어요."
+      };
     case "approved":
       return {
         currentIndex: 2,

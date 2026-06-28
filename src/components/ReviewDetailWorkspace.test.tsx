@@ -917,7 +917,7 @@ describe("ReviewDetailWorkspace", () => {
     expect(
       await screen.findByRole("heading", { name: "심의 완료 증명서" })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("심의 의견 본문")).toBeInTheDocument();
+    expect(screen.getByLabelText("심의 의견")).toBeInTheDocument();
     expect(
       screen.getByText(
         "승인 후 심의필을 발급할 수 있습니다. (승인 시 작성한 내용이 자동 발급됩니다.)"
@@ -975,7 +975,8 @@ describe("ReviewDetailWorkspace", () => {
     render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
 
     await user.click(screen.getByRole("tab", { name: "심의필" }));
-    changeTextField("심의 의견 본문", "심의필 본문");
+    changeTextField("심의 의견", "심의필 본문");
+    changeTextField("심의필 번호", "2026-0628-001");
 
     await user.click(screen.getByRole("button", { name: "승인" }));
 
@@ -984,13 +985,18 @@ describe("ReviewDetailWorkspace", () => {
     );
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/v1/review-cases/rc-demo-deposit-001/certificate",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ body: "심의필 본문" })
-        })
+      const certificatePostCall = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          typeof url === "string" &&
+          url.endsWith("/certificate") &&
+          (init as RequestInit | undefined)?.method === "POST"
       );
+      expect(certificatePostCall).toBeDefined();
+      const payload = JSON.parse((certificatePostCall![1] as RequestInit).body as string);
+      expect(payload).toMatchObject({
+        body: "심의필 본문",
+        certificateNumber: "2026-0628-001"
+      });
     });
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-deposit-001/finalize",

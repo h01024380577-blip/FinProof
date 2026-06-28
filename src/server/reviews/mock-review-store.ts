@@ -74,6 +74,8 @@ import type {
 } from "./review-store";
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
+const reReviewNotice =
+  "재업로드된 수정본입니다. AI 재분석 없이 직전 버전과 비교해 재검토하세요.";
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -398,10 +400,23 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     return new Date().toISOString();
   }
 
-  function certificateNumberFor(reviewCaseId: string, isoDate: string): string {
-    const year = new Date(isoDate).getUTCFullYear();
-
-    return `FP-${year}-${reviewCaseId.slice(-6).toUpperCase()}`;
+  function collectReviewDocumentExtractions(
+    review: ReviewCase
+  ): ReviewVersion["documentsSnapshot"] {
+    return review.files
+      .map((file) => {
+        const chunk = evidenceChunks.get(deterministicReviewFileChunkId(review.id, file.id));
+        if (!chunk || typeof chunk.chunkText !== "string") {
+          return undefined;
+        }
+        return {
+          fileId: file.id,
+          fileName: file.name,
+          fileType: file.fileType,
+          text: chunk.chunkText
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined);
   }
 
   function recordReviewVersionSnapshot(
@@ -429,6 +444,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         name: file.name,
         fileType: file.fileType
       })),
+      documentsSnapshot: collectReviewDocumentExtractions(review),
       decidedByUserId: scope.actorUserId,
       decidedByName: scope.actorUserName,
       decidedAt: now,
@@ -1558,7 +1574,8 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         currentDraftVersion: undefined,
         highestRiskLevel: "info",
         currentVersion: nextVersion,
-        status: "analysis_waiting",
+        status: "re_review_pending",
+        analysisNotice: reReviewNotice,
         missingMaterials: []
       };
 
@@ -1583,6 +1600,48 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       );
     },
 
+    async getReviewDocumentExtractions(scope, reviewCaseId) {
+      const review = cases.get(reviewCaseId);
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return [];
+      }
+      return clone(collectReviewDocumentExtractions(review) ?? []);
+    },
+
+    async replaceReviewDocumentExtractions(scope, reviewCaseId, documents) {
+      const review = cases.get(reviewCaseId);
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return;
+      }
+
+      const now = nowIso();
+      const reviewFileIds = new Set(review.files.map((file) => file.id));
+
+      for (const document of documents) {
+        if (!reviewFileIds.has(document.fileId)) {
+          continue;
+        }
+
+        const chunkId = deterministicReviewFileChunkId(reviewCaseId, document.fileId);
+        evidenceChunks.set(chunkId, {
+          id: chunkId,
+          tenantId: scope.tenantId,
+          reviewFileId: document.fileId,
+          chunkText: document.text,
+          chunkSummary: document.fileName,
+          embeddingModel: "deterministic",
+          embeddingId: `embedding-${chunkId}`,
+          metadata: {
+            source: "review_file",
+            provider: document.provider,
+            confidence: document.confidence,
+            ...(document.storageKey ? { storageKey: document.storageKey } : {})
+          },
+          createdAt: now
+        });
+      }
+    },
+
     async issueReviewCertificate(
       scope: ReviewStoreScope,
       reviewCaseId,
@@ -1600,9 +1659,11 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       const certificate: ReviewCertificate = {
         id: existing?.id ?? `review-certificate-${reviewCaseId}`,
         reviewCaseId,
-        certificateNumber:
-          existing?.certificateNumber ?? certificateNumberFor(reviewCaseId, approvedAt),
+        certificateNumber: input.certificateNumber,
         body: input.body,
+        validFrom: input.validFrom,
+        validUntil: input.validUntil,
+        remarks: input.remarks,
         metadata: {
           title: review.title,
           productType: review.productType,

@@ -14,6 +14,14 @@ import { createRegulatoryKnowledgeService } from "@/server/regulatory/regulatory
 import { expandArchiveUploads } from "@/server/storage/archive-extraction";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
 import type { KnowledgeDocument, ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
+import { buildRevisionDiff, type RevisionDiff } from "@/domain/revision-diff";
+
+export type RevisionDiffResult =
+  | { available: true; diff: RevisionDiff }
+  | {
+      available: false;
+      reason: "not_found" | "first_version" | "no_previous_snapshot";
+    };
 import { getReviewStore } from ".";
 import { StateConflictError } from "./route-utils";
 import type {
@@ -188,6 +196,11 @@ export function availableActionsFor(role: RoleId, status: ReviewStatus): ReviewA
 
   if (status === "analysis_failed" && (role === "reviewer" || role === "compliance_admin")) {
     return ["start_analysis", "open_workbench", "view_audit"];
+  }
+
+  // 재업로드된 수정본은 AI 재분석 없이 심의자가 바로 재검토(비교)한다.
+  if (status === "re_review_pending" && (role === "reviewer" || role === "compliance_admin")) {
+    return ["open_workbench", "view_audit"];
   }
 
   if (status === "analysis_complete") {
@@ -677,6 +690,17 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       const updated = await store.createReviewCaseRevision(scope, reviewCaseId, { files });
 
       if (updated) {
+        // AI 이슈탐지는 건너뛰되, 직전 버전과의 변경분석(diff)에 쓸 OCR 추출 텍스트만 확보한다.
+        // 추출 실패는 재업로드 자체를 막지 않는다(비교만 비활성화됨).
+        try {
+          const extractedDocuments = await analysisPipeline.extractOnly({ review: updated, scope });
+          await store.replaceReviewDocumentExtractions(scope, reviewCaseId, extractedDocuments);
+        } catch (error) {
+          console.error(
+            `Revision text extraction failed for ${reviewCaseId}: ${errorMessage(error)}`
+          );
+        }
+
         await store.recordAuditEvent(scope, {
           action: "review_case.revision_uploaded",
           targetType: "review_case",
@@ -695,6 +719,46 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
 
     async listReviewVersions(context: RequestContext, reviewCaseId: string) {
       return store.listReviewVersions(scopeFromContext(context), reviewCaseId);
+    },
+
+    async getRevisionDiff(
+      context: RequestContext,
+      reviewCaseId: string
+    ): Promise<RevisionDiffResult> {
+      requireRole(context, ["reviewer", "compliance_admin"], "view revision diff");
+
+      const scope = scopeFromContext(context);
+      const review = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!review) {
+        return { available: false, reason: "not_found" };
+      }
+      if (review.currentVersion <= 1) {
+        return { available: false, reason: "first_version" };
+      }
+
+      const versions = await store.listReviewVersions(scope, reviewCaseId);
+      const previous = versions.find(
+        (version) => version.versionNumber === review.currentVersion - 1
+      );
+      const previousDocuments = previous?.documentsSnapshot ?? [];
+
+      // 이 기능 배포 이전에 반려된 회차는 텍스트 스냅샷이 없어 비교 기준이 없다.
+      if (previousDocuments.length === 0) {
+        return { available: false, reason: "no_previous_snapshot" };
+      }
+
+      const currentDocuments = await store.getReviewDocumentExtractions(scope, reviewCaseId);
+
+      return {
+        available: true,
+        diff: buildRevisionDiff(
+          previousDocuments,
+          currentDocuments,
+          review.currentVersion - 1,
+          review.currentVersion
+        )
+      };
     },
 
     async issueReviewCertificate(

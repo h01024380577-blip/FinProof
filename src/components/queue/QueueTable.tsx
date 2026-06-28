@@ -39,6 +39,7 @@ function isAnalysisWaiting(status: ReviewCase["status"]): boolean {
 function canOpenWorkbench(status: ReviewCase["status"]): boolean {
   return (
     status === "analysis_complete" ||
+    status === "re_review_pending" ||
     status === "under_review" ||
     status === "change_requested" ||
     status === "rejected" ||
@@ -59,6 +60,12 @@ function fallbackActionsFor(role: RoleId, status: ReviewCase["status"]): ReviewA
     return status === "analysis_failed"
       ? ["start_analysis", "open_workbench", "view_audit"]
       : ["start_analysis"];
+  }
+  if (
+    status === "re_review_pending" &&
+    (role === "reviewer" || role === "compliance_admin")
+  ) {
+    return ["open_workbench", "view_audit"];
   }
   if (canOpenWorkbench(status)) {
     return status === "analysis_complete" ? ["open_workbench", "view_audit"] : ["view_audit"];
@@ -392,7 +399,9 @@ export function QueueTable({
         // analysis_failed surfaces all three actions (재시도 + 직접검토 + 상세보기); a still-waiting
         // row that the poller marked failed keeps only the retry affordance.
         const showStartButton = waiting || failedStatus;
-        const showWorkbench = canOpen && (review.status === "analysis_complete" || failedStatus);
+        const isReReview = review.status === "re_review_pending";
+        const showWorkbench =
+          canOpen && (review.status === "analysis_complete" || failedStatus || isReReview);
         const showAudit = !waiting && canViewAudit && review.status !== "analysis_complete";
         const showStatusNote = !waiting && !openable;
         const canDelete =
@@ -493,7 +502,7 @@ export function QueueTable({
                   onClick={() => handleOpenReviewClick(review)}
                 >
                   <ClipboardCheck size={15} aria-hidden="true" />
-                  {failedStatus ? "직접검토" : "검토하기"}
+                  {failedStatus ? "직접검토" : isReReview ? "재검토하기" : "검토하기"}
                 </button>
               ) : null}
               {showAudit ? (

@@ -10,15 +10,30 @@ import {
 
 type IssueCertificateRequest = {
   body?: string;
+  certificateNumber?: string;
+  validFrom?: string;
+  validUntil?: string;
+  remarks?: string;
 };
 
 export async function POST(request: Request, context: RouteContext<{ caseId: string }>) {
   const { caseId } = await context.params;
   const payload = await readJsonBody<IssueCertificateRequest>(request);
   const body = typeof payload?.body === "string" ? payload.body.trim() : "";
+  const certificateNumber =
+    typeof payload?.certificateNumber === "string" ? payload.certificateNumber.trim() : "";
+  const validFrom =
+    typeof payload?.validFrom === "string" ? payload.validFrom.trim() : "";
+  const validUntil =
+    typeof payload?.validUntil === "string" ? payload.validUntil.trim() : "";
+  const remarks = typeof payload?.remarks === "string" ? payload.remarks.trim() : "";
 
   if (!body) {
     return jsonError("body is required", 400);
+  }
+
+  if (!certificateNumber) {
+    return jsonError("certificateNumber is required", 400);
   }
 
   let certificate;
@@ -27,7 +42,13 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
     certificate = await createReviewService().issueReviewCertificate(
       await requestContext(request),
       caseId,
-      { body }
+      {
+        body,
+        certificateNumber,
+        validFrom: validFrom || undefined,
+        validUntil: validUntil || undefined,
+        remarks: remarks || undefined
+      }
     );
   } catch (error) {
     return jsonRouteError(error);

@@ -8,6 +8,7 @@ import { filterMatchedEvidence } from "@/domain/evidence";
 import { getRequiredMaterialRows } from "@/domain/intake";
 import { generateReviewReport } from "@/domain/reports";
 import { classifyUploadFileWithConfidence } from "@/domain/upload-policy";
+import type { ReviewDocumentExtraction } from "@/domain/revision-diff";
 import type {
   ChatMessage,
   ChatSession,
@@ -95,6 +96,8 @@ const reviewInclude = {
 } as const;
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
+const reReviewNotice =
+  "재업로드된 수정본입니다. AI 재분석 없이 직전 버전과 비교해 재검토하세요.";
 
 const longWriteTransactionOptions = {
   maxWait: 10_000,
@@ -638,10 +641,6 @@ function demoUserEmailForActor(scope: ReviewStoreScope): string {
   return `${safeUserId || "requester"}@finproof.local`;
 }
 
-function certificateNumberFor(reviewCaseId: string, date: Date): string {
-  return `FP-${date.getUTCFullYear()}-${reviewCaseId.slice(-6).toUpperCase()}`;
-}
-
 async function recordReviewVersionSnapshot(
   tx: Prisma.TransactionClient,
   scope: ReviewStoreScope,
@@ -651,6 +650,31 @@ async function recordReviewVersionSnapshot(
   decidedAt: Date
 ): Promise<void> {
   const versionNumber = review.currentVersion;
+
+  // 재업로드 시 원본 파일/추출 텍스트가 삭제되므로, 다음 회차 변경분석(diff) 비교 기준으로
+  // 현재 문서들의 OCR 추출 텍스트를 스냅샷에 함께 보존한다.
+  const fileIds = review.files.map((file) => file.id);
+  const chunks = fileIds.length
+    ? await tx.evidenceChunk.findMany({
+        where: { reviewFileId: { in: fileIds } },
+        select: { reviewFileId: true, chunkText: true }
+      })
+    : [];
+  const chunkByFileId = new Map(
+    chunks
+      .filter((chunk) => chunk.reviewFileId !== null)
+      .map((chunk) => [chunk.reviewFileId as string, chunk.chunkText])
+  );
+  const documentsSnapshot = review.files
+    .map((file) => {
+      const text = chunkByFileId.get(file.id);
+      if (typeof text !== "string") {
+        return undefined;
+      }
+      return { fileId: file.id, fileName: file.name, fileType: file.fileType, text };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined);
+
   const data = {
     status,
     reviewerComment: reviewerComment ?? null,
@@ -661,6 +685,7 @@ async function recordReviewVersionSnapshot(
       name: file.name,
       fileType: file.fileType
     })) as unknown as Prisma.InputJsonValue,
+    documentsSnapshot: documentsSnapshot as unknown as Prisma.InputJsonValue,
     decidedByUserId: scope.actorUserId,
     decidedByName: scope.actorUserName ?? null,
     decidedAt
@@ -3041,7 +3066,7 @@ export function createPrismaReviewStore(): ReviewStore {
         const updated = await tx.reviewCase.update({
           where: { id: reviewCaseId },
           data: {
-            status: "analysis_waiting",
+            status: "re_review_pending",
             highestRiskLevel: "info",
             currentDraft: null,
             currentDraftVersion: 0,
@@ -3049,7 +3074,7 @@ export function createPrismaReviewStore(): ReviewStore {
             analysisStartedAt: null,
             analysisCompletedAt: null,
             finalDecisionAt: null,
-            analysisNotice: uploadAnalysisNotice,
+            analysisNotice: reReviewNotice,
             missingMaterials,
             files: { create: files }
           },
@@ -3076,6 +3101,89 @@ export function createPrismaReviewStore(): ReviewStore {
       });
 
       return rows.map(toReviewVersion);
+    },
+
+    async getReviewDocumentExtractions(scope, reviewCaseId) {
+      const review = await prisma.reviewCase.findFirst({
+        where: { id: reviewCaseId, ...reviewCaseScopeWhere(scope) },
+        select: { files: { select: { id: true, originalFilename: true, fileType: true } } }
+      });
+
+      if (!review) {
+        return [];
+      }
+
+      const fileIds = review.files.map((file) => file.id);
+      if (fileIds.length === 0) {
+        return [];
+      }
+
+      const chunks = await prisma.evidenceChunk.findMany({
+        where: { reviewFileId: { in: fileIds } },
+        select: { reviewFileId: true, chunkText: true }
+      });
+      const textByFileId = new Map(
+        chunks
+          .filter((chunk) => chunk.reviewFileId !== null)
+          .map((chunk) => [chunk.reviewFileId as string, chunk.chunkText])
+      );
+
+      return review.files
+        .map((file) => {
+          const text = textByFileId.get(file.id);
+          if (typeof text !== "string") {
+            return undefined;
+          }
+          return {
+            fileId: file.id,
+            fileName: file.originalFilename,
+            fileType: file.fileType as ReviewDocumentExtraction["fileType"],
+            text
+          };
+        })
+        .filter((entry): entry is ReviewDocumentExtraction => entry !== undefined);
+    },
+
+    async replaceReviewDocumentExtractions(scope, reviewCaseId, documents) {
+      const review = await prisma.reviewCase.findFirst({
+        where: { id: reviewCaseId, ...reviewCaseScopeWhere(scope) },
+        select: { files: { select: { id: true } } }
+      });
+
+      if (!review) {
+        return;
+      }
+
+      const reviewFileIds = new Set(review.files.map((file) => file.id));
+
+      await prisma.$transaction(async (tx) => {
+        for (const document of documents) {
+          if (!reviewFileIds.has(document.fileId)) {
+            continue;
+          }
+
+          const chunkId = chunkIdForReviewDocument(reviewCaseId, document.fileId);
+          const chunkData = {
+            reviewFileId: document.fileId,
+            chunkText: document.text,
+            chunkSummary: document.fileName,
+            embeddingModel: "deterministic",
+            embeddingId: `embedding-${chunkId}`,
+            metadata: {
+              source: "review_file",
+              provider: document.provider,
+              storageKey: document.storageKey,
+              confidence: document.confidence
+            } as Prisma.InputJsonValue
+          };
+
+          await tx.evidenceChunk.upsert({
+            where: { id: chunkId },
+            create: { id: chunkId, tenantId: scope.tenantId, ...chunkData },
+            update: chunkData
+          });
+        }
+      });
     },
 
     async issueReviewCertificate(
@@ -3108,9 +3216,7 @@ export function createPrismaReviewStore(): ReviewStore {
           ? toReviewCertificate(existing).metadata.approvedAt
           : "";
         const approvedAt = existingApprovedAt || (review.finalDecisionAt ?? now).toISOString();
-        const certificateNumber =
-          existing?.certificateNumber ??
-          certificateNumberFor(reviewCaseId, new Date(approvedAt));
+        const certificateNumber = input.certificateNumber;
         const metadata = {
           title: review.title,
           productType: review.productType,
@@ -3125,12 +3231,19 @@ export function createPrismaReviewStore(): ReviewStore {
             reviewCaseId,
             certificateNumber,
             body: input.body,
+            validFrom: input.validFrom ?? null,
+            validUntil: input.validUntil ?? null,
+            remarks: input.remarks ?? null,
             metadata,
             issuedByUserId: scope.actorUserId,
             issuedByName: scope.actorUserName ?? null
           },
           update: {
+            certificateNumber,
             body: input.body,
+            validFrom: input.validFrom ?? null,
+            validUntil: input.validUntil ?? null,
+            remarks: input.remarks ?? null,
             metadata,
             issuedByUserId: scope.actorUserId,
             issuedByName: scope.actorUserName ?? null

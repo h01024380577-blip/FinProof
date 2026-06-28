@@ -759,7 +759,7 @@ describe("mock review store", () => {
 
     expect(revised).toMatchObject({
       currentVersion: 2,
-      status: "analysis_waiting",
+      status: "re_review_pending",
       highestRiskLevel: "info",
       issues: []
     });
@@ -823,7 +823,7 @@ describe("mock review store", () => {
       files: [{ name: "v2.png", type: "image/png", size: 2048 }]
     });
 
-    expect(revised).toMatchObject({ currentVersion: 2, status: "analysis_waiting" });
+    expect(revised).toMatchObject({ currentVersion: 2, status: "re_review_pending" });
   });
 
   it("issues a stable review certificate and reads it back", async () => {
@@ -842,14 +842,20 @@ describe("mock review store", () => {
     await store.updateReviewStatus(scope, caseId, "approved");
 
     const certificate = await store.issueReviewCertificate(scope, caseId, {
-      body: "본 광고물은 승인 조건을 충족합니다."
+      body: "본 광고물은 승인 조건을 충족합니다.",
+      certificateNumber: "2026-0605-001",
+      validFrom: "2026-06-05",
+      validUntil: "2026-12-04",
+      remarks: "옥외 광고 전용"
     });
-    const expectedNumber = `FP-${new Date().getUTCFullYear()}-${caseId.slice(-6).toUpperCase()}`;
 
     expect(certificate).toMatchObject({
       reviewCaseId: caseId,
-      certificateNumber: expectedNumber,
+      certificateNumber: "2026-0605-001",
       body: "본 광고물은 승인 조건을 충족합니다.",
+      validFrom: "2026-06-05",
+      validUntil: "2026-12-04",
+      remarks: "옥외 광고 전용",
       metadata: expect.objectContaining({
         title: "심의필 케이스",
         productType: "deposit",
@@ -858,15 +864,120 @@ describe("mock review store", () => {
     });
 
     const reissued = await store.issueReviewCertificate(scope, caseId, {
-      body: "조건을 보완하여 재발급합니다."
+      body: "조건을 보완하여 재발급합니다.",
+      certificateNumber: "2026-0605-002",
+      validFrom: "2026-07-01",
+      validUntil: "2026-12-31",
+      remarks: "재발급분"
     });
 
-    expect(reissued?.certificateNumber).toBe(expectedNumber);
+    expect(reissued?.certificateNumber).toBe("2026-0605-002");
     expect(reissued?.body).toBe("조건을 보완하여 재발급합니다.");
+    expect(reissued?.validFrom).toBe("2026-07-01");
+    expect(reissued?.validUntil).toBe("2026-12-31");
+    expect(reissued?.remarks).toBe("재발급분");
 
     const fetched = await store.getReviewCertificate(scope, caseId);
 
     expect(fetched?.body).toBe("조건을 보완하여 재발급합니다.");
+    expect(fetched?.certificateNumber).toBe("2026-0605-002");
+    expect(fetched?.validFrom).toBe("2026-07-01");
+    expect(fetched?.validUntil).toBe("2026-12-31");
+    expect(fetched?.remarks).toBe("재발급분");
     await expect(store.getReviewCertificate(scope, "missing-case")).resolves.toBeUndefined();
+  });
+
+  it("preserves prior-version document text in the version snapshot for revision diffing", async () => {
+    const store = createMockReviewStore();
+    const caseId = "rc-revision-diff-test";
+
+    await store.createReviewCaseFromUploadedFiles(scope, {
+      reviewCaseId: caseId,
+      title: "예금 광고 재검토",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ id: "file-v1", name: "copy.txt", type: "text/plain", size: 1024 }]
+    });
+
+    // v1 분석 결과 영속화(추출 텍스트 chunk 생성)
+    await store.enqueueAnalysis(scope, caseId);
+    const jobV1 = await store.claimNextAnalysisJob(scope.tenantId, "worker-test");
+    await store.persistAnalysisOutputs(scope, {
+      reviewCaseId: caseId,
+      jobId: jobV1!.id,
+      artifacts: {
+        generatedAt: "2026-06-05T00:00:00.000Z",
+        extractedDocuments: [
+          {
+            fileId: "file-v1",
+            fileName: "copy.txt",
+            text: "연 5.0% 특별금리\n원금 보장",
+            confidence: 0.95,
+            provider: "fixture"
+          }
+        ],
+        evidenceCandidates: []
+      }
+    });
+    await store.completeAnalysisJob(scope, jobV1!.id, {
+      generatedAt: "2026-06-05T00:00:00.000Z",
+      extractedDocuments: [],
+      evidenceCandidates: []
+    });
+
+    // 반려 → v1 스냅샷에 추출 텍스트 보존
+    await store.updateReviewStatus(scope, caseId, "change_requested", {
+      reviewerComment: "원금 보장 표현 수정 요망"
+    });
+
+    // 요청자 수정본 재업로드(v2)
+    const revised = await store.createReviewCaseRevision(scope, caseId, {
+      files: [{ id: "file-v2", name: "copy.txt", type: "text/plain", size: 1024 }]
+    });
+    expect(revised?.currentVersion).toBe(2);
+
+    // v2 분석 결과 영속화
+    await store.enqueueAnalysis(scope, caseId);
+    const jobV2 = await store.claimNextAnalysisJob(scope.tenantId, "worker-test");
+    await store.persistAnalysisOutputs(scope, {
+      reviewCaseId: caseId,
+      jobId: jobV2!.id,
+      artifacts: {
+        generatedAt: "2026-06-06T00:00:00.000Z",
+        extractedDocuments: [
+          {
+            fileId: "file-v2",
+            fileName: "copy.txt",
+            text: "연 5.0% 특별금리\n원금 비보장",
+            confidence: 0.95,
+            provider: "fixture"
+          }
+        ],
+        evidenceCandidates: []
+      }
+    });
+
+    const versions = await store.listReviewVersions(scope, caseId);
+    const v1 = versions.find((version) => version.versionNumber === 1);
+    expect(v1?.documentsSnapshot).toEqual([
+      {
+        fileId: "file-v1",
+        fileName: "copy.txt",
+        fileType: "copy_draft",
+        text: "연 5.0% 특별금리\n원금 보장"
+      }
+    ]);
+
+    const current = await store.getReviewDocumentExtractions(scope, caseId);
+    expect(current).toEqual([
+      {
+        fileId: "file-v2",
+        fileName: "copy.txt",
+        fileType: "copy_draft",
+        text: "연 5.0% 특별금리\n원금 비보장"
+      }
+    ]);
   });
 });

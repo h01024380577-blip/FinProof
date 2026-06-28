@@ -116,6 +116,14 @@ export type ReviewFileBodyReader = Pick<ReviewStorageAdapter, "getReviewFileBody
 
 export type ReviewAnalysisPipeline = {
   run(input: { review: ReviewCase; scope?: ReviewStoreScope }): Promise<AnalysisArtifacts>;
+  /**
+   * OCR 추출만 수행하고 AI 이슈탐지(RAG·서브에이전트·이슈생성)는 건너뛴다.
+   * 재업로드 재검토에서 버전 간 텍스트 비교(diff)용 추출 텍스트만 필요할 때 사용한다.
+   */
+  extractOnly(input: {
+    review: ReviewCase;
+    scope?: ReviewStoreScope;
+  }): Promise<ExtractedDocument[]>;
 };
 
 type OcrFetchLike = (
@@ -1261,6 +1269,10 @@ export function createReviewAnalysisPipeline({
   now = () => new Date()
 }: ReviewAnalysisPipelineOptions = {}): ReviewAnalysisPipeline {
   return {
+    async extractOnly({ review }) {
+      const rawExtractedDocuments = await ocrProvider.extract({ review, files: review.files });
+      return rawExtractedDocuments.map(sanitizeExtractedDocument);
+    },
     async run({ review, scope }) {
       const config = getAnalysisProviderConfig();
       const query = reviewRagQuery(review);

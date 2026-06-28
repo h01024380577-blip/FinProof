@@ -29,6 +29,9 @@ export type ReviewCertificateMinAggregateOutputType = {
   reviewCaseId: string | null
   certificateNumber: string | null
   body: string | null
+  validFrom: string | null
+  validUntil: string | null
+  remarks: string | null
   issuedByUserId: string | null
   issuedByName: string | null
   issuedAt: Date | null
@@ -41,6 +44,9 @@ export type ReviewCertificateMaxAggregateOutputType = {
   reviewCaseId: string | null
   certificateNumber: string | null
   body: string | null
+  validFrom: string | null
+  validUntil: string | null
+  remarks: string | null
   issuedByUserId: string | null
   issuedByName: string | null
   issuedAt: Date | null
@@ -53,6 +59,9 @@ export type ReviewCertificateCountAggregateOutputType = {
   reviewCaseId: number
   certificateNumber: number
   body: number
+  validFrom: number
+  validUntil: number
+  remarks: number
   metadata: number
   issuedByUserId: number
   issuedByName: number
@@ -68,6 +77,9 @@ export type ReviewCertificateMinAggregateInputType = {
   reviewCaseId?: true
   certificateNumber?: true
   body?: true
+  validFrom?: true
+  validUntil?: true
+  remarks?: true
   issuedByUserId?: true
   issuedByName?: true
   issuedAt?: true
@@ -80,6 +92,9 @@ export type ReviewCertificateMaxAggregateInputType = {
   reviewCaseId?: true
   certificateNumber?: true
   body?: true
+  validFrom?: true
+  validUntil?: true
+  remarks?: true
   issuedByUserId?: true
   issuedByName?: true
   issuedAt?: true
@@ -92,6 +107,9 @@ export type ReviewCertificateCountAggregateInputType = {
   reviewCaseId?: true
   certificateNumber?: true
   body?: true
+  validFrom?: true
+  validUntil?: true
+  remarks?: true
   metadata?: true
   issuedByUserId?: true
   issuedByName?: true
@@ -178,6 +196,9 @@ export type ReviewCertificateGroupByOutputType = {
   reviewCaseId: string
   certificateNumber: string
   body: string
+  validFrom: string | null
+  validUntil: string | null
+  remarks: string | null
   metadata: runtime.JsonValue
   issuedByUserId: string
   issuedByName: string | null
@@ -212,6 +233,9 @@ export type ReviewCertificateWhereInput = {
   reviewCaseId?: Prisma.StringFilter<"ReviewCertificate"> | string
   certificateNumber?: Prisma.StringFilter<"ReviewCertificate"> | string
   body?: Prisma.StringFilter<"ReviewCertificate"> | string
+  validFrom?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
+  validUntil?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
+  remarks?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
   metadata?: Prisma.JsonFilter<"ReviewCertificate">
   issuedByUserId?: Prisma.StringFilter<"ReviewCertificate"> | string
   issuedByName?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
@@ -226,6 +250,9 @@ export type ReviewCertificateOrderByWithRelationInput = {
   reviewCaseId?: Prisma.SortOrder
   certificateNumber?: Prisma.SortOrder
   body?: Prisma.SortOrder
+  validFrom?: Prisma.SortOrderInput | Prisma.SortOrder
+  validUntil?: Prisma.SortOrderInput | Prisma.SortOrder
+  remarks?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
   issuedByUserId?: Prisma.SortOrder
   issuedByName?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -243,6 +270,9 @@ export type ReviewCertificateWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ReviewCertificateWhereInput | Prisma.ReviewCertificateWhereInput[]
   certificateNumber?: Prisma.StringFilter<"ReviewCertificate"> | string
   body?: Prisma.StringFilter<"ReviewCertificate"> | string
+  validFrom?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
+  validUntil?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
+  remarks?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
   metadata?: Prisma.JsonFilter<"ReviewCertificate">
   issuedByUserId?: Prisma.StringFilter<"ReviewCertificate"> | string
   issuedByName?: Prisma.StringNullableFilter<"ReviewCertificate"> | string | null
@@ -257,6 +287,9 @@ export type ReviewCertificateOrderByWithAggregationInput = {
   reviewCaseId?: Prisma.SortOrder
   certificateNumber?: Prisma.SortOrder
   body?: Prisma.SortOrder
+  validFrom?: Prisma.SortOrderInput | Prisma.SortOrder
+  validUntil?: Prisma.SortOrderInput | Prisma.SortOrder
+  remarks?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
   issuedByUserId?: Prisma.SortOrder
   issuedByName?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -276,6 +309,9 @@ export type ReviewCertificateScalarWhereWithAggregatesInput = {
   reviewCaseId?: Prisma.StringWithAggregatesFilter<"ReviewCertificate"> | string
   certificateNumber?: Prisma.StringWithAggregatesFilter<"ReviewCertificate"> | string
   body?: Prisma.StringWithAggregatesFilter<"ReviewCertificate"> | string
+  validFrom?: Prisma.StringNullableWithAggregatesFilter<"ReviewCertificate"> | string | null
+  validUntil?: Prisma.StringNullableWithAggregatesFilter<"ReviewCertificate"> | string | null
+  remarks?: Prisma.StringNullableWithAggregatesFilter<"ReviewCertificate"> | string | null
   metadata?: Prisma.JsonWithAggregatesFilter<"ReviewCertificate">
   issuedByUserId?: Prisma.StringWithAggregatesFilter<"ReviewCertificate"> | string
   issuedByName?: Prisma.StringNullableWithAggregatesFilter<"ReviewCertificate"> | string | null
@@ -288,6 +324,9 @@ export type ReviewCertificateCreateInput = {
   id: string
   certificateNumber: string
   body: string
+  validFrom?: string | null
+  validUntil?: string | null
+  remarks?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId: string
   issuedByName?: string | null
@@ -302,6 +341,9 @@ export type ReviewCertificateUncheckedCreateInput = {
   reviewCaseId: string
   certificateNumber: string
   body: string
+  validFrom?: string | null
+  validUntil?: string | null
+  remarks?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId: string
   issuedByName?: string | null
@@ -314,6 +356,9 @@ export type ReviewCertificateUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   certificateNumber?: Prisma.StringFieldUpdateOperationsInput | string
   body?: Prisma.StringFieldUpdateOperationsInput | string
+  validFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  validUntil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  remarks?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   issuedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -328,6 +373,9 @@ export type ReviewCertificateUncheckedUpdateInput = {
   reviewCaseId?: Prisma.StringFieldUpdateOperationsInput | string
   certificateNumber?: Prisma.StringFieldUpdateOperationsInput | string
   body?: Prisma.StringFieldUpdateOperationsInput | string
+  validFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  validUntil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  remarks?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   issuedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -341,6 +389,9 @@ export type ReviewCertificateCreateManyInput = {
   reviewCaseId: string
   certificateNumber: string
   body: string
+  validFrom?: string | null
+  validUntil?: string | null
+  remarks?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId: string
   issuedByName?: string | null
@@ -353,6 +404,9 @@ export type ReviewCertificateUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   certificateNumber?: Prisma.StringFieldUpdateOperationsInput | string
   body?: Prisma.StringFieldUpdateOperationsInput | string
+  validFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  validUntil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  remarks?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   issuedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -366,6 +420,9 @@ export type ReviewCertificateUncheckedUpdateManyInput = {
   reviewCaseId?: Prisma.StringFieldUpdateOperationsInput | string
   certificateNumber?: Prisma.StringFieldUpdateOperationsInput | string
   body?: Prisma.StringFieldUpdateOperationsInput | string
+  validFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  validUntil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  remarks?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   issuedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -384,6 +441,9 @@ export type ReviewCertificateCountOrderByAggregateInput = {
   reviewCaseId?: Prisma.SortOrder
   certificateNumber?: Prisma.SortOrder
   body?: Prisma.SortOrder
+  validFrom?: Prisma.SortOrder
+  validUntil?: Prisma.SortOrder
+  remarks?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
   issuedByUserId?: Prisma.SortOrder
   issuedByName?: Prisma.SortOrder
@@ -397,6 +457,9 @@ export type ReviewCertificateMaxOrderByAggregateInput = {
   reviewCaseId?: Prisma.SortOrder
   certificateNumber?: Prisma.SortOrder
   body?: Prisma.SortOrder
+  validFrom?: Prisma.SortOrder
+  validUntil?: Prisma.SortOrder
+  remarks?: Prisma.SortOrder
   issuedByUserId?: Prisma.SortOrder
   issuedByName?: Prisma.SortOrder
   issuedAt?: Prisma.SortOrder
@@ -409,6 +472,9 @@ export type ReviewCertificateMinOrderByAggregateInput = {
   reviewCaseId?: Prisma.SortOrder
   certificateNumber?: Prisma.SortOrder
   body?: Prisma.SortOrder
+  validFrom?: Prisma.SortOrder
+  validUntil?: Prisma.SortOrder
+  remarks?: Prisma.SortOrder
   issuedByUserId?: Prisma.SortOrder
   issuedByName?: Prisma.SortOrder
   issuedAt?: Prisma.SortOrder
@@ -452,6 +518,9 @@ export type ReviewCertificateCreateWithoutReviewCaseInput = {
   id: string
   certificateNumber: string
   body: string
+  validFrom?: string | null
+  validUntil?: string | null
+  remarks?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId: string
   issuedByName?: string | null
@@ -464,6 +533,9 @@ export type ReviewCertificateUncheckedCreateWithoutReviewCaseInput = {
   id: string
   certificateNumber: string
   body: string
+  validFrom?: string | null
+  validUntil?: string | null
+  remarks?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId: string
   issuedByName?: string | null
@@ -492,6 +564,9 @@ export type ReviewCertificateUpdateWithoutReviewCaseInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   certificateNumber?: Prisma.StringFieldUpdateOperationsInput | string
   body?: Prisma.StringFieldUpdateOperationsInput | string
+  validFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  validUntil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  remarks?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   issuedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -504,6 +579,9 @@ export type ReviewCertificateUncheckedUpdateWithoutReviewCaseInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   certificateNumber?: Prisma.StringFieldUpdateOperationsInput | string
   body?: Prisma.StringFieldUpdateOperationsInput | string
+  validFrom?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  validUntil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  remarks?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   issuedByUserId?: Prisma.StringFieldUpdateOperationsInput | string
   issuedByName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -519,6 +597,9 @@ export type ReviewCertificateSelect<ExtArgs extends runtime.Types.Extensions.Int
   reviewCaseId?: boolean
   certificateNumber?: boolean
   body?: boolean
+  validFrom?: boolean
+  validUntil?: boolean
+  remarks?: boolean
   metadata?: boolean
   issuedByUserId?: boolean
   issuedByName?: boolean
@@ -533,6 +614,9 @@ export type ReviewCertificateSelectCreateManyAndReturn<ExtArgs extends runtime.T
   reviewCaseId?: boolean
   certificateNumber?: boolean
   body?: boolean
+  validFrom?: boolean
+  validUntil?: boolean
+  remarks?: boolean
   metadata?: boolean
   issuedByUserId?: boolean
   issuedByName?: boolean
@@ -547,6 +631,9 @@ export type ReviewCertificateSelectUpdateManyAndReturn<ExtArgs extends runtime.T
   reviewCaseId?: boolean
   certificateNumber?: boolean
   body?: boolean
+  validFrom?: boolean
+  validUntil?: boolean
+  remarks?: boolean
   metadata?: boolean
   issuedByUserId?: boolean
   issuedByName?: boolean
@@ -561,6 +648,9 @@ export type ReviewCertificateSelectScalar = {
   reviewCaseId?: boolean
   certificateNumber?: boolean
   body?: boolean
+  validFrom?: boolean
+  validUntil?: boolean
+  remarks?: boolean
   metadata?: boolean
   issuedByUserId?: boolean
   issuedByName?: boolean
@@ -569,7 +659,7 @@ export type ReviewCertificateSelectScalar = {
   createdAt?: boolean
 }
 
-export type ReviewCertificateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "reviewCaseId" | "certificateNumber" | "body" | "metadata" | "issuedByUserId" | "issuedByName" | "issuedAt" | "updatedAt" | "createdAt", ExtArgs["result"]["reviewCertificate"]>
+export type ReviewCertificateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "reviewCaseId" | "certificateNumber" | "body" | "validFrom" | "validUntil" | "remarks" | "metadata" | "issuedByUserId" | "issuedByName" | "issuedAt" | "updatedAt" | "createdAt", ExtArgs["result"]["reviewCertificate"]>
 export type ReviewCertificateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   reviewCase?: boolean | Prisma.ReviewCaseDefaultArgs<ExtArgs>
 }
@@ -590,6 +680,9 @@ export type $ReviewCertificatePayload<ExtArgs extends runtime.Types.Extensions.I
     reviewCaseId: string
     certificateNumber: string
     body: string
+    validFrom: string | null
+    validUntil: string | null
+    remarks: string | null
     metadata: runtime.JsonValue
     issuedByUserId: string
     issuedByName: string | null
@@ -1024,6 +1117,9 @@ export interface ReviewCertificateFieldRefs {
   readonly reviewCaseId: Prisma.FieldRef<"ReviewCertificate", 'String'>
   readonly certificateNumber: Prisma.FieldRef<"ReviewCertificate", 'String'>
   readonly body: Prisma.FieldRef<"ReviewCertificate", 'String'>
+  readonly validFrom: Prisma.FieldRef<"ReviewCertificate", 'String'>
+  readonly validUntil: Prisma.FieldRef<"ReviewCertificate", 'String'>
+  readonly remarks: Prisma.FieldRef<"ReviewCertificate", 'String'>
   readonly metadata: Prisma.FieldRef<"ReviewCertificate", 'Json'>
   readonly issuedByUserId: Prisma.FieldRef<"ReviewCertificate", 'String'>
   readonly issuedByName: Prisma.FieldRef<"ReviewCertificate", 'String'>

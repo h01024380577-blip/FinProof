@@ -342,6 +342,7 @@ export function toReviewVersion(row: {
   opinionDraft: string | null;
   issuesSnapshot: unknown;
   filesSnapshot: unknown;
+  documentsSnapshot?: unknown;
   decidedByUserId: string;
   decidedByName: string | null;
   decidedAt: Date;
@@ -360,6 +361,9 @@ export function toReviewVersion(row: {
     filesSnapshot: Array.isArray(row.filesSnapshot)
       ? (row.filesSnapshot as ReviewVersion["filesSnapshot"])
       : [],
+    documentsSnapshot: Array.isArray(row.documentsSnapshot)
+      ? (row.documentsSnapshot as ReviewVersion["documentsSnapshot"])
+      : undefined,
     decidedByUserId: row.decidedByUserId,
     decidedByName: row.decidedByName ?? undefined,
     decidedAt: row.decidedAt.toISOString(),
@@ -372,6 +376,9 @@ export function toReviewCertificate(row: {
   reviewCaseId: string;
   certificateNumber: string;
   body: string;
+  validFrom: string | null;
+  validUntil: string | null;
+  remarks: string | null;
   metadata: unknown;
   issuedByUserId: string;
   issuedByName: string | null;
@@ -386,6 +393,9 @@ export function toReviewCertificate(row: {
     reviewCaseId: row.reviewCaseId,
     certificateNumber: row.certificateNumber,
     body: row.body,
+    validFrom: row.validFrom ?? undefined,
+    validUntil: row.validUntil ?? undefined,
+    remarks: row.remarks ?? undefined,
     metadata: {
       title: typeof meta.title === "string" ? meta.title : "",
       productType: meta.productType as ReviewCertificate["metadata"]["productType"],

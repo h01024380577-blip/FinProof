@@ -25,6 +25,7 @@ import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { productLabels, statusLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, ReviewVersion, RiskLevel, RoleId } from "@/domain/types";
+import type { RevisionDiff } from "@/domain/revision-diff";
 import { useRoleContext } from "./RoleContext";
 import { WorkbenchHeader } from "./workbench/WorkbenchHeader";
 import type { FinalDecisionAction } from "./workbench/WorkbenchHeader";
@@ -32,7 +33,7 @@ import { IssueList } from "./workbench/IssueList";
 import { CreativeViewer } from "./workbench/CreativeViewer";
 import { IssueDetailTabs, type IssueDetailTabKey } from "./workbench/IssueDetailTabs";
 import { WorkbenchDrawer } from "./workbench/WorkbenchDrawer";
-import { CertificateEditor } from "./workbench/CertificateEditor";
+import { CertificateEditor, type CertificateDraft } from "./workbench/CertificateEditor";
 import { ManualIssueForm, type ManualIssueInput } from "./workbench/ManualIssueForm";
 import { VersionHistoryPanel } from "./workbench/VersionHistoryPanel";
 import styles from "./ReviewDetailWorkspace.module.css";
@@ -386,6 +387,21 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [versions, setVersions] = useState<ReviewVersion[]>([]);
   const [currentVersionNumber, setCurrentVersionNumber] = useState(initialVersion);
   const [selectedVersionNumber, setSelectedVersionNumber] = useState(initialVersion);
+  const [revisionDiff, setRevisionDiff] = useState<RevisionDiff | null>(null);
+  // 재업로드 재검토 모드: AI 재분석이 없어 v2 이슈가 없으므로 직전 회차(v1)의 AI 이슈를 읽기전용 참고로 보여준다.
+  const isReReview = reviewStatus === "re_review_pending";
+  const referenceIssues = useMemo<ReviewIssue[]>(() => {
+    if (!isReReview) {
+      return [];
+    }
+    const previous = versions.find(
+      (version) => version.versionNumber === currentVersionNumber - 1
+    );
+    return previous?.issuesSnapshot ?? [];
+  }, [isReReview, versions, currentVersionNumber]);
+  const displayIssues = isReReview ? referenceIssues : allIssues;
+  // 재검토 모드에선 v1 이슈를 직접 수정/판정하지 않는다(현 케이스 이슈가 아님). 최종 결정은 헤더 승인/반려로만.
+  const issuesAreMutable = reviewerCanMutate && !isReReview;
   const [analysisErrorMessage, setAnalysisErrorMessage] = useState<string | null>(null);
   const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
   const [isManualIssueOpen, setIsManualIssueOpen] = useState(false);
@@ -393,7 +409,13 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [manualIssueError, setManualIssueError] = useState<string | null>(null);
   const [draft, setDraftState] = useState("");
   const latestDraftRef = useRef(draft);
-  const [certificateBody, setCertificateBody] = useState("");
+  const [certificateDraft, setCertificateDraft] = useState<CertificateDraft>({
+    body: "",
+    certificateNumber: "",
+    validFrom: "",
+    validUntil: "",
+    remarks: ""
+  });
   const [uploadedCreativeObject, setUploadedCreativeObject] = useState<{
     fileId: string;
     url: string;
@@ -431,7 +453,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const chatResponsesByIssueId = chatResponsesByReviewId[review.id] ?? {};
   const selectedIssue: ReviewIssue | undefined =
-    allIssues.find((issue) => issue.id === selectedIssueId) ?? allIssues[0];
+    displayIssues.find((issue) => issue.id === selectedIssueId) ?? displayIssues[0];
   const visibleChatResponses = Object.entries(chatResponsesByIssueId).flatMap(
     ([issueId, responses]) => responses.map((response) => ({ issueId, response }))
   );
@@ -568,6 +590,45 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       cancelled = true;
     };
   }, [review.id, roleHeaders, initialVersion]);
+
+  // 재업로드(v2+) 재검토 시 직전 버전 대비 변경분석을 지연 로드한다. 요청자 화면에는 노출하지 않는다.
+  useEffect(() => {
+    if (activeRole === "requester" || currentVersionNumber <= 1) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadRevisionDiff() {
+      try {
+        const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/revision-diff`, {
+          headers: roleHeaders
+        });
+
+        if (!apiResponse.ok || cancelled) {
+          return;
+        }
+
+        const body = (await apiResponse.json()) as
+          | { available: true; diff: RevisionDiff }
+          | { available: false; reason: string };
+
+        if (cancelled) {
+          return;
+        }
+
+        setRevisionDiff(body.available ? body.diff : null);
+      } catch {
+        // 변경분석은 보조 정보이므로 실패해도 워크벤치는 단일 모드로 정상 동작한다.
+      }
+    }
+
+    void loadRevisionDiff();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [review.id, roleHeaders, activeRole, currentVersionNumber]);
 
   useEffect(() => {
     if (review.status !== "analysis_failed") {
@@ -894,7 +955,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       confirmed = window.confirm(
         "수정 요청 의견을 작성하지 않았습니다. 의견 없이 반려하시겠습니까?"
       );
-    } else if (finalAction === "approve" && certificateBody.trim().length === 0) {
+    } else if (finalAction === "approve" && certificateDraft.body.trim().length === 0) {
       confirmed = window.confirm(
         "심의필을 작성하지 않았습니다. 심의필 없이 승인하시겠습니까?"
       );
@@ -929,26 +990,39 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       setReviewStatus(body.reviewCase.status);
       setFinalizedNotice(`최종 상태가 ${statusLabels[body.reviewCase.status]}으로 저장되었습니다.`);
 
-      const trimmedCertificateBody = certificateBody.trim();
+      const trimmedCertificateBody = certificateDraft.body.trim();
+      const trimmedCertificateNumber = certificateDraft.certificateNumber.trim();
 
       if (finalAction === "approve" && trimmedCertificateBody.length > 0) {
-        try {
-          const certificateResponse = await fetch(
-            `/api/v1/review-cases/${review.id}/certificate`,
-            {
-              method: "POST",
-              headers: jsonHeaders,
-              body: JSON.stringify({ body: trimmedCertificateBody })
-            }
-          );
-
-          if (!certificateResponse.ok) {
-            throw new Error("certificate issue failed");
-          }
-        } catch {
+        if (trimmedCertificateNumber.length === 0) {
           setInteractionError(
-            "승인은 완료되었으나 심의필 발급에 실패했습니다. 심의 이력에서 다시 시도해 주세요."
+            "심의필 번호가 없어 자동 발급되지 않았습니다. 심의 이력에서 발급해 주세요."
           );
+        } else {
+          try {
+            const certificateResponse = await fetch(
+              `/api/v1/review-cases/${review.id}/certificate`,
+              {
+                method: "POST",
+                headers: jsonHeaders,
+                body: JSON.stringify({
+                  body: trimmedCertificateBody,
+                  certificateNumber: trimmedCertificateNumber,
+                  validFrom: certificateDraft.validFrom,
+                  validUntil: certificateDraft.validUntil,
+                  remarks: certificateDraft.remarks
+                })
+              }
+            );
+
+            if (!certificateResponse.ok) {
+              throw new Error("certificate issue failed");
+            }
+          } catch {
+            setInteractionError(
+              "승인은 완료되었으나 심의필 발급에 실패했습니다. 심의 이력에서 다시 시도해 주세요."
+            );
+          }
         }
       }
 
@@ -1235,12 +1309,14 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     <CertificateEditor
       caseId={review.id}
       title={review.title}
-      affiliateName={review.affiliate}
+      issuerName={roleContext?.currentUser?.name ?? review.reviewer}
+      productType={review.productType}
+      reviewerName={review.reviewer}
       reviewStatus={reviewStatus}
       canMutate={reviewerCanMutate}
       apiHeaders={apiHeaders}
-      body={certificateBody}
-      onBodyChange={setCertificateBody}
+      draft={certificateDraft}
+      onDraftChange={setCertificateDraft}
     />
   );
 
@@ -1334,11 +1410,15 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
           <section className="detail__grid">
             <IssueList
-              issues={allIssues}
+              issues={displayIssues}
               selectedIssueId={selectedIssue?.id}
               onSelectIssue={selectIssue}
-              analysisNotice={review.analysisNotice}
-              canAddManualIssue={reviewerCanMutate}
+              analysisNotice={
+                isReReview
+                  ? `직전 회차(v${currentVersionNumber - 1}) AI 지적사항입니다. 수정본을 비교(중앙)해 재검토하세요.`
+                  : review.analysisNotice
+              }
+              canAddManualIssue={issuesAreMutable}
               onAddManualIssue={() => {
                 setManualIssueError(null);
                 setIsManualIssueOpen(true);
@@ -1354,9 +1434,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                   : undefined
               }
               isCreativeImageLoading={Boolean(uploadedCreativeFile) && isUploadedCreativeLoading}
-              issues={allIssues}
+              issues={isReReview ? [] : allIssues}
               selectedIssueId={selectedIssue?.id}
               onSelectIssue={selectIssue}
+              revisionDiff={
+                activeRole !== "requester" && currentVersionNumber > 1 ? revisionDiff : null
+              }
             />
 
             {selectedIssue ? (
@@ -1367,7 +1450,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                 reviewerRiskLevel={reviewerRiskLevel}
                 reviewerComment={reviewerComment}
                 savedDecision={savedDecision}
-                canMutate={reviewerCanMutate}
+                canMutate={issuesAreMutable}
                 isSavingDecision={isSavingDecision}
                 onChangeRiskLevel={setReviewerRiskLevel}
                 onChangeReviewerComment={setReviewerComment}
