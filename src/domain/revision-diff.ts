@@ -244,6 +244,61 @@ export function toSideBySideRows(lines: DiffLine[]): SideBySideRow[] {
   return rows;
 }
 
+/** 좌·우가 모두 context(동일)인 행 = 변경 없는 줄. */
+function isUnchangedRow(row: SideBySideRow): boolean {
+  return (
+    row.left?.kind === "context" &&
+    row.right?.kind === "context" &&
+    row.left.text === row.right.text
+  );
+}
+
+export type SideBySideEntry =
+  | { type: "row"; row: SideBySideRow }
+  | { type: "gap"; count: number };
+
+/**
+ * 변경된 부분만 보이도록, 변경 라인에서 `context`줄 이상 떨어진 동일 구간을 접는다.
+ * 접힌 구간은 생략된 줄 수를 가진 gap 엔트리로 대체된다. 변경이 전혀 없으면 빈 배열을 반환한다.
+ */
+export function collapseSideBySide(rows: SideBySideRow[], context = 3): SideBySideEntry[] {
+  const changed = rows.map((row) => !isUnchangedRow(row));
+  if (!changed.some(Boolean)) {
+    return [];
+  }
+  // 각 변경 라인 주변 context줄을 '표시' 대상으로 마크.
+  const keep = new Array<boolean>(rows.length).fill(false);
+  rows.forEach((_, index) => {
+    if (!changed[index]) {
+      return;
+    }
+    for (let offset = -context; offset <= context; offset += 1) {
+      const target = index + offset;
+      if (target >= 0 && target < rows.length) {
+        keep[target] = true;
+      }
+    }
+  });
+
+  const entries: SideBySideEntry[] = [];
+  let gap = 0;
+  rows.forEach((row, index) => {
+    if (keep[index]) {
+      if (gap > 0) {
+        entries.push({ type: "gap", count: gap });
+        gap = 0;
+      }
+      entries.push({ type: "row", row });
+    } else {
+      gap += 1;
+    }
+  });
+  if (gap > 0) {
+    entries.push({ type: "gap", count: gap });
+  }
+  return entries;
+}
+
 /** 직전 버전 문서들과 현재 버전 문서들로 전체 RevisionDiff를 만든다. */
 export function buildRevisionDiff(
   previousDocuments: ReviewDocumentExtraction[],

@@ -1,5 +1,6 @@
 import {
   buildRevisionDiff,
+  collapseSideBySide,
   diffLines,
   matchDocuments,
   splitLines,
@@ -21,6 +22,36 @@ function doc(
 describe("splitLines", () => {
   it("normalizes CRLF and trims trailing blank lines and right whitespace", () => {
     expect(splitLines("a  \r\nb\n\n\n")).toEqual(["a", "b"]);
+  });
+});
+
+describe("collapseSideBySide", () => {
+  it("returns empty when there are no changes", () => {
+    const rows = toSideBySideRows(diffLines("a\nb\nc", "a\nb\nc"));
+    expect(collapseSideBySide(rows)).toEqual([]);
+  });
+
+  it("collapses unchanged runs beyond the context radius into a gap", () => {
+    const oldText = Array.from({ length: 20 }, (_, i) => `line${i}`).join("\n");
+    const newText = oldText.replace("line10", "line10-changed");
+    const rows = toSideBySideRows(diffLines(oldText, newText));
+    const entries = collapseSideBySide(rows, 2);
+
+    // 변경(line10) 주변 2줄만 남고 위/아래 동일 구간은 gap으로 접힌다.
+    const gaps = entries.filter((entry) => entry.type === "gap");
+    expect(gaps.length).toBe(2);
+    // 접힌 줄 수 + 표시된 행 수 = 전체 행 수
+    const shown = entries.filter((entry) => entry.type === "row").length;
+    const collapsed = gaps.reduce((sum, entry) => sum + (entry.type === "gap" ? entry.count : 0), 0);
+    expect(shown + collapsed).toBe(rows.length);
+  });
+
+  it("keeps context rows adjacent to a change", () => {
+    const rows = toSideBySideRows(diffLines("a\nb\nc\nd\ne", "a\nb\nX\nd\ne"));
+    const entries = collapseSideBySide(rows, 1);
+    // 변경 라인(c→X)과 양옆 b,d는 남고, 끝의 a,e는 접힌다.
+    expect(entries.some((entry) => entry.type === "gap")).toBe(true);
+    expect(entries.filter((entry) => entry.type === "row").length).toBeGreaterThan(0);
   });
 });
 
