@@ -2069,18 +2069,15 @@ a.review-table__row:hover {
   white-space: nowrap;
 }
 
-.queue-version-toggle {
+.queue-row-action-button--sm {
   min-width: 0;
-  gap: 4px;
-  border-style: dashed;
-  color: var(--text-soft);
-  font-weight: 700;
+  padding-inline: 12px;
 }
 
 .queue-version-toggle[aria-expanded="true"] {
-  border-style: solid;
-  border-color: var(--accent, #1b4ca8);
-  color: var(--accent, #1b4ca8);
+  border-color: #1b4ca8;
+  background: #eef4ff;
+  color: #1b4ca8;
 }
 
 /* Full-width expandable sub-row; .review-table is a single-column grid so this
@@ -2245,8 +2242,6 @@ a.review-table__row:hover {
 .queue-version-item__opinion {
   margin: 2px 0 0;
   padding: 8px 10px;
-  max-height: 7.5em;
-  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface);

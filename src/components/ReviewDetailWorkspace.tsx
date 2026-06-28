@@ -388,20 +388,6 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [currentVersionNumber, setCurrentVersionNumber] = useState(initialVersion);
   const [selectedVersionNumber, setSelectedVersionNumber] = useState(initialVersion);
   const [revisionDiff, setRevisionDiff] = useState<RevisionDiff | null>(null);
-  // 재업로드 재검토 모드: AI 재분석이 없어 v2 이슈가 없으므로 직전 회차(v1)의 AI 이슈를 읽기전용 참고로 보여준다.
-  const isReReview = reviewStatus === "re_review_pending";
-  const referenceIssues = useMemo<ReviewIssue[]>(() => {
-    if (!isReReview) {
-      return [];
-    }
-    const previous = versions.find(
-      (version) => version.versionNumber === currentVersionNumber - 1
-    );
-    return previous?.issuesSnapshot ?? [];
-  }, [isReReview, versions, currentVersionNumber]);
-  const displayIssues = isReReview ? referenceIssues : allIssues;
-  // 재검토 모드에선 v1 이슈를 직접 수정/판정하지 않는다(현 케이스 이슈가 아님). 최종 결정은 헤더 승인/반려로만.
-  const issuesAreMutable = reviewerCanMutate && !isReReview;
   const [analysisErrorMessage, setAnalysisErrorMessage] = useState<string | null>(null);
   const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
   const [isManualIssueOpen, setIsManualIssueOpen] = useState(false);
@@ -453,7 +439,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const chatResponsesByIssueId = chatResponsesByReviewId[review.id] ?? {};
   const selectedIssue: ReviewIssue | undefined =
-    displayIssues.find((issue) => issue.id === selectedIssueId) ?? displayIssues[0];
+    allIssues.find((issue) => issue.id === selectedIssueId) ?? allIssues[0];
   const visibleChatResponses = Object.entries(chatResponsesByIssueId).flatMap(
     ([issueId, responses]) => responses.map((response) => ({ issueId, response }))
   );
@@ -1410,15 +1396,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
           <section className="detail__grid">
             <IssueList
-              issues={displayIssues}
+              issues={allIssues}
               selectedIssueId={selectedIssue?.id}
               onSelectIssue={selectIssue}
-              analysisNotice={
-                isReReview
-                  ? `직전 회차(v${currentVersionNumber - 1}) AI 지적사항입니다. 수정본을 비교(중앙)해 재검토하세요.`
-                  : review.analysisNotice
-              }
-              canAddManualIssue={issuesAreMutable}
+              analysisNotice={review.analysisNotice}
+              canAddManualIssue={reviewerCanMutate}
               onAddManualIssue={() => {
                 setManualIssueError(null);
                 setIsManualIssueOpen(true);
@@ -1434,7 +1416,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                   : undefined
               }
               isCreativeImageLoading={Boolean(uploadedCreativeFile) && isUploadedCreativeLoading}
-              issues={isReReview ? [] : allIssues}
+              issues={allIssues}
               selectedIssueId={selectedIssue?.id}
               onSelectIssue={selectIssue}
               revisionDiff={
@@ -1450,7 +1432,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                 reviewerRiskLevel={reviewerRiskLevel}
                 reviewerComment={reviewerComment}
                 savedDecision={savedDecision}
-                canMutate={issuesAreMutable}
+                canMutate={reviewerCanMutate}
                 isSavingDecision={isSavingDecision}
                 onChangeRiskLevel={setReviewerRiskLevel}
                 onChangeReviewerComment={setReviewerComment}

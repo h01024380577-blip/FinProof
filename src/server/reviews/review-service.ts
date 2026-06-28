@@ -198,9 +198,9 @@ export function availableActionsFor(role: RoleId, status: ReviewStatus): ReviewA
     return ["start_analysis", "open_workbench", "view_audit"];
   }
 
-  // 재업로드된 수정본은 AI 재분석 없이 심의자가 바로 재검토(비교)한다.
+  // 재업로드된 수정본은 심의자가 'AI 재검토'로 분석을 돌린 뒤(→ analysis_complete) 재검토한다.
   if (status === "re_review_pending" && (role === "reviewer" || role === "compliance_admin")) {
-    return ["open_workbench", "view_audit"];
+    return ["start_analysis"];
   }
 
   if (status === "analysis_complete") {
@@ -350,7 +350,8 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         before &&
         before.status !== "submitted" &&
         before.status !== "analysis_waiting" &&
-        before.status !== "analysis_failed"
+        before.status !== "analysis_failed" &&
+        before.status !== "re_review_pending"
       ) {
         throw new StateConflictError(`Cannot start analysis while review case is ${before.status}`);
       }
@@ -690,17 +691,8 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       const updated = await store.createReviewCaseRevision(scope, reviewCaseId, { files });
 
       if (updated) {
-        // AI 이슈탐지는 건너뛰되, 직전 버전과의 변경분석(diff)에 쓸 OCR 추출 텍스트만 확보한다.
-        // 추출 실패는 재업로드 자체를 막지 않는다(비교만 비활성화됨).
-        try {
-          const extractedDocuments = await analysisPipeline.extractOnly({ review: updated, scope });
-          await store.replaceReviewDocumentExtractions(scope, reviewCaseId, extractedDocuments);
-        } catch (error) {
-          console.error(
-            `Revision text extraction failed for ${reviewCaseId}: ${errorMessage(error)}`
-          );
-        }
-
+        // 재업로드 후에는 심의자가 'AI 재검토'로 분석을 실행한다. 그때 OCR 추출 텍스트가
+        // 영속화되어 직전 버전과의 변경분석(diff)이 가능해진다(여기서는 추출하지 않는다).
         await store.recordAuditEvent(scope, {
           action: "review_case.revision_uploaded",
           targetType: "review_case",

@@ -237,7 +237,6 @@ export function CertificateEditor({
     <div className="panel panel--compact drawer-support-panel">
       <div className="panel__header">
         <div>
-          <p className="eyebrow">심의필</p>
           <h3>심의 완료 증명서</h3>
         </div>
         {canMutate ? (

@@ -2,8 +2,6 @@
 
 import { Fragment, useEffect, useRef, useState, type JSX } from "react";
 import {
-  ChevronDown,
-  ChevronRight,
   ClipboardCheck,
   History,
   Loader2,
@@ -39,7 +37,6 @@ function isAnalysisWaiting(status: ReviewCase["status"]): boolean {
 function canOpenWorkbench(status: ReviewCase["status"]): boolean {
   return (
     status === "analysis_complete" ||
-    status === "re_review_pending" ||
     status === "under_review" ||
     status === "change_requested" ||
     status === "rejected" ||
@@ -65,7 +62,7 @@ function fallbackActionsFor(role: RoleId, status: ReviewCase["status"]): ReviewA
     status === "re_review_pending" &&
     (role === "reviewer" || role === "compliance_admin")
   ) {
-    return ["open_workbench", "view_audit"];
+    return ["start_analysis"];
   }
   if (canOpenWorkbench(status)) {
     return status === "analysis_complete" ? ["open_workbench", "view_audit"] : ["view_audit"];
@@ -398,12 +395,15 @@ export function QueueTable({
           : "";
         // analysis_failed surfaces all three actions (재시도 + 직접검토 + 상세보기); a still-waiting
         // row that the poller marked failed keeps only the retry affordance.
-        const showStartButton = waiting || failedStatus;
-        const isReReview = review.status === "re_review_pending";
+        // 재업로드 대기(re_review_pending)는 분석 전이므로 시작 버튼('AI 재검토')을 노출한다.
+        const isReReviewPending = review.status === "re_review_pending";
+        const isReUpload = (review.currentVersion ?? 1) > 1;
+        const showStartButton = waiting || failedStatus || isReReviewPending;
         const showWorkbench =
-          canOpen && (review.status === "analysis_complete" || failedStatus || isReReview);
-        const showAudit = !waiting && canViewAudit && review.status !== "analysis_complete";
-        const showStatusNote = !waiting && !openable;
+          canOpen && (review.status === "analysis_complete" || failedStatus);
+        const showAudit =
+          !waiting && canViewAudit && review.status !== "analysis_complete";
+        const showStatusNote = !waiting && !openable && !showStartButton;
         const canDelete =
           canDeleteReviewHistory &&
           isFinalizedHistoryStatus(review.status) &&
@@ -481,7 +481,7 @@ export function QueueTable({
                   ) : (
                     <>
                       <PlayCircle size={15} aria-hidden="true" />
-                      AI 분석 시작
+                      {isReReviewPending ? "AI 재검토" : "AI 분석 시작"}
                     </>
                   )}
                 </button>
@@ -502,12 +502,12 @@ export function QueueTable({
                   onClick={() => handleOpenReviewClick(review)}
                 >
                   <ClipboardCheck size={15} aria-hidden="true" />
-                  {failedStatus ? "직접검토" : isReReview ? "재검토하기" : "검토하기"}
+                  {failedStatus ? "직접검토" : isReUpload ? "재검토하기" : "검토하기"}
                 </button>
               ) : null}
               {showAudit ? (
                 <button
-                  className="button button--small queue-row-action-button"
+                  className="button button--small queue-row-action-button queue-row-action-button--sm"
                   type="button"
                   onClick={() => onOpenReview(review.id)}
                 >
@@ -516,18 +516,14 @@ export function QueueTable({
               ) : null}
               {showVersionToggle ? (
                 <button
-                  className="button button--small queue-row-action-button queue-version-toggle"
+                  className="icon-button icon-button--small queue-version-toggle"
                   type="button"
                   aria-expanded={isVersionExpanded}
                   aria-label={`심의 버전 이력 v1~v${reviewCurrentVersion}`}
+                  title={`심의 버전 이력 v1~v${reviewCurrentVersion}`}
                   onClick={() => toggleVersionHistory(review.id)}
                 >
-                  {isVersionExpanded ? (
-                    <ChevronDown size={15} aria-hidden="true" />
-                  ) : (
-                    <ChevronRight size={15} aria-hidden="true" />
-                  )}
-                  버전 이력 v1~v{reviewCurrentVersion}
+                  <History size={18} aria-hidden="true" />
                 </button>
               ) : null}
               {showStatusNote ? (

@@ -89,6 +89,12 @@ describe("review service", () => {
       "view_audit"
     ]);
     expect(availableActionsFor("reviewer", "change_requested")).toEqual(["view_audit"]);
+    // 재업로드 대기 건은 심의자가 'AI 재검토'로 분석을 시작한다.
+    expect(availableActionsFor("reviewer", "re_review_pending")).toEqual(["start_analysis"]);
+    expect(availableActionsFor("compliance_admin", "re_review_pending")).toEqual([
+      "start_analysis"
+    ]);
+    expect(availableActionsFor("requester", "re_review_pending")).toEqual([]);
     expect(availableActionsFor("requester", "analysis_failed")).toEqual([]);
     expect(availableActionsFor("reviewer", "analysis_failed")).toEqual([
       "start_analysis",
