@@ -2723,9 +2723,16 @@ a.review-table__row:hover {
   font-weight: 800;
 }
 
-/* 단일/비교 토글이 있을 때는 도구 묶음을 좌측 정렬로 통일한다. */
+/* 단일/비교 토글은 좌측에 고정하되, 줌 컨트롤 묶음은 툴바 중앙 정렬을 유지한다. */
 .viewer-toolbar:has(.viewer-mode-toggle) {
-  justify-content: flex-start;
+  position: relative;
+}
+
+.viewer-toolbar .viewer-mode-toggle {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .poster__brand {
