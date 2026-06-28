@@ -481,7 +481,7 @@ export function QueueTable({
                   ) : (
                     <>
                       <PlayCircle size={15} aria-hidden="true" />
-                      {isReReviewPending ? "AI 재검토" : "AI 분석 시작"}
+                      {isReReviewPending ? "AI 재검토 시작" : "AI 분석 시작"}
                     </>
                   )}
                 </button>
