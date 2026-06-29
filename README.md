@@ -186,8 +186,7 @@ docs/                  # decisions(ADR) · diagrams · ops 런북
 
 ## 7. 평가 하니스 (`finproof-eval/`)
 
-에이전트의 **판정 품질**을 정량 채점하는 독립 Python 패키지입니다. 본체 소스를 한 줄도
-건드리지 않고, FinProof가 내보낸 리뷰 결과(JSON)와 사람이 검증한 정답을 비교합니다.
+에이전트의 **판정 품질**을 정량 채점하는 독립 Python 패키지입니다. FinProof가 내보낸 리뷰 결과(JSON)와 사람이 검증한 정답을 비교합니다.
 
 4계층 지표 — **검색**(precision/recall·임계값 스윕), **근거**(citation validity·faithfulness),
 **판정**(issue F1·위험도 정확도·**위험 과소분류율**·조치 정확도), **운영**(escalation recall·캘리브레이션).
