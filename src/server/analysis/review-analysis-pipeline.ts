@@ -16,6 +16,10 @@ import {
   createEmbeddingProvider,
   type EmbeddingProvider
 } from "@/server/knowledge/embedding-provider";
+import {
+  extractViaOcrService,
+  isOcrServiceEnabled
+} from "@/server/knowledge/ocr-service-client";
 import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import { buildAnalysisIssues } from "./issue-generation";
@@ -1102,7 +1106,78 @@ function defaultFileBodyReader(): ReviewFileBodyReader {
   return getReviewStorageAdapter();
 }
 
+/**
+ * Phase 2 — routes review-file OCR through the optional Python service
+ * (ocr-service/), reusing the same client as the knowledge-ingestion path
+ * (Strangler Fig). Digital text/PDF files keep using the local stored-document
+ * extractor; only files that would otherwise become metadata-only placeholders
+ * (images, scanned PDFs) are sent to the service. Any failure (disabled,
+ * timeout, empty result) falls back to the existing `sampleOrMetadataDocument`,
+ * so behavior is unchanged when `FINPROOF_OCR_PROVIDER` is not `python_service`.
+ */
+export function createPythonServiceOcrProvider(
+  env: Record<string, string | undefined> = process.env,
+  fileBodyReader?: ReviewFileBodyReader,
+  fetchImpl?: Parameters<typeof extractViaOcrService>[2]
+): OcrProvider {
+  return {
+    async extract({ review, files }) {
+      return Promise.all(
+        files.map(async (file) => {
+          const storedDocument = await extractStoredDocument(file, fileBodyReader);
+
+          if (storedDocument) {
+            return {
+              fileId: file.id,
+              fileName: file.name,
+              storageKey: file.storageKey,
+              text: storedDocument.text,
+              confidence: storedDocument.confidence,
+              provider: storedDocument.provider
+            };
+          }
+
+          if (isOcrServiceEnabled(env) && file.storageKey && fileBodyReader) {
+            try {
+              const body = await fileBodyReader.getReviewFileBody(file.storageKey);
+
+              if (body) {
+                const result = await extractViaOcrService(
+                  { fileName: file.name, contentType: file.contentType ?? "", body },
+                  env,
+                  fetchImpl
+                );
+
+                if (result && result.text.trim()) {
+                  return {
+                    fileId: file.id,
+                    fileName: file.name,
+                    storageKey: file.storageKey,
+                    text: result.text,
+                    confidence: result.confidence,
+                    provider: result.provider
+                  };
+                }
+              }
+            } catch {
+              // fall through to legacy metadata/sample fallback
+            }
+          }
+
+          return sampleOrMetadataDocument(review, file);
+        })
+      );
+    }
+  };
+}
+
 function defaultOcrProvider(fileBodyReader?: ReviewFileBodyReader) {
+  // Phase 2: opt-in Python OCR service. Unknown to provider-config (which maps it
+  // to deterministic), so we branch on the env value directly here.
+  if (isOcrServiceEnabled()) {
+    return createPythonServiceOcrProvider(process.env, fileBodyReader);
+  }
+
   const config = getAnalysisProviderConfig();
 
   if (config.ocr.provider === "http") {

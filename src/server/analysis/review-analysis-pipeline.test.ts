@@ -2,6 +2,7 @@ import type { ReviewCase } from "@/domain/types";
 import {
   createGeminiOcrProvider,
   createOpenAiOcrProvider,
+  createPythonServiceOcrProvider,
   createReviewAnalysisPipeline,
   selectEvidenceCandidates
 } from "./review-analysis-pipeline";
@@ -2074,5 +2075,73 @@ describe("selectEvidenceCandidates", () => {
     const selected = selectEvidenceCandidates(candidates, { minScore: 0.55, topK: 4 });
 
     expect(selected.map((candidate) => candidate.id)).toEqual(["product-1", "product-2"]);
+  });
+});
+
+describe("Phase 2 — python service OCR provider", () => {
+  const pythonEnv = {
+    FINPROOF_OCR_PROVIDER: "python_service",
+    FINPROOF_OCR_ENDPOINT: "http://localhost:8000"
+  };
+
+  it("routes an image file to the python service and uses its result", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ text: "연 10% 확정 수익 보장", confidence: 0.83, provider: "tesseract" })
+    }));
+    const provider = createPythonServiceOcrProvider(
+      pythonEnv,
+      {
+        async getReviewFileBody() {
+          return new TextEncoder().encode("PNGBYTES");
+        }
+      },
+      fetchImpl
+    );
+
+    const [document] = await provider.extract({ review, files: review.files });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(document.provider).toBe("tesseract");
+    expect(document.text).toContain("확정 수익");
+    expect(document.confidence).toBe(0.83);
+  });
+
+  it("falls back to metadata extraction when the service is unavailable", async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error("ECONNREFUSED");
+    });
+    const provider = createPythonServiceOcrProvider(
+      pythonEnv,
+      {
+        async getReviewFileBody() {
+          return new TextEncoder().encode("PNGBYTES");
+        }
+      },
+      fetchImpl
+    );
+
+    const [document] = await provider.extract({ review, files: review.files });
+
+    expect(document.provider).toBe("metadata-only"); // legacy fallback preserved
+  });
+
+  it("does not call the service when not enabled (legacy behavior)", async () => {
+    const fetchImpl = vi.fn();
+    const provider = createPythonServiceOcrProvider(
+      {},
+      {
+        async getReviewFileBody() {
+          return new TextEncoder().encode("PNGBYTES");
+        }
+      },
+      fetchImpl
+    );
+
+    const [document] = await provider.extract({ review, files: review.files });
+
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(document.provider).toBe("metadata-only");
   });
 });
