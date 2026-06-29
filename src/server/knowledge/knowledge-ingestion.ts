@@ -9,6 +9,10 @@ import {
   createEmbeddingProvider,
   type EmbeddingProvider
 } from "@/server/knowledge/embedding-provider";
+import {
+  extractViaOcrService,
+  isOcrServiceEnabled
+} from "@/server/knowledge/ocr-service-client";
 
 const execFileAsync = promisify(execFile);
 
@@ -109,6 +113,21 @@ export async function extractKnowledgeDocumentText({
   contentType,
   body
 }: KnowledgeDocumentTextInput): Promise<string> {
+  // Strangler Fig: when the optional Python OCR/preprocessing service is enabled,
+  // try it first. On any failure (disabled, timeout, empty result) fall through
+  // to the legacy extraction below — the legacy path is never removed.
+  if (isOcrServiceEnabled()) {
+    try {
+      const serviceResult = await extractViaOcrService({ fileName, contentType, body });
+
+      if (serviceResult && serviceResult.text.trim()) {
+        return normalizeText(serviceResult.text);
+      }
+    } catch {
+      // fall through to legacy extraction
+    }
+  }
+
   const normalizedType = contentType.toLowerCase();
 
   if (

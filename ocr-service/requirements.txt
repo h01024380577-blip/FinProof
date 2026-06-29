@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pymupdf
+pdfplumber
+python-docx
+pytesseract
+pillow
