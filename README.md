@@ -61,10 +61,38 @@ src/
 환경변수 하나(`FINPROOF_REVIEW_STORE`)로 전환되며, 모든 호출은 `ReviewStoreScope`
 (tenant·actor·role)를 받아 RBAC·감사를 일관되게 처리합니다.
 
-<div align="center">
-  <img src="docs/diagrams/finproof-final-agent-flow.png" alt="FinProof 에이전트 전체 흐름" width="760" />
-  <br/><sub>전체 에이전트 플로우 — 인테이크부터 심의 결정까지</sub>
-</div>
+```mermaid
+flowchart TB
+    REQ(["요청자"])
+    REV(["심의자"])
+
+    REQ -->|"광고 패키지 업로드<br/>POST /review-cases"| API["API Route Handler<br/>requestContext · requireRole"]
+    API --> SVC["ReviewService"]
+    SVC -->|"스캔 → ZIP 전개 → 저장"| STG["Storage 어댑터<br/>local-metadata / S3"]
+    SVC --> STORE{{"ReviewStore (단일 seam)<br/>mock / prisma + pgvector"}}
+
+    REV -->|"분석 시작"| SVC
+    SVC -->|"inline 즉시 실행 / queued enqueue"| PIPE["분석 파이프라인"]
+    WORKER["분석 워커 (queued)"] -->|"claim → run"| PIPE
+    PIPE -->|"이슈 + 근거"| STORE
+
+    STORE --> WB["심의 워크벤치<br/>이슈 · 근거 · 크리에이티브 뷰어"]
+    REV --> WB
+    WB -->|"최종 결정: 승인 / 수정요청 / 반려"| SVC
+    SVC -->|"모든 변이 기록"| AUDIT[("감사 로그")]
+    SVC -.->|"결과 통보"| REQ
+
+    classDef actor fill:#fef3c7,stroke:#b45309,color:#1c1917;
+    classDef core fill:#dcfce7,stroke:#166534,color:#052e16;
+    classDef store fill:#fde68a,stroke:#92400e,color:#1c1917;
+    classDef pipe fill:#fce7f3,stroke:#9d174d,color:#3f0a25;
+    class REQ,REV actor;
+    class API,SVC,WB core;
+    class STORE,STG,AUDIT store;
+    class PIPE,WORKER pipe;
+```
+
+<div align="center"><sub>전체 에이전트 플로우 — 인테이크부터 심의 결정까지. 모든 영속성은 <code>ReviewStore</code> seam을 통과합니다.</sub></div>
 
 ---
 
@@ -88,10 +116,39 @@ OCR → 임베딩 → RAG 검색 → (선택) 재랭킹 → 서브 에이전트 
 실행 모드도 분리됩니다 — `inline`(요청 내 동기 실행) 또는 `queued`(워커가 큐에서 작업을
 claim해 처리, 프로덕션에서는 별도 systemd 유닛).
 
-<div align="center">
-  <img src="docs/diagrams/finproof-subagent-orchestration-flow.png" alt="서브 에이전트 오케스트레이션" width="720" />
-  <br/><sub>서브 에이전트 오케스트레이션 — 도메인 체크 분담 후 리드가 종합</sub>
-</div>
+```mermaid
+flowchart LR
+    DOC["업로드 문서"] --> OCR["OCR<br/>deterministic · gemini · http"]
+    OCR --> EMB["임베딩<br/>deterministic · openai"]
+    EMB --> RAG["RAG 검색<br/>승인 지식 + 과거 사례 · pgvector"]
+    RAG --> RR["재랭킹 (선택)<br/>cohere"]
+    RR --> SUB
+
+    subgraph SUB["서브 에이전트 · 도메인 체크 분담"]
+        direction TB
+        A1["creative_review"]
+        A2["product_terms"]
+        A3["regulation"]
+        A4["internal_policy"]
+        A5["evidence_verification"]
+        A6["case_search"]
+    end
+
+    SUB -->|"AgentFinding"| LEAD["컴플라이언스 리드<br/>중복·충돌 해소 + 최종 위험도"]
+    LEAD --> ISS["이슈 생성<br/>ReviewIssue + Evidence 인용"]
+
+    ROUTER["모델 라우터<br/>default · escalation · multimodal 티어"] -.->|"text / multimodal"| SUB
+    ROUTER -.-> LEAD
+
+    classDef stage fill:#dbeafe,stroke:#1e40af,color:#0f172a;
+    classDef agent fill:#fce7f3,stroke:#9d174d,color:#3f0a25;
+    classDef out fill:#dcfce7,stroke:#166534,color:#052e16;
+    class DOC,OCR,EMB,RAG,RR,ROUTER stage;
+    class A1,A2,A3,A4,A5,A6 agent;
+    class LEAD,ISS out;
+```
+
+<div align="center"><sub>서브 에이전트 오케스트레이션 — 도메인 체크를 분담하고 리드가 종합해 근거 기반 이슈를 생성합니다.</sub></div>
 
 ---
 
