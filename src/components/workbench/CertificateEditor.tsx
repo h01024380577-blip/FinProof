@@ -64,6 +64,7 @@ export function CertificateEditor({
   const [isLoading, setIsLoading] = useState(true);
   const [certificate, setCertificate] = useState<ReviewCertificate | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -225,13 +226,67 @@ export function CertificateEditor({
     }
   }
 
+  async function saveDraft(): Promise<void> {
+    const trimmedBody = draft.body.trim();
+
+    if (!trimmedBody) {
+      setError("심의 의견 본문을 입력해 주세요.");
+      return;
+    }
+
+    setIsSavingDraft(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch(`/api/v1/review-cases/${caseId}/certificate`, {
+        method: "PUT",
+        headers: apiHeaders({ "content-type": "application/json" }),
+        body: JSON.stringify({
+          body: trimmedBody,
+          certificateNumber: draft.certificateNumber.trim(),
+          validFrom: draft.validFrom,
+          validUntil: draft.validUntil,
+          remarks: draft.remarks
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          throw new Error("심의 의견 본문을 입력해 주세요.");
+        }
+        if (response.status === 403) {
+          throw new Error("심의필을 저장할 권한이 없습니다.");
+        }
+        throw new Error("심의필 임시 저장 요청을 처리하지 못했습니다.");
+      }
+
+      const payload = (await response.json()) as CertificateResponse;
+
+      if (payload.certificate) {
+        setCertificate(payload.certificate);
+      }
+      setSuccessMessage("심의필 내용을 임시 저장했습니다. 승인 후 발급할 수 있습니다.");
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "심의필 임시 저장 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }
+
   const metadata = certificate?.metadata;
   const displayTitle = metadata?.title ?? title;
   const previewNumber = draft.certificateNumber.trim() || "발급 예정";
   const isApproved = reviewStatus === "approved";
-  const submitLabel = certificate ? "저장" : "발급";
+  const isIssued = certificate?.status === "issued";
+  const submitLabel = isIssued ? "저장" : "발급";
   const canIssue =
     isApproved && canMutate && draft.body.trim().length > 0 && draft.certificateNumber.trim().length > 0;
+  const canSaveDraft = canMutate && draft.body.trim().length > 0;
 
   return (
     <div className="panel panel--compact drawer-support-panel">
@@ -240,21 +295,39 @@ export function CertificateEditor({
           <h3>심의 완료 증명서</h3>
         </div>
         {canMutate ? (
-          <button
-            className="button button--small button--primary"
-            type="button"
-            disabled={isSaving || !canIssue}
-            onClick={() => void issueCertificate()}
-          >
-            {isSaving ? (
-              <>
-                <LoaderCircle className="action-spinner" size={15} aria-hidden="true" />
-                처리 중
-              </>
-            ) : (
-              submitLabel
-            )}
-          </button>
+          isApproved ? (
+            <button
+              className="button button--small button--primary"
+              type="button"
+              disabled={isSaving || isSavingDraft || !canIssue}
+              onClick={() => void issueCertificate()}
+            >
+              {isSaving ? (
+                <>
+                  <LoaderCircle className="action-spinner" size={15} aria-hidden="true" />
+                  처리 중
+                </>
+              ) : (
+                submitLabel
+              )}
+            </button>
+          ) : (
+            <button
+              className="button button--small"
+              type="button"
+              disabled={isSavingDraft || !canSaveDraft}
+              onClick={() => void saveDraft()}
+            >
+              {isSavingDraft ? (
+                <>
+                  <LoaderCircle className="action-spinner" size={15} aria-hidden="true" />
+                  저장 중
+                </>
+              ) : (
+                "임시 저장"
+              )}
+            </button>
+          )
         ) : null}
       </div>
 
@@ -271,7 +344,11 @@ export function CertificateEditor({
                 className={styles.form}
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void issueCertificate();
+                  if (isApproved) {
+                    void issueCertificate();
+                  } else {
+                    void saveDraft();
+                  }
                 }}
               >
                 <fieldset className={styles.issueInfo}>
@@ -284,7 +361,7 @@ export function CertificateEditor({
                       type="text"
                       aria-label="심의필 번호"
                       value={draft.certificateNumber}
-                      disabled={isSaving}
+                      disabled={isSaving || isSavingDraft}
                       placeholder="사내 시스템에서 발급된 번호를 입력하세요 (예: 2026-0605-001)"
                       onChange={(event) => updateField("certificateNumber", event.target.value)}
                     />
@@ -299,7 +376,7 @@ export function CertificateEditor({
                         type="date"
                         aria-label="유효기간 시작"
                         value={draft.validFrom}
-                        disabled={isSaving}
+                        disabled={isSaving || isSavingDraft}
                         onChange={(event) => updateField("validFrom", event.target.value)}
                       />
                       <span className={styles.dateRangeSep} aria-hidden="true">
@@ -310,7 +387,7 @@ export function CertificateEditor({
                         type="date"
                         aria-label="유효기간 종료"
                         value={draft.validUntil}
-                        disabled={isSaving}
+                        disabled={isSaving || isSavingDraft}
                         onChange={(event) => updateField("validUntil", event.target.value)}
                       />
                     </div>
@@ -323,7 +400,7 @@ export function CertificateEditor({
                       className={styles.remarks}
                       aria-label="심의 의견"
                       value={draft.body}
-                      disabled={isSaving}
+                      disabled={isSaving || isSavingDraft}
                       placeholder="심의 의견을 자유롭게 작성해 주세요."
                       onChange={(event) => updateField("body", event.target.value)}
                     />
@@ -361,15 +438,15 @@ export function CertificateEditor({
               certificateNumber={previewNumber}
               title={displayTitle}
               productType={metadata?.productType ?? productType}
-              approvedAt={metadata?.approvedAt}
+              approvedAt={isIssued ? metadata?.approvedAt : undefined}
               reviewerName={metadata?.reviewerName ?? reviewerName}
               validFrom={draft.validFrom}
               validUntil={draft.validUntil}
               remarks={draft.remarks}
               body={draft.body}
               bodyPlaceholder="작성하신 심의 의견이 여기에 실시간으로 반영됩니다."
-              issuedByName={certificate?.issuedByName ?? issuerName}
-              issuedAt={certificate?.issuedAt}
+              issuedByName={isIssued ? (certificate?.issuedByName ?? issuerName) : issuerName}
+              issuedAt={isIssued ? certificate?.issuedAt : undefined}
             />
           </section>
         </div>

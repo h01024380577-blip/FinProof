@@ -86,6 +86,7 @@ import type {
 
 const reviewInclude = {
   files: true,
+  certificate: { select: { metadata: true } },
   issues: {
     orderBy: { id: "asc" },
     include: {
@@ -3222,7 +3223,8 @@ export function createPrismaReviewStore(): ReviewStore {
           productType: review.productType,
           affiliateName: review.affiliateName,
           reviewerName: review.reviewerName,
-          approvedAt
+          approvedAt,
+          status: input.status ?? "issued"
         } as unknown as Prisma.InputJsonValue;
         const certificate = await tx.reviewCertificate.upsert({
           where: { reviewCaseId },

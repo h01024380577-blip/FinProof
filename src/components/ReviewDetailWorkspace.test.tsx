@@ -925,6 +925,55 @@ describe("ReviewDetailWorkspace", () => {
     ).toBeInTheDocument();
   });
 
+  it("saves a 심의필 draft from the workbench before approval via PUT", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn((url: string, init?: RequestInit) => {
+      if (url.endsWith("/certificate") && init?.method === "PUT") {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            certificate: { status: "draft", certificateNumber: "", body: "임시 저장 본문" }
+          })
+        });
+      }
+      if (url.endsWith("/certificate")) {
+        return Promise.resolve({
+          ok: false,
+          status: 404,
+          json: async () => ({ error: "Review certificate not found" })
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReviewDetailWorkspace review={getReviewCaseById("rc-demo-deposit-001")!} />);
+
+    await user.click(screen.getByRole("tab", { name: "심의필" }));
+    await screen.findByRole("heading", { name: "심의 완료 증명서" });
+
+    const opinionField = screen.getByLabelText("심의 의견");
+    await user.type(opinionField, "임시 저장 본문");
+    await user.click(screen.getByRole("button", { name: "임시 저장" }));
+
+    await waitFor(() => {
+      const putCall = fetchMock.mock.calls.find(
+        ([url, init]) =>
+          typeof url === "string" &&
+          url.endsWith("/certificate") &&
+          (init as RequestInit | undefined)?.method === "PUT"
+      );
+      expect(putCall).toBeDefined();
+      const payload = JSON.parse((putCall![1] as RequestInit).body as string);
+      expect(payload.body).toBe("임시 저장 본문");
+    });
+
+    expect(
+      await screen.findByText("심의필 내용을 임시 저장했습니다. 승인 후 발급할 수 있습니다.")
+    ).toBeInTheDocument();
+  });
+
   it("does not expose the 심의필 tab for requesters", async () => {
     const user = userEvent.setup();
 

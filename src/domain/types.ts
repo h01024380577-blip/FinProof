@@ -167,9 +167,13 @@ export type ReviewCertificateMetadata = {
   approvedAt: string;
 };
 
+export type ReviewCertificateStatus = "draft" | "issued";
+
 export type ReviewCertificate = {
   id: string;
   reviewCaseId: string;
+  // 심의 중 워크벤치에서 임시 저장한 내용은 "draft", 승인 후 정식 발급되면 "issued"로 표시한다.
+  status: ReviewCertificateStatus;
   certificateNumber: string;
   body: string;
   validFrom?: string;
@@ -198,6 +202,8 @@ export type ReviewSummary = Pick<
   | "currentVersion"
 > & {
   availableActions?: ReviewAction[];
+  // 심의 이력 탭에서 승인 건의 심의필 발급 필요 여부를 표시하기 위한 상태.
+  certificateStatus?: ReviewCertificateStatus;
 };
 
 export type PaginatedResult<T> = {

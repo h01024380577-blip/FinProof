@@ -763,4 +763,55 @@ describe("review service", () => {
     });
     expect(review?.status).toBe("analysis_complete");
   });
+
+  it("saves a certificate draft before approval, hides it from requesters, and issues it later", async () => {
+    const store = createMockReviewStore();
+    const service = createReviewService({ store });
+    const requesterStoreScope = {
+      tenantId: requesterContext.tenantId,
+      actorUserId: requesterContext.userId,
+      actorRole: requesterContext.role
+    };
+    const created = await store.createReviewCaseFromUploadedFiles(requesterStoreScope, {
+      title: "심의필 임시저장 케이스",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-06-20",
+      files: [{ name: "poster.png", type: "image/png", size: 2048 }]
+    });
+    const caseId = created.reviewCase.id;
+
+    // 승인 전에도 워크벤치에서 심의필 내용을 임시 저장할 수 있다(번호는 선택값).
+    const draft = await service.saveReviewCertificateDraft(reviewerContext, caseId, {
+      body: "임시 저장한 심의 의견",
+      certificateNumber: ""
+    });
+    expect(draft?.status).toBe("draft");
+
+    // 심의자는 임시 저장본을 그대로 다시 불러올 수 있다.
+    const reviewerView = await service.getReviewCertificate(reviewerContext, caseId);
+    expect(reviewerView).toMatchObject({ status: "draft", body: "임시 저장한 심의 의견" });
+
+    // 승인되어도 정식 발급 전(draft)에는 요청자에게 노출되지 않는다.
+    await store.updateReviewStatus(reviewerStoreScope, caseId, "approved");
+    await expect(service.getReviewCertificate(requesterContext, caseId)).resolves.toBeUndefined();
+
+    // 심의 이력에서는 발급 필요 상태(draft)로 표시된다.
+    const beforeIssue = await service.listCaseLibrary(reviewerContext, {});
+    expect(beforeIssue.items.find((item) => item.id === caseId)?.certificateStatus).toBe("draft");
+
+    // 정식 발급하면 요청자도 볼 수 있고 이력 상태도 issued로 바뀐다.
+    const issued = await service.issueReviewCertificate(reviewerContext, caseId, {
+      body: "임시 저장한 심의 의견",
+      certificateNumber: "2026-0630-001"
+    });
+    expect(issued?.status).toBe("issued");
+
+    const requesterView = await service.getReviewCertificate(requesterContext, caseId);
+    expect(requesterView).toMatchObject({ status: "issued", certificateNumber: "2026-0630-001" });
+
+    const afterIssue = await service.listCaseLibrary(reviewerContext, {});
+    expect(afterIssue.items.find((item) => item.id === caseId)?.certificateStatus).toBe("issued");
+  });
 });

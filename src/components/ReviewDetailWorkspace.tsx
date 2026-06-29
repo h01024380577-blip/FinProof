@@ -981,9 +981,35 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
       if (finalAction === "approve" && trimmedCertificateBody.length > 0) {
         if (trimmedCertificateNumber.length === 0) {
-          setInteractionError(
-            "심의필 번호가 없어 자동 발급되지 않았습니다. 심의 이력에서 발급해 주세요."
-          );
+          // 번호가 없으면 자동 발급은 보류하되, 작성한 내용은 임시 저장해 심의 이력에서 그대로 불러올 수 있게 한다.
+          try {
+            const draftResponse = await fetch(
+              `/api/v1/review-cases/${review.id}/certificate`,
+              {
+                method: "PUT",
+                headers: jsonHeaders,
+                body: JSON.stringify({
+                  body: trimmedCertificateBody,
+                  certificateNumber: trimmedCertificateNumber,
+                  validFrom: certificateDraft.validFrom,
+                  validUntil: certificateDraft.validUntil,
+                  remarks: certificateDraft.remarks
+                })
+              }
+            );
+
+            if (!draftResponse.ok) {
+              throw new Error("certificate draft save failed");
+            }
+
+            setInteractionError(
+              "심의필 번호가 없어 자동 발급되지 않았습니다. 작성한 내용은 저장되었으니 심의 이력에서 발급해 주세요."
+            );
+          } catch {
+            setInteractionError(
+              "심의필 번호가 없어 자동 발급되지 않았습니다. 심의 이력에서 발급해 주세요."
+            );
+          }
         } else {
           try {
             const certificateResponse = await fetch(

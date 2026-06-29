@@ -17,6 +17,7 @@ import type {
   RoleId,
   ReviewCase,
   ReviewCertificate,
+  ReviewCertificateStatus,
   ReviewFile,
   ReviewIssue,
   ReviewSummary,
@@ -159,6 +160,8 @@ export type IssueReviewCertificateInput = {
   validFrom?: string;
   validUntil?: string;
   remarks?: string;
+  // "draft"는 승인 전 워크벤치 임시 저장, "issued"(기본값)는 정식 발급.
+  status?: ReviewCertificateStatus;
 };
 
 export type FinalReviewStatus = Extract<

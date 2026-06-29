@@ -6,6 +6,7 @@ import {
   History,
   Loader2,
   PlayCircle,
+  Stamp,
   Trash2,
   UserCheck
 } from "lucide-react";
@@ -403,6 +404,9 @@ export function QueueTable({
           canOpen && (review.status === "analysis_complete" || failedStatus);
         const showAudit =
           !waiting && canViewAudit && review.status !== "analysis_complete";
+        // 승인 완료 건은 심의필이 정식 발급되기 전까지 '심의필 발급하기'로 안내한다.
+        const certificateNeedsIssue =
+          review.status === "approved" && review.certificateStatus !== "issued";
         const showStatusNote = !waiting && !openable && !showStartButton;
         const canDelete =
           canDeleteReviewHistory &&
@@ -505,7 +509,16 @@ export function QueueTable({
                   {failedStatus ? "직접검토" : isReUpload ? "재검토하기" : "검토하기"}
                 </button>
               ) : null}
-              {showAudit ? (
+              {certificateNeedsIssue ? (
+                <button
+                  className="button button--small button--primary queue-row-action-button"
+                  type="button"
+                  onClick={() => onOpenReview(review.id)}
+                >
+                  <Stamp size={15} aria-hidden="true" />
+                  심의필 발급하기
+                </button>
+              ) : showAudit ? (
                 <button
                   className="button button--small queue-row-action-button queue-row-action-button--sm"
                   type="button"

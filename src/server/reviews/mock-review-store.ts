@@ -135,7 +135,10 @@ function withStorageMetadata(review: ReviewCase): ReviewCase {
   };
 }
 
-function toSummary(review: ReviewCase): ReviewSummary {
+function toSummary(
+  review: ReviewCase,
+  certificateStatus?: ReviewSummary["certificateStatus"]
+): ReviewSummary {
   return {
     id: review.id,
     title: review.title,
@@ -147,7 +150,8 @@ function toSummary(review: ReviewCase): ReviewSummary {
     requester: review.requester,
     requestDepartment: review.requestDepartment,
     reviewer: review.reviewer,
-    currentVersion: review.currentVersion ?? 1
+    currentVersion: review.currentVersion ?? 1,
+    ...(certificateStatus ? { certificateStatus } : {})
   };
 }
 
@@ -282,7 +286,8 @@ function findingsFromArtifacts(
 
 function paginatedSummaries(
   reviews: ReviewCase[],
-  options: ListReviewSummariesOptions = {}
+  options: ListReviewSummariesOptions = {},
+  certificateStatusFor?: (reviewCaseId: string) => ReviewSummary["certificateStatus"]
 ): ReviewSummaryPage {
   const page = Math.max(1, options.page ?? 1);
   const pageSize = Math.max(1, options.pageSize ?? 50);
@@ -305,7 +310,9 @@ function paginatedSummaries(
 
     return true;
   });
-  const items = filtered.slice((page - 1) * pageSize, page * pageSize).map(toSummary);
+  const items = filtered
+    .slice((page - 1) * pageSize, page * pageSize)
+    .map((review) => toSummary(review, certificateStatusFor?.(review.id)));
 
   return {
     items,
@@ -763,7 +770,8 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     async listReviewSummaries(scope: ReviewStoreScope, options?: ListReviewSummariesOptions) {
       return paginatedSummaries(
         Array.from(cases.values()).filter((review) => canAccessCase(scope, review.id)),
-        options
+        options,
+        (id) => reviewCertificates.get(id)?.status
       );
     },
 
@@ -1659,6 +1667,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       const certificate: ReviewCertificate = {
         id: existing?.id ?? `review-certificate-${reviewCaseId}`,
         reviewCaseId,
+        status: input.status ?? "issued",
         certificateNumber: input.certificateNumber,
         body: input.body,
         validFrom: input.validFrom,
@@ -2603,10 +2612,14 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       );
       const riskLevel = options?.riskLevel as RiskLevel | undefined;
 
-      return paginatedSummaries(finalReviews, {
-        ...options,
-        riskLevel
-      });
+      return paginatedSummaries(
+        finalReviews,
+        {
+          ...options,
+          riskLevel
+        },
+        (id) => reviewCertificates.get(id)?.status
+      );
     }
   };
 

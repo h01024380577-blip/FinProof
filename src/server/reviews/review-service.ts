@@ -773,7 +773,10 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         );
       }
 
-      const certificate = await store.issueReviewCertificate(scope, reviewCaseId, input);
+      const certificate = await store.issueReviewCertificate(scope, reviewCaseId, {
+        ...input,
+        status: "issued"
+      });
 
       if (certificate) {
         await store.recordAuditEvent(scope, {
@@ -787,18 +790,52 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       return certificate;
     },
 
+    // 승인 전 워크벤치 검토 단계에서 심의필 내용을 임시 저장한다(정식 발급 아님).
+    async saveReviewCertificateDraft(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: IssueReviewCertificateInput
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "save review certificate draft");
+
+      const scope = scopeFromContext(context);
+      const review = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!review) {
+        return undefined;
+      }
+
+      const certificate = await store.issueReviewCertificate(scope, reviewCaseId, {
+        ...input,
+        status: "draft"
+      });
+
+      if (certificate) {
+        await store.recordAuditEvent(scope, {
+          action: "review_case.certificate.save_draft",
+          targetType: "review_case",
+          targetId: reviewCaseId,
+          afterValue: { certificateNumber: certificate.certificateNumber }
+        });
+      }
+
+      return certificate;
+    },
+
     async getReviewCertificate(context: RequestContext, reviewCaseId: string) {
       const scope = scopeFromContext(context);
+      const certificate = await store.getReviewCertificate(scope, reviewCaseId);
 
+      // 요청자에게는 승인되어 정식 발급된 심의필만 노출한다(임시 저장본은 비공개).
       if (context.role === "requester") {
         const review = await store.getReviewCase(scope, reviewCaseId);
 
-        if (!review || review.status !== "approved") {
+        if (!review || review.status !== "approved" || certificate?.status !== "issued") {
           return undefined;
         }
       }
 
-      return store.getReviewCertificate(scope, reviewCaseId);
+      return certificate;
     },
 
     async deleteReviewHistory(context: RequestContext, reviewCaseId: string) {

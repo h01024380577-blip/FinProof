@@ -90,6 +90,7 @@ export type PrismaReviewCaseRow = {
   currentDraftVersion: number;
   currentVersion: number;
   analysisNotice: string | null;
+  certificate?: { metadata: unknown } | null;
 };
 
 function stringArray(value: unknown): string[] {
@@ -391,6 +392,7 @@ export function toReviewCertificate(row: {
   return {
     id: row.id,
     reviewCaseId: row.reviewCaseId,
+    status: meta.status === "draft" ? "draft" : "issued",
     certificateNumber: row.certificateNumber,
     body: row.body,
     validFrom: row.validFrom ?? undefined,
@@ -412,6 +414,13 @@ export function toReviewCertificate(row: {
 }
 
 export function toReviewSummary(row: PrismaReviewCaseRow): ReviewSummary {
+  const certificateMeta = row.certificate ? jsonObject(row.certificate.metadata) : undefined;
+  const certificateStatus: ReviewSummary["certificateStatus"] = !row.certificate
+    ? undefined
+    : certificateMeta?.status === "draft"
+      ? "draft"
+      : "issued";
+
   return {
     id: row.id,
     title: row.title,
@@ -423,7 +432,8 @@ export function toReviewSummary(row: PrismaReviewCaseRow): ReviewSummary {
     requester: row.requesterName,
     requestDepartment: optionalTrimmedString(row.requestDepartment),
     reviewer: row.reviewerName,
-    currentVersion: row.currentVersion
+    currentVersion: row.currentVersion,
+    ...(certificateStatus ? { certificateStatus } : {})
   };
 }
 

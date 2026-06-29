@@ -566,6 +566,57 @@ describe("QueueTable", () => {
     expect(screen.getAllByText("반려")[0]).toHaveAttribute("data-status", "rejected");
   });
 
+  it("prompts certificate issuance for an approved row whose 심의필 is not yet issued", async () => {
+    const onOpen = vi.fn();
+    render(
+      <QueueTable
+        rows={[
+          {
+            ...baseRow,
+            id: "RC-APPROVED-001",
+            status: "approved",
+            certificateStatus: "draft",
+            availableActions: ["view_audit"]
+          }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={onOpen}
+      />
+    );
+
+    const issueButton = screen.getByRole("button", { name: "심의필 발급하기" });
+    expect(issueButton).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "상세보기" })).not.toBeInTheDocument();
+
+    await userEvent.click(issueButton);
+    expect(onOpen).toHaveBeenCalledWith("RC-APPROVED-001");
+  });
+
+  it("keeps 상세보기 for an approved row once the 심의필 has been issued", () => {
+    render(
+      <QueueTable
+        rows={[
+          {
+            ...baseRow,
+            id: "RC-APPROVED-002",
+            status: "approved",
+            certificateStatus: "issued",
+            availableActions: ["view_audit"]
+          }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "상세보기" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "심의필 발급하기" })).not.toBeInTheDocument();
+  });
+
   it("shows a version-history toggle for a history row with multiple versions and renders the timeline on expand", async () => {
     const user = userEvent.setup();
     const versionsBody = {
