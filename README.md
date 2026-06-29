@@ -152,35 +152,7 @@ flowchart LR
 
 ---
 
-## 5. 빠른 시작
-
-별도 설정 없이 **결정론적 mock 모드**로 즉시 실행됩니다 (DB·API 키 불필요).
-
-```bash
-npm install
-npm run dev          # http://localhost:3000
-```
-
-품질 게이트:
-
-```bash
-npm run test         # Vitest (jsdom), 소스와 colocate된 테스트
-npm run lint         # eslint --max-warnings=0 (CI는 경고도 실패 처리)
-npm run build        # 프로덕션 빌드
-```
-
-PostgreSQL(pgvector)로 실제 영속성을 쓰려면:
-
-```bash
-cp .env.example .env
-docker compose up -d postgres
-npm run db:generate && npm run db:migrate -- --name init && npm run db:seed
-FINPROOF_REVIEW_STORE=prisma npm run dev
-```
-
----
-
-## 6. 기술 스택
+## 5. 기술 스택
 
 - **프론트엔드** — Next.js 16 (App Router, Turbopack), React 19, TypeScript, CSS Modules
 - **백엔드** — Next Route Handlers, 도메인 주도 3계층 분리
@@ -192,7 +164,7 @@ FINPROOF_REVIEW_STORE=prisma npm run dev
 
 ---
 
-## 7. 프로젝트 구조
+## 6. 프로젝트 구조
 
 ```
 src/
@@ -212,7 +184,7 @@ docs/                  # decisions(ADR) · diagrams · ops 런북
 
 ---
 
-## 8. 평가 하니스 (`finproof-eval/`)
+## 7. 평가 하니스 (`finproof-eval/`)
 
 에이전트의 **판정 품질**을 정량 채점하는 독립 Python 패키지입니다. 본체 소스를 한 줄도
 건드리지 않고, FinProof가 내보낸 리뷰 결과(JSON)와 사람이 검증한 정답을 비교합니다.
@@ -224,7 +196,7 @@ PR마다 GitHub Actions가 결정론적 지표를 채점합니다(안전 모드)
 
 ---
 
-## 9. 더 읽을거리
+## 8. 더 읽을거리
 
 - [`docs/decisions/`](docs/decisions/) — 아키텍처 결정 기록(ADR)
 - [`docs/diagrams/`](docs/diagrams/) — 분석 플로우·서브 에이전트 오케스트레이션 도식
