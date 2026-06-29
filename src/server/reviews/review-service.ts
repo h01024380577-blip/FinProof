@@ -14,6 +14,14 @@ import { createRegulatoryKnowledgeService } from "@/server/regulatory/regulatory
 import { expandArchiveUploads } from "@/server/storage/archive-extraction";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
 import type { KnowledgeDocument, ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
+import { buildRevisionDiff, type RevisionDiff } from "@/domain/revision-diff";
+
+export type RevisionDiffResult =
+  | { available: true; diff: RevisionDiff }
+  | {
+      available: false;
+      reason: "not_found" | "first_version" | "no_previous_snapshot";
+    };
 import { getReviewStore } from ".";
 import { StateConflictError } from "./route-utils";
 import type {
@@ -23,11 +31,13 @@ import type {
   CreateChatSessionInput,
   CreateDraftVersionInput,
   CreateKnowledgeDocumentInput,
+  CreateManualIssueInput,
   CreateRegulatorySourceInput,
   CreateReviewReportInput,
   CreateReviewCaseFromSamplePackageInput,
   CreateReviewCaseFromUploadedFilesInput,
   FinalReviewStatus,
+  IssueReviewCertificateInput,
   KnowledgeEvidenceSearchInput,
   ListIssuesOptions,
   ListReviewSummariesOptions,
@@ -35,7 +45,8 @@ import type {
   ReviewStore,
   ReviewStoreScope,
   SaveIssueDecisionInput,
-  UpdateReviewReviewerInput
+  UpdateReviewReviewerInput,
+  UpdateReviewStatusOptions
 } from "./review-store";
 
 export type AnalysisStatusResponse = {
@@ -183,6 +194,15 @@ export function availableActionsFor(role: RoleId, status: ReviewStatus): ReviewA
     return ["start_analysis"];
   }
 
+  if (status === "analysis_failed" && (role === "reviewer" || role === "compliance_admin")) {
+    return ["start_analysis", "open_workbench", "view_audit"];
+  }
+
+  // 재업로드된 수정본은 심의자가 'AI 재검토'로 분석을 돌린 뒤(→ analysis_complete) 재검토한다.
+  if (status === "re_review_pending" && (role === "reviewer" || role === "compliance_admin")) {
+    return ["start_analysis"];
+  }
+
   if (status === "analysis_complete") {
     return ["open_workbench", "view_audit"];
   }
@@ -326,7 +346,13 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       const scope = scopeFromContext(context);
       const before = await store.getReviewCase(scope, reviewCaseId);
 
-      if (before && before.status !== "submitted" && before.status !== "analysis_waiting") {
+      if (
+        before &&
+        before.status !== "submitted" &&
+        before.status !== "analysis_waiting" &&
+        before.status !== "analysis_failed" &&
+        before.status !== "re_review_pending"
+      ) {
         throw new StateConflictError(`Cannot start analysis while review case is ${before.status}`);
       }
 
@@ -557,13 +583,14 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
     async updateReviewStatus(
       context: RequestContext,
       reviewCaseId: string,
-      status: FinalReviewStatus
+      status: FinalReviewStatus,
+      options: UpdateReviewStatusOptions = {}
     ) {
       requireRole(context, ["reviewer", "compliance_admin"], "finalize review");
 
       const scope = scopeFromContext(context);
       const before = await store.getReviewCase(scope, reviewCaseId);
-      const review = await store.updateReviewStatus(scope, reviewCaseId, status);
+      const review = await store.updateReviewStatus(scope, reviewCaseId, status, options);
 
       if (review) {
         await store.recordAuditEvent(scope, {
@@ -571,11 +598,207 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
           targetType: "review_case",
           targetId: reviewCaseId,
           beforeValue: before ? { status: before.status } : undefined,
-          afterValue: { status: review.status }
+          afterValue: { status: review.status, version: review.currentVersion }
         });
       }
 
       return review;
+    },
+
+    async createManualIssue(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: CreateManualIssueInput
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "create manual issue");
+
+      const scope = scopeFromContext(context);
+      const issue = await store.createManualIssue(scope, reviewCaseId, input);
+
+      if (issue) {
+        await store.recordAuditEvent(scope, {
+          action: "issue.manual.create",
+          targetType: "review_issue",
+          targetId: issue.id,
+          afterValue: {
+            reviewCaseId,
+            riskLevel: issue.riskLevel,
+            title: issue.title,
+            suggestedAction: issue.suggestedAction
+          }
+        });
+      }
+
+      return issue;
+    },
+
+    async createReviewCaseRevision(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: { files: Array<{ name: string; type: string; size: number; body: Uint8Array }> }
+    ) {
+      requireRole(context, ["requester"], "upload review revision");
+
+      const scope = scopeFromContext(context);
+      const before = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!before) {
+        return undefined;
+      }
+
+      if (before.status !== "change_requested" && before.status !== "rejected") {
+        throw new StateConflictError(
+          `Cannot upload a revision while review case is ${before.status}`
+        );
+      }
+
+      const nextVersion = before.currentVersion + 1;
+      const uploadFiles = await expandArchiveUploads(input.files);
+      const files = await Promise.all(
+        uploadFiles.map(async (file, index) => {
+          const fileId = `${reviewCaseId}-v${nextVersion}-file-upload-${String(index + 1).padStart(
+            3,
+            "0"
+          )}`;
+          const contentType = file.type || "application/octet-stream";
+          await uploadScanner.scanReviewFile({
+            reviewCaseId,
+            fileId,
+            fileName: file.name,
+            contentType,
+            sizeBytes: file.size,
+            body: file.body
+          });
+          const metadata = await storage.putReviewFile({
+            reviewCaseId,
+            fileId,
+            fileName: file.name,
+            contentType,
+            sizeBytes: file.size,
+            body: file.body
+          });
+
+          return {
+            id: fileId,
+            name: file.name,
+            type: metadata.contentType,
+            size: metadata.sizeBytes,
+            storageProvider: metadata.storageProvider,
+            storageKey: metadata.storageKey
+          };
+        })
+      );
+      const updated = await store.createReviewCaseRevision(scope, reviewCaseId, { files });
+
+      if (updated) {
+        // 재업로드 후에는 심의자가 'AI 재검토'로 분석을 실행한다. 그때 OCR 추출 텍스트가
+        // 영속화되어 직전 버전과의 변경분석(diff)이 가능해진다(여기서는 추출하지 않는다).
+        await store.recordAuditEvent(scope, {
+          action: "review_case.revision_uploaded",
+          targetType: "review_case",
+          targetId: reviewCaseId,
+          beforeValue: { status: before.status, version: before.currentVersion },
+          afterValue: {
+            status: updated.status,
+            version: updated.currentVersion,
+            fileCount: updated.files.length
+          }
+        });
+      }
+
+      return updated;
+    },
+
+    async listReviewVersions(context: RequestContext, reviewCaseId: string) {
+      return store.listReviewVersions(scopeFromContext(context), reviewCaseId);
+    },
+
+    async getRevisionDiff(
+      context: RequestContext,
+      reviewCaseId: string
+    ): Promise<RevisionDiffResult> {
+      requireRole(context, ["reviewer", "compliance_admin"], "view revision diff");
+
+      const scope = scopeFromContext(context);
+      const review = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!review) {
+        return { available: false, reason: "not_found" };
+      }
+      if (review.currentVersion <= 1) {
+        return { available: false, reason: "first_version" };
+      }
+
+      const versions = await store.listReviewVersions(scope, reviewCaseId);
+      const previous = versions.find(
+        (version) => version.versionNumber === review.currentVersion - 1
+      );
+      const previousDocuments = previous?.documentsSnapshot ?? [];
+
+      // 이 기능 배포 이전에 반려된 회차는 텍스트 스냅샷이 없어 비교 기준이 없다.
+      if (previousDocuments.length === 0) {
+        return { available: false, reason: "no_previous_snapshot" };
+      }
+
+      const currentDocuments = await store.getReviewDocumentExtractions(scope, reviewCaseId);
+
+      return {
+        available: true,
+        diff: buildRevisionDiff(
+          previousDocuments,
+          currentDocuments,
+          review.currentVersion - 1,
+          review.currentVersion
+        )
+      };
+    },
+
+    async issueReviewCertificate(
+      context: RequestContext,
+      reviewCaseId: string,
+      input: IssueReviewCertificateInput
+    ) {
+      requireRole(context, ["reviewer", "compliance_admin"], "issue review certificate");
+
+      const scope = scopeFromContext(context);
+      const review = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!review) {
+        return undefined;
+      }
+
+      if (review.status !== "approved") {
+        throw new StateConflictError(
+          "Review certificate can only be issued for approved review cases"
+        );
+      }
+
+      const certificate = await store.issueReviewCertificate(scope, reviewCaseId, input);
+
+      if (certificate) {
+        await store.recordAuditEvent(scope, {
+          action: "review_case.certificate.issue",
+          targetType: "review_case",
+          targetId: reviewCaseId,
+          afterValue: { certificateNumber: certificate.certificateNumber }
+        });
+      }
+
+      return certificate;
+    },
+
+    async getReviewCertificate(context: RequestContext, reviewCaseId: string) {
+      const scope = scopeFromContext(context);
+
+      if (context.role === "requester") {
+        const review = await store.getReviewCase(scope, reviewCaseId);
+
+        if (!review || review.status !== "approved") {
+          return undefined;
+        }
+      }
+
+      return store.getReviewCertificate(scope, reviewCaseId);
     },
 
     async deleteReviewHistory(context: RequestContext, reviewCaseId: string) {

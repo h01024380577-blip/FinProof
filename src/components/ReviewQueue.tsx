@@ -42,8 +42,19 @@ function fallbackActionsFor(
   role: ReturnType<typeof useRole>["activeRole"],
   status: ReviewCase["status"]
 ) {
-  if (status === "analysis_waiting" && (role === "reviewer" || role === "compliance_admin")) {
-    return ["start_analysis" as const];
+  if (
+    (status === "analysis_waiting" || status === "analysis_failed") &&
+    (role === "reviewer" || role === "compliance_admin")
+  ) {
+    return status === "analysis_failed"
+      ? (["start_analysis", "open_workbench", "view_audit"] as const)
+      : (["start_analysis"] as const);
+  }
+  if (
+    status === "re_review_pending" &&
+    (role === "reviewer" || role === "compliance_admin")
+  ) {
+    return ["start_analysis"] as const;
   }
   if (
     status === "analysis_complete" ||
@@ -328,10 +339,10 @@ export function ReviewQueue(): JSX.Element {
               candidate.id === reviewId
                 ? {
                     ...candidate,
-                    status: "analysis_waiting",
+                    status: "analysis_failed",
                     availableActions: fallbackActionsFor(
                       activeRole,
-                      "analysis_waiting"
+                      "analysis_failed"
                     ) as unknown as ReviewSummary["availableActions"]
                   }
                 : candidate
@@ -566,6 +577,8 @@ export function ReviewQueue(): JSX.Element {
           loadingMessage={loadingMessage}
           canDeleteReviewHistory={canDeleteReviewHistory}
           deletingReviewHistoryIds={deletingHistoryIds}
+          showVersionHistory={scope === "history"}
+          apiHeaders={apiHeaders}
           emptyMessage={
             scopedReviews.length > 0
               ? "검색 또는 필터 조건에 맞는 심의 건이 없습니다."

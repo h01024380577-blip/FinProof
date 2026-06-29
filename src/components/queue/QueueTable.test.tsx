@@ -498,6 +498,52 @@ describe("QueueTable", () => {
     expect(deleteButtonBlock).toContain("height: 36px");
   });
 
+  it("renders retry, direct review, and audit actions for an analysis_failed row", () => {
+    render(
+      <QueueTable
+        rows={[
+          {
+            ...baseRow,
+            status: "analysis_failed",
+            availableActions: ["start_analysis", "open_workbench", "view_audit"]
+          }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    const row = screen.getByRole("row", { name: /최고 연 5.0%/ });
+    expect(within(row).getByRole("button", { name: "AI 분석 재시도" })).toBeEnabled();
+    expect(within(row).getByRole("button", { name: "직접검토" })).toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: "상세보기" })).toBeInTheDocument();
+    expect(within(row).getByText("분석 실패")).toHaveAttribute("data-status", "analysis_failed");
+  });
+
+  it("retries analysis from an analysis_failed row through the start handler", async () => {
+    const onStart = vi.fn();
+    render(
+      <QueueTable
+        rows={[
+          {
+            ...baseRow,
+            status: "analysis_failed",
+            availableActions: ["start_analysis", "open_workbench", "view_audit"]
+          }
+        ]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        onStartAnalysis={onStart}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "AI 분석 재시도" }));
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ id: "RC-2026-001" }));
+  });
+
   it("marks rejected history status with a rejected status tone", () => {
     render(
       <QueueTable
@@ -518,5 +564,95 @@ describe("QueueTable", () => {
     );
 
     expect(screen.getAllByText("반려")[0]).toHaveAttribute("data-status", "rejected");
+  });
+
+  it("shows a version-history toggle for a history row with multiple versions and renders the timeline on expand", async () => {
+    const user = userEvent.setup();
+    const versionsBody = {
+      currentVersion: 2,
+      versions: [
+        {
+          id: "ver-1",
+          reviewCaseId: "RC-2026-001",
+          versionNumber: 1,
+          status: "change_requested",
+          opinionDraft: "1차 수정 요청 의견",
+          issuesSnapshot: [],
+          filesSnapshot: [],
+          decidedByUserId: "u-1",
+          decidedByName: "박심의",
+          decidedAt: "2026-06-10T05:00:00.000Z",
+          createdAt: "2026-06-10T05:00:00.000Z"
+        },
+        {
+          id: "ver-2",
+          reviewCaseId: "RC-2026-001",
+          versionNumber: 2,
+          status: "approved",
+          opinionDraft: "2차 승인 의견",
+          issuesSnapshot: [],
+          filesSnapshot: [],
+          decidedByUserId: "u-1",
+          decidedByName: "박심의",
+          decidedAt: "2026-06-12T05:00:00.000Z",
+          createdAt: "2026-06-12T05:00:00.000Z"
+        }
+      ]
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => versionsBody } as Response);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, status: "approved", currentVersion: 2 }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        showVersionHistory
+        apiHeaders={() => ({ "x-test": "1" })}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    const toggle = screen.getByRole("button", { name: "심의 버전 이력 v1~v2" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(toggle);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/RC-2026-001/versions",
+      expect.objectContaining({ headers: { "x-test": "1" } })
+    );
+    expect(await screen.findByText("v1")).toBeInTheDocument();
+    expect(screen.getByText("v2")).toBeInTheDocument();
+    expect(screen.getByText("1차 수정 요청 의견")).toBeInTheDocument();
+    expect(screen.getByText("2차 승인 의견")).toBeInTheDocument();
+    expect(screen.getByText("현재")).toBeInTheDocument();
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    // Collapsing then re-expanding reuses the cached result (no second fetch).
+    await user.click(toggle);
+    await user.click(toggle);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not show the version-history toggle for single-version history rows", () => {
+    render(
+      <QueueTable
+        rows={[{ ...baseRow, status: "approved", currentVersion: 1 }]}
+        activeRole="reviewer"
+        activeAnalysisId={null}
+        showVersionHistory
+        apiHeaders={() => ({})}
+        onStartAnalysis={() => undefined}
+        onOpenReview={() => undefined}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /심의 버전 이력/ })).not.toBeInTheDocument();
   });
 });

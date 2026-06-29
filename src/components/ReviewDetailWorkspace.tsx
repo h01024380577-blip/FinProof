@@ -1,12 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent, type JSX } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type JSX
+} from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Download, FilePenLine, LoaderCircle, MessageCircle, Save, Send, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Download,
+  FilePenLine,
+  LoaderCircle,
+  MessageCircle,
+  RotateCw,
+  Save,
+  Send,
+  X
+} from "lucide-react";
 import type { ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { productLabels, statusLabels } from "@/domain/reviews";
-import type { ReviewCase, ReviewIssue, RiskLevel, RoleId } from "@/domain/types";
+import type { ReviewCase, ReviewIssue, ReviewVersion, RiskLevel, RoleId } from "@/domain/types";
+import type { RevisionDiff } from "@/domain/revision-diff";
 import { useRoleContext } from "./RoleContext";
 import { WorkbenchHeader } from "./workbench/WorkbenchHeader";
 import type { FinalDecisionAction } from "./workbench/WorkbenchHeader";
@@ -14,6 +33,10 @@ import { IssueList } from "./workbench/IssueList";
 import { CreativeViewer } from "./workbench/CreativeViewer";
 import { IssueDetailTabs, type IssueDetailTabKey } from "./workbench/IssueDetailTabs";
 import { WorkbenchDrawer } from "./workbench/WorkbenchDrawer";
+import { CertificateEditor, type CertificateDraft } from "./workbench/CertificateEditor";
+import { ManualIssueForm, type ManualIssueInput } from "./workbench/ManualIssueForm";
+import { VersionHistoryPanel } from "./workbench/VersionHistoryPanel";
+import styles from "./ReviewDetailWorkspace.module.css";
 
 type SavedDecision = {
   riskLevel: RiskLevel;
@@ -342,11 +365,43 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       },
     [roleContext, roleHeaders]
   );
+  const apiHeaders = useCallback(
+    (extra?: Record<string, string>) =>
+      roleContext?.apiHeaders(extra) ?? { ...roleHeaders, ...(extra ?? {}) },
+    [roleContext, roleHeaders]
+  );
   const reviewerCanMutate = canMutateReview(activeRole);
   const [reviewStatus, setReviewStatus] = useState<ReviewCase["status"]>(review.status);
+  const [manualIssues, setManualIssues] = useState<ReviewIssue[]>([]);
+  const allIssues = useMemo<ReviewIssue[]>(() => {
+    if (manualIssues.length === 0) {
+      return review.issues;
+    }
+
+    const existingIds = new Set(review.issues.map((issue) => issue.id));
+
+    return [...review.issues, ...manualIssues.filter((issue) => !existingIds.has(issue.id))];
+  }, [review.issues, manualIssues]);
   const [selectedIssueId, setSelectedIssueId] = useState(review.issues[0]?.id);
+  const initialVersion = review.currentVersion ?? 1;
+  const [versions, setVersions] = useState<ReviewVersion[]>([]);
+  const [currentVersionNumber, setCurrentVersionNumber] = useState(initialVersion);
+  const [selectedVersionNumber, setSelectedVersionNumber] = useState(initialVersion);
+  const [revisionDiff, setRevisionDiff] = useState<RevisionDiff | null>(null);
+  const [analysisErrorMessage, setAnalysisErrorMessage] = useState<string | null>(null);
+  const [isRetryingAnalysis, setIsRetryingAnalysis] = useState(false);
+  const [isManualIssueOpen, setIsManualIssueOpen] = useState(false);
+  const [isSubmittingManualIssue, setIsSubmittingManualIssue] = useState(false);
+  const [manualIssueError, setManualIssueError] = useState<string | null>(null);
   const [draft, setDraftState] = useState("");
   const latestDraftRef = useRef(draft);
+  const [certificateDraft, setCertificateDraft] = useState<CertificateDraft>({
+    body: "",
+    certificateNumber: "",
+    validFrom: "",
+    validUntil: "",
+    remarks: ""
+  });
   const [uploadedCreativeObject, setUploadedCreativeObject] = useState<{
     fileId: string;
     url: string;
@@ -384,7 +439,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const chatResponsesByIssueId = chatResponsesByReviewId[review.id] ?? {};
   const selectedIssue: ReviewIssue | undefined =
-    review.issues.find((issue) => issue.id === selectedIssueId) ?? review.issues[0];
+    allIssues.find((issue) => issue.id === selectedIssueId) ?? allIssues[0];
   const visibleChatResponses = Object.entries(chatResponsesByIssueId).flatMap(
     ([issueId, responses]) => responses.map((response) => ({ issueId, response }))
   );
@@ -482,6 +537,121 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     };
   }, [finalizedNotice, reportNotice, draftNotice]);
 
+  useEffect(() => {
+    if (initialVersion <= 1) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadVersions() {
+      try {
+        const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/versions`, {
+          headers: roleHeaders
+        });
+
+        if (!apiResponse.ok || cancelled) {
+          return;
+        }
+
+        const body = (await apiResponse.json()) as {
+          currentVersion: number;
+          versions: ReviewVersion[];
+        };
+
+        if (cancelled) {
+          return;
+        }
+
+        setVersions(body.versions);
+        setCurrentVersionNumber(body.currentVersion);
+      } catch {
+        // Version history is supplemental; the live workbench still renders without it.
+      }
+    }
+
+    void loadVersions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [review.id, roleHeaders, initialVersion]);
+
+  // 재업로드(v2+) 재검토 시 직전 버전 대비 변경분석을 지연 로드한다. 요청자 화면에는 노출하지 않는다.
+  useEffect(() => {
+    if (activeRole === "requester" || currentVersionNumber <= 1) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadRevisionDiff() {
+      try {
+        const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/revision-diff`, {
+          headers: roleHeaders
+        });
+
+        if (!apiResponse.ok || cancelled) {
+          return;
+        }
+
+        const body = (await apiResponse.json()) as
+          | { available: true; diff: RevisionDiff }
+          | { available: false; reason: string };
+
+        if (cancelled) {
+          return;
+        }
+
+        setRevisionDiff(body.available ? body.diff : null);
+      } catch {
+        // 변경분석은 보조 정보이므로 실패해도 워크벤치는 단일 모드로 정상 동작한다.
+      }
+    }
+
+    void loadRevisionDiff();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [review.id, roleHeaders, activeRole, currentVersionNumber]);
+
+  useEffect(() => {
+    if (review.status !== "analysis_failed") {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    async function loadAnalysisFailure() {
+      try {
+        const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/analysis/status`, {
+          headers: roleHeaders
+        });
+
+        if (!apiResponse.ok || cancelled) {
+          return;
+        }
+
+        const body = (await apiResponse.json()) as { errorMessage?: string };
+
+        if (cancelled || !body.errorMessage) {
+          return;
+        }
+
+        setAnalysisErrorMessage(body.errorMessage);
+      } catch {
+        // The banner still renders with a generic message if the status probe fails.
+      }
+    }
+
+    void loadAnalysisFailure();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [review.id, review.status, roleHeaders]);
+
   function setActiveTab(next: IssueDetailTabKey): void {
     setActiveTabState(next);
     const params = new URLSearchParams(searchParams?.toString() ?? "");
@@ -500,7 +670,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   }
 
   function selectIssue(issueId: string) {
-    const nextIssue = review.issues.find((issue) => issue.id === issueId);
+    const nextIssue = allIssues.find((issue) => issue.id === issueId);
     const nextSavedDecision = nextIssue ? savedDecisionsByIssueId[nextIssue.id] : undefined;
 
     setSelectedIssueId(issueId);
@@ -672,7 +842,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       selectedIssue?.suggestedAction ??
       finalReviewAction ??
       "change_request";
-    const issueIds = selectedIssue ? [selectedIssue.id] : review.issues.map((issue) => issue.id);
+    const issueIds = selectedIssue ? [selectedIssue.id] : allIssues.map((issue) => issue.id);
 
     setInteractionError(null);
     setReportNotice(null);
@@ -765,9 +935,21 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       return;
     }
 
-    const confirmed = window.confirm(
-      `이 심의를 ${finalDecisionConfirmPhrases[finalAction]} 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다.`
-    );
+    let confirmed: boolean;
+
+    if (finalAction === "reject" && draft.trim().length === 0) {
+      confirmed = window.confirm(
+        "수정 요청 의견을 작성하지 않았습니다. 의견 없이 반려하시겠습니까?"
+      );
+    } else if (finalAction === "approve" && certificateDraft.body.trim().length === 0) {
+      confirmed = window.confirm(
+        "심의필을 작성하지 않았습니다. 심의필 없이 승인하시겠습니까?"
+      );
+    } else {
+      confirmed = window.confirm(
+        `이 심의를 ${finalDecisionConfirmPhrases[finalAction]} 확정하시겠습니까? 확정 후 심의 이력에 반영됩니다.`
+      );
+    }
 
     if (!confirmed) {
       return;
@@ -793,6 +975,43 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
 
       setReviewStatus(body.reviewCase.status);
       setFinalizedNotice(`최종 상태가 ${statusLabels[body.reviewCase.status]}으로 저장되었습니다.`);
+
+      const trimmedCertificateBody = certificateDraft.body.trim();
+      const trimmedCertificateNumber = certificateDraft.certificateNumber.trim();
+
+      if (finalAction === "approve" && trimmedCertificateBody.length > 0) {
+        if (trimmedCertificateNumber.length === 0) {
+          setInteractionError(
+            "심의필 번호가 없어 자동 발급되지 않았습니다. 심의 이력에서 발급해 주세요."
+          );
+        } else {
+          try {
+            const certificateResponse = await fetch(
+              `/api/v1/review-cases/${review.id}/certificate`,
+              {
+                method: "POST",
+                headers: jsonHeaders,
+                body: JSON.stringify({
+                  body: trimmedCertificateBody,
+                  certificateNumber: trimmedCertificateNumber,
+                  validFrom: certificateDraft.validFrom,
+                  validUntil: certificateDraft.validUntil,
+                  remarks: certificateDraft.remarks
+                })
+              }
+            );
+
+            if (!certificateResponse.ok) {
+              throw new Error("certificate issue failed");
+            }
+          } catch {
+            setInteractionError(
+              "승인은 완료되었으나 심의필 발급에 실패했습니다. 심의 이력에서 다시 시도해 주세요."
+            );
+          }
+        }
+      }
+
       router.push("/reviews?scope=history");
     } catch (error) {
       setInteractionError(
@@ -800,6 +1019,81 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       );
     } finally {
       setIsFinalizingReview(false);
+    }
+  }
+
+  async function retryAnalysis() {
+    if (!reviewerCanMutate || isRetryingAnalysis) {
+      return;
+    }
+
+    setInteractionError(null);
+    setIsRetryingAnalysis(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/analysis/start`, {
+        method: "POST",
+        headers: jsonHeaders
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("AI 분석 재시도 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as { status?: ReviewCase["status"] };
+
+      if (body.status) {
+        setReviewStatus(body.status);
+      }
+
+      setAnalysisErrorMessage(null);
+      router.refresh();
+    } catch (error) {
+      setInteractionError(
+        error instanceof Error ? error.message : "AI 분석 재시도 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsRetryingAnalysis(false);
+    }
+  }
+
+  async function submitManualIssue(input: ManualIssueInput) {
+    if (!reviewerCanMutate || isSubmittingManualIssue) {
+      return;
+    }
+
+    setManualIssueError(null);
+    setIsSubmittingManualIssue(true);
+    try {
+      const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/issues`, {
+        method: "POST",
+        headers: jsonHeaders,
+        body: JSON.stringify({
+          title: input.title,
+          riskLevel: input.riskLevel,
+          suggestedAction: input.suggestedAction,
+          ...(input.targetText ? { targetText: input.targetText } : {}),
+          ...(input.description ? { description: input.description } : {}),
+          ...(input.suggestedCopy ? { suggestedCopy: input.suggestedCopy } : {})
+        })
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error("이슈 추가 요청을 처리하지 못했습니다.");
+      }
+
+      const body = (await apiResponse.json()) as { issue: ReviewIssue };
+
+      setManualIssues((current) => [...current, body.issue]);
+      setSelectedIssueId(body.issue.id);
+      setIsManualIssueOpen(false);
+      setManualIssueError(null);
+      router.refresh();
+    } catch (error) {
+      setManualIssueError(
+        error instanceof Error ? error.message : "이슈 추가 요청을 처리하지 못했습니다."
+      );
+    } finally {
+      setIsSubmittingManualIssue(false);
     }
   }
 
@@ -997,8 +1291,88 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     </div>
   );
 
+  const certificatePanel = (
+    <CertificateEditor
+      caseId={review.id}
+      title={review.title}
+      issuerName={roleContext?.currentUser?.name ?? review.reviewer}
+      productType={review.productType}
+      reviewerName={review.reviewer}
+      reviewStatus={reviewStatus}
+      canMutate={reviewerCanMutate}
+      apiHeaders={apiHeaders}
+      draft={certificateDraft}
+      onDraftChange={setCertificateDraft}
+    />
+  );
+
+  const isAnalysisFailed = reviewStatus === "analysis_failed";
+  const showVersionSelector = currentVersionNumber > 1;
+  const selectedPastVersion =
+    selectedVersionNumber < currentVersionNumber
+      ? versions.find((version) => version.versionNumber === selectedVersionNumber)
+      : undefined;
+  const isViewingPastVersion = Boolean(selectedPastVersion);
+
+  const versionSelectorNode = showVersionSelector ? (
+    <div className={styles.versionSelector} role="group" aria-label="심의 버전 선택">
+      <span className={styles.versionLabel}>심의 버전</span>
+      <div className={styles.versionOptions}>
+        {Array.from({ length: currentVersionNumber }, (_, index) => index + 1).map(
+          (versionNumber) => (
+            <button
+              key={versionNumber}
+              className="chip"
+              type="button"
+              data-active={versionNumber === selectedVersionNumber}
+              aria-pressed={versionNumber === selectedVersionNumber}
+              onClick={() => setSelectedVersionNumber(versionNumber)}
+            >
+              {versionNumber === currentVersionNumber ? `v${versionNumber} (현재)` : `v${versionNumber}`}
+            </button>
+          )
+        )}
+      </div>
+      {isViewingPastVersion ? (
+        <span className={styles.versionViewingNote}>과거 회차 — 읽기 전용 스냅샷</span>
+      ) : null}
+    </div>
+  ) : null;
+
+  const failureBannerNode = isAnalysisFailed ? (
+    <div className={styles.failureBanner} role="alert">
+      <AlertTriangle className={styles.failureBannerIcon} size={22} aria-hidden="true" />
+      <div className={styles.failureBannerBody}>
+        <span className={styles.failureBannerTitle}>AI 분석 실패 — 직접검토 모드</span>
+        <p className={styles.failureBannerReason}>
+          {analysisErrorMessage ??
+            "AI 분석이 완료되지 못했습니다. 직접검토로 이슈를 추가하거나 분석을 다시 시도할 수 있습니다."}
+        </p>
+      </div>
+      {reviewerCanMutate ? (
+        <div className={styles.failureBannerActions}>
+          <button
+            className="button button--primary"
+            type="button"
+            disabled={isRetryingAnalysis}
+            onClick={retryAnalysis}
+          >
+            {isRetryingAnalysis ? (
+              <LoaderCircle className="action-spinner" size={16} aria-hidden="true" />
+            ) : (
+              <RotateCw size={16} aria-hidden="true" />
+            )}
+            {isRetryingAnalysis ? "재시도 중" : "AI 분석 재시도"}
+          </button>
+        </div>
+      ) : null}
+    </div>
+  ) : null;
+
   return (
     <div className="detail">
+      {versionSelectorNode}
+
       <WorkbenchHeader
         id={review.id}
         title={review.title}
@@ -1014,52 +1388,79 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         onFinalizeReviewCase={finalizeReviewCase}
       />
 
-      <section className="detail__grid">
-        <IssueList
-          issues={review.issues}
-          selectedIssueId={selectedIssue?.id}
-          onSelectIssue={selectIssue}
-          analysisNotice={review.analysisNotice}
-        />
+      {isViewingPastVersion && selectedPastVersion ? (
+        <VersionHistoryPanel version={selectedPastVersion} />
+      ) : (
+        <>
+          {failureBannerNode}
 
-        <CreativeViewer
-          copy={review.promotionalCopy}
-          disclosure={review.disclosure}
-          creativeImage={
-            uploadedCreativeFile && uploadedCreativeObjectUrl
-              ? { src: uploadedCreativeObjectUrl, alt: uploadedCreativeFile.name }
-              : undefined
-          }
-          isCreativeImageLoading={Boolean(uploadedCreativeFile) && isUploadedCreativeLoading}
-          issues={review.issues}
-          selectedIssueId={selectedIssue?.id}
-          onSelectIssue={selectIssue}
-        />
+          <section className="detail__grid">
+            <IssueList
+              issues={allIssues}
+              selectedIssueId={selectedIssue?.id}
+              onSelectIssue={selectIssue}
+              analysisNotice={review.analysisNotice}
+              canAddManualIssue={reviewerCanMutate}
+              onAddManualIssue={() => {
+                setManualIssueError(null);
+                setIsManualIssueOpen(true);
+              }}
+            />
 
-        {selectedIssue ? (
-          <IssueDetailTabs
-            issue={selectedIssue}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            reviewerRiskLevel={reviewerRiskLevel}
-            reviewerComment={reviewerComment}
-            savedDecision={savedDecision}
-            canMutate={reviewerCanMutate}
-            isSavingDecision={isSavingDecision}
-            onChangeRiskLevel={setReviewerRiskLevel}
-            onChangeReviewerComment={setReviewerComment}
-            onSaveReviewerDecision={saveReviewerDecision}
+            <CreativeViewer
+              copy={review.promotionalCopy}
+              disclosure={review.disclosure}
+              creativeImage={
+                uploadedCreativeFile && uploadedCreativeObjectUrl
+                  ? { src: uploadedCreativeObjectUrl, alt: uploadedCreativeFile.name }
+                  : undefined
+              }
+              isCreativeImageLoading={Boolean(uploadedCreativeFile) && isUploadedCreativeLoading}
+              issues={allIssues}
+              selectedIssueId={selectedIssue?.id}
+              onSelectIssue={selectIssue}
+              revisionDiff={
+                activeRole !== "requester" && currentVersionNumber > 1 ? revisionDiff : null
+              }
+            />
+
+            {selectedIssue ? (
+              <IssueDetailTabs
+                issue={selectedIssue}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                reviewerRiskLevel={reviewerRiskLevel}
+                reviewerComment={reviewerComment}
+                savedDecision={savedDecision}
+                canMutate={reviewerCanMutate}
+                isSavingDecision={isSavingDecision}
+                onChangeRiskLevel={setReviewerRiskLevel}
+                onChangeReviewerComment={setReviewerComment}
+                onSaveReviewerDecision={saveReviewerDecision}
+              />
+            ) : null}
+          </section>
+
+          <WorkbenchDrawer
+            defaultCollapsed={activeRole === "requester"}
+            draftNode={draftPanel}
+            filesNode={filesPanel}
+            certificateNode={reviewerCanMutate ? certificatePanel : undefined}
           />
-        ) : null}
-      </section>
 
-      <WorkbenchDrawer
-        defaultCollapsed={activeRole === "requester"}
-        draftNode={draftPanel}
-        filesNode={filesPanel}
-      />
+          {isManualIssueOpen ? (
+            <ManualIssueForm
+              onSubmit={submitManualIssue}
+              onClose={() => {
+                setIsManualIssueOpen(false);
+                setManualIssueError(null);
+              }}
+              isSubmitting={isSubmittingManualIssue}
+              error={manualIssueError}
+            />
+          ) : null}
 
-      <div className="chat-widget" data-open={isChatWidgetOpen ? "true" : "false"}>
+          <div className="chat-widget" data-open={isChatWidgetOpen ? "true" : "false"}>
         {isChatWidgetOpen ? (
           <section
             className="chat-widget__panel"
@@ -1113,7 +1514,9 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             </>
           )}
         </button>
-      </div>
+          </div>
+        </>
+      )}
 
       {interactionError ? (
         <p className="interaction-error" role="alert">

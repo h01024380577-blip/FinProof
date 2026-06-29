@@ -87,4 +87,27 @@ describe("IssueList", () => {
     const card = screen.getByRole("button", { name: /최고 연 5.0% 조건 표시 부족/ });
     expect(within(card).getByText("#1")).toHaveClass("issue-card__index");
   });
+
+  it("does not show the manual issue button by default", () => {
+    render(<IssueList issues={issues} selectedIssueId="issue-1" onSelectIssue={() => undefined} />);
+
+    expect(screen.queryByRole("button", { name: "이슈 직접 추가" })).not.toBeInTheDocument();
+  });
+
+  it("renders an empty issue list with the manual issue affordance", async () => {
+    const onAdd = vi.fn();
+    render(
+      <IssueList
+        issues={[]}
+        onSelectIssue={() => undefined}
+        canAddManualIssue
+        onAddManualIssue={onAdd}
+      />
+    );
+
+    expect(screen.getByText("이슈 목록 (0)")).toBeInTheDocument();
+    expect(screen.getByText("추가 확인 필요")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "이슈 직접 추가" }));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+  });
 });

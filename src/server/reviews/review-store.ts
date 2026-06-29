@@ -16,12 +16,18 @@ import type {
   RegulatorySource,
   RoleId,
   ReviewCase,
+  ReviewCertificate,
   ReviewFile,
   ReviewIssue,
   ReviewSummary,
+  ReviewVersion,
   RiskLevel
 } from "@/domain/types";
-import type { AnalysisArtifacts } from "@/server/analysis/review-analysis-pipeline";
+import type { ReviewDocumentExtraction } from "@/domain/revision-diff";
+import type {
+  AnalysisArtifacts,
+  ExtractedDocument
+} from "@/server/analysis/review-analysis-pipeline";
 
 export type ReviewStoreScope = {
   tenantId: string;
@@ -127,6 +133,32 @@ export type SaveIssueDecisionInput = {
 export type UpdateReviewReviewerInput = {
   reviewCaseId: string;
   reviewer: string;
+};
+
+export type UpdateReviewStatusOptions = {
+  reviewerComment?: string;
+};
+
+export type CreateManualIssueInput = {
+  issueType?: string;
+  riskLevel: RiskLevel;
+  title: string;
+  targetText?: string;
+  description?: string;
+  suggestedAction: ReviewIssue["suggestedAction"];
+  suggestedCopy?: string;
+};
+
+export type CreateReviewCaseRevisionInput = {
+  files: UploadedFileInput[];
+};
+
+export type IssueReviewCertificateInput = {
+  body: string;
+  certificateNumber: string;
+  validFrom?: string;
+  validUntil?: string;
+  remarks?: string;
 };
 
 export type FinalReviewStatus = Extract<
@@ -365,6 +397,11 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     input: SaveIssueDecisionInput
   ): Promise<ReviewIssue | undefined>;
+  createManualIssue(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: CreateManualIssueInput
+  ): Promise<ReviewIssue | undefined>;
   saveOpinionDraft(
     scope: ReviewStoreScope,
     reviewCaseId: string,
@@ -377,8 +414,44 @@ export interface ReviewStore {
   updateReviewStatus(
     scope: ReviewStoreScope,
     reviewCaseId: string,
-    status: FinalReviewStatus
+    status: FinalReviewStatus,
+    options?: UpdateReviewStatusOptions
   ): Promise<ReviewCase | undefined>;
+  createReviewCaseRevision(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: CreateReviewCaseRevisionInput
+  ): Promise<ReviewCase | undefined>;
+  listReviewVersions(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<ReviewVersion[]>;
+  /**
+   * 케이스의 현재 버전 문서들에 대해 영속화된 OCR 추출 텍스트(EvidenceChunk, source=review_file)를
+   * 파일별로 반환한다. 재업로드 변경분석(diff)의 "현재 버전" 비교 소스로 사용한다.
+   */
+  getReviewDocumentExtractions(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<ReviewDocumentExtraction[]>;
+  /**
+   * 리뷰 케이스 파일들의 OCR 추출 텍스트(EvidenceChunk, source=review_file)만 저장한다.
+   * AI 분석 없이 재업로드본의 변경분석(diff)용 텍스트를 확보할 때 사용하며, 이슈/근거는 건드리지 않는다.
+   */
+  replaceReviewDocumentExtractions(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    documents: ExtractedDocument[]
+  ): Promise<void>;
+  issueReviewCertificate(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    input: IssueReviewCertificateInput
+  ): Promise<ReviewCertificate | undefined>;
+  getReviewCertificate(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<ReviewCertificate | undefined>;
   deleteReviewCase(scope: ReviewStoreScope, reviewCaseId: string): Promise<ReviewCase | undefined>;
   recordAuditEvent(scope: ReviewStoreScope, input: AuditEventInput): Promise<AuditEvent>;
   listAuditEvents(scope: ReviewStoreScope, options?: ListAuditEventsOptions): Promise<AuditEvent[]>;

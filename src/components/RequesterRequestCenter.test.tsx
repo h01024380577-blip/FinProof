@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { RequesterRequestCenter, RequesterRequestHistory } from "./RequesterRequestCenter";
+import { RevisionUploadPanel } from "./RevisionUploadPanel";
 
 const navigationMock = vi.hoisted(() => ({
   push: vi.fn()
@@ -217,8 +218,7 @@ describe("RequesterRequestCenter", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("loads only the logged-in requester's history and hides saved drafts except rejected results", async () => {
-    const user = userEvent.setup();
+  it("loads the requester's history into a master–detail view and lazily shows the reviewer opinion for the selected action item", async () => {
     const apiHeaders = setRole();
     const fetchMock = mockHistoryFetch();
     vi.stubGlobal("fetch", fetchMock);
@@ -238,10 +238,12 @@ describe("RequesterRequestCenter", () => {
         })
       })
     );
+    // The default-selected action item (rejected) lazily fetches its opinion.
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-own-rejected-001",
       expect.any(Object)
     );
+    // Non-selected items are never fetched up front.
     expect(fetchMock).not.toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-own-approved-001",
       expect.any(Object)
@@ -256,59 +258,35 @@ describe("RequesterRequestCenter", () => {
     );
     expect(apiHeaders).toHaveBeenCalledTimes(2);
 
-    const historyGrid = screen.getByRole("grid", { name: "요청 기록 목록" });
-    expect(
-      within(historyGrid)
-        .getAllByRole("columnheader")
-        .map((header) => header.textContent)
-    ).toEqual(["요청번호", "제목", "제휴사", "상품유형", "예정 게시일", "상태", "담당자", "작업"]);
+    // The master list contains only the logged-in requester's three cases, as buttons.
+    expect(screen.getByRole("button", { name: /김서연 대출 배너/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /김서연 예금 앱푸시/ })).toBeInTheDocument();
+    const waitingItem = screen.getByRole("button", { name: /김서연 카드 상세페이지/ });
+    expect(waitingItem).toBeInTheDocument();
+    expect(screen.queryByText("이민수 예금 배너")).not.toBeInTheDocument();
 
-    const rejectedRow = screen.getByRole("row", { name: "김서연 대출 배너" });
-    expect(
-      within(rejectedRow)
-        .getAllByRole("cell")
-        .map((cell) => cell.textContent)
-    ).toEqual([
-      "rc-own-rejected-001",
-      "김서연 대출 배너",
-      "하나은행",
-      "대출",
-      "2026-06-12",
-      "반려",
-      "준법심의자 박민준",
-      "반려사유"
-    ]);
-    expect(within(rejectedRow).getByText("반려")).toBeInTheDocument();
+    // The waiting (in-progress) case keeps the lightweight status badge styling.
+    const waitingBadge = within(waitingItem).getByText("검토중");
+    expect(waitingBadge).toHaveClass("request-history-status");
+    expect(waitingBadge).not.toHaveClass("status-badge");
 
-    const toggleButton = within(rejectedRow).getByRole("button", {
-      name: "반려사유 펼치기"
-    });
-    expect(toggleButton).toHaveTextContent("반려사유");
-    await user.click(toggleButton);
+    // The rejected case is selected by default; the stepper reflects the 반려 result.
+    expect(screen.getByRole("list", { name: "진행 단계: 반려" })).toBeInTheDocument();
 
-    expect(screen.getByText("수정 요청")).toBeInTheDocument();
+    // The reviewer opinion is shown directly for the selected action item.
     expect(
-      screen.getByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
+      await screen.findByText("비교 조건과 상환 예시 문구를 구체적으로 보완해 주세요.")
     ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "반려 사유" })).toBeInTheDocument();
     expect(screen.queryByText("버전 3")).not.toBeInTheDocument();
-    expect(toggleButton).toHaveAccessibleName("반려사유 접기");
 
-    const approvedRow = screen.getByRole("row", { name: "김서연 예금 앱푸시" });
-    expect(within(approvedRow).getByText("승인")).toBeInTheDocument();
+    // Drafts stored on non-rejected cases must never surface.
     expect(
       screen.queryByText("승인 건에 저장된 수정 요청 초안은 요청자 화면에서 숨겨야 합니다.")
     ).not.toBeInTheDocument();
-
-    const waitingRow = screen.getByRole("row", { name: "김서연 카드 상세페이지" });
-    const waitingStatus = within(waitingRow).getByText("검토중");
-    expect(waitingStatus).toBeInTheDocument();
-    expect(waitingStatus).toHaveClass("request-history-status");
-    expect(waitingStatus).not.toHaveClass("status-badge");
     expect(
       screen.queryByText("검토 중 초안도 최종 반려 전에는 숨겨야 합니다.")
     ).not.toBeInTheDocument();
-
-    expect(screen.queryByText("이민수 예금 배너")).not.toBeInTheDocument();
   });
 
   it("keeps requester history visible when the display name differs from the stored requester name", async () => {
@@ -351,7 +329,7 @@ describe("RequesterRequestCenter", () => {
     render(<RequesterRequestHistory />);
 
     expect(
-      await screen.findByRole("row", { name: "이전 담당자가 올린 카드 배너" })
+      await screen.findByRole("button", { name: /이전 담당자가 올린 카드 배너/ })
     ).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases",
@@ -359,6 +337,124 @@ describe("RequesterRequestCenter", () => {
         headers: expect.objectContaining({
           "x-finproof-user-id": "user-requester-kmu-marketing"
         })
+      })
+    );
+  });
+
+  it("posts a revised package and shows a success notice (re-upload happy path)", async () => {
+    const user = userEvent.setup();
+    const apiHeaders = vi.fn(() => ({
+      "x-finproof-role": "requester",
+      authorization: "Bearer requester.jwt"
+    }));
+    const onSuccess = vi.fn();
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        reviewCase: { id: "rc-own-rejected-001" },
+        analysisStartHref: "/api/v1/review-cases/rc-own-rejected-001/analysis/start"
+      })
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <RevisionUploadPanel
+        caseId="rc-own-rejected-001"
+        apiHeaders={apiHeaders}
+        onSuccess={onSuccess}
+      />
+    );
+
+    const fileInput = screen.getByLabelText("심의 대상 패키지를 업로드하세요 (ZIP, PDF, JPG)");
+    const file = new File(["revised"], "revision.pdf", { type: "application/pdf" });
+    await user.upload(fileInput, file);
+
+    await user.click(screen.getByRole("button", { name: "재업로드" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/review-cases/rc-own-rejected-001/revisions",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.any(FormData),
+          headers: expect.objectContaining({ "x-finproof-role": "requester" })
+        })
+      );
+    });
+
+    const formData = fetchMock.mock.calls[0][1].body as FormData;
+    expect(formData.getAll("files")).toHaveLength(1);
+    expect(await screen.findByText("재검토 요청이 접수되었습니다.")).toBeInTheDocument();
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the downloadable certificate for the selected approved case (심의필 happy path)", async () => {
+    setRole();
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url === "/api/v1/review-cases") {
+        return {
+          ok: true,
+          json: async () => ({
+            items: [
+              {
+                id: "rc-own-approved-001",
+                title: "김서연 예금 앱푸시",
+                affiliate: "하나은행",
+                productType: "deposit",
+                plannedPublishDate: "2026-06-13",
+                status: "approved",
+                highestRiskLevel: "info",
+                requester: "김서연",
+                reviewer: "준법심의자 박민준"
+              }
+            ]
+          })
+        };
+      }
+
+      if (url === "/api/v1/review-cases/rc-own-approved-001/certificate") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            certificate: {
+              certificateNumber: "FP-2026-ABC123",
+              body: "본 광고물은 관련 규정을 준수합니다.",
+              metadata: {
+                title: "김서연 예금 앱푸시",
+                productType: "deposit",
+                affiliateName: "하나은행",
+                reviewerName: "준법심의자 박민준",
+                approvedAt: "2026-06-20T05:00:00.000Z"
+              },
+              issuedByName: "준법심의자 박민준",
+              issuedAt: "2026-06-13T05:01:00.000Z"
+            }
+          })
+        };
+      }
+
+      return { ok: false, status: 404, json: async () => ({}) };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<RequesterRequestHistory />);
+
+    // The approved case is the default selection, so its certificate loads immediately.
+    expect(await screen.findByText("FP-2026-ABC123")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "심의필" })).toBeInTheDocument();
+    expect(screen.getByText("본 광고물은 관련 규정을 준수합니다.")).toBeInTheDocument();
+    expect(screen.getByText("2026-06-20")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "심의필 PDF 다운로드" })
+    ).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-own-approved-001/certificate",
+      expect.objectContaining({
+        headers: expect.objectContaining({ "x-finproof-role": "requester" })
       })
     );
   });

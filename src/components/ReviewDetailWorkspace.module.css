@@ -1,0 +1,70 @@
+.versionSelector {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.versionLabel {
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  color: var(--text-soft);
+}
+
+.versionOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.versionViewingNote {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.failureBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid #e9aaa1;
+  border-left-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--risk-high-bg);
+}
+
+.failureBannerIcon {
+  color: var(--risk-high);
+  flex-shrink: 0;
+}
+
+.failureBannerBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.failureBannerTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--risk-reject);
+}
+
+.failureBannerReason {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.failureBannerActions {
+  flex-shrink: 0;
+}

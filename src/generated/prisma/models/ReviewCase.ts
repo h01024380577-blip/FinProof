@@ -28,10 +28,12 @@ export type AggregateReviewCase = {
 
 export type ReviewCaseAvgAggregateOutputType = {
   currentDraftVersion: number | null
+  currentVersion: number | null
 }
 
 export type ReviewCaseSumAggregateOutputType = {
   currentDraftVersion: number | null
+  currentVersion: number | null
 }
 
 export type ReviewCaseMinAggregateOutputType = {
@@ -55,6 +57,7 @@ export type ReviewCaseMinAggregateOutputType = {
   expectedDraft: string | null
   currentDraft: string | null
   currentDraftVersion: number | null
+  currentVersion: number | null
   analysisNotice: string | null
   submittedAt: Date | null
   analysisStartedAt: Date | null
@@ -85,6 +88,7 @@ export type ReviewCaseMaxAggregateOutputType = {
   expectedDraft: string | null
   currentDraft: string | null
   currentDraftVersion: number | null
+  currentVersion: number | null
   analysisNotice: string | null
   submittedAt: Date | null
   analysisStartedAt: Date | null
@@ -117,6 +121,7 @@ export type ReviewCaseCountAggregateOutputType = {
   expectedDraft: number
   currentDraft: number
   currentDraftVersion: number
+  currentVersion: number
   analysisNotice: number
   submittedAt: number
   analysisStartedAt: number
@@ -130,10 +135,12 @@ export type ReviewCaseCountAggregateOutputType = {
 
 export type ReviewCaseAvgAggregateInputType = {
   currentDraftVersion?: true
+  currentVersion?: true
 }
 
 export type ReviewCaseSumAggregateInputType = {
   currentDraftVersion?: true
+  currentVersion?: true
 }
 
 export type ReviewCaseMinAggregateInputType = {
@@ -157,6 +164,7 @@ export type ReviewCaseMinAggregateInputType = {
   expectedDraft?: true
   currentDraft?: true
   currentDraftVersion?: true
+  currentVersion?: true
   analysisNotice?: true
   submittedAt?: true
   analysisStartedAt?: true
@@ -187,6 +195,7 @@ export type ReviewCaseMaxAggregateInputType = {
   expectedDraft?: true
   currentDraft?: true
   currentDraftVersion?: true
+  currentVersion?: true
   analysisNotice?: true
   submittedAt?: true
   analysisStartedAt?: true
@@ -219,6 +228,7 @@ export type ReviewCaseCountAggregateInputType = {
   expectedDraft?: true
   currentDraft?: true
   currentDraftVersion?: true
+  currentVersion?: true
   analysisNotice?: true
   submittedAt?: true
   analysisStartedAt?: true
@@ -338,6 +348,7 @@ export type ReviewCaseGroupByOutputType = {
   expectedDraft: string
   currentDraft: string | null
   currentDraftVersion: number
+  currentVersion: number
   analysisNotice: string | null
   submittedAt: Date | null
   analysisStartedAt: Date | null
@@ -393,6 +404,7 @@ export type ReviewCaseWhereInput = {
   expectedDraft?: Prisma.StringFilter<"ReviewCase"> | string
   currentDraft?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   currentDraftVersion?: Prisma.IntFilter<"ReviewCase"> | number
+  currentVersion?: Prisma.IntFilter<"ReviewCase"> | number
   analysisNotice?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   submittedAt?: Prisma.DateTimeNullableFilter<"ReviewCase"> | Date | string | null
   analysisStartedAt?: Prisma.DateTimeNullableFilter<"ReviewCase"> | Date | string | null
@@ -412,6 +424,8 @@ export type ReviewCaseWhereInput = {
   chatSessions?: Prisma.ChatSessionListRelationFilter
   draftVersions?: Prisma.DraftVersionListRelationFilter
   reports?: Prisma.ReviewReportListRelationFilter
+  versions?: Prisma.ReviewVersionListRelationFilter
+  certificate?: Prisma.XOR<Prisma.ReviewCertificateNullableScalarRelationFilter, Prisma.ReviewCertificateWhereInput> | null
 }
 
 export type ReviewCaseOrderByWithRelationInput = {
@@ -437,6 +451,7 @@ export type ReviewCaseOrderByWithRelationInput = {
   expectedDraft?: Prisma.SortOrder
   currentDraft?: Prisma.SortOrderInput | Prisma.SortOrder
   currentDraftVersion?: Prisma.SortOrder
+  currentVersion?: Prisma.SortOrder
   analysisNotice?: Prisma.SortOrderInput | Prisma.SortOrder
   submittedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   analysisStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -456,6 +471,8 @@ export type ReviewCaseOrderByWithRelationInput = {
   chatSessions?: Prisma.ChatSessionOrderByRelationAggregateInput
   draftVersions?: Prisma.DraftVersionOrderByRelationAggregateInput
   reports?: Prisma.ReviewReportOrderByRelationAggregateInput
+  versions?: Prisma.ReviewVersionOrderByRelationAggregateInput
+  certificate?: Prisma.ReviewCertificateOrderByWithRelationInput
 }
 
 export type ReviewCaseWhereUniqueInput = Prisma.AtLeast<{
@@ -484,6 +501,7 @@ export type ReviewCaseWhereUniqueInput = Prisma.AtLeast<{
   expectedDraft?: Prisma.StringFilter<"ReviewCase"> | string
   currentDraft?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   currentDraftVersion?: Prisma.IntFilter<"ReviewCase"> | number
+  currentVersion?: Prisma.IntFilter<"ReviewCase"> | number
   analysisNotice?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   submittedAt?: Prisma.DateTimeNullableFilter<"ReviewCase"> | Date | string | null
   analysisStartedAt?: Prisma.DateTimeNullableFilter<"ReviewCase"> | Date | string | null
@@ -503,6 +521,8 @@ export type ReviewCaseWhereUniqueInput = Prisma.AtLeast<{
   chatSessions?: Prisma.ChatSessionListRelationFilter
   draftVersions?: Prisma.DraftVersionListRelationFilter
   reports?: Prisma.ReviewReportListRelationFilter
+  versions?: Prisma.ReviewVersionListRelationFilter
+  certificate?: Prisma.XOR<Prisma.ReviewCertificateNullableScalarRelationFilter, Prisma.ReviewCertificateWhereInput> | null
 }, "id">
 
 export type ReviewCaseOrderByWithAggregationInput = {
@@ -528,6 +548,7 @@ export type ReviewCaseOrderByWithAggregationInput = {
   expectedDraft?: Prisma.SortOrder
   currentDraft?: Prisma.SortOrderInput | Prisma.SortOrder
   currentDraftVersion?: Prisma.SortOrder
+  currentVersion?: Prisma.SortOrder
   analysisNotice?: Prisma.SortOrderInput | Prisma.SortOrder
   submittedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   analysisStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -568,6 +589,7 @@ export type ReviewCaseScalarWhereWithAggregatesInput = {
   expectedDraft?: Prisma.StringWithAggregatesFilter<"ReviewCase"> | string
   currentDraft?: Prisma.StringNullableWithAggregatesFilter<"ReviewCase"> | string | null
   currentDraftVersion?: Prisma.IntWithAggregatesFilter<"ReviewCase"> | number
+  currentVersion?: Prisma.IntWithAggregatesFilter<"ReviewCase"> | number
   analysisNotice?: Prisma.StringNullableWithAggregatesFilter<"ReviewCase"> | string | null
   submittedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ReviewCase"> | Date | string | null
   analysisStartedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ReviewCase"> | Date | string | null
@@ -596,6 +618,7 @@ export type ReviewCaseCreateInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -615,6 +638,8 @@ export type ReviewCaseCreateInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateInput = {
@@ -640,6 +665,7 @@ export type ReviewCaseUncheckedCreateInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -655,6 +681,8 @@ export type ReviewCaseUncheckedCreateInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUpdateInput = {
@@ -676,6 +704,7 @@ export type ReviewCaseUpdateInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -695,6 +724,8 @@ export type ReviewCaseUpdateInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateInput = {
@@ -720,6 +751,7 @@ export type ReviewCaseUncheckedUpdateInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -735,6 +767,8 @@ export type ReviewCaseUncheckedUpdateInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateManyInput = {
@@ -760,6 +794,7 @@ export type ReviewCaseCreateManyInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -788,6 +823,7 @@ export type ReviewCaseUpdateManyMutationInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -820,6 +856,7 @@ export type ReviewCaseUncheckedUpdateManyInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -862,6 +899,7 @@ export type ReviewCaseCountOrderByAggregateInput = {
   expectedDraft?: Prisma.SortOrder
   currentDraft?: Prisma.SortOrder
   currentDraftVersion?: Prisma.SortOrder
+  currentVersion?: Prisma.SortOrder
   analysisNotice?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   analysisStartedAt?: Prisma.SortOrder
@@ -873,6 +911,7 @@ export type ReviewCaseCountOrderByAggregateInput = {
 
 export type ReviewCaseAvgOrderByAggregateInput = {
   currentDraftVersion?: Prisma.SortOrder
+  currentVersion?: Prisma.SortOrder
 }
 
 export type ReviewCaseMaxOrderByAggregateInput = {
@@ -896,6 +935,7 @@ export type ReviewCaseMaxOrderByAggregateInput = {
   expectedDraft?: Prisma.SortOrder
   currentDraft?: Prisma.SortOrder
   currentDraftVersion?: Prisma.SortOrder
+  currentVersion?: Prisma.SortOrder
   analysisNotice?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   analysisStartedAt?: Prisma.SortOrder
@@ -926,6 +966,7 @@ export type ReviewCaseMinOrderByAggregateInput = {
   expectedDraft?: Prisma.SortOrder
   currentDraft?: Prisma.SortOrder
   currentDraftVersion?: Prisma.SortOrder
+  currentVersion?: Prisma.SortOrder
   analysisNotice?: Prisma.SortOrder
   submittedAt?: Prisma.SortOrder
   analysisStartedAt?: Prisma.SortOrder
@@ -937,6 +978,7 @@ export type ReviewCaseMinOrderByAggregateInput = {
 
 export type ReviewCaseSumOrderByAggregateInput = {
   currentDraftVersion?: Prisma.SortOrder
+  currentVersion?: Prisma.SortOrder
 }
 
 export type ReviewCaseScalarRelationFilter = {
@@ -1140,6 +1182,34 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type ReviewCaseCreateNestedOneWithoutVersionsInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutVersionsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutVersionsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+}
+
+export type ReviewCaseUpdateOneRequiredWithoutVersionsNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutVersionsInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutVersionsInput
+  upsert?: Prisma.ReviewCaseUpsertWithoutVersionsInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutVersionsInput, Prisma.ReviewCaseUpdateWithoutVersionsInput>, Prisma.ReviewCaseUncheckedUpdateWithoutVersionsInput>
+}
+
+export type ReviewCaseCreateNestedOneWithoutCertificateInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutCertificateInput, Prisma.ReviewCaseUncheckedCreateWithoutCertificateInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutCertificateInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+}
+
+export type ReviewCaseUpdateOneRequiredWithoutCertificateNestedInput = {
+  create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutCertificateInput, Prisma.ReviewCaseUncheckedCreateWithoutCertificateInput>
+  connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutCertificateInput
+  upsert?: Prisma.ReviewCaseUpsertWithoutCertificateInput
+  connect?: Prisma.ReviewCaseWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ReviewCaseUpdateToOneWithWhereWithoutCertificateInput, Prisma.ReviewCaseUpdateWithoutCertificateInput>, Prisma.ReviewCaseUncheckedUpdateWithoutCertificateInput>
+}
+
 export type ReviewCaseCreateNestedOneWithoutFilesInput = {
   create?: Prisma.XOR<Prisma.ReviewCaseCreateWithoutFilesInput, Prisma.ReviewCaseUncheckedCreateWithoutFilesInput>
   connectOrCreate?: Prisma.ReviewCaseCreateOrConnectWithoutFilesInput
@@ -1271,6 +1341,7 @@ export type ReviewCaseCreateWithoutTenantInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1289,6 +1360,8 @@ export type ReviewCaseCreateWithoutTenantInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutTenantInput = {
@@ -1313,6 +1386,7 @@ export type ReviewCaseUncheckedCreateWithoutTenantInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1328,6 +1402,8 @@ export type ReviewCaseUncheckedCreateWithoutTenantInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutTenantInput = {
@@ -1382,6 +1458,7 @@ export type ReviewCaseScalarWhereInput = {
   expectedDraft?: Prisma.StringFilter<"ReviewCase"> | string
   currentDraft?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   currentDraftVersion?: Prisma.IntFilter<"ReviewCase"> | number
+  currentVersion?: Prisma.IntFilter<"ReviewCase"> | number
   analysisNotice?: Prisma.StringNullableFilter<"ReviewCase"> | string | null
   submittedAt?: Prisma.DateTimeNullableFilter<"ReviewCase"> | Date | string | null
   analysisStartedAt?: Prisma.DateTimeNullableFilter<"ReviewCase"> | Date | string | null
@@ -1410,6 +1487,7 @@ export type ReviewCaseCreateWithoutAffiliateInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1428,6 +1506,8 @@ export type ReviewCaseCreateWithoutAffiliateInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutAffiliateInput = {
@@ -1452,6 +1532,7 @@ export type ReviewCaseUncheckedCreateWithoutAffiliateInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1467,6 +1548,8 @@ export type ReviewCaseUncheckedCreateWithoutAffiliateInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutAffiliateInput = {
@@ -1514,6 +1597,7 @@ export type ReviewCaseCreateWithoutRequesterInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1532,6 +1616,8 @@ export type ReviewCaseCreateWithoutRequesterInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutRequesterInput = {
@@ -1556,6 +1642,7 @@ export type ReviewCaseUncheckedCreateWithoutRequesterInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1571,6 +1658,8 @@ export type ReviewCaseUncheckedCreateWithoutRequesterInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutRequesterInput = {
@@ -1602,6 +1691,7 @@ export type ReviewCaseCreateWithoutReviewerInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1620,6 +1710,8 @@ export type ReviewCaseCreateWithoutReviewerInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutReviewerInput = {
@@ -1644,6 +1736,7 @@ export type ReviewCaseUncheckedCreateWithoutReviewerInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1659,6 +1752,8 @@ export type ReviewCaseUncheckedCreateWithoutReviewerInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutReviewerInput = {
@@ -1703,6 +1798,374 @@ export type ReviewCaseUpdateManyWithWhereWithoutReviewerInput = {
   data: Prisma.XOR<Prisma.ReviewCaseUpdateManyMutationInput, Prisma.ReviewCaseUncheckedUpdateManyWithoutReviewerInput>
 }
 
+export type ReviewCaseCreateWithoutVersionsInput = {
+  id: string
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterName: string
+  requestDepartment?: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  currentVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutCasesInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutCasesInput
+  requester: Prisma.UserCreateNestedOneWithoutRequestedCasesInput
+  reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
+  files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
+}
+
+export type ReviewCaseUncheckedCreateWithoutVersionsInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterId: string
+  reviewerId?: string | null
+  requesterName: string
+  requestDepartment?: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  currentVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
+}
+
+export type ReviewCaseCreateOrConnectWithoutVersionsInput = {
+  where: Prisma.ReviewCaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutVersionsInput>
+}
+
+export type ReviewCaseUpsertWithoutVersionsInput = {
+  update: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutVersionsInput, Prisma.ReviewCaseUncheckedUpdateWithoutVersionsInput>
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutVersionsInput, Prisma.ReviewCaseUncheckedCreateWithoutVersionsInput>
+  where?: Prisma.ReviewCaseWhereInput
+}
+
+export type ReviewCaseUpdateToOneWithWhereWithoutVersionsInput = {
+  where?: Prisma.ReviewCaseWhereInput
+  data: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutVersionsInput, Prisma.ReviewCaseUncheckedUpdateWithoutVersionsInput>
+}
+
+export type ReviewCaseUpdateWithoutVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCasesNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutCasesNestedInput
+  requester?: Prisma.UserUpdateOneRequiredWithoutRequestedCasesNestedInput
+  reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
+  files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseUncheckedUpdateWithoutVersionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterId?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseCreateWithoutCertificateInput = {
+  id: string
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterName: string
+  requestDepartment?: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  currentVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  tenant: Prisma.TenantCreateNestedOneWithoutCasesInput
+  affiliate?: Prisma.AffiliateCreateNestedOneWithoutCasesInput
+  requester: Prisma.UserCreateNestedOneWithoutRequestedCasesInput
+  reviewer?: Prisma.UserCreateNestedOneWithoutAssignedCasesInput
+  files?: Prisma.ReviewFileCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseUncheckedCreateWithoutCertificateInput = {
+  id: string
+  tenantId: string
+  affiliateId?: string | null
+  affiliateName: string
+  title: string
+  productType: $Enums.ProductType
+  channelType: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Date | string | null
+  status: $Enums.ReviewStatus
+  highestRiskLevel?: $Enums.RiskLevel
+  requesterId: string
+  reviewerId?: string | null
+  requesterName: string
+  requestDepartment?: string
+  reviewerName: string
+  promotionalCopy: string
+  disclosure: string
+  productDescription: string
+  missingMaterials: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft: string
+  currentDraft?: string | null
+  currentDraftVersion?: number
+  currentVersion?: number
+  analysisNotice?: string | null
+  submittedAt?: Date | string | null
+  analysisStartedAt?: Date | string | null
+  analysisCompletedAt?: Date | string | null
+  finalDecisionAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  files?: Prisma.ReviewFileUncheckedCreateNestedManyWithoutReviewCaseInput
+  issues?: Prisma.ReviewIssueUncheckedCreateNestedManyWithoutReviewCaseInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentRuns?: Prisma.AgentRunUncheckedCreateNestedManyWithoutReviewCaseInput
+  agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
+  chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
+  draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+}
+
+export type ReviewCaseCreateOrConnectWithoutCertificateInput = {
+  where: Prisma.ReviewCaseWhereUniqueInput
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutCertificateInput, Prisma.ReviewCaseUncheckedCreateWithoutCertificateInput>
+}
+
+export type ReviewCaseUpsertWithoutCertificateInput = {
+  update: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutCertificateInput, Prisma.ReviewCaseUncheckedUpdateWithoutCertificateInput>
+  create: Prisma.XOR<Prisma.ReviewCaseCreateWithoutCertificateInput, Prisma.ReviewCaseUncheckedCreateWithoutCertificateInput>
+  where?: Prisma.ReviewCaseWhereInput
+}
+
+export type ReviewCaseUpdateToOneWithWhereWithoutCertificateInput = {
+  where?: Prisma.ReviewCaseWhereInput
+  data: Prisma.XOR<Prisma.ReviewCaseUpdateWithoutCertificateInput, Prisma.ReviewCaseUncheckedUpdateWithoutCertificateInput>
+}
+
+export type ReviewCaseUpdateWithoutCertificateInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  tenant?: Prisma.TenantUpdateOneRequiredWithoutCasesNestedInput
+  affiliate?: Prisma.AffiliateUpdateOneWithoutCasesNestedInput
+  requester?: Prisma.UserUpdateOneRequiredWithoutRequestedCasesNestedInput
+  reviewer?: Prisma.UserUpdateOneWithoutAssignedCasesNestedInput
+  files?: Prisma.ReviewFileUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+}
+
+export type ReviewCaseUncheckedUpdateWithoutCertificateInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tenantId?: Prisma.StringFieldUpdateOperationsInput | string
+  affiliateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  affiliateName?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  productType?: Prisma.EnumProductTypeFieldUpdateOperationsInput | $Enums.ProductType
+  channelType?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  plannedPublishDate?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  status?: Prisma.EnumReviewStatusFieldUpdateOperationsInput | $Enums.ReviewStatus
+  highestRiskLevel?: Prisma.EnumRiskLevelFieldUpdateOperationsInput | $Enums.RiskLevel
+  requesterId?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requesterName?: Prisma.StringFieldUpdateOperationsInput | string
+  requestDepartment?: Prisma.StringFieldUpdateOperationsInput | string
+  reviewerName?: Prisma.StringFieldUpdateOperationsInput | string
+  promotionalCopy?: Prisma.StringFieldUpdateOperationsInput | string
+  disclosure?: Prisma.StringFieldUpdateOperationsInput | string
+  productDescription?: Prisma.StringFieldUpdateOperationsInput | string
+  missingMaterials?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
+  currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  analysisCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finalDecisionAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  files?: Prisma.ReviewFileUncheckedUpdateManyWithoutReviewCaseNestedInput
+  issues?: Prisma.ReviewIssueUncheckedUpdateManyWithoutReviewCaseNestedInput
+  analysisJobs?: Prisma.AnalysisJobUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentRuns?: Prisma.AgentRunUncheckedUpdateManyWithoutReviewCaseNestedInput
+  agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
+  chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+}
+
 export type ReviewCaseCreateWithoutFilesInput = {
   id: string
   affiliateName: string
@@ -1722,6 +2185,7 @@ export type ReviewCaseCreateWithoutFilesInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1740,6 +2204,8 @@ export type ReviewCaseCreateWithoutFilesInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutFilesInput = {
@@ -1765,6 +2231,7 @@ export type ReviewCaseUncheckedCreateWithoutFilesInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1779,6 +2246,8 @@ export type ReviewCaseUncheckedCreateWithoutFilesInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutFilesInput = {
@@ -1816,6 +2285,7 @@ export type ReviewCaseUpdateWithoutFilesInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1834,6 +2304,8 @@ export type ReviewCaseUpdateWithoutFilesInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutFilesInput = {
@@ -1859,6 +2331,7 @@ export type ReviewCaseUncheckedUpdateWithoutFilesInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1873,6 +2346,8 @@ export type ReviewCaseUncheckedUpdateWithoutFilesInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutIssuesInput = {
@@ -1894,6 +2369,7 @@ export type ReviewCaseCreateWithoutIssuesInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1912,6 +2388,8 @@ export type ReviewCaseCreateWithoutIssuesInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutIssuesInput = {
@@ -1937,6 +2415,7 @@ export type ReviewCaseUncheckedCreateWithoutIssuesInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -1951,6 +2430,8 @@ export type ReviewCaseUncheckedCreateWithoutIssuesInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutIssuesInput = {
@@ -1988,6 +2469,7 @@ export type ReviewCaseUpdateWithoutIssuesInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2006,6 +2488,8 @@ export type ReviewCaseUpdateWithoutIssuesInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutIssuesInput = {
@@ -2031,6 +2515,7 @@ export type ReviewCaseUncheckedUpdateWithoutIssuesInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2045,6 +2530,8 @@ export type ReviewCaseUncheckedUpdateWithoutIssuesInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutAnalysisJobsInput = {
@@ -2066,6 +2553,7 @@ export type ReviewCaseCreateWithoutAnalysisJobsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2084,6 +2572,8 @@ export type ReviewCaseCreateWithoutAnalysisJobsInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutAnalysisJobsInput = {
@@ -2109,6 +2599,7 @@ export type ReviewCaseUncheckedCreateWithoutAnalysisJobsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2123,6 +2614,8 @@ export type ReviewCaseUncheckedCreateWithoutAnalysisJobsInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutAnalysisJobsInput = {
@@ -2160,6 +2653,7 @@ export type ReviewCaseUpdateWithoutAnalysisJobsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2178,6 +2672,8 @@ export type ReviewCaseUpdateWithoutAnalysisJobsInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutAnalysisJobsInput = {
@@ -2203,6 +2699,7 @@ export type ReviewCaseUncheckedUpdateWithoutAnalysisJobsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2217,6 +2714,8 @@ export type ReviewCaseUncheckedUpdateWithoutAnalysisJobsInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutAgentRunsInput = {
@@ -2238,6 +2737,7 @@ export type ReviewCaseCreateWithoutAgentRunsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2256,6 +2756,8 @@ export type ReviewCaseCreateWithoutAgentRunsInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutAgentRunsInput = {
@@ -2281,6 +2783,7 @@ export type ReviewCaseUncheckedCreateWithoutAgentRunsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2295,6 +2798,8 @@ export type ReviewCaseUncheckedCreateWithoutAgentRunsInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutAgentRunsInput = {
@@ -2332,6 +2837,7 @@ export type ReviewCaseUpdateWithoutAgentRunsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2350,6 +2856,8 @@ export type ReviewCaseUpdateWithoutAgentRunsInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutAgentRunsInput = {
@@ -2375,6 +2883,7 @@ export type ReviewCaseUncheckedUpdateWithoutAgentRunsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2389,6 +2898,8 @@ export type ReviewCaseUncheckedUpdateWithoutAgentRunsInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutAgentFindingsInput = {
@@ -2410,6 +2921,7 @@ export type ReviewCaseCreateWithoutAgentFindingsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2428,6 +2940,8 @@ export type ReviewCaseCreateWithoutAgentFindingsInput = {
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutAgentFindingsInput = {
@@ -2453,6 +2967,7 @@ export type ReviewCaseUncheckedCreateWithoutAgentFindingsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2467,6 +2982,8 @@ export type ReviewCaseUncheckedCreateWithoutAgentFindingsInput = {
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutAgentFindingsInput = {
@@ -2504,6 +3021,7 @@ export type ReviewCaseUpdateWithoutAgentFindingsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2522,6 +3040,8 @@ export type ReviewCaseUpdateWithoutAgentFindingsInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutAgentFindingsInput = {
@@ -2547,6 +3067,7 @@ export type ReviewCaseUncheckedUpdateWithoutAgentFindingsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2561,6 +3082,8 @@ export type ReviewCaseUncheckedUpdateWithoutAgentFindingsInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutChatSessionsInput = {
@@ -2582,6 +3105,7 @@ export type ReviewCaseCreateWithoutChatSessionsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2600,6 +3124,8 @@ export type ReviewCaseCreateWithoutChatSessionsInput = {
   agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutChatSessionsInput = {
@@ -2625,6 +3151,7 @@ export type ReviewCaseUncheckedCreateWithoutChatSessionsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2639,6 +3166,8 @@ export type ReviewCaseUncheckedCreateWithoutChatSessionsInput = {
   agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutChatSessionsInput = {
@@ -2676,6 +3205,7 @@ export type ReviewCaseUpdateWithoutChatSessionsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2694,6 +3224,8 @@ export type ReviewCaseUpdateWithoutChatSessionsInput = {
   agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutChatSessionsInput = {
@@ -2719,6 +3251,7 @@ export type ReviewCaseUncheckedUpdateWithoutChatSessionsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2733,6 +3266,8 @@ export type ReviewCaseUncheckedUpdateWithoutChatSessionsInput = {
   agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutDraftVersionsInput = {
@@ -2754,6 +3289,7 @@ export type ReviewCaseCreateWithoutDraftVersionsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2772,6 +3308,8 @@ export type ReviewCaseCreateWithoutDraftVersionsInput = {
   agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutDraftVersionsInput = {
@@ -2797,6 +3335,7 @@ export type ReviewCaseUncheckedCreateWithoutDraftVersionsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2811,6 +3350,8 @@ export type ReviewCaseUncheckedCreateWithoutDraftVersionsInput = {
   agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   reports?: Prisma.ReviewReportUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutDraftVersionsInput = {
@@ -2848,6 +3389,7 @@ export type ReviewCaseUpdateWithoutDraftVersionsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2866,6 +3408,8 @@ export type ReviewCaseUpdateWithoutDraftVersionsInput = {
   agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutDraftVersionsInput = {
@@ -2891,6 +3435,7 @@ export type ReviewCaseUncheckedUpdateWithoutDraftVersionsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -2905,6 +3450,8 @@ export type ReviewCaseUncheckedUpdateWithoutDraftVersionsInput = {
   agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateWithoutReportsInput = {
@@ -2926,6 +3473,7 @@ export type ReviewCaseCreateWithoutReportsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2944,6 +3492,8 @@ export type ReviewCaseCreateWithoutReportsInput = {
   agentFindings?: Prisma.AgentFindingCreateNestedManyWithoutReviewCaseInput
   chatSessions?: Prisma.ChatSessionCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseUncheckedCreateWithoutReportsInput = {
@@ -2969,6 +3519,7 @@ export type ReviewCaseUncheckedCreateWithoutReportsInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -2983,6 +3534,8 @@ export type ReviewCaseUncheckedCreateWithoutReportsInput = {
   agentFindings?: Prisma.AgentFindingUncheckedCreateNestedManyWithoutReviewCaseInput
   chatSessions?: Prisma.ChatSessionUncheckedCreateNestedManyWithoutReviewCaseInput
   draftVersions?: Prisma.DraftVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  versions?: Prisma.ReviewVersionUncheckedCreateNestedManyWithoutReviewCaseInput
+  certificate?: Prisma.ReviewCertificateUncheckedCreateNestedOneWithoutReviewCaseInput
 }
 
 export type ReviewCaseCreateOrConnectWithoutReportsInput = {
@@ -3020,6 +3573,7 @@ export type ReviewCaseUpdateWithoutReportsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3038,6 +3592,8 @@ export type ReviewCaseUpdateWithoutReportsInput = {
   agentFindings?: Prisma.AgentFindingUpdateManyWithoutReviewCaseNestedInput
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutReportsInput = {
@@ -3063,6 +3619,7 @@ export type ReviewCaseUncheckedUpdateWithoutReportsInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3077,6 +3634,8 @@ export type ReviewCaseUncheckedUpdateWithoutReportsInput = {
   agentFindings?: Prisma.AgentFindingUncheckedUpdateManyWithoutReviewCaseNestedInput
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseCreateManyTenantInput = {
@@ -3101,6 +3660,7 @@ export type ReviewCaseCreateManyTenantInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -3129,6 +3689,7 @@ export type ReviewCaseUpdateWithoutTenantInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3147,6 +3708,8 @@ export type ReviewCaseUpdateWithoutTenantInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutTenantInput = {
@@ -3171,6 +3734,7 @@ export type ReviewCaseUncheckedUpdateWithoutTenantInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3186,6 +3750,8 @@ export type ReviewCaseUncheckedUpdateWithoutTenantInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutTenantInput = {
@@ -3210,6 +3776,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutTenantInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3241,6 +3808,7 @@ export type ReviewCaseCreateManyAffiliateInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -3269,6 +3837,7 @@ export type ReviewCaseUpdateWithoutAffiliateInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3287,6 +3856,8 @@ export type ReviewCaseUpdateWithoutAffiliateInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutAffiliateInput = {
@@ -3311,6 +3882,7 @@ export type ReviewCaseUncheckedUpdateWithoutAffiliateInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3326,6 +3898,8 @@ export type ReviewCaseUncheckedUpdateWithoutAffiliateInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutAffiliateInput = {
@@ -3350,6 +3924,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutAffiliateInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3381,6 +3956,7 @@ export type ReviewCaseCreateManyRequesterInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -3412,6 +3988,7 @@ export type ReviewCaseCreateManyReviewerInput = {
   expectedDraft: string
   currentDraft?: string | null
   currentDraftVersion?: number
+  currentVersion?: number
   analysisNotice?: string | null
   submittedAt?: Date | string | null
   analysisStartedAt?: Date | string | null
@@ -3440,6 +4017,7 @@ export type ReviewCaseUpdateWithoutRequesterInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3458,6 +4036,8 @@ export type ReviewCaseUpdateWithoutRequesterInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutRequesterInput = {
@@ -3482,6 +4062,7 @@ export type ReviewCaseUncheckedUpdateWithoutRequesterInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3497,6 +4078,8 @@ export type ReviewCaseUncheckedUpdateWithoutRequesterInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutRequesterInput = {
@@ -3521,6 +4104,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutRequesterInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3549,6 +4133,7 @@ export type ReviewCaseUpdateWithoutReviewerInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3567,6 +4152,8 @@ export type ReviewCaseUpdateWithoutReviewerInput = {
   chatSessions?: Prisma.ChatSessionUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateWithoutReviewerInput = {
@@ -3591,6 +4178,7 @@ export type ReviewCaseUncheckedUpdateWithoutReviewerInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3606,6 +4194,8 @@ export type ReviewCaseUncheckedUpdateWithoutReviewerInput = {
   chatSessions?: Prisma.ChatSessionUncheckedUpdateManyWithoutReviewCaseNestedInput
   draftVersions?: Prisma.DraftVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
   reports?: Prisma.ReviewReportUncheckedUpdateManyWithoutReviewCaseNestedInput
+  versions?: Prisma.ReviewVersionUncheckedUpdateManyWithoutReviewCaseNestedInput
+  certificate?: Prisma.ReviewCertificateUncheckedUpdateOneWithoutReviewCaseNestedInput
 }
 
 export type ReviewCaseUncheckedUpdateManyWithoutReviewerInput = {
@@ -3630,6 +4220,7 @@ export type ReviewCaseUncheckedUpdateManyWithoutReviewerInput = {
   expectedDraft?: Prisma.StringFieldUpdateOperationsInput | string
   currentDraft?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   currentDraftVersion?: Prisma.IntFieldUpdateOperationsInput | number
+  currentVersion?: Prisma.IntFieldUpdateOperationsInput | number
   analysisNotice?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   submittedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   analysisStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -3653,6 +4244,7 @@ export type ReviewCaseCountOutputType = {
   chatSessions: number
   draftVersions: number
   reports: number
+  versions: number
 }
 
 export type ReviewCaseCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3664,6 +4256,7 @@ export type ReviewCaseCountOutputTypeSelect<ExtArgs extends runtime.Types.Extens
   chatSessions?: boolean | ReviewCaseCountOutputTypeCountChatSessionsArgs
   draftVersions?: boolean | ReviewCaseCountOutputTypeCountDraftVersionsArgs
   reports?: boolean | ReviewCaseCountOutputTypeCountReportsArgs
+  versions?: boolean | ReviewCaseCountOutputTypeCountVersionsArgs
 }
 
 /**
@@ -3732,6 +4325,13 @@ export type ReviewCaseCountOutputTypeCountReportsArgs<ExtArgs extends runtime.Ty
   where?: Prisma.ReviewReportWhereInput
 }
 
+/**
+ * ReviewCaseCountOutputType without action
+ */
+export type ReviewCaseCountOutputTypeCountVersionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ReviewVersionWhereInput
+}
+
 
 export type ReviewCaseSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -3756,6 +4356,7 @@ export type ReviewCaseSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   expectedDraft?: boolean
   currentDraft?: boolean
   currentDraftVersion?: boolean
+  currentVersion?: boolean
   analysisNotice?: boolean
   submittedAt?: boolean
   analysisStartedAt?: boolean
@@ -3775,6 +4376,8 @@ export type ReviewCaseSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   chatSessions?: boolean | Prisma.ReviewCase$chatSessionsArgs<ExtArgs>
   draftVersions?: boolean | Prisma.ReviewCase$draftVersionsArgs<ExtArgs>
   reports?: boolean | Prisma.ReviewCase$reportsArgs<ExtArgs>
+  versions?: boolean | Prisma.ReviewCase$versionsArgs<ExtArgs>
+  certificate?: boolean | Prisma.ReviewCase$certificateArgs<ExtArgs>
   _count?: boolean | Prisma.ReviewCaseCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["reviewCase"]>
 
@@ -3801,6 +4404,7 @@ export type ReviewCaseSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   expectedDraft?: boolean
   currentDraft?: boolean
   currentDraftVersion?: boolean
+  currentVersion?: boolean
   analysisNotice?: boolean
   submittedAt?: boolean
   analysisStartedAt?: boolean
@@ -3837,6 +4441,7 @@ export type ReviewCaseSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   expectedDraft?: boolean
   currentDraft?: boolean
   currentDraftVersion?: boolean
+  currentVersion?: boolean
   analysisNotice?: boolean
   submittedAt?: boolean
   analysisStartedAt?: boolean
@@ -3873,6 +4478,7 @@ export type ReviewCaseSelectScalar = {
   expectedDraft?: boolean
   currentDraft?: boolean
   currentDraftVersion?: boolean
+  currentVersion?: boolean
   analysisNotice?: boolean
   submittedAt?: boolean
   analysisStartedAt?: boolean
@@ -3882,7 +4488,7 @@ export type ReviewCaseSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ReviewCaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "affiliateId" | "affiliateName" | "title" | "productType" | "channelType" | "plannedPublishDate" | "status" | "highestRiskLevel" | "requesterId" | "reviewerId" | "requesterName" | "requestDepartment" | "reviewerName" | "promotionalCopy" | "disclosure" | "productDescription" | "missingMaterials" | "expectedDraft" | "currentDraft" | "currentDraftVersion" | "analysisNotice" | "submittedAt" | "analysisStartedAt" | "analysisCompletedAt" | "finalDecisionAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reviewCase"]>
+export type ReviewCaseOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tenantId" | "affiliateId" | "affiliateName" | "title" | "productType" | "channelType" | "plannedPublishDate" | "status" | "highestRiskLevel" | "requesterId" | "reviewerId" | "requesterName" | "requestDepartment" | "reviewerName" | "promotionalCopy" | "disclosure" | "productDescription" | "missingMaterials" | "expectedDraft" | "currentDraft" | "currentDraftVersion" | "currentVersion" | "analysisNotice" | "submittedAt" | "analysisStartedAt" | "analysisCompletedAt" | "finalDecisionAt" | "createdAt" | "updatedAt", ExtArgs["result"]["reviewCase"]>
 export type ReviewCaseInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tenant?: boolean | Prisma.TenantDefaultArgs<ExtArgs>
   affiliate?: boolean | Prisma.ReviewCase$affiliateArgs<ExtArgs>
@@ -3896,6 +4502,8 @@ export type ReviewCaseInclude<ExtArgs extends runtime.Types.Extensions.InternalA
   chatSessions?: boolean | Prisma.ReviewCase$chatSessionsArgs<ExtArgs>
   draftVersions?: boolean | Prisma.ReviewCase$draftVersionsArgs<ExtArgs>
   reports?: boolean | Prisma.ReviewCase$reportsArgs<ExtArgs>
+  versions?: boolean | Prisma.ReviewCase$versionsArgs<ExtArgs>
+  certificate?: boolean | Prisma.ReviewCase$certificateArgs<ExtArgs>
   _count?: boolean | Prisma.ReviewCaseCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ReviewCaseIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3926,6 +4534,8 @@ export type $ReviewCasePayload<ExtArgs extends runtime.Types.Extensions.Internal
     chatSessions: Prisma.$ChatSessionPayload<ExtArgs>[]
     draftVersions: Prisma.$DraftVersionPayload<ExtArgs>[]
     reports: Prisma.$ReviewReportPayload<ExtArgs>[]
+    versions: Prisma.$ReviewVersionPayload<ExtArgs>[]
+    certificate: Prisma.$ReviewCertificatePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3950,6 +4560,7 @@ export type $ReviewCasePayload<ExtArgs extends runtime.Types.Extensions.Internal
     expectedDraft: string
     currentDraft: string | null
     currentDraftVersion: number
+    currentVersion: number
     analysisNotice: string | null
     submittedAt: Date | null
     analysisStartedAt: Date | null
@@ -4363,6 +4974,8 @@ export interface Prisma__ReviewCaseClient<T, Null = never, ExtArgs extends runti
   chatSessions<T extends Prisma.ReviewCase$chatSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$chatSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   draftVersions<T extends Prisma.ReviewCase$draftVersionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$draftVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DraftVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   reports<T extends Prisma.ReviewCase$reportsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$reportsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewReportPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  versions<T extends Prisma.ReviewCase$versionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$versionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  certificate<T extends Prisma.ReviewCase$certificateArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ReviewCase$certificateArgs<ExtArgs>>): Prisma.Prisma__ReviewCertificateClient<runtime.Types.Result.GetResult<Prisma.$ReviewCertificatePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4414,6 +5027,7 @@ export interface ReviewCaseFieldRefs {
   readonly expectedDraft: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly currentDraft: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly currentDraftVersion: Prisma.FieldRef<"ReviewCase", 'Int'>
+  readonly currentVersion: Prisma.FieldRef<"ReviewCase", 'Int'>
   readonly analysisNotice: Prisma.FieldRef<"ReviewCase", 'String'>
   readonly submittedAt: Prisma.FieldRef<"ReviewCase", 'DateTime'>
   readonly analysisStartedAt: Prisma.FieldRef<"ReviewCase", 'DateTime'>
@@ -5049,6 +5663,49 @@ export type ReviewCase$reportsArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.ReviewReportScalarFieldEnum | Prisma.ReviewReportScalarFieldEnum[]
+}
+
+/**
+ * ReviewCase.versions
+ */
+export type ReviewCase$versionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ReviewVersion
+   */
+  select?: Prisma.ReviewVersionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ReviewVersion
+   */
+  omit?: Prisma.ReviewVersionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReviewVersionInclude<ExtArgs> | null
+  where?: Prisma.ReviewVersionWhereInput
+  orderBy?: Prisma.ReviewVersionOrderByWithRelationInput | Prisma.ReviewVersionOrderByWithRelationInput[]
+  cursor?: Prisma.ReviewVersionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ReviewVersionScalarFieldEnum | Prisma.ReviewVersionScalarFieldEnum[]
+}
+
+/**
+ * ReviewCase.certificate
+ */
+export type ReviewCase$certificateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ReviewCertificate
+   */
+  select?: Prisma.ReviewCertificateSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ReviewCertificate
+   */
+  omit?: Prisma.ReviewCertificateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ReviewCertificateInclude<ExtArgs> | null
+  where?: Prisma.ReviewCertificateWhereInput
 }
 
 /**

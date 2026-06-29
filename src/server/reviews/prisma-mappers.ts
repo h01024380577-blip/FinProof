@@ -9,9 +9,11 @@ import type {
   RegulatorySnapshot,
   RegulatorySource,
   ReviewCase,
+  ReviewCertificate,
   ReviewFile,
   ReviewIssue,
-  ReviewSummary
+  ReviewSummary,
+  ReviewVersion
 } from "@/domain/types";
 import { filterMatchedEvidence } from "@/domain/evidence";
 
@@ -86,6 +88,7 @@ export type PrismaReviewCaseRow = {
   expectedDraft: string;
   currentDraft: string | null;
   currentDraftVersion: number;
+  currentVersion: number;
   analysisNotice: string | null;
 };
 
@@ -324,8 +327,87 @@ export function toReviewCase(row: PrismaReviewCaseRow): ReviewCase {
     issues: row.issues.map(toIssue),
     expectedDraft: row.expectedDraft,
     currentDraft: row.currentDraft ?? undefined,
-    currentDraftVersion: row.currentDraftVersion,
+    currentDraftVersion: row.currentDraftVersion === 0 ? undefined : row.currentDraftVersion,
+    currentVersion: row.currentVersion,
     analysisNotice: row.analysisNotice ?? undefined
+  };
+}
+
+export function toReviewVersion(row: {
+  id: string;
+  reviewCaseId: string;
+  versionNumber: number;
+  status: ReviewCase["status"];
+  reviewerComment: string | null;
+  opinionDraft: string | null;
+  issuesSnapshot: unknown;
+  filesSnapshot: unknown;
+  documentsSnapshot?: unknown;
+  decidedByUserId: string;
+  decidedByName: string | null;
+  decidedAt: Date;
+  createdAt: Date;
+}): ReviewVersion {
+  return {
+    id: row.id,
+    reviewCaseId: row.reviewCaseId,
+    versionNumber: row.versionNumber,
+    status: row.status as ReviewVersion["status"],
+    reviewerComment: row.reviewerComment ?? undefined,
+    opinionDraft: row.opinionDraft ?? undefined,
+    issuesSnapshot: Array.isArray(row.issuesSnapshot)
+      ? (row.issuesSnapshot as ReviewIssue[])
+      : [],
+    filesSnapshot: Array.isArray(row.filesSnapshot)
+      ? (row.filesSnapshot as ReviewVersion["filesSnapshot"])
+      : [],
+    documentsSnapshot: Array.isArray(row.documentsSnapshot)
+      ? (row.documentsSnapshot as ReviewVersion["documentsSnapshot"])
+      : undefined,
+    decidedByUserId: row.decidedByUserId,
+    decidedByName: row.decidedByName ?? undefined,
+    decidedAt: row.decidedAt.toISOString(),
+    createdAt: row.createdAt.toISOString()
+  };
+}
+
+export function toReviewCertificate(row: {
+  id: string;
+  reviewCaseId: string;
+  certificateNumber: string;
+  body: string;
+  validFrom: string | null;
+  validUntil: string | null;
+  remarks: string | null;
+  metadata: unknown;
+  issuedByUserId: string;
+  issuedByName: string | null;
+  issuedAt: Date;
+  updatedAt: Date;
+  createdAt: Date;
+}): ReviewCertificate {
+  const meta = jsonObject(row.metadata);
+
+  return {
+    id: row.id,
+    reviewCaseId: row.reviewCaseId,
+    certificateNumber: row.certificateNumber,
+    body: row.body,
+    validFrom: row.validFrom ?? undefined,
+    validUntil: row.validUntil ?? undefined,
+    remarks: row.remarks ?? undefined,
+    metadata: {
+      title: typeof meta.title === "string" ? meta.title : "",
+      productType: meta.productType as ReviewCertificate["metadata"]["productType"],
+      affiliateName: typeof meta.affiliateName === "string" ? meta.affiliateName : "",
+      reviewerName: typeof meta.reviewerName === "string" ? meta.reviewerName : "",
+      approvedAt: typeof meta.approvedAt === "string" ? meta.approvedAt : ""
+    },
+    issuedByUserId: row.issuedByUserId,
+    issuedByName: row.issuedByName ?? undefined,
+    issuedAt: row.issuedAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    createdAt: row.createdAt.toISOString()
   };
 }
 
@@ -340,7 +422,8 @@ export function toReviewSummary(row: PrismaReviewCaseRow): ReviewSummary {
     highestRiskLevel: row.highestRiskLevel,
     requester: row.requesterName,
     requestDepartment: optionalTrimmedString(row.requestDepartment),
-    reviewer: row.reviewerName
+    reviewer: row.reviewerName,
+    currentVersion: row.currentVersion
   };
 }
 

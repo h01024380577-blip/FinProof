@@ -89,6 +89,23 @@ describe("review service", () => {
       "view_audit"
     ]);
     expect(availableActionsFor("reviewer", "change_requested")).toEqual(["view_audit"]);
+    // 재업로드 대기 건은 심의자가 'AI 재검토'로 분석을 시작한다.
+    expect(availableActionsFor("reviewer", "re_review_pending")).toEqual(["start_analysis"]);
+    expect(availableActionsFor("compliance_admin", "re_review_pending")).toEqual([
+      "start_analysis"
+    ]);
+    expect(availableActionsFor("requester", "re_review_pending")).toEqual([]);
+    expect(availableActionsFor("requester", "analysis_failed")).toEqual([]);
+    expect(availableActionsFor("reviewer", "analysis_failed")).toEqual([
+      "start_analysis",
+      "open_workbench",
+      "view_audit"
+    ]);
+    expect(availableActionsFor("compliance_admin", "analysis_failed")).toEqual([
+      "start_analysis",
+      "open_workbench",
+      "view_audit"
+    ]);
   });
 
   it("returns not-started analysis status before a job exists", async () => {
@@ -276,6 +293,16 @@ describe("review service", () => {
               }
             ]
           };
+        },
+        async extractOnly({ review }) {
+          return review.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "최고 연 5.0% 우대금리 조건 추출",
+            confidence: 0.92,
+            provider: "fixture-ocr"
+          }));
         }
       }
     });
@@ -346,6 +373,16 @@ describe("review service", () => {
               }
             ]
           };
+        },
+        async extractOnly({ review }) {
+          return review.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "최고 연 5.0% 금리를 누구나 받을 수 있는 적금 상품입니다.",
+            confidence: 0.93,
+            provider: "fixture-ocr"
+          }));
         }
       }
     });

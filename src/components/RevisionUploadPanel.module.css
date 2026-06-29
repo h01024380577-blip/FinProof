@@ -1,0 +1,97 @@
+/* Net-new styling for requester re-upload (재검토 요청) and certificate (심의필) panels.
+   Reuses global tokens from globals.css; no global classes are modified here. */
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.panelHeading {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: #eef7f1;
+  color: #00674b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+/* Wraps the multiple inline action buttons inside the table action cell. */
+.actionCell {
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Certificate (심의필) */
+.certCard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.certHeader {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.certNumber {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.certMeta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px var(--space-4);
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.certMetaLabel {
+  margin: 0;
+  color: var(--text-soft);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.certMetaValue {
+  margin: 0;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.certBody {
+  white-space: pre-wrap;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: var(--line-height-relaxed);
+}
+
+.stateText {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}

@@ -1,9 +1,26 @@
 import {
   answerReviewQuestion,
+  detectReviewDraftLanguage,
   generateDraftWithChatContext,
   generateIssueBasedOpinionDraft
 } from "./chat";
 import { getReviewCaseById } from "./reviews";
+import type { MultilingualIssueContext, ReviewCase } from "./types";
+
+const vietnameseContext: MultilingualIssueContext = {
+  segmentId: "seg-vi-001",
+  language: "vi",
+  originalText: "Vay tiền nhanh, duyệt trong 5 phút, ai cũng được vay",
+  literalTranslation: "빠른 대출, 5분 내 승인, 누구나 대출 가능",
+  complianceMeaning: "무조건 승인을 암시하는 단정적 표현",
+  riskCategory: "both",
+  riskSignals: ["guaranteed_approval", "absolute_expression"],
+  koreanComplianceCategory: "단정적 표현",
+  koreanComplianceReason: "심사 절차를 생략한 무조건 승인 오인 소지",
+  evidenceQuery: "대출 광고 단정적 표현 금지",
+  suggestedCopyOriginalLanguage: "Vay tiền nhanh (tùy theo điều kiện xét duyệt)",
+  suggestedCopyKoreanMeaning: "빠른 대출 (심사 조건에 따라 다름)"
+};
 
 describe("review chat guardrails", () => {
   const review = getReviewCaseById("rc-demo-deposit-001")!;
@@ -58,5 +75,52 @@ describe("review chat guardrails", () => {
     expect(draft).toContain(issue.description);
     expect(draft).toContain(issue.suggestedCopy);
     expect(draft).toContain(issue.evidence[0].title);
+  });
+});
+
+describe("multilingual opinion draft", () => {
+  const review = getReviewCaseById("rc-demo-deposit-001")!;
+
+  function reviewWithMultilingualIssue(context: MultilingualIssueContext): ReviewCase {
+    return {
+      ...review,
+      issues: [{ ...review.issues[0], multilingualContext: context }]
+    };
+  }
+
+  it("detects Korean by default when no multilingual context exists", () => {
+    expect(detectReviewDraftLanguage(review)).toBe("ko");
+  });
+
+  it("detects the dominant non-Korean language from issue multilingual context", () => {
+    expect(detectReviewDraftLanguage(reviewWithMultilingualIssue(vietnameseContext))).toBe("vi");
+  });
+
+  it("writes the opinion draft in the detected language using original-language wording", () => {
+    const draft = generateIssueBasedOpinionDraft(reviewWithMultilingualIssue(vietnameseContext));
+
+    // Section labels are localized to the detected language.
+    expect(draft).toContain("Bản nháp ý kiến yêu cầu chỉnh sửa");
+    expect(draft).toContain("Mức độ rủi ro");
+    expect(draft).toContain("Ý kiến tổng hợp:");
+    expect(draft).not.toContain("수정 요청 의견 초안");
+
+    // Target text and suggestion come from the original-language fields.
+    expect(draft).toContain(vietnameseContext.originalText);
+    expect(draft).toContain(vietnameseContext.suggestedCopyOriginalLanguage);
+  });
+
+  it("localizes the chat reflection note to the detected language", () => {
+    const multilingualReview = reviewWithMultilingualIssue(vietnameseContext);
+    const response = answerReviewQuestion({
+      review: multilingualReview,
+      issue: multilingualReview.issues[0],
+      question: "우대금리 조건을 어느 수준까지 표시해야 하나요?"
+    });
+
+    const draft = generateDraftWithChatContext(multilingualReview, [response]);
+
+    expect(draft).toContain("Bối cảnh trò chuyện:");
+    expect(draft).not.toContain("채팅 반영");
   });
 });

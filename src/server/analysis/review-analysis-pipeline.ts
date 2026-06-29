@@ -116,6 +116,14 @@ export type ReviewFileBodyReader = Pick<ReviewStorageAdapter, "getReviewFileBody
 
 export type ReviewAnalysisPipeline = {
   run(input: { review: ReviewCase; scope?: ReviewStoreScope }): Promise<AnalysisArtifacts>;
+  /**
+   * OCR 추출만 수행하고 AI 이슈탐지(RAG·서브에이전트·이슈생성)는 건너뛴다.
+   * 재업로드 재검토에서 버전 간 텍스트 비교(diff)용 추출 텍스트만 필요할 때 사용한다.
+   */
+  extractOnly(input: {
+    review: ReviewCase;
+    scope?: ReviewStoreScope;
+  }): Promise<ExtractedDocument[]>;
 };
 
 type OcrFetchLike = (
@@ -150,6 +158,29 @@ type RenderedPdfPage = {
   mimeType: "image/png";
   body: Uint8Array;
 };
+
+/**
+ * Removes characters that PostgreSQL rejects from extracted document text.
+ *
+ * Text/jsonb columns cannot store the NUL byte (U+0000) and raise
+ * `invalid byte sequence for encoding "UTF8": 0x00` on insert. NUL bytes routinely
+ * appear when binary content or mis-encoded files are decoded as UTF-8 — for example a
+ * UTF-16 text file (common for Windows-authored Vietnamese content) decodes to characters
+ * interleaved with NUL, and `pdftotext` can emit embedded NUL bytes. Whitespace
+ * normalization (`\s`) does not match NUL, so it has to be stripped explicitly.
+ *
+ * This also drops other C0 control characters (except tab, newline, and carriage return)
+ * since they carry no meaning for review text and can break downstream JSON handling.
+ */
+export function sanitizeExtractedText(text: string): string {
+  return text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+}
+
+function sanitizeExtractedDocument(document: ExtractedDocument): ExtractedDocument {
+  const sanitizedText = sanitizeExtractedText(document.text);
+
+  return sanitizedText === document.text ? document : { ...document, text: sanitizedText };
+}
 
 function textPreview(text: string, maxLength: number) {
   const normalized = text.replace(/\s+/g, " ").trim();
@@ -1238,15 +1269,23 @@ export function createReviewAnalysisPipeline({
   now = () => new Date()
 }: ReviewAnalysisPipelineOptions = {}): ReviewAnalysisPipeline {
   return {
+    async extractOnly({ review }) {
+      const rawExtractedDocuments = await ocrProvider.extract({ review, files: review.files });
+      return rawExtractedDocuments.map(sanitizeExtractedDocument);
+    },
     async run({ review, scope }) {
       const config = getAnalysisProviderConfig();
       const query = reviewRagQuery(review);
       // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
       // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
-      const [extractedDocuments] = await Promise.all([
+      const [rawExtractedDocuments] = await Promise.all([
         ocrProvider.extract({ review, files: review.files }),
         ragRetriever.prefetch?.({ review, scope })
       ]);
+      // Strip NUL/control bytes here, before any document text is used for retrieval,
+      // segmentation, findings, or persistence. Mis-encoded uploads (e.g. UTF-16 Vietnamese
+      // text decoded as UTF-8) otherwise carry NUL bytes that Postgres refuses to store.
+      const extractedDocuments = rawExtractedDocuments.map(sanitizeExtractedDocument);
       const analysisDocuments = documentsForAnalysis(extractedDocuments, review);
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
       // retrieve() uses the prefetched knowledge/case candidates and computes

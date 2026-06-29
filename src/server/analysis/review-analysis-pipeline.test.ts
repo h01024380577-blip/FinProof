@@ -42,10 +42,36 @@ const review: ReviewCase = {
     }
   ],
   issues: [],
-  expectedDraft: "검토 필요"
+  expectedDraft: "검토 필요",
+  currentVersion: 1
 };
 
 describe("review analysis pipeline", () => {
+  it("strips NUL/control bytes from extracted text so Postgres can persist it", async () => {
+    // Simulates a mis-encoded upload (e.g. UTF-16 Vietnamese text decoded as UTF-8),
+    // where characters are interleaved with NUL bytes that Postgres rejects.
+    const pipeline = createReviewAnalysisPipeline({
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "V\u0000a\u0000y\u0000 t\u0000i\u0000ề\u0000n\u0000 nhanh\u0001\u001f",
+            confidence: 0.88,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    const [document] = artifacts.extractedDocuments;
+    expect(document.text).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
+    expect(document.text).toContain("Vay tiền nhanh");
+  });
+
   it("extracts OCR text and creates RAG evidence candidates", async () => {
     const pipeline = createReviewAnalysisPipeline({
       ocrProvider: {

@@ -10,12 +10,19 @@ export type ReviewStatus =
   | "analysis_queued"
   | "analysis_in_progress"
   | "analysis_complete"
+  | "analysis_failed"
+  | "re_review_pending"
   | "under_review"
   | "change_requested"
   | "rejected"
   | "approved"
   | "on_hold"
   | "archived";
+
+export type FinalReviewStatus = Extract<
+  ReviewStatus,
+  "approved" | "change_requested" | "rejected" | "on_hold"
+>;
 
 export type ReviewAction = "start_analysis" | "open_workbench" | "view_audit";
 
@@ -122,7 +129,58 @@ export type ReviewCase = {
   expectedDraft: string;
   currentDraft?: string;
   currentDraftVersion?: number;
+  currentVersion: number;
   analysisNotice?: string;
+};
+
+export type ReviewVersion = {
+  id: string;
+  reviewCaseId: string;
+  versionNumber: number;
+  status: FinalReviewStatus;
+  reviewerComment?: string;
+  opinionDraft?: string;
+  issuesSnapshot: ReviewIssue[];
+  filesSnapshot: Array<Pick<ReviewFile, "id" | "name" | "fileType">>;
+  /**
+   * 이 회차에서 분석된 각 문서의 OCR 추출 텍스트 스냅샷. 재업로드 시 원본 파일/추출
+   * 텍스트가 삭제되므로, 다음 회차의 변경분석(diff) 비교 기준으로 보존한다.
+   * 이 기능 배포 이전에 확정된 회차는 비어 있을 수 있다.
+   */
+  documentsSnapshot?: Array<{
+    fileId: string;
+    fileName: string;
+    fileType: ReviewFile["fileType"];
+    text: string;
+  }>;
+  decidedByUserId: string;
+  decidedByName?: string;
+  decidedAt: string;
+  createdAt: string;
+};
+
+export type ReviewCertificateMetadata = {
+  title: string;
+  productType: ProductType;
+  affiliateName: string;
+  reviewerName: string;
+  approvedAt: string;
+};
+
+export type ReviewCertificate = {
+  id: string;
+  reviewCaseId: string;
+  certificateNumber: string;
+  body: string;
+  validFrom?: string;
+  validUntil?: string;
+  remarks?: string;
+  metadata: ReviewCertificateMetadata;
+  issuedByUserId: string;
+  issuedByName?: string;
+  issuedAt: string;
+  updatedAt: string;
+  createdAt: string;
 };
 
 export type ReviewSummary = Pick<
@@ -137,6 +195,7 @@ export type ReviewSummary = Pick<
   | "requester"
   | "requestDepartment"
   | "reviewer"
+  | "currentVersion"
 > & {
   availableActions?: ReviewAction[];
 };

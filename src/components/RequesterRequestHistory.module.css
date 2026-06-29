@@ -1,0 +1,427 @@
+/* Master–detail layout for the requester request-history tab.
+   Reuses global brand tokens from globals.css; no global classes are modified here. */
+
+.shell {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 540px;
+}
+
+/* ---------------- Master (left) column ---------------- */
+.master {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+  background: var(--surface-subtle);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 16px 14px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-muted);
+}
+
+.chip[data-active="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.chipCount {
+  font-size: 0.72rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  align-items: center;
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.item:hover {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.item[aria-current="true"] {
+  background: var(--surface);
+  border-color: var(--primary);
+  box-shadow:
+    inset 3px 0 0 var(--primary),
+    var(--shadow-card);
+}
+
+.itemTitle {
+  grid-column: 1;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.itemStatus {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  justify-self: end;
+}
+
+.itemId {
+  grid-column: 1;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.listEmpty {
+  margin: 0;
+  padding: 24px 14px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+/* ---------------- Detail (right) panel ---------------- */
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  min-height: 0;
+  padding: 26px 30px 30px;
+  overflow-y: auto;
+}
+
+.detailHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.detailTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.detailTitle {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.detailId {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px 20px;
+  margin: 6px 0 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.metaItem {
+  display: grid;
+  gap: 3px;
+}
+
+.metaLabel {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.metaValue {
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+/* ---------------- Progress stepper (hero) ---------------- */
+.stepperSection {
+  display: grid;
+  gap: 14px;
+  padding: 24px 22px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, #f7faff 0%, var(--surface) 70%);
+}
+
+.stepper {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+}
+
+.step:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  top: 17px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--line-strong);
+  z-index: 0;
+}
+
+.step[data-state="complete"]::before,
+.step[data-state="active"]::before {
+  background: var(--primary);
+}
+
+.step[data-outcome="approved"]::before {
+  background: var(--verified);
+}
+
+.step[data-outcome="rejected"]::before {
+  background: var(--risk-high);
+}
+
+.step[data-outcome="change"]::before {
+  background: var(--risk-caution);
+}
+
+.stepNode {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.step[data-state="complete"] .stepNode {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.step[data-state="active"] .stepNode {
+  border-color: var(--primary);
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(0, 63, 125, 0.12);
+}
+
+.step[data-outcome="approved"] .stepNode {
+  border-color: var(--verified);
+  background: var(--verified);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.step[data-outcome="rejected"] .stepNode {
+  border-color: var(--risk-high);
+  background: var(--risk-high);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.step[data-outcome="change"] .stepNode {
+  border-color: var(--risk-caution);
+  background: var(--risk-caution);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.stepLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.step[data-state="complete"] .stepLabel,
+.step[data-state="active"] .stepLabel {
+  color: var(--text);
+}
+
+.step[data-state="active"] .stepLabel {
+  font-weight: 800;
+}
+
+.step[data-outcome="approved"] .stepLabel {
+  color: var(--verified);
+}
+
+.step[data-outcome="rejected"] .stepLabel {
+  color: var(--risk-high);
+}
+
+.step[data-outcome="change"] .stepLabel {
+  color: var(--risk-caution);
+}
+
+.stageNote {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------------- Sections (opinion / actions) ---------------- */
+.section {
+  display: grid;
+  gap: 12px;
+}
+
+.sectionHeading {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.opinionCard {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.subtleState {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.progressNote {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--primary-soft);
+  border-radius: var(--radius-md);
+  background: #eef4fd;
+  color: var(--primary-strong);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: var(--line-height-relaxed);
+}
+
+.emptyDetail {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ---------------- Responsive: stack columns ---------------- */
+@media (max-width: 880px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .master {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .list {
+    max-height: 320px;
+  }
+
+  .detail {
+    padding: 22px 20px 26px;
+  }
+}

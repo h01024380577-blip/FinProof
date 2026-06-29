@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type JSX } from "react";
 import { LoaderCircle, Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import type { ReviewIssue } from "@/domain/types";
+import type { RevisionDiff } from "@/domain/revision-diff";
+import { RevisionDiffView } from "./RevisionDiffView";
 
 const MIN_ZOOM = 50;
 const MAX_ZOOM = 200;
@@ -21,7 +23,17 @@ export type CreativeViewerProps = {
   issues: ReviewIssue[];
   selectedIssueId?: string;
   onSelectIssue: (issueId: string) => void;
+  /** 재업로드(v2+) 재검토 시 직전 버전 대비 변경분석. 있을 때만 비교 토글이 노출된다. */
+  revisionDiff?: RevisionDiff | null;
 };
+
+function hasComparableChanges(revisionDiff: RevisionDiff | null | undefined): boolean {
+  return Boolean(
+    revisionDiff &&
+      revisionDiff.documents.length > 0 &&
+      revisionDiff.documents.some((document) => document.status !== "unchanged")
+  );
+}
 
 function HighlightBoxes({
   issues,
@@ -64,12 +76,25 @@ export function CreativeViewer({
   isCreativeImageLoading = false,
   issues,
   selectedIssueId,
-  onSelectIssue
+  onSelectIssue,
+  revisionDiff
 }: CreativeViewerProps): JSX.Element {
   const [zoom, setZoom] = useState(100);
   const [isFrameFit, setIsFrameFit] = useState(false);
   const [fitZoom, setFitZoom] = useState(100);
   const viewportRef = useRef<HTMLDivElement>(null);
+
+  const compareAvailable = Boolean(revisionDiff && revisionDiff.documents.length > 0);
+  const [viewMode, setViewMode] = useState<"single" | "compare">("single");
+  // 재업로드(v2+)로 변경이 감지되면 비교 모드로 자동 진입(한 번만). 이후 사용자가 '단일'로 전환 가능.
+  const autoComparedRef = useRef(false);
+  useEffect(() => {
+    if (!autoComparedRef.current && hasComparableChanges(revisionDiff)) {
+      autoComparedRef.current = true;
+      setViewMode("compare");
+    }
+  }, [revisionDiff]);
+  const isComparing = compareAvailable && viewMode === "compare";
 
   const calcFitZoom = useCallback((): number => {
     const el = viewportRef.current;
@@ -118,39 +143,68 @@ export function CreativeViewer({
       data-frame-fit={isFrameFit}
     >
       <div className="viewer-toolbar" aria-label="문서 보기 도구">
-        <button
-          className="icon-button icon-button--small"
-          type="button"
-          aria-label="축소"
-          disabled={isFrameFit || zoom <= MIN_ZOOM}
-          onClick={() => adjustZoom("out")}
-        >
-          <Minus size={15} aria-hidden="true" />
-        </button>
-        <span>{isFrameFit ? "맞춤" : `${zoom}%`}</span>
-        <button
-          className="icon-button icon-button--small"
-          type="button"
-          aria-label="확대"
-          disabled={isFrameFit || zoom >= MAX_ZOOM}
-          onClick={() => adjustZoom("in")}
-        >
-          <Plus size={15} aria-hidden="true" />
-        </button>
-        <span>1 / 1</span>
-        <button
-          className="icon-button icon-button--small"
-          type="button"
-          aria-label={isFrameFit ? "페이지 맞추기 해제" : "페이지 맞추기"}
-          onClick={toggleFrameFit}
-        >
-          {isFrameFit ? (
-            <Minimize2 size={15} aria-hidden="true" />
-          ) : (
-            <Maximize2 size={15} aria-hidden="true" />
-          )}
-        </button>
+        {compareAvailable ? (
+          <div className="viewer-mode-toggle" role="group" aria-label="보기 모드">
+            <button
+              type="button"
+              data-active={!isComparing}
+              aria-pressed={!isComparing}
+              onClick={() => setViewMode("single")}
+            >
+              단일
+            </button>
+            <button
+              type="button"
+              data-active={isComparing}
+              aria-pressed={isComparing}
+              onClick={() => setViewMode("compare")}
+            >
+              비교
+            </button>
+          </div>
+        ) : null}
+        {isComparing ? (
+          <span className="viewer-toolbar__spacer" aria-hidden="true" />
+        ) : (
+          <>
+            <button
+              className="icon-button icon-button--small"
+              type="button"
+              aria-label="축소"
+              disabled={isFrameFit || zoom <= MIN_ZOOM}
+              onClick={() => adjustZoom("out")}
+            >
+              <Minus size={15} aria-hidden="true" />
+            </button>
+            <span>{isFrameFit ? "맞춤" : `${zoom}%`}</span>
+            <button
+              className="icon-button icon-button--small"
+              type="button"
+              aria-label="확대"
+              disabled={isFrameFit || zoom >= MAX_ZOOM}
+              onClick={() => adjustZoom("in")}
+            >
+              <Plus size={15} aria-hidden="true" />
+            </button>
+            <span>1 / 1</span>
+            <button
+              className="icon-button icon-button--small"
+              type="button"
+              aria-label={isFrameFit ? "페이지 맞추기 해제" : "페이지 맞추기"}
+              onClick={toggleFrameFit}
+            >
+              {isFrameFit ? (
+                <Minimize2 size={15} aria-hidden="true" />
+              ) : (
+                <Maximize2 size={15} aria-hidden="true" />
+              )}
+            </button>
+          </>
+        )}
       </div>
+      {isComparing && revisionDiff ? (
+        <RevisionDiffView diff={revisionDiff} />
+      ) : (
       <div className="viewer-viewport" ref={viewportRef}>
         <div
           className="poster-zoom-stage"
@@ -196,6 +250,7 @@ export function CreativeViewer({
           )}
         </div>
       </div>
+      )}
     </section>
   );
 }

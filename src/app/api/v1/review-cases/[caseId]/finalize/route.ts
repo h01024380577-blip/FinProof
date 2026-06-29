@@ -46,7 +46,8 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
     reviewCase = await createReviewService().updateReviewStatus(
       await requestContext(request),
       caseId,
-      status
+      status,
+      typeof body?.reviewerComment === "string" ? { reviewerComment: body.reviewerComment } : {}
     );
   } catch (error) {
     return jsonForbidden(error);
