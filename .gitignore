@@ -13,3 +13,22 @@ security/
 *.key
 .finproof-uploads/
 .worktrees/
+
+# editor / IDE
+.vscode/
+
+# auto-generated tool snapshots & scratch
+.playwright-mcp/
+tmp/
+outputs/
+
+# python scratch / build artifacts
+__pycache__/
+*.pyc
+.tmp_pycache/
+.tmp_build_script.py
+.tmp_*
+
+# slide / deck build scratch
+.pptx_work/
+slides_build/
