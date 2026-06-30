@@ -28,7 +28,7 @@
     "ops:s3:apply": "tsx scripts/provision-s3.ts --execute",
     "db:seed:knowledge:law": "tsx scripts/seed-knowledge-law-api.ts",
     "db:seed:knowledge:guides": "tsx scripts/seed-knowledge-guides.ts",
-    "ops:regulatory:poll": "tsx scripts/poll-regulatory-sources.ts --once",
+    "ops:regulatory:poll": "tsx scripts/poll-regulatory-sources.ts",
     "ops:regulatory:poll:loop": "tsx scripts/poll-regulatory-sources.ts --loop"
   },
   "dependencies": {
