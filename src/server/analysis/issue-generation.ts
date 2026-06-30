@@ -96,10 +96,21 @@ function issueRelevance(issueText: string, candidate: RagEvidenceCandidate): num
   return matches / issueTokens.length;
 }
 
+// A small boost for candidates that cite a concrete article/section, so that — all
+// else near-equal — a specific legal provision is preferred over a general guide.
+// Kept small (0.05) so it only breaks near-ties: a clearly more issue-relevant
+// candidate still wins regardless of whether it carries an article reference.
+const ARTICLE_REFERENCE_BOOST = 0.05;
+
+function hasArticleCitation(candidate: RagEvidenceCandidate): boolean {
+  return Boolean(candidate.section?.trim()) || hasArticleReference(candidate.quoteSummary);
+}
+
 /**
- * Picks the candidate most relevant to the issue, breaking ties by the candidate's
- * own retrieval/rerank score so a stronger general match still wins when no
- * candidate overlaps the issue text.
+ * Picks the candidate most relevant to the issue. Relevance to the issue text is the
+ * PRIMARY signal (with a small article-citation boost); ties fall back to the
+ * candidate's own retrieval score. This way each issue gets the regulation most
+ * relevant to IT rather than whichever happens to carry an article reference.
  */
 function bestByIssueRelevance(
   issueText: string,
@@ -109,10 +120,14 @@ function bestByIssueRelevance(
     return undefined;
   }
 
-  return [...candidates].sort((left, right) => {
-    const relevanceDelta = issueRelevance(issueText, right) - issueRelevance(issueText, left);
+  const rank = (candidate: RagEvidenceCandidate) =>
+    issueRelevance(issueText, candidate) +
+    (hasArticleCitation(candidate) ? ARTICLE_REFERENCE_BOOST : 0);
 
-    return relevanceDelta !== 0 ? relevanceDelta : right.relevanceScore - left.relevanceScore;
+  return [...candidates].sort((left, right) => {
+    const rankDelta = rank(right) - rank(left);
+
+    return rankDelta !== 0 ? rankDelta : right.relevanceScore - left.relevanceScore;
   })[0];
 }
 
@@ -128,27 +143,19 @@ function preferredEvidenceCandidate(
   const reliableArtifactCandidates = artifacts.evidenceCandidates.filter((candidate) =>
     isReliableEvidenceCandidate(candidate, minEvidenceScore)
   );
-  const registeredCandidates = [
+  // All registered (law/internal_policy) candidates, excluding table-of-contents
+  // chunks. Article and non-article candidates compete in ONE pool ranked by
+  // per-issue relevance (article citation is only a small tie-break boost).
+  const usableRegisteredCandidates = [
     ...reliableCandidates.filter(isRegisteredKnowledgeEvidence),
     ...reliableArtifactCandidates.filter(isRegisteredKnowledgeEvidence)
-  ];
-  const articleCandidates = registeredCandidates.filter(
-    (candidate) =>
-      !isTableOfContentsEvidence(candidate) &&
-      (candidate.section?.trim() || hasArticleReference(candidate.quoteSummary))
-  );
-  const usableRegisteredCandidates = registeredCandidates.filter(
-    (candidate) => !isTableOfContentsEvidence(candidate)
-  );
+  ].filter((candidate) => !isTableOfContentsEvidence(candidate));
   const nonCaseCandidates = [
     ...reliableCandidates.filter(isNotCaseHistoryEvidence),
     ...reliableArtifactCandidates.filter(isNotCaseHistoryEvidence)
   ].filter((candidate) => !isTableOfContentsEvidence(candidate));
 
-  // Within each preference tier, pick the candidate most relevant to THIS issue
-  // (tie-broken by retrieval score) rather than always the globally top one.
   return (
-    bestByIssueRelevance(issueText, articleCandidates) ??
     bestByIssueRelevance(issueText, usableRegisteredCandidates) ??
     bestByIssueRelevance(issueText, nonCaseCandidates) ??
     bestByIssueRelevance(issueText, reliableCandidates) ??
