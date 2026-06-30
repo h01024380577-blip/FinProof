@@ -1214,17 +1214,22 @@ export function createPrismaReviewStore(): ReviewStore {
           }
         ];
       });
-      const evidenceById = new Map<string, Evidence>();
+      // Dedupe by DOCUMENT (keep each document's best-scoring chunk), not by chunk,
+      // so a single large regulation (e.g. 은행업감독규정 with 60+ chunks) cannot crowd
+      // out single-chunk-but-more-relevant documents (e.g. a 1-chunk 광고 심의 체크리스트).
+      // This gives the candidate pool document-level diversity for per-issue matching.
+      const evidenceByDocument = new Map<string, Evidence>();
 
       for (const evidence of [...vectorEvidence, ...lexicalEvidence]) {
-        const existing = evidenceById.get(evidence.id);
+        const key = evidence.documentId ?? evidence.id;
+        const existing = evidenceByDocument.get(key);
 
         if (!existing || evidence.relevanceScore > existing.relevanceScore) {
-          evidenceById.set(evidence.id, evidence);
+          evidenceByDocument.set(key, evidence);
         }
       }
 
-      return Array.from(evidenceById.values())
+      return Array.from(evidenceByDocument.values())
         .sort((left, right) => right.relevanceScore - left.relevanceScore)
         .slice(0, topK);
     },

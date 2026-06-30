@@ -1887,49 +1887,62 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       const minScore = input.minScore ?? 0.5;
       const topK = input.topK ?? 4;
 
-      return Array.from(evidenceChunks.values())
-        .flatMap((chunk) => {
-          const documentId = chunk.knowledgeDocumentId;
-          const document = documentId ? knowledgeDocuments.get(documentId) : undefined;
+      const knowledgeMatches = Array.from(evidenceChunks.values()).flatMap((chunk) => {
+        const documentId = chunk.knowledgeDocumentId;
+        const document = documentId ? knowledgeDocuments.get(documentId) : undefined;
 
-          if (
-            !document ||
-            document.tenantId !== scope.tenantId ||
-            !matchesKnowledgeSearch(document, input) ||
-            !activeChunkForSearch(chunk, input)
-          ) {
-            return [];
+        if (
+          !document ||
+          document.tenantId !== scope.tenantId ||
+          !matchesKnowledgeSearch(document, input) ||
+          !activeChunkForSearch(chunk, input)
+        ) {
+          return [];
+        }
+
+        // Down-weight lexical vs vector cosine (see prisma store KNOWLEDGE_LEXICAL_WEIGHT)
+        // so keyword-rich generic docs cannot outrank genuine semantic matches.
+        const score =
+          lexicalKnowledgeScore(
+            input.query,
+            [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
+            document.title
+          ) * 0.8;
+
+        if (score < minScore) {
+          return [];
+        }
+
+        return [
+          {
+            id: `knowledge-evidence-${chunk.id}`,
+            sourceType: documentSourceType(document),
+            documentId: document.id,
+            chunkId: chunk.id,
+            version: document.version,
+            effectiveFrom: document.effectiveFrom,
+            title: document.title,
+            page: chunk.page,
+            section: chunk.section,
+            quoteSummary: chunk.chunkSummary || chunk.chunkText,
+            relevanceScore: score
           }
+        ];
+      });
 
-          // Down-weight lexical vs vector cosine (see prisma store KNOWLEDGE_LEXICAL_WEIGHT)
-          // so keyword-rich generic docs cannot outrank genuine semantic matches.
-          const score =
-            lexicalKnowledgeScore(
-              input.query,
-              [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
-              document.title
-            ) * 0.8;
+      // Dedupe by document (best chunk per document) so a large multi-chunk
+      // regulation can't crowd out single-chunk relevant documents (see prisma store).
+      const knowledgeByDocument = new Map<string, (typeof knowledgeMatches)[number]>();
+      for (const evidence of knowledgeMatches) {
+        const key = evidence.documentId ?? evidence.id;
+        const existing = knowledgeByDocument.get(key);
 
-          if (score < minScore) {
-            return [];
-          }
+        if (!existing || evidence.relevanceScore > existing.relevanceScore) {
+          knowledgeByDocument.set(key, evidence);
+        }
+      }
 
-          return [
-            {
-              id: `knowledge-evidence-${chunk.id}`,
-              sourceType: documentSourceType(document),
-              documentId: document.id,
-              chunkId: chunk.id,
-              version: document.version,
-              effectiveFrom: document.effectiveFrom,
-              title: document.title,
-              page: chunk.page,
-              section: chunk.section,
-              quoteSummary: chunk.chunkSummary || chunk.chunkText,
-              relevanceScore: score
-            }
-          ];
-        })
+      return Array.from(knowledgeByDocument.values())
         .sort((left, right) => right.relevanceScore - left.relevanceScore)
         .slice(0, topK);
     },
