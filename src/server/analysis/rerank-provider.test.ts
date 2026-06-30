@@ -76,7 +76,7 @@ describe("Cohere reranker", () => {
           sourceType: candidates[1].sourceType
         }
       ],
-      top_n: 2,
+      top_n: 2, // = candidate count (Cohere scores all), no longer FINPROOF_RERANK_TOP_K
       return_documents: false
     });
     expect(ranked).toEqual([
