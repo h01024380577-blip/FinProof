@@ -1241,7 +1241,10 @@ export function createHybridOcrProvider(
   env: Record<string, string | undefined> = process.env,
   fileBodyReader?: ReviewFileBodyReader,
   openAiFetch: OcrFetchLike = fetch,
-  ocrServiceFetch?: Parameters<typeof callOcrService>[2]
+  ocrServiceFetch?: Parameters<typeof callOcrService>[2],
+  // The PDF text-layer probe. Defaults to the local `pdftotext` extractor; injectable
+  // so routing can be tested without the poppler binary present (e.g. CI runners).
+  pdfTextProbe: (body: Uint8Array) => Promise<string | undefined> = extractPdfText
 ): OcrProvider {
   return {
     async extract({ review, files }) {
@@ -1319,7 +1322,7 @@ export function createHybridOcrProvider(
               return sampleOrMetadataDocument(review, file);
             }
 
-            const probe = await extractPdfText(body);
+            const probe = await pdfTextProbe(body);
 
             if (probe && hasEnoughPdfText(probe)) {
               const service = await viaService(file, body);

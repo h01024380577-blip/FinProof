@@ -2174,22 +2174,20 @@ describe("Phase 2 — python service OCR provider", () => {
 });
 
 describe("Phase 3 — content-based hybrid OCR provider", () => {
-  // Minimal real PDFs so the live `pdftotext` text-layer probe behaves correctly:
-  // DIGITAL has an extractable text layer (>40 chars), BLANK has none (scanned-like).
-  const DIGITAL_PDF_B64 =
-    "JVBERi0xLjcKJcK1wrYKCjEgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDIgMCBSPj4KZW5kb2JqCgoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvQ291bnQgMS9LaWRzWzQgMCBSXT4+CmVuZG9iagoKMyAwIG9iago8PC9Gb250PDwvaGVsdiA1IDAgUj4+Pj4KZW5kb2JqCgo0IDAgb2JqCjw8L1R5cGUvUGFnZS9NZWRpYUJveFswIDAgNDAwIDIwMF0vUm90YXRlIDAvUmVzb3VyY2VzIDMgMCBSL1BhcmVudCAyIDAgUi9Db250ZW50c1s2IDAgUl0+PgplbmRvYmoKCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhL0VuY29kaW5nL1dpbkFuc2lFbmNvZGluZz4+CmVuZG9iagoKNiAwIG9iago8PC9MZW5ndGggMTU3L0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp42k2OvQ7CMAyE9zxF3gD/5dxIiKESCxtSNsRUUjHAwMLz41QdkKXId/5ydvqkuSXOFMVZ4iHK7Z0Oz/76Zubc1nw7mqHCUd3AWIQKWVhCoYtPbkJYwF5DSbjkghXmBTpmoXiQQmrStQ5ikFAU9O33I4hpS6nR1+HppPRf2zaGBFP2HcV15Dgix/ZrdL+moqOc7u2Szi1d0w/H7jI2CmVuZHN0cmVhbQplbmRvYmoKCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNiAwMDAwMCBuIAowMDAwMDAwMDYyIDAwMDAwIG4gCjAwMDAwMDAxMTQgMDAwMDAgbiAKMDAwMDAwMDE1NSAwMDAwMCBuIAowMDAwMDAwMjYyIDAwMDAwIG4gCjAwMDAwMDAzNTEgMDAwMDAgbiAKCnRyYWlsZXIKPDwvU2l6ZSA3L1Jvb3QgMSAwIFIvSURbPEMzODdDMkE1QzI4QjdFQzJCOTI3QzNCQTZCMzMzOUMzPjwxQ0E2ODk0MjdCMkVGQTdBRjM0MjNCQTFBQzNFN0NCQj5dPj4Kc3RhcnR4cmVmCjU3NwolJUVPRgo=";
-  const BLANK_PDF_B64 =
-    "JVBERi0xLjcKJcK1wrYKCjEgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDIgMCBSPj4KZW5kb2JqCgoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvQ291bnQgMS9LaWRzWzQgMCBSXT4+CmVuZG9iagoKMyAwIG9iago8PD4+CmVuZG9iagoKNCAwIG9iago8PC9UeXBlL1BhZ2UvTWVkaWFCb3hbMCAwIDMwMCAyMDBdL1JvdGF0ZSAwL1Jlc291cmNlcyAzIDAgUi9QYXJlbnQgMiAwIFI+PgplbmRvYmoKCnhyZWYKMCA1CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNiAwMDAwMCBuIAowMDAwMDAwMDYyIDAwMDAwIG4gCjAwMDAwMDAxMTQgMDAwMDAgbiAKMDAwMDAwMDEzNSAwMDAwMCBuIAoKdHJhaWxlcgo8PC9TaXplIDUvUm9vdCAxIDAgUi9JRFs8QzI5NEMyODU0N0MyOTE3MEMzODJDMjlEQzM4MUMyODQ+PDM0MDg2RjA2ODk2RkI3REYzRDIxQkVEOEUxRTQ2QjA3Pl0+PgpzdGFydHhyZWYKMjI2CiUlRU9GCg==";
+  // The PDF text-layer probe (`pdftotext`) is injected in these tests so routing is
+  // deterministic without the poppler binary (CI runners don't have it). A non-empty
+  // (>40 non-whitespace chars) probe => digital PDF; `undefined` => scanned PDF.
+  const PDF_BODY = new Uint8Array([37, 80, 68, 70]); // "%PDF"
+  const DIGITAL_TEXT =
+    "디지털PDF텍스트레이어상품설명서금리연4.9퍼센트최대한도8000만원표보존테스트본문";
+  const digitalProbe = async () => DIGITAL_TEXT;
+  const scannedProbe = async () => undefined;
 
   const hybridEnv = {
     FINPROOF_OCR_PROVIDER: "hybrid",
     FINPROOF_OCR_ENDPOINT: "http://localhost:8000",
     OPENAI_API_KEY: "test-key"
   };
-
-  function bytes(b64: string) {
-    return new Uint8Array(Buffer.from(b64, "base64"));
-  }
 
   function makeFile(over: Partial<(typeof review.files)[number]>) {
     return {
@@ -2251,9 +2249,10 @@ describe("Phase 3 — content-based hybrid OCR provider", () => {
     const service = serviceFetch("pdfplumber");
     const provider = createHybridOcrProvider(
       hybridEnv,
-      reader(bytes(DIGITAL_PDF_B64)),
+      reader(PDF_BODY),
       vision,
-      service
+      service,
+      digitalProbe
     );
 
     const files = [makeFile({ name: "rates.pdf", contentType: "application/pdf" })];
@@ -2268,8 +2267,10 @@ describe("Phase 3 — content-based hybrid OCR provider", () => {
     const vision = visionFetch();
     const provider = createHybridOcrProvider(
       { FINPROOF_OCR_PROVIDER: "hybrid", OPENAI_API_KEY: "test-key" }, // no FINPROOF_OCR_ENDPOINT
-      reader(bytes(DIGITAL_PDF_B64)),
-      vision
+      reader(PDF_BODY),
+      vision,
+      undefined,
+      digitalProbe
     );
 
     const files = [makeFile({ name: "rates.pdf", contentType: "application/pdf" })];
@@ -2277,7 +2278,7 @@ describe("Phase 3 — content-based hybrid OCR provider", () => {
 
     expect(vision).not.toHaveBeenCalled();
     expect(document.provider).toBe("local-pdf-text-extractor");
-    expect(document.text.toLowerCase()).toContain("digital pdf text layer");
+    expect(document.text).toContain("텍스트레이어");
   });
 
   it("routes a scanned PDF (no text layer) to the vision LLM", async () => {
@@ -2285,9 +2286,10 @@ describe("Phase 3 — content-based hybrid OCR provider", () => {
     const service = serviceFetch("pdfplumber");
     const provider = createHybridOcrProvider(
       hybridEnv,
-      reader(bytes(BLANK_PDF_B64)),
+      reader(PDF_BODY),
       vision,
-      service
+      service,
+      scannedProbe
     );
 
     const files = [makeFile({ name: "scan.pdf", contentType: "application/pdf" })];
