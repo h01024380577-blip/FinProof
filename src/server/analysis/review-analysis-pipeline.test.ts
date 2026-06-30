@@ -1,6 +1,7 @@
 import type { ReviewCase } from "@/domain/types";
 import {
   createGeminiOcrProvider,
+  createHybridOcrProvider,
   createOpenAiOcrProvider,
   createPythonServiceOcrProvider,
   createReviewAnalysisPipeline,
@@ -2059,8 +2060,7 @@ describe("selectEvidenceCandidates", () => {
     expect(selected).toHaveLength(4);
     const knowledgeIds = selected
       .filter(
-        (candidate) =>
-          candidate.sourceType === "internal_policy" || candidate.sourceType === "law"
+        (candidate) => candidate.sourceType === "internal_policy" || candidate.sourceType === "law"
       )
       .map((candidate) => candidate.id);
     expect(knowledgeIds.length).toBeGreaterThanOrEqual(1);
@@ -2112,7 +2112,11 @@ describe("Phase 2 — python service OCR provider", () => {
     const fetchImpl = vi.fn(async () => ({
       ok: true,
       status: 200,
-      json: async () => ({ text: "월 최대 300만원 즉시 대출", confidence: 0.79, provider: "tesseract" })
+      json: async () => ({
+        text: "월 최대 300만원 즉시 대출",
+        confidence: 0.79,
+        provider: "tesseract"
+      })
     }));
     const provider = createPythonServiceOcrProvider(
       { FINPROOF_OCR_PROVIDER: "http", FINPROOF_OCR_ENDPOINT: "http://localhost:8000" },
@@ -2165,6 +2169,202 @@ describe("Phase 2 — python service OCR provider", () => {
     const [document] = await provider.extract({ review, files: review.files });
 
     expect(fetchImpl).not.toHaveBeenCalled();
+    expect(document.provider).toBe("metadata-only");
+  });
+});
+
+describe("Phase 3 — content-based hybrid OCR provider", () => {
+  // Minimal real PDFs so the live `pdftotext` text-layer probe behaves correctly:
+  // DIGITAL has an extractable text layer (>40 chars), BLANK has none (scanned-like).
+  const DIGITAL_PDF_B64 =
+    "JVBERi0xLjcKJcK1wrYKCjEgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDIgMCBSPj4KZW5kb2JqCgoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvQ291bnQgMS9LaWRzWzQgMCBSXT4+CmVuZG9iagoKMyAwIG9iago8PC9Gb250PDwvaGVsdiA1IDAgUj4+Pj4KZW5kb2JqCgo0IDAgb2JqCjw8L1R5cGUvUGFnZS9NZWRpYUJveFswIDAgNDAwIDIwMF0vUm90YXRlIDAvUmVzb3VyY2VzIDMgMCBSL1BhcmVudCAyIDAgUi9Db250ZW50c1s2IDAgUl0+PgplbmRvYmoKCjUgMCBvYmoKPDwvVHlwZS9Gb250L1N1YnR5cGUvVHlwZTEvQmFzZUZvbnQvSGVsdmV0aWNhL0VuY29kaW5nL1dpbkFuc2lFbmNvZGluZz4+CmVuZG9iagoKNiAwIG9iago8PC9MZW5ndGggMTU3L0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp42k2OvQ7CMAyE9zxF3gD/5dxIiKESCxtSNsRUUjHAwMLz41QdkKXId/5ydvqkuSXOFMVZ4iHK7Z0Oz/76Zubc1nw7mqHCUd3AWIQKWVhCoYtPbkJYwF5DSbjkghXmBTpmoXiQQmrStQ5ikFAU9O33I4hpS6nR1+HppPRf2zaGBFP2HcV15Dgix/ZrdL+moqOc7u2Szi1d0w/H7jI2CmVuZHN0cmVhbQplbmRvYmoKCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNiAwMDAwMCBuIAowMDAwMDAwMDYyIDAwMDAwIG4gCjAwMDAwMDAxMTQgMDAwMDAgbiAKMDAwMDAwMDE1NSAwMDAwMCBuIAowMDAwMDAwMjYyIDAwMDAwIG4gCjAwMDAwMDAzNTEgMDAwMDAgbiAKCnRyYWlsZXIKPDwvU2l6ZSA3L1Jvb3QgMSAwIFIvSURbPEMzODdDMkE1QzI4QjdFQzJCOTI3QzNCQTZCMzMzOUMzPjwxQ0E2ODk0MjdCMkVGQTdBRjM0MjNCQTFBQzNFN0NCQj5dPj4Kc3RhcnR4cmVmCjU3NwolJUVPRgo=";
+  const BLANK_PDF_B64 =
+    "JVBERi0xLjcKJcK1wrYKCjEgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDIgMCBSPj4KZW5kb2JqCgoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvQ291bnQgMS9LaWRzWzQgMCBSXT4+CmVuZG9iagoKMyAwIG9iago8PD4+CmVuZG9iagoKNCAwIG9iago8PC9UeXBlL1BhZ2UvTWVkaWFCb3hbMCAwIDMwMCAyMDBdL1JvdGF0ZSAwL1Jlc291cmNlcyAzIDAgUi9QYXJlbnQgMiAwIFI+PgplbmRvYmoKCnhyZWYKMCA1CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNiAwMDAwMCBuIAowMDAwMDAwMDYyIDAwMDAwIG4gCjAwMDAwMDAxMTQgMDAwMDAgbiAKMDAwMDAwMDEzNSAwMDAwMCBuIAoKdHJhaWxlcgo8PC9TaXplIDUvUm9vdCAxIDAgUi9JRFs8QzI5NEMyODU0N0MyOTE3MEMzODJDMjlEQzM4MUMyODQ+PDM0MDg2RjA2ODk2RkI3REYzRDIxQkVEOEUxRTQ2QjA3Pl0+PgpzdGFydHhyZWYKMjI2CiUlRU9GCg==";
+
+  const hybridEnv = {
+    FINPROOF_OCR_PROVIDER: "hybrid",
+    FINPROOF_OCR_ENDPOINT: "http://localhost:8000",
+    OPENAI_API_KEY: "test-key"
+  };
+
+  function bytes(b64: string) {
+    return new Uint8Array(Buffer.from(b64, "base64"));
+  }
+
+  function makeFile(over: Partial<(typeof review.files)[number]>) {
+    return {
+      id: "file-h",
+      name: "doc",
+      fileType: "promotional_creative" as const,
+      classificationConfidence: 0.8,
+      parseStatus: "pending" as const,
+      storageProvider: "s3" as const,
+      storageKey: "s3://b/doc",
+      contentType: "application/octet-stream",
+      sizeBytes: 1024,
+      ...over
+    };
+  }
+
+  function reader(body: Uint8Array) {
+    return {
+      async getReviewFileBody() {
+        return body;
+      }
+    };
+  }
+
+  const visionFetch = () =>
+    vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ output_text: "비전 OCR 추출: 최저 연 4.9% 연체 최고 15%" })
+    }));
+  const serviceFetch = (provider: string) =>
+    vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ text: "서비스 추출 본문", confidence: 0.95, provider })
+    }));
+
+  it("routes an image to the vision LLM (not the Python service)", async () => {
+    const vision = visionFetch();
+    const service = serviceFetch("pdfplumber");
+    const provider = createHybridOcrProvider(
+      hybridEnv,
+      reader(new Uint8Array([1, 2, 3])),
+      vision,
+      service
+    );
+
+    const files = [makeFile({ name: "banner.png", contentType: "image/png" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(vision).toHaveBeenCalledOnce();
+    expect(service).not.toHaveBeenCalled();
+    expect(document.provider).toBe("openai-ocr");
+    expect(document.text).toContain("연체 최고 15%");
+  });
+
+  it("routes a digital (text-layer) PDF to the Python service (not the vision LLM)", async () => {
+    const vision = visionFetch();
+    const service = serviceFetch("pdfplumber");
+    const provider = createHybridOcrProvider(
+      hybridEnv,
+      reader(bytes(DIGITAL_PDF_B64)),
+      vision,
+      service
+    );
+
+    const files = [makeFile({ name: "rates.pdf", contentType: "application/pdf" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(service).toHaveBeenCalledOnce();
+    expect(vision).not.toHaveBeenCalled();
+    expect(document.provider).toBe("pdfplumber");
+  });
+
+  it("keeps the local text layer when the service is unreachable for a digital PDF", async () => {
+    const vision = visionFetch();
+    const provider = createHybridOcrProvider(
+      { FINPROOF_OCR_PROVIDER: "hybrid", OPENAI_API_KEY: "test-key" }, // no FINPROOF_OCR_ENDPOINT
+      reader(bytes(DIGITAL_PDF_B64)),
+      vision
+    );
+
+    const files = [makeFile({ name: "rates.pdf", contentType: "application/pdf" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(vision).not.toHaveBeenCalled();
+    expect(document.provider).toBe("local-pdf-text-extractor");
+    expect(document.text.toLowerCase()).toContain("digital pdf text layer");
+  });
+
+  it("routes a scanned PDF (no text layer) to the vision LLM", async () => {
+    const vision = visionFetch();
+    const service = serviceFetch("pdfplumber");
+    const provider = createHybridOcrProvider(
+      hybridEnv,
+      reader(bytes(BLANK_PDF_B64)),
+      vision,
+      service
+    );
+
+    const files = [makeFile({ name: "scan.pdf", contentType: "application/pdf" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(vision).toHaveBeenCalledOnce();
+    expect(service).not.toHaveBeenCalled();
+    expect(document.provider).toBe("openai-ocr");
+  });
+
+  it("routes a DOCX to the Python service", async () => {
+    const vision = visionFetch();
+    const service = serviceFetch("python-docx");
+    const provider = createHybridOcrProvider(
+      hybridEnv,
+      reader(new Uint8Array([80, 75])),
+      vision,
+      service
+    );
+
+    const files = [
+      makeFile({
+        name: "terms.docx",
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      })
+    ];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(service).toHaveBeenCalledOnce();
+    expect(vision).not.toHaveBeenCalled();
+    expect(document.provider).toBe("python-docx");
+  });
+
+  it("extracts text files locally without any external call", async () => {
+    const vision = visionFetch();
+    const service = serviceFetch("pdfplumber");
+    const provider = createHybridOcrProvider(
+      hybridEnv,
+      reader(new TextEncoder().encode("일반 텍스트 광고 문안 본문")),
+      vision,
+      service
+    );
+
+    const files = [makeFile({ name: "copy.txt", contentType: "text/plain" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(vision).not.toHaveBeenCalled();
+    expect(service).not.toHaveBeenCalled();
+    expect(document.provider).toBe("local-text-extractor");
+    expect(document.text).toContain("광고 문안");
+  });
+
+  it("falls back to metadata when the vision call fails (analysis never breaks)", async () => {
+    const vision = vi.fn(async () => {
+      throw new Error("OpenAI 5xx");
+    });
+    const provider = createHybridOcrProvider(hybridEnv, reader(new Uint8Array([1, 2, 3])), vision);
+
+    const files = [makeFile({ name: "banner.png", contentType: "image/png" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(vision).toHaveBeenCalledOnce();
+    expect(document.provider).toBe("metadata-only"); // legacy fallback preserved
+  });
+
+  it("falls back to metadata for an image when OPENAI_API_KEY is missing", async () => {
+    const vision = visionFetch();
+    const provider = createHybridOcrProvider(
+      { FINPROOF_OCR_PROVIDER: "hybrid", FINPROOF_OCR_ENDPOINT: "http://localhost:8000" },
+      reader(new Uint8Array([1, 2, 3])),
+      vision
+    );
+
+    const files = [makeFile({ name: "banner.png", contentType: "image/png" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(vision).not.toHaveBeenCalled();
     expect(document.provider).toBe("metadata-only");
   });
 });

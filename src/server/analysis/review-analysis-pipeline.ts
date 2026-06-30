@@ -17,6 +17,7 @@ import {
   type EmbeddingProvider
 } from "@/server/knowledge/embedding-provider";
 import {
+  callOcrService,
   extractViaOcrService,
   isOcrServiceEnabled
 } from "@/server/knowledge/ocr-service-client";
@@ -256,6 +257,19 @@ function isPdfFile(file: ReviewFile) {
   const contentType = file.contentType?.split(";")[0]?.trim().toLowerCase();
 
   return contentType === "application/pdf" || /\.pdf$/i.test(file.name);
+}
+
+function isDocxFile(file: ReviewFile) {
+  const contentType = file.contentType?.split(";")[0]?.trim().toLowerCase();
+
+  return (
+    contentType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    /\.docx$/i.test(file.name)
+  );
+}
+
+function isImageFile(file: ReviewFile) {
+  return geminiOcrMimeType(file)?.startsWith("image/") ?? false;
 }
 
 function stripHtml(text: string) {
@@ -737,6 +751,104 @@ async function geminiOcrInlineParts(
   ];
 }
 
+type OpenAiOcrOptions = {
+  apiKey: string;
+  model: string;
+  maxInlineBytes: number;
+  ocrTimeoutMs: number;
+};
+
+function resolveOpenAiOcrOptions(env: Record<string, string | undefined>): OpenAiOcrOptions | null {
+  const apiKey = env.OPENAI_API_KEY?.trim();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  return {
+    apiKey,
+    model: openAiOcrModel(env),
+    maxInlineBytes: positiveInteger(env, "FINPROOF_OCR_MAX_INLINE_BYTES", 20 * 1024 * 1024),
+    ocrTimeoutMs: positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000)
+  };
+}
+
+/**
+ * Single-file OpenAI vision OCR. Returns `null` for the cases the caller should
+ * fall back on (unsupported mime, missing/oversized body, empty extraction) and
+ * THROWS only on a non-OK HTTP response. Shared by `createOpenAiOcrProvider` and
+ * the content-based hybrid provider so the request shape stays identical.
+ */
+async function extractFileViaOpenAi(
+  file: ReviewFile,
+  review: ReviewCase,
+  options: OpenAiOcrOptions,
+  env: Record<string, string | undefined>,
+  fileBodyReader: ReviewFileBodyReader | undefined,
+  fetchImpl: OcrFetchLike
+): Promise<ExtractedDocument | null> {
+  const mimeType = geminiOcrMimeType(file);
+
+  if (!mimeType || !file.storageKey || !fileBodyReader) {
+    return null;
+  }
+
+  const body = await fileBodyReader.getReviewFileBody(file.storageKey);
+
+  if (!body || body.byteLength > options.maxInlineBytes) {
+    return null;
+  }
+
+  const response = await fetchImpl("https://api.openai.com/v1/responses", {
+    method: "POST",
+    signal: AbortSignal.timeout(options.ocrTimeoutMs),
+    headers: {
+      authorization: `Bearer ${options.apiKey}`,
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      model: options.model,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: `${openAiOcrInstruction()}\n\n${geminiOcrUserPrompt(review, file)}`
+            },
+            ...(await openAiOcrContentParts(file, mimeType, body, env))
+          ]
+        }
+      ],
+      max_output_tokens: 2000
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `OpenAI OCR request failed: ${response.status ?? "unknown"} ${
+        response.statusText ?? ""
+      }`.trim()
+    );
+  }
+
+  const rawJson = await response.json();
+  const extracted = parseOcrText(extractOpenAIText(rawJson));
+
+  if (!extracted.text) {
+    return null;
+  }
+
+  return {
+    fileId: file.id,
+    fileName: file.name,
+    storageKey: file.storageKey,
+    text: extracted.text,
+    confidence: extracted.confidence,
+    provider: "openai-ocr"
+  };
+}
+
 export function createOpenAiOcrProvider(
   env: Record<string, string | undefined> = process.env,
   fileBodyReader?: ReviewFileBodyReader,
@@ -744,19 +856,11 @@ export function createOpenAiOcrProvider(
 ): OcrProvider {
   return {
     async extract({ review, files }) {
-      const apiKey = env.OPENAI_API_KEY?.trim();
+      const options = resolveOpenAiOcrOptions(env);
 
-      if (!apiKey) {
+      if (!options) {
         throw new Error("OPENAI_API_KEY is required when FINPROOF_OCR_PROVIDER=openai");
       }
-
-      const model = openAiOcrModel(env);
-      const maxInlineBytes = positiveInteger(
-        env,
-        "FINPROOF_OCR_MAX_INLINE_BYTES",
-        20 * 1024 * 1024
-      );
-      const ocrTimeoutMs = positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000);
 
       return Promise.all(
         files.map(async (file) => {
@@ -773,66 +877,16 @@ export function createOpenAiOcrProvider(
             };
           }
 
-          const mimeType = geminiOcrMimeType(file);
+          const extracted = await extractFileViaOpenAi(
+            file,
+            review,
+            options,
+            env,
+            fileBodyReader,
+            fetchImpl
+          );
 
-          if (!mimeType || !file.storageKey || !fileBodyReader) {
-            return sampleOrMetadataDocument(review, file);
-          }
-
-          const body = await fileBodyReader.getReviewFileBody(file.storageKey);
-
-          if (!body || body.byteLength > maxInlineBytes) {
-            return sampleOrMetadataDocument(review, file);
-          }
-
-          const response = await fetchImpl("https://api.openai.com/v1/responses", {
-            method: "POST",
-            signal: AbortSignal.timeout(ocrTimeoutMs),
-            headers: {
-              authorization: `Bearer ${apiKey}`,
-              "content-type": "application/json"
-            },
-            body: JSON.stringify({
-              model,
-              input: [
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "input_text",
-                      text: `${openAiOcrInstruction()}\n\n${geminiOcrUserPrompt(review, file)}`
-                    },
-                    ...(await openAiOcrContentParts(file, mimeType, body, env))
-                  ]
-                }
-              ],
-              max_output_tokens: 2000
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error(
-              `OpenAI OCR request failed: ${response.status ?? "unknown"} ${
-                response.statusText ?? ""
-              }`.trim()
-            );
-          }
-
-          const rawJson = await response.json();
-          const extracted = parseOcrText(extractOpenAIText(rawJson));
-
-          if (!extracted.text) {
-            return sampleOrMetadataDocument(review, file);
-          }
-
-          return {
-            fileId: file.id,
-            fileName: file.name,
-            storageKey: file.storageKey,
-            text: extracted.text,
-            confidence: extracted.confidence,
-            provider: "openai-ocr"
-          };
+          return extracted ?? sampleOrMetadataDocument(review, file);
         })
       );
     }
@@ -1171,7 +1225,154 @@ export function createPythonServiceOcrProvider(
   };
 }
 
+/**
+ * Phase 3 — content-based hybrid OCR (`FINPROOF_OCR_PROVIDER=hybrid`). Routes each
+ * review file to the engine measured best for its type:
+ *   - text files                    -> local decode (free, exact)
+ *   - digital PDFs (text layer)     -> Python service /extract (pdfplumber: tables
+ *                                      preserved, complete, free, deterministic)
+ *   - DOCX                          -> Python service /extract (python-docx)
+ *   - images & scanned PDFs         -> OpenAI vision (Tesseract is too weak on
+ *     (no text layer)                  stylized Korean ad images / compliance fine-print)
+ * Every engine failure (service off/unreachable, no API key, timeout, empty text)
+ * falls back to `sampleOrMetadataDocument`, so analysis is never broken.
+ */
+export function createHybridOcrProvider(
+  env: Record<string, string | undefined> = process.env,
+  fileBodyReader?: ReviewFileBodyReader,
+  openAiFetch: OcrFetchLike = fetch,
+  ocrServiceFetch?: Parameters<typeof callOcrService>[2]
+): OcrProvider {
+  return {
+    async extract({ review, files }) {
+      const endpoint = env.FINPROOF_OCR_ENDPOINT?.trim();
+      const timeoutMs = positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 30_000);
+      const openAiOptions = resolveOpenAiOcrOptions(env);
+
+      const toDocument = (
+        file: ReviewFile,
+        result: { text: string; confidence: number; provider: string }
+      ): ExtractedDocument => ({
+        fileId: file.id,
+        fileName: file.name,
+        storageKey: file.storageKey,
+        text: result.text,
+        confidence: result.confidence,
+        provider: result.provider
+      });
+
+      const viaService = async (file: ReviewFile, body: Uint8Array) => {
+        if (!endpoint) {
+          return null;
+        }
+
+        return callOcrService(
+          { fileName: file.name, contentType: file.contentType ?? "", body },
+          { endpoint, timeoutMs },
+          ocrServiceFetch
+        );
+      };
+
+      const viaOpenAi = async (file: ReviewFile) => {
+        if (!openAiOptions) {
+          return null;
+        }
+
+        try {
+          return await extractFileViaOpenAi(
+            file,
+            review,
+            openAiOptions,
+            env,
+            fileBodyReader,
+            openAiFetch
+          );
+        } catch {
+          return null;
+        }
+      };
+
+      return Promise.all(
+        files.map(async (file): Promise<ExtractedDocument> => {
+          const body =
+            file.storageKey && fileBodyReader
+              ? await fileBodyReader.getReviewFileBody(file.storageKey)
+              : undefined;
+
+          // 1) DOCX first — its MIME (`...openXMLformats...`) otherwise trips the
+          //    `includes("xml")` text heuristic. Python service (python-docx) preserves cells.
+          if (isDocxFile(file)) {
+            if (body) {
+              const service = await viaService(file, body);
+
+              if (service && service.text.trim()) {
+                return toDocument(file, service);
+              }
+            }
+
+            return sampleOrMetadataDocument(review, file);
+          }
+
+          // 2) PDF: probe the text layer to pick digital (pdfplumber) vs scanned (vision).
+          if (isPdfFile(file)) {
+            if (!body) {
+              return sampleOrMetadataDocument(review, file);
+            }
+
+            const probe = await extractPdfText(body);
+
+            if (probe && hasEnoughPdfText(probe)) {
+              const service = await viaService(file, body);
+
+              if (service && service.text.trim()) {
+                return toDocument(file, service);
+              }
+
+              // Service off/unreachable: keep the local text layer we already have.
+              return toDocument(file, {
+                text: probe,
+                confidence: 0.94,
+                provider: "local-pdf-text-extractor"
+              });
+            }
+
+            // No usable text layer => scanned/image PDF => vision LLM.
+            const vision = await viaOpenAi(file);
+
+            return vision ?? sampleOrMetadataDocument(review, file);
+          }
+
+          // 3) Images: vision LLM.
+          if (isImageFile(file)) {
+            const vision = await viaOpenAi(file);
+
+            return vision ?? sampleOrMetadataDocument(review, file);
+          }
+
+          // 4) Text files: local decode, no external call.
+          if (isTextLikeFile(file)) {
+            const stored = await extractStoredDocument(file, fileBodyReader);
+
+            return stored ? toDocument(file, stored) : sampleOrMetadataDocument(review, file);
+          }
+
+          // 5) Anything else: legacy metadata/sample fallback.
+          return sampleOrMetadataDocument(review, file);
+        })
+      );
+    }
+  };
+}
+
 function defaultOcrProvider(fileBodyReader?: ReviewFileBodyReader) {
+  // Phase 3: content-based hybrid. Per-file routing — digital PDFs/DOCX -> Python
+  // service (pdfplumber/python-docx), images & scanned PDFs -> vision LLM, text ->
+  // local. Branches on the env value directly (provider-config maps it to
+  // deterministic). Each engine failure falls back, so behavior is safe.
+  if (process.env.FINPROOF_OCR_PROVIDER?.trim() === "hybrid") {
+    return createHybridOcrProvider(process.env, fileBodyReader);
+  }
+
   // Phase 2 regime unification: `FINPROOF_OCR_PROVIDER=http` (canonical) and
   // `python_service` (legacy alias) both route review-file OCR through the Python
   // microservice (ocr-service/). provider-config independently validates the http

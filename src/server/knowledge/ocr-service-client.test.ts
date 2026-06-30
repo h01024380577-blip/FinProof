@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { extractViaOcrService, isOcrServiceEnabled } from "./ocr-service-client";
+import { callOcrService, extractViaOcrService, isOcrServiceEnabled } from "./ocr-service-client";
 
 const input = {
   fileName: "scan.pdf",
@@ -33,6 +33,30 @@ describe("ocr-service-client", () => {
     // Legacy JSON-batch selector and any other value stay OFF for this client.
     expect(isOcrServiceEnabled({ FINPROOF_OCR_PROVIDER: "http_json" })).toBe(false);
     expect(isOcrServiceEnabled({ FINPROOF_OCR_PROVIDER: "deterministic" })).toBe(false);
+  });
+
+  it("callOcrService bypasses the enable-gate and calls the endpoint directly (hybrid path)", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ text: "표 보존 본문", confidence: 0.95, provider: "pdfplumber" })
+    );
+    // No FINPROOF_OCR_PROVIDER at all — the low-level call must still fire.
+    const result = await callOcrService(
+      input,
+      { endpoint: "http://localhost:8000/", timeoutMs: 5000 },
+      fetchImpl
+    );
+
+    expect(result).toEqual({ text: "표 보존 본문", confidence: 0.95, provider: "pdfplumber" });
+    expect(fetchImpl).toHaveBeenCalledWith("http://localhost:8000/extract", expect.anything());
+  });
+
+  it("callOcrService returns null on empty text so the caller falls back", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ text: "   ", confidence: 0.0, provider: "none" })
+    );
+    const result = await callOcrService(input, { endpoint: "http://localhost:8000" }, fetchImpl);
+
+    expect(result).toBeNull();
   });
 
   it("calls the service when enabled via the canonical `http` value", async () => {

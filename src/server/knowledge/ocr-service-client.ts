@@ -89,6 +89,22 @@ export async function extractViaOcrService(
   }
 
   const timeoutMs = positiveNumber(env, "FINPROOF_OCR_TIMEOUT_MS", DEFAULT_TIMEOUT_MS);
+
+  return callOcrService(input, { endpoint, timeoutMs }, fetchImpl);
+}
+
+/**
+ * Low-level call to the OCR microservice's multipart `/extract`, WITHOUT the
+ * `FINPROOF_OCR_PROVIDER` enable-gate. `extractViaOcrService` wraps this for the
+ * gated `http`/`python_service` path; the content-based hybrid provider calls it
+ * directly so it can route digital PDFs/DOCX to the service while images go to a
+ * vision LLM. Returns `null` on timeout / non-OK / empty-text so callers fall back.
+ */
+export async function callOcrService(
+  input: OcrServiceInput,
+  { endpoint, timeoutMs = DEFAULT_TIMEOUT_MS }: { endpoint: string; timeoutMs?: number },
+  fetchImpl: FetchLike = fetch
+): Promise<OcrServiceResult | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const url = `${endpoint.replace(/\/+$/, "")}/extract`;
