@@ -114,6 +114,44 @@ export function createLocalMetadataStorageAdapter({
         contentType: input.contentType,
         sizeBytes: input.sizeBytes
       };
+    },
+
+    async putRegulatorySourceText(input: {
+      sourceId: string;
+      tenantId: string;
+      text: string;
+    }): Promise<void> {
+      const storageKey = `local/regulatory/source-text/${input.tenantId}/${input.sourceId}.txt`;
+      const targetPath = storagePath(rootDir, storageKey);
+
+      if (!targetPath) {
+        throw new Error(`Invalid regulatory source text key: ${storageKey}`);
+      }
+
+      await mkdir(path.dirname(targetPath), { recursive: true });
+      await writeFile(targetPath, input.text, "utf8");
+    },
+
+    async getRegulatorySourceText(input: {
+      sourceId: string;
+      tenantId: string;
+    }): Promise<string | null> {
+      const storageKey = `local/regulatory/source-text/${input.tenantId}/${input.sourceId}.txt`;
+      const targetPath = storagePath(rootDir, storageKey);
+
+      if (!targetPath) {
+        return null;
+      }
+
+      try {
+        return await readFile(targetPath, "utf8");
+      } catch (error) {
+        if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+          return null;
+        }
+
+        throw error;
+      }
     }
   };
 }

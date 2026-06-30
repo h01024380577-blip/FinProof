@@ -66,6 +66,20 @@ describe("local metadata storage adapter", () => {
     expect(Array.from(storedBody ?? [])).toEqual(Array.from(body));
   });
 
+  it("round-trips regulatory source text", async () => {
+    const rootDir = await mkdtemp(path.join(tmpdir(), "finproof-storage-"));
+    const adapter = createLocalMetadataStorageAdapter({ rootDir });
+    const key = { sourceId: "src-test-1", tenantId: "tenant-demo" };
+
+    expect(await adapter.getRegulatorySourceText(key)).toBeNull();
+
+    await adapter.putRegulatorySourceText({ ...key, text: "제1조 본문 v1" });
+    expect(await adapter.getRegulatorySourceText(key)).toBe("제1조 본문 v1");
+
+    await adapter.putRegulatorySourceText({ ...key, text: "제1조 본문 v2" });
+    expect(await adapter.getRegulatorySourceText(key)).toBe("제1조 본문 v2");
+  });
+
   it("creates sample metadata for seeded files", () => {
     const adapter = createLocalMetadataStorageAdapter();
 
