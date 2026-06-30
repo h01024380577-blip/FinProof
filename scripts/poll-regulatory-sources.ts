@@ -23,13 +23,21 @@ async function main() {
       console.log(`[regulatory-poll] CHANGE detected: ${info.name} (${info.changeSetCount} change-set)`)
   });
 
+  let stop = false;
+  process.once("SIGINT", () => {
+    stop = true;
+  });
+  process.once("SIGTERM", () => {
+    stop = true;
+  });
+
   do {
     const summary = await poller.pollAll(reviewerContext());
     console.log(`[regulatory-poll] ${JSON.stringify(summary)}`);
-    if (loop) {
+    if (loop && !stop) {
       await sleep(Number.isFinite(intervalMs) && intervalMs > 0 ? intervalMs : 86_400_000);
     }
-  } while (loop);
+  } while (loop && !stop);
 }
 
 main().catch((error) => {
