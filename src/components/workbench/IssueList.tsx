@@ -5,6 +5,7 @@ import { riskLabels } from "@/domain/reviews";
 import type { ReviewIssue, RiskLevel } from "@/domain/types";
 
 const riskOrder: RiskLevel[] = ["high", "caution", "info"];
+const riskRank: Record<RiskLevel, number> = { high: 0, caution: 1, info: 2 };
 
 function displayLength(value: string): number {
   return Array.from(value).reduce((total, character) => {
@@ -40,21 +41,21 @@ export function IssueList({
   onAddManualIssue
 }: IssueListProps): JSX.Element {
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "all">("all");
-  const visible = useMemo(
-    () => (riskFilter === "all" ? issues : issues.filter((i) => i.riskLevel === riskFilter)),
-    [issues, riskFilter]
-  );
+  const visible = useMemo(() => {
+    const filtered =
+      riskFilter === "all" ? issues : issues.filter((i) => i.riskLevel === riskFilter);
+
+    // Sort by risk severity descending (위험 → 주의 → 참고). Array.prototype.sort is
+    // stable, so issues with the same risk level keep their original mapping order.
+    return [...filtered].sort((a, b) => riskRank[a.riskLevel] - riskRank[b.riskLevel]);
+  }, [issues, riskFilter]);
 
   return (
     <aside className="issue-panel">
       <div className="issue-panel__heading">
         <h3>이슈 목록 ({issues.length})</h3>
         {canAddManualIssue && onAddManualIssue ? (
-          <button
-            className="button button--small"
-            type="button"
-            onClick={onAddManualIssue}
-          >
+          <button className="button button--small" type="button" onClick={onAddManualIssue}>
             이슈 직접 추가
           </button>
         ) : null}

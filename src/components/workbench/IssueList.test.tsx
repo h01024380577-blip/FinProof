@@ -41,6 +41,22 @@ describe("IssueList", () => {
     expect(screen.queryByText("Info issue")).not.toBeInTheDocument();
   });
 
+  it("sorts mapped issues by risk severity descending (위험 → 주의 → 참고)", () => {
+    const mixed: ReviewIssue[] = [
+      { ...issues[0], id: "info-1", riskLevel: "info", title: "Info A" },
+      { ...issues[0], id: "high-1", riskLevel: "high", title: "High A" },
+      { ...issues[0], id: "caution-1", riskLevel: "caution", title: "Caution A" },
+      { ...issues[0], id: "high-2", riskLevel: "high", title: "High B" }
+    ];
+    render(<IssueList issues={mixed} onSelectIssue={() => undefined} />);
+
+    const titles = Array.from(document.querySelectorAll(".issue-card__title")).map(
+      (el) => el.textContent
+    );
+    // high first (stable: A before B), then caution, then info.
+    expect(titles).toEqual(["High A", "High B", "Caution A", "Info A"]);
+  });
+
   it("separates long card title and excerpt for stable scroll layout", () => {
     render(
       <IssueList
