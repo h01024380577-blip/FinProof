@@ -2108,6 +2108,29 @@ describe("Phase 2 — python service OCR provider", () => {
     expect(document.confidence).toBe(0.83);
   });
 
+  it("routes via the canonical `http` value (python_service alias preserved)", async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ text: "월 최대 300만원 즉시 대출", confidence: 0.79, provider: "tesseract" })
+    }));
+    const provider = createPythonServiceOcrProvider(
+      { FINPROOF_OCR_PROVIDER: "http", FINPROOF_OCR_ENDPOINT: "http://localhost:8000" },
+      {
+        async getReviewFileBody() {
+          return new TextEncoder().encode("PNGBYTES");
+        }
+      },
+      fetchImpl
+    );
+
+    const [document] = await provider.extract({ review, files: review.files });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(document.provider).toBe("tesseract");
+    expect(document.confidence).toBe(0.79); // low-confidence OCR signal preserved (< 0.82)
+  });
+
   it("falls back to metadata extraction when the service is unavailable", async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error("ECONNREFUSED");

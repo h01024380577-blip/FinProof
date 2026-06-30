@@ -27,6 +27,28 @@ describe("ocr-service-client", () => {
     expect(isOcrServiceEnabled({})).toBe(false);
   });
 
+  it("treats `http` as the canonical ON value and `python_service` as a backward-compatible alias", async () => {
+    expect(isOcrServiceEnabled({ FINPROOF_OCR_PROVIDER: "http" })).toBe(true);
+    expect(isOcrServiceEnabled({ FINPROOF_OCR_PROVIDER: "python_service" })).toBe(true);
+    // Legacy JSON-batch selector and any other value stay OFF for this client.
+    expect(isOcrServiceEnabled({ FINPROOF_OCR_PROVIDER: "http_json" })).toBe(false);
+    expect(isOcrServiceEnabled({ FINPROOF_OCR_PROVIDER: "deterministic" })).toBe(false);
+  });
+
+  it("calls the service when enabled via the canonical `http` value", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ text: "추출된 본문", confidence: 0.91, provider: "pdfplumber" })
+    );
+    const result = await extractViaOcrService(
+      input,
+      { FINPROOF_OCR_PROVIDER: "http", FINPROOF_OCR_ENDPOINT: "http://localhost:8000" },
+      fetchImpl
+    );
+
+    expect(result).toEqual({ text: "추출된 본문", confidence: 0.91, provider: "pdfplumber" });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
   it("returns null when enabled but endpoint is missing", async () => {
     const fetchImpl = vi.fn();
     const result = await extractViaOcrService(

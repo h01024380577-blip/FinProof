@@ -3,8 +3,8 @@
  * (see `ocr-service/`). Mirrors the existing "external provider + deterministic
  * fallback" pattern used by `rerank-provider.ts`:
  *
- *   - `FINPROOF_OCR_PROVIDER=python_service` turns it ON (unset => OFF, legacy
- *     behavior is preserved exactly).
+ *   - `FINPROOF_OCR_PROVIDER=http` turns it ON (`python_service` is kept as a
+ *     backward-compatible alias). Unset => OFF, legacy behavior is preserved exactly.
  *   - `FINPROOF_OCR_ENDPOINT` is the service base URL (e.g. http://localhost:8000).
  *   - `FINPROOF_OCR_TIMEOUT_MS` bounds the call (default 30000).
  *
@@ -12,10 +12,12 @@
  * `null` so the caller falls back to its legacy extraction path. No new runtime
  * dependencies — uses Node's built-in fetch / FormData / Blob / AbortController.
  *
- * NOTE: `FINPROOF_OCR_PROVIDER=python_service` is an unknown value to
- * `provider-config.ts`, which safely treats it as `deterministic` for the
- * analysis pipeline. So enabling this only affects the knowledge-ingestion path
- * (Phase 1); the analysis-pipeline OCR is Phase 2.
+ * Phase 2 regime unification: `http` now enables BOTH the knowledge-ingestion
+ * path (Phase 1) and the analysis-pipeline review-file OCR (Phase 2), which share
+ * this client. `provider-config.ts` independently recognizes `http` and validates
+ * `FINPROOF_OCR_ENDPOINT`; the analysis pipeline branches on `isOcrServiceEnabled`
+ * directly so the multipart `/extract` client is used (not the legacy JSON-batch
+ * `createHttpOcrProvider`, which is retained under the explicit `http_json` value).
  */
 
 type Env = Record<string, string | undefined>;
@@ -62,7 +64,11 @@ function errorMessage(error: unknown): string {
 }
 
 export function isOcrServiceEnabled(env: Env = process.env): boolean {
-  return value(env, "FINPROOF_OCR_PROVIDER") === "python_service";
+  const provider = value(env, "FINPROOF_OCR_PROVIDER");
+
+  // `http` is the canonical value (Phase 2 regime unification); `python_service`
+  // is kept as a backward-compatible alias so existing configs keep working.
+  return provider === "http" || provider === "python_service";
 }
 
 export async function extractViaOcrService(

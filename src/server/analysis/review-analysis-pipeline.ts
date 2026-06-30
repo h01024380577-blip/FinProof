@@ -1172,17 +1172,24 @@ export function createPythonServiceOcrProvider(
 }
 
 function defaultOcrProvider(fileBodyReader?: ReviewFileBodyReader) {
-  // Phase 2: opt-in Python OCR service. Unknown to provider-config (which maps it
-  // to deterministic), so we branch on the env value directly here.
+  // Phase 2 regime unification: `FINPROOF_OCR_PROVIDER=http` (canonical) and
+  // `python_service` (legacy alias) both route review-file OCR through the Python
+  // microservice (ocr-service/). provider-config independently validates the http
+  // endpoint, but we branch on the env value directly so the multipart `/extract`
+  // client is used — same regime as Phase 1 knowledge ingestion.
   if (isOcrServiceEnabled()) {
     return createPythonServiceOcrProvider(process.env, fileBodyReader);
   }
 
-  const config = getAnalysisProviderConfig();
-
-  if (config.ocr.provider === "http") {
+  // Legacy speculative JSON-batch OCR API (POSTs storage keys, expects
+  // `{documents}`). Superseded by the Python service above and retained for
+  // backward compatibility; reachable only via the explicit `http_json` value so
+  // it never shadows the canonical `http`.
+  if (process.env.FINPROOF_OCR_PROVIDER?.trim() === "http_json") {
     return createHttpOcrProvider();
   }
+
+  const config = getAnalysisProviderConfig();
 
   if (config.ocr.provider === "gemini") {
     return createGeminiOcrProvider(process.env, fileBodyReader);
