@@ -176,9 +176,9 @@ export function createS3MetadataStorageAdapter({
             Bucket: bucket,
             Key: key
           })
-        )) as { Body?: { transformToString?: (encoding?: string) => Promise<string> } };
+        )) as { Body?: { transformToString: (encoding?: string) => Promise<string> } };
 
-        return (await response.Body?.transformToString?.("utf-8")) ?? null;
+        return (await response.Body?.transformToString("utf-8")) ?? null;
       } catch (error) {
         const name = (error as { name?: string }).name;
 
