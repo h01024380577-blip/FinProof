@@ -68,10 +68,59 @@ function isImageOnlyReview(review: ReviewCase) {
   return review.files.length > 0 && review.files.every(isVisualCreativeUpload);
 }
 
+function tokenize(value: string): string[] {
+  return normalizeText(value)
+    .toLowerCase()
+    .split(/[\s.,:;!?()[\]{}"'`~|\\/]+/)
+    .filter((token) => token.length >= 2);
+}
+
+/**
+ * How relevant a candidate is to a SPECIFIC issue (not the case overall): the
+ * fraction of the issue's terms that appear in the candidate's title/quote. Used
+ * to pick, per issue, the most relevant regulation from the candidate pool instead
+ * of always attaching the globally top-ranked candidate to every issue.
+ */
+function issueRelevance(issueText: string, candidate: RagEvidenceCandidate): number {
+  const issueTokens = [...new Set(tokenize(issueText))];
+
+  if (issueTokens.length === 0) {
+    return 0;
+  }
+
+  // Substring inclusion (not exact token equality) so Korean terms still match
+  // across attached particles ("금리" ⊂ "금리를"), matching the pipeline's overlapScore.
+  const candidateText = normalizeText(`${candidate.title} ${candidate.quoteSummary}`).toLowerCase();
+  const matches = issueTokens.filter((token) => candidateText.includes(token)).length;
+
+  return matches / issueTokens.length;
+}
+
+/**
+ * Picks the candidate most relevant to the issue, breaking ties by the candidate's
+ * own retrieval/rerank score so a stronger general match still wins when no
+ * candidate overlaps the issue text.
+ */
+function bestByIssueRelevance(
+  issueText: string,
+  candidates: RagEvidenceCandidate[]
+): RagEvidenceCandidate | undefined {
+  if (candidates.length === 0) {
+    return undefined;
+  }
+
+  return [...candidates].sort((left, right) => {
+    const relevanceDelta = issueRelevance(issueText, right) - issueRelevance(issueText, left);
+
+    return relevanceDelta !== 0 ? relevanceDelta : right.relevanceScore - left.relevanceScore;
+  })[0];
+}
+
 function preferredEvidenceCandidate(
   artifacts: AnalysisArtifacts,
   candidates: RagEvidenceCandidate[],
-  minEvidenceScore: number
+  minEvidenceScore: number,
+  issueText: string
 ): RagEvidenceCandidate | undefined {
   const reliableCandidates = candidates.filter((candidate) =>
     isReliableEvidenceCandidate(candidate, minEvidenceScore)
@@ -96,12 +145,14 @@ function preferredEvidenceCandidate(
     ...reliableArtifactCandidates.filter(isNotCaseHistoryEvidence)
   ].filter((candidate) => !isTableOfContentsEvidence(candidate));
 
+  // Within each preference tier, pick the candidate most relevant to THIS issue
+  // (tie-broken by retrieval score) rather than always the globally top one.
   return (
-    articleCandidates[0] ??
-    usableRegisteredCandidates[0] ??
-    nonCaseCandidates[0] ??
-    reliableCandidates[0] ??
-    reliableArtifactCandidates[0]
+    bestByIssueRelevance(issueText, articleCandidates) ??
+    bestByIssueRelevance(issueText, usableRegisteredCandidates) ??
+    bestByIssueRelevance(issueText, nonCaseCandidates) ??
+    bestByIssueRelevance(issueText, reliableCandidates) ??
+    bestByIssueRelevance(issueText, reliableArtifactCandidates)
   );
 }
 
@@ -141,9 +192,10 @@ function issueEvidence(
   review: ReviewCase,
   artifacts: AnalysisArtifacts,
   issueId: string,
-  minEvidenceScore: number
+  minEvidenceScore: number,
+  issueText: string
 ): Evidence[] {
-  const candidate = preferredEvidenceCandidate(artifacts, [], minEvidenceScore);
+  const candidate = preferredEvidenceCandidate(artifacts, [], minEvidenceScore, issueText);
   const evidence = candidate
     ? candidateToEvidence(candidate, issueId, 0)
     : fallbackEvidence(review, artifacts);
@@ -219,7 +271,13 @@ function baseIssue({
     status: "open",
     description,
     suggestedCopy,
-    evidence: issueEvidence(review, artifacts, issueId, minEvidenceScore)
+    evidence: issueEvidence(
+      review,
+      artifacts,
+      issueId,
+      minEvidenceScore,
+      `${title} ${targetText} ${description}`
+    )
   };
 }
 
@@ -240,7 +298,8 @@ function issuesFromAgentFindings(
     const preferredEvidence = preferredEvidenceCandidate(
       artifacts,
       matchedEvidence,
-      minEvidenceScore
+      minEvidenceScore,
+      `${finding.title} ${finding.targetText} ${finding.description}`
     );
     const issueEvidence = preferredEvidence
       ? [candidateToEvidence(preferredEvidence, issueId, 0)]

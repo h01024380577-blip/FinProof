@@ -1901,11 +1901,14 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
             return [];
           }
 
-          const score = lexicalKnowledgeScore(
-            input.query,
-            [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
-            document.title
-          );
+          // Down-weight lexical vs vector cosine (see prisma store KNOWLEDGE_LEXICAL_WEIGHT)
+          // so keyword-rich generic docs cannot outrank genuine semantic matches.
+          const score =
+            lexicalKnowledgeScore(
+              input.query,
+              [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
+              document.title
+            ) * 0.8;
 
           if (score < minScore) {
             return [];

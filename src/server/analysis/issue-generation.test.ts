@@ -146,6 +146,75 @@ describe("issue generation", () => {
     );
   });
 
+  it("attaches the most issue-relevant regulation to each issue, not the globally top one", () => {
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+    const rateRule = {
+      id: "ev-rate",
+      sourceType: "internal_policy" as const,
+      title: "금리 표시 의무 규정",
+      quoteSummary: "광고에 금리를 표시할 때 기본금리와 최고금리, 적용 조건을 함께 표시해야 한다.",
+      relevanceScore: 0.55
+    };
+    const disclosureRule = {
+      id: "ev-disclosure",
+      sourceType: "internal_policy" as const,
+      title: "필수 고지 가독성 규정",
+      quoteSummary: "필수 고지 사항은 소비자가 읽을 수 있는 크기와 가독성으로 표시해야 한다.",
+      relevanceScore: 0.62 // globally higher → old code attached this to BOTH issues
+    };
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-07-01T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "f",
+          fileName: "ad.txt",
+          text: "적금 안내문",
+          confidence: 0.9,
+          provider: "fixture"
+        }
+      ],
+      // disclosure listed first AND higher score: without per-issue selection it wins both.
+      evidenceCandidates: [disclosureRule, rateRule],
+      agentFindings: [
+        {
+          id: "rate",
+          agent: "creative_review",
+          issueType: "rate_claim",
+          riskLevel: "high",
+          title: "최고금리 표시 조건 확인 필요",
+          targetText: "최고 연 4.5%",
+          description: "최고금리 표시 시 기본금리·적용 조건 병기가 불충분합니다.",
+          suggestedAction: "change_request",
+          suggestedCopy: "최고금리 적용 조건을 함께 표시해 주세요.",
+          evidenceCandidateIds: ["ev-rate", "ev-disclosure"],
+          confidence: 0.8
+        },
+        {
+          id: "disclosure",
+          agent: "creative_review",
+          issueType: "disclosure",
+          riskLevel: "caution",
+          title: "필수 고지 가독성 확인 필요",
+          targetText: "하단 고지 문구",
+          description: "필수 고지 사항의 가독성 보완이 필요합니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "필수 고지를 읽을 수 있는 크기로 표시해 주세요.",
+          evidenceCandidateIds: ["ev-rate", "ev-disclosure"],
+          confidence: 0.8
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    const rateIssue = issues.find((issue) => issue.id === `issue-${review.id}-rate`)!;
+    const disclosureIssue = issues.find((issue) => issue.id === `issue-${review.id}-disclosure`)!;
+
+    // Each issue gets the regulation most relevant to IT — even though the disclosure
+    // rule has the higher global score and would have been attached to both before.
+    expect(rateIssue.evidence[0].title).toBe("금리 표시 의무 규정");
+    expect(disclosureIssue.evidence[0].title).toBe("필수 고지 가독성 규정");
+  });
+
   it("does not attach model-selected evidence below the matching threshold", () => {
     const review = getReviewCaseById("rc-demo-loan-001")!;
     const artifacts: AnalysisArtifacts = {

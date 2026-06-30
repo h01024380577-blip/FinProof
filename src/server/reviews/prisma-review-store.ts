@@ -331,6 +331,12 @@ function chunkIdForKnowledgeDocument(documentId: string): string {
   return `chunk-${documentId}-001`;
 }
 
+// Lexical (keyword-overlap) knowledge scores are down-weighted relative to vector
+// cosine scores so a keyword-rich generic document cannot outrank a genuinely
+// semantic vector match. Korean ad-copy↔regulation cosine tops out ~0.6, while the
+// lexical formula floors at 0.55, so without this weight lexical always wins.
+const KNOWLEDGE_LEXICAL_WEIGHT = 0.8;
+
 function lexicalKnowledgeScore(query: string, text: string, title = ""): number {
   const terms = query
     .split(/[\s.,:;!?()[\]{}"'`~|\\/]+/)
@@ -1181,11 +1187,12 @@ export function createPrismaReviewStore(): ReviewStore {
           return [];
         }
 
-        const score = lexicalKnowledgeScore(
-          input.query,
-          [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
-          document.title
-        );
+        const score =
+          lexicalKnowledgeScore(
+            input.query,
+            [chunk.chunkSummary, chunk.chunkText, document.version].filter(Boolean).join(" "),
+            document.title
+          ) * KNOWLEDGE_LEXICAL_WEIGHT;
 
         if (score < minScore) {
           return [];
