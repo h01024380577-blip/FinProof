@@ -32,24 +32,27 @@ function envValue(env: Env, key: string): string | undefined {
 
 function extractMcpText(result: unknown): string {
   if (
-    result &&
-    typeof result === "object" &&
-    "content" in result &&
-    Array.isArray((result as { content: unknown[] }).content)
+    !result ||
+    typeof result !== "object" ||
+    !("content" in result) ||
+    !Array.isArray((result as { content: unknown }).content)
   ) {
-    for (const part of (result as { content: unknown[] }).content) {
-      if (
-        part &&
-        typeof part === "object" &&
-        "type" in part &&
-        (part as { type: unknown }).type === "text" &&
-        "text" in part &&
-        typeof (part as { text: unknown }).text === "string"
-      ) {
-        return (part as { text: string }).text;
-      }
+    return "";
+  }
+
+  for (const part of (result as { content: unknown[] }).content) {
+    if (
+      part &&
+      typeof part === "object" &&
+      "type" in part &&
+      (part as { type: unknown }).type === "text" &&
+      "text" in part &&
+      typeof (part as { text: unknown }).text === "string"
+    ) {
+      return (part as { text: string }).text;
     }
   }
+
   return "";
 }
 
@@ -82,7 +85,7 @@ export function createKoreanLawMcpClient(
             name: "get_law_text",
             arguments: {
               ...(params.lawId ? { lawId: params.lawId } : {}),
-              ...(params.mst ? { MST: params.mst } : {}),
+              ...(params.mst ? { MST: params.mst } : {}), // law.go.kr API expects uppercase "MST"
               ...(params.jo ? { jo: params.jo } : {})
             }
           }
