@@ -74,8 +74,7 @@ import type {
 } from "./review-store";
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
-const reReviewNotice =
-  "재업로드된 수정본입니다. AI 재분석 없이 직전 버전과 비교해 재검토하세요.";
+const reReviewNotice = "재업로드된 수정본입니다. AI 재분석 없이 직전 버전과 비교해 재검토하세요.";
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -435,9 +434,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     const versions = reviewVersions.get(review.id) ?? [];
     const versionNumber = review.currentVersion;
     const now = nowIso();
-    const existingIndex = versions.findIndex(
-      (version) => version.versionNumber === versionNumber
-    );
+    const existingIndex = versions.findIndex((version) => version.versionNumber === versionNumber);
     const snapshot: ReviewVersion = {
       id: `review-version-${review.id}-v${versionNumber}`,
       reviewCaseId: review.id,
@@ -1593,10 +1590,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       return clone(revisedReview);
     },
 
-    async listReviewVersions(
-      scope: ReviewStoreScope,
-      reviewCaseId
-    ): Promise<ReviewVersion[]> {
+    async listReviewVersions(scope: ReviewStoreScope, reviewCaseId): Promise<ReviewVersion[]> {
       if (!canAccessCase(scope, reviewCaseId)) {
         return [];
       }
@@ -1890,7 +1884,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     },
 
     async searchKnowledgeEvidence(scope: ReviewStoreScope, input: KnowledgeEvidenceSearchInput) {
-      const minScore = input.minScore ?? 0.72;
+      const minScore = input.minScore ?? 0.5;
       const topK = input.topK ?? 4;
 
       return Array.from(evidenceChunks.values())
@@ -2279,7 +2273,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       scope: ReviewStoreScope,
       input: CaseHistoryEvidenceSearchInput
     ) {
-      const minScore = input.minScore ?? 0.72;
+      const minScore = input.minScore ?? 0.5;
       const topK = input.topK ?? 4;
       const finalStatuses: ReviewCase["status"][] = [
         "approved",

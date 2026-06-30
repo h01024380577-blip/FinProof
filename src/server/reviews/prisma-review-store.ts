@@ -97,8 +97,7 @@ const reviewInclude = {
 } as const;
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
-const reReviewNotice =
-  "재업로드된 수정본입니다. AI 재분석 없이 직전 버전과 비교해 재검토하세요.";
+const reReviewNotice = "재업로드된 수정본입니다. AI 재분석 없이 직전 버전과 비교해 재검토하세요.";
 
 const longWriteTransactionOptions = {
   maxWait: 10_000,
@@ -1022,7 +1021,7 @@ export function createPrismaReviewStore(): ReviewStore {
 
     async searchKnowledgeEvidence(scope, input: KnowledgeEvidenceSearchInput) {
       const topK = input.topK ?? 4;
-      const minScore = input.minScore ?? 0.72;
+      const minScore = input.minScore ?? 0.5;
       const queryVector = vectorLiteral(input.queryEmbedding);
       let vectorEvidence: Evidence[] = [];
       const effectiveOn = input.effectiveOn ? plannedDate(input.effectiveOn) : undefined;
@@ -1673,7 +1672,7 @@ export function createPrismaReviewStore(): ReviewStore {
 
     async searchCaseHistoryEvidence(scope, input: CaseHistoryEvidenceSearchInput) {
       const topK = input.topK ?? 4;
-      const minScore = input.minScore ?? 0.72;
+      const minScore = input.minScore ?? 0.5;
       const finalStatuses = ["approved", "change_requested", "rejected", "on_hold"] as const;
 
       const rows = await prisma.reviewIssue.findMany({
