@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
+import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Check, Loader2, X } from "lucide-react";
 import { productLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewStatus, ReviewSummary, RoleId } from "@/domain/types";
@@ -38,8 +39,7 @@ function requesterTableStatus(status: ReviewStatus): {
 } {
   if (status === "approved") return { label: "승인", statusTone: "approved" };
   if (status === "rejected") return { label: "반려", statusTone: "rejected" };
-  if (status === "change_requested")
-    return { label: "수정 요청", statusTone: "change-requested" };
+  if (status === "change_requested") return { label: "수정 요청", statusTone: "change-requested" };
   return { label: "검토중", statusTone: "in-progress" };
 }
 
@@ -117,12 +117,17 @@ const FILTER_DEFS: Array<{ key: FilterKey; label: string }> = [
 /* ------------------------------ Master–detail ------------------------------ */
 
 function RequesterHistoryPanel({ apiHeaders }: { apiHeaders: ApiHeaders }): JSX.Element {
+  // After submitting a new request, SamplePackageSelector navigates here with
+  // `?selected=<newCaseId>` so the just-requested case is selected on landing
+  // (rather than defaulting to an action-needed/rejected case).
+  const searchParams = useSearchParams();
+  const requestedId = searchParams.get("selected");
   const [requests, setRequests] = useState<ReviewSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(requestedId);
   const [detailCache, setDetailCache] = useState<Record<string, ReviewCase | null>>({});
 
   useEffect(() => {
@@ -153,17 +158,18 @@ function RequesterHistoryPanel({ apiHeaders }: { apiHeaders: ApiHeaders }): JSX.
           if (previous && loaded.some((review) => review.id === previous)) {
             return previous;
           }
+          // A just-requested case (from `?selected=`) wins over the action-needed default.
+          if (requestedId && loaded.some((review) => review.id === requestedId)) {
+            return requestedId;
+          }
           const actionNeeded = loaded.find(
-            (review) =>
-              review.status === "change_requested" || review.status === "rejected"
+            (review) => review.status === "change_requested" || review.status === "rejected"
           );
           return actionNeeded?.id ?? loaded[0]?.id ?? null;
         });
       } catch (error) {
         if (mounted) {
-          setLoadError(
-            error instanceof Error ? error.message : "요청 기록을 불러오지 못했습니다."
-          );
+          setLoadError(error instanceof Error ? error.message : "요청 기록을 불러오지 못했습니다.");
           setRequests([]);
           setSelectedId(null);
         }
@@ -179,7 +185,7 @@ function RequesterHistoryPanel({ apiHeaders }: { apiHeaders: ApiHeaders }): JSX.
     return () => {
       mounted = false;
     };
-  }, [apiHeaders, refreshToken]);
+  }, [apiHeaders, refreshToken, requestedId]);
 
   const handleRefresh = useCallback((): void => {
     setRefreshToken((token) => token + 1);

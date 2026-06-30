@@ -203,7 +203,9 @@ describe("SamplePackageSelector", () => {
     expect(screen.getByRole("status", { name: "심의 요청 등록 완료" })).toHaveTextContent(
       "심의 요청이 등록되었습니다."
     );
-    await waitFor(() => expect(navigationMock.push).toHaveBeenCalledWith("/reviews/history"));
+    await waitFor(() =>
+      expect(navigationMock.push).toHaveBeenCalledWith("/reviews/history?selected=rc-upload-001")
+    );
     expect(screen.queryByRole("link", { name: "심의 대기 목록에서 확인" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "다른 요청 작성" })).not.toBeInTheDocument();
   });

@@ -253,9 +253,12 @@ export function SamplePackageSelector(): JSX.Element {
         throw new Error("업로드 요청을 처리하지 못했습니다.");
       }
 
-      setUploadResult((await response.json()) as UploadResult);
+      const result = (await response.json()) as UploadResult;
+      setUploadResult(result);
       setShowSubmissionNotice(true);
-      router.push("/reviews/history");
+      // Carry the just-created case id so the history page selects it on landing
+      // (instead of defaulting to an action-needed/rejected case).
+      router.push(`/reviews/history?selected=${encodeURIComponent(result.reviewCase.id)}`);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "업로드 요청을 처리하지 못했습니다.");
     } finally {

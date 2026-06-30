@@ -5,7 +5,8 @@ import { RequesterRequestCenter, RequesterRequestHistory } from "./RequesterRequ
 import { RevisionUploadPanel } from "./RevisionUploadPanel";
 
 const navigationMock = vi.hoisted(() => ({
-  push: vi.fn()
+  push: vi.fn(),
+  selected: null as string | null
 }));
 
 vi.mock("next/navigation", () => ({
@@ -16,7 +17,9 @@ vi.mock("next/navigation", () => ({
     forward: vi.fn(),
     refresh: vi.fn(),
     prefetch: vi.fn()
-  })
+  }),
+  useSearchParams: () =>
+    new URLSearchParams(navigationMock.selected ? `selected=${navigationMock.selected}` : "")
 }));
 
 type MockRoleId = "requester" | "reviewer" | "compliance_admin";
@@ -160,6 +163,7 @@ function mockHistoryFetch() {
 describe("RequesterRequestCenter", () => {
   beforeEach(() => {
     setRole();
+    navigationMock.selected = null;
   });
 
   afterEach(() => {
@@ -287,6 +291,28 @@ describe("RequesterRequestCenter", () => {
     expect(
       screen.queryByText("검토 중 초안도 최종 반려 전에는 숨겨야 합니다.")
     ).not.toBeInTheDocument();
+  });
+
+  it("selects the just-requested case from the `selected` query param instead of the action-needed default", async () => {
+    setRole();
+    // Simulate landing here right after submitting a new request.
+    navigationMock.selected = "rc-own-waiting-001";
+    vi.stubGlobal("fetch", mockHistoryFetch());
+
+    render(<RequesterRequestHistory />);
+
+    // The just-requested (under_review) case is selected, not the rejected default.
+    const selectedItem = await screen.findByRole("button", {
+      name: "김서연 카드 상세페이지, 검토중",
+      current: true
+    });
+    expect(selectedItem).toBeInTheDocument();
+
+    // The rejected case must NOT be auto-selected this time.
+    expect(screen.getByRole("button", { name: "김서연 대출 배너, 반려" })).not.toHaveAttribute(
+      "aria-current",
+      "true"
+    );
   });
 
   it("keeps requester history visible when the display name differs from the stored requester name", async () => {
@@ -448,9 +474,7 @@ describe("RequesterRequestCenter", () => {
     expect(screen.getByRole("heading", { name: "심의필" })).toBeInTheDocument();
     expect(screen.getByText("본 광고물은 관련 규정을 준수합니다.")).toBeInTheDocument();
     expect(screen.getByText("2026-06-20")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "심의필 PDF 다운로드" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "심의필 PDF 다운로드" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-own-approved-001/certificate",
       expect.objectContaining({
