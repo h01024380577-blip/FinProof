@@ -110,4 +110,25 @@ describe("createRegulatorySourcePoller", () => {
     expect(d.runSourceCheck).not.toHaveBeenCalled();
     expect(summary.skipped).toBe(1);
   });
+
+  it("does not abort the run when an audit write fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const d = deps({
+      store: {
+        ...deps().store,
+        listRegulatorySources: vi.fn(async () => [
+          { id: "src-x", tenantId: "tenant-demo", sourceType: "law", name: "no-id", pollingSchedule: "manual", trustLevel: "official", status: "active", createdAt: "", updatedAt: "" }
+        ]),
+        recordAuditEvent: vi.fn(async () => {
+          throw new Error("db down");
+        })
+      }
+    });
+    const poller = createRegulatorySourcePoller(d as never);
+
+    const summary = await poller.pollAll(context);
+
+    expect(summary.skipped).toBe(1);
+    errorSpy.mockRestore();
+  });
 });

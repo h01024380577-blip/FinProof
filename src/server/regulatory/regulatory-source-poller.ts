@@ -5,13 +5,20 @@ import { getReviewStorageAdapter } from "@/server/storage";
 import { createRegulatoryKnowledgeService } from "./regulatory-knowledge-service";
 import { createKoreanLawMcpClient, type KoreanLawMcpClient } from "./korean-law-mcp-client";
 
+type PollerScope = {
+  tenantId: string;
+  actorUserId?: string;
+  actorRole?: string;
+  ipAddress?: string;
+};
+
 export type RegulatorySourcePollerDeps = {
   runSourceCheck?: ReturnType<typeof createRegulatoryKnowledgeService>["runSourceCheck"];
   store?: {
-    listRegulatorySources: (scope: { tenantId: string }) => Promise<unknown[]>;
-    getLatestRegulatorySnapshot: (scope: { tenantId: string }, sourceId: string) => Promise<unknown>;
-    recordAuditEvent: (scope: { tenantId: string }, event: Record<string, unknown>) => Promise<unknown>;
-    updateRegulatorySource?: (scope: { tenantId: string }, id: string, patch: Record<string, unknown>) => Promise<unknown>;
+    listRegulatorySources: (scope: PollerScope) => Promise<unknown[]>;
+    getLatestRegulatorySnapshot: (scope: PollerScope, sourceId: string) => Promise<unknown>;
+    recordAuditEvent: (scope: PollerScope, event: Record<string, unknown>) => Promise<unknown>;
+    updateRegulatorySource?: (scope: PollerScope, id: string, patch: Record<string, unknown>) => Promise<unknown>;
   };
   storage?: {
     getRegulatorySourceText: (input: { sourceId: string; tenantId: string }) => Promise<string | null>;
@@ -41,7 +48,19 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
 
   return {
     async pollAll(context: RequestContext): Promise<PollSummary> {
-      const scope = { tenantId: context.tenantId };
+      const scope = {
+        tenantId: context.tenantId,
+        actorUserId: context.userId,
+        actorRole: context.role,
+        ipAddress: context.ipAddress
+      };
+      const safeAudit = async (event: Record<string, unknown>) => {
+        try {
+          await store.recordAuditEvent(scope, event);
+        } catch (auditError) {
+          console.error("[regulatory-poll] audit write failed:", (auditError as Error).message);
+        }
+      };
       const sources = (await store.listRegulatorySources(scope)) as Array<{
         id: string;
         name: string;
@@ -59,7 +78,7 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
         const identifier = parseLawIdentifier(source.url);
         if (!identifier) {
           summary.skipped += 1;
-          await store.recordAuditEvent(scope, {
+          await safeAudit({
             action: "regulatory_source.poll_skipped",
             targetType: "regulatory_source",
             targetId: source.id,
@@ -72,6 +91,12 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
           const law = await lawClient.getLawText(identifier);
           if (!law.text) {
             summary.skipped += 1;
+            await safeAudit({
+              action: "regulatory_source.poll_skipped",
+              targetType: "regulatory_source",
+              targetId: source.id,
+              afterValue: { reason: "empty_law_text" }
+            });
             continue;
           }
 
@@ -111,7 +136,7 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
           }
         } catch (error) {
           summary.failed += 1;
-          await store.recordAuditEvent(scope, {
+          await safeAudit({
             action: "regulatory_source.poll_failed",
             targetType: "regulatory_source",
             targetId: source.id,
