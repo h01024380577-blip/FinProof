@@ -123,7 +123,7 @@ describe("review AI service", () => {
 
   it("injects authoritative law evidence as a separate prompt axis", async () => {
     const provider = modelProvider("법령 원문 기반 답변");
-    await answerReviewQuestionWithModel(
+    const response = await answerReviewQuestionWithModel(
       {
         review,
         issue,
@@ -148,6 +148,11 @@ describe("review AI service", () => {
     expect(call?.input).toContain("authoritativeLawEvidence");
     expect(call?.input).toContain("전자금융거래법");
     expect(call?.instructions).toContain("authoritativeLawEvidence");
+    expect(response.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "law-mcp-123456", title: "전자금융거래법" })
+      ])
+    );
   });
 
   it("removes uploaded file names from chat answer text", async () => {
