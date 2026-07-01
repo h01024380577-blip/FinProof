@@ -38,6 +38,17 @@ export type RegulatorySourcePollerDeps = {
 
 export type PollSummary = { checked: number; changed: number; skipped: number; failed: number };
 
+// MCP 폴러는 자체 소스 ID 네임스페이스를 쓴다. 기존(수동/track) 경로가 만든
+// reg-source-knowledge-* 스냅샷 체인과 충돌하면 previousNormalizedText 해시 불일치로
+// 전건 실패하므로, 폴러 소스는 반드시 이 접두사로 분리한다.
+const MCP_SOURCE_PREFIX = "mcp-";
+
+// 행정규칙(감독규정·고시·훈령·예규·지침·세칙)은 법령 API(get_law_text)로 못 가져온다.
+// 제목으로 판별해 search_admin_rule/get_admin_rule 경로로 라우팅한다.
+function isAdminRuleTitle(title: string): boolean {
+  return /규정|고시|훈령|예규|지침|세칙/.test(title);
+}
+
 function parseLawIdentifier(value: string | null | undefined): { lawId?: string; mst?: string } | null {
   if (!value) return null;
   const trimmed = value.trim();
@@ -88,7 +99,7 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
 
       const groups = new Map<string, KnowledgeDocument[]>();
       for (const document of documents) {
-        const sourceId = stableRegulatorySourceId(document);
+        const sourceId = MCP_SOURCE_PREFIX + stableRegulatorySourceId(document);
         const group = groups.get(sourceId) ?? [];
         group.push(document);
         groups.set(sourceId, group);
@@ -113,26 +124,32 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
             });
           }
 
-          let identifier = parseLawIdentifier(
-            await storage.getRegulatoryLawId({ sourceId, tenantId: context.tenantId })
-          );
-          if (!identifier) {
-            identifier = parseLawIdentifier(source.url);
-          }
-          if (!identifier) {
-            const found = await lawClient.searchLaw(document.title);
-            const resolved = found.lawId
-              ? `lawId=${found.lawId}`
-              : found.mst
-                ? `mst=${found.mst}`
-                : null;
+          const isAdmin = isAdminRuleTitle(document.title);
+
+          // 해석 우선순위: 캐시 ▸ (법령만) source.url ▸ search_law / search_admin_rule.
+          // 캐시/최종 형식: "lawId=...", "mst=...", "admin=<행정규칙일련번호>".
+          let resolved =
+            (await storage.getRegulatoryLawId({ sourceId, tenantId: context.tenantId })) ??
+            (isAdmin ? null : source.url ?? null);
+
+          if (!resolved) {
+            let matchedTitle: string | null = null;
+            if (isAdmin) {
+              const found = await lawClient.searchAdminRule(document.title);
+              resolved = found.serialNo ? `admin=${found.serialNo}` : null;
+              matchedTitle = found.title ?? null;
+            } else {
+              const found = await lawClient.searchLaw(document.title);
+              resolved = found.lawId ? `lawId=${found.lawId}` : found.mst ? `mst=${found.mst}` : null;
+              matchedTitle = found.title ?? null;
+            }
             if (!resolved) {
               summary.skipped += 1;
               await safeAudit({
                 action: "regulatory_source.poll_skipped",
                 targetType: "regulatory_source",
                 targetId: sourceId,
-                afterValue: { reason: "law_id_unresolved", title: document.title }
+                afterValue: { reason: "law_id_unresolved", title: document.title, kind: isAdmin ? "admin_rule" : "law" }
               });
               continue;
             }
@@ -143,15 +160,16 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
               targetId: sourceId,
               afterValue: {
                 resolvedIdentifier: resolved,
-                matchedTitle: found.title ?? null,
-                method: "search_law",
+                matchedTitle,
+                method: isAdmin ? "search_admin_rule" : "search_law",
                 query: document.title
               }
             });
-            identifier = parseLawIdentifier(resolved);
           }
 
-          const law = await lawClient.getLawText(identifier!);
+          const law = resolved.startsWith("admin=")
+            ? await lawClient.getAdminRuleText(resolved.slice("admin=".length))
+            : await lawClient.getLawText(parseLawIdentifier(resolved)!);
           if (!law.text) {
             summary.skipped += 1;
             await safeAudit({
