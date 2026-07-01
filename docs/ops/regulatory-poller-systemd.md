@@ -2,6 +2,8 @@
 
 korean-law-mcp(law.go.kr Open API 래퍼)에서 법령 전문을 자동 수집해, 기존 변경탐지 엔진(`runSourceCheck`)으로 변경을 감지·버전화하는 폴러를 EC2에 스케줄 등록한다. (Vercel 배포가 아니라 EC2 + nginx 환경이므로 systemd timer가 정석. OCR 서비스(`finproof-ocr`)와 동일 패턴.)
 
+**추적 대상**: 폴러는 **이미 지식베이스에 등록된 법령 지식문서**(`documentType: "law"`, 승인·최신본)만 감시한다. 별도 감시목록을 손으로 등록할 필요가 없다 — 지식문서로 등록해 둔 법령이 곧 추적 대상이다. 각 문서의 law.go.kr 식별자는 이름으로 `search_law` 자동 해석 후 캐시된다.
+
 ## 신규 환경변수 (.env / 배포 env)
 
 | 변수 | 필수 | 설명 |
@@ -71,20 +73,25 @@ sudo systemctl start finproof-regulatory-poll.service   # 즉시 1회 수동 실
 journalctl -u finproof-regulatory-poll.service -n 80 --no-pager   # 로그 확인
 ```
 
-## RegulatorySource 등록 규칙 (폴링 대상이 되려면)
+## 추적 대상 규칙 (어떤 문서가 폴링되나)
 
-폴러는 `RegulatorySource` 행 중 **`status === "active"`** 이고 **`url` 필드에 법령 식별자**가 있는 것만 처리한다.
+폴러는 **지식문서(`KnowledgeDocument`)** 중 아래를 모두 만족하는 것만 대상으로 삼는다:
+- `documentType === "law"`
+- `approvalStatus === "approved"`
+- `lifecycleStatus !== "superseded"` (최신본)
+- `autoIngested !== true` (자동 생성된 버전 자기 자신은 제외)
 
-- `url` 형식: `lawId=<법령ID>` 또는 `mst=<MST>` 또는 식별자만 입력(=lawId로 간주).
-  - 법령ID/MST는 korean-law-mcp의 `search_law` 또는 law.go.kr에서 조회.
-- 일시 중지는 `status`를 `paused`로 변경.
-- **첫 폴링은 baseline**(스냅샷만 생성, diff 없음). **두 번째 폴링부터** 직전 텍스트와 비교해 변경을 감지한다.
+동작:
+- 대상 문서는 `stableRegulatorySourceId`로 그룹화되어 `RegulatorySource` 행이 자동 생성된다(수동 등록 불필요).
+- 법령 식별자(lawId/MST)는 **문서 title로 `search_law` 자동 해석 → storage에 캐시**된다. 최초 해석은 `regulatory_source.law_id_resolved` audit에 남아 검증 가능(어떤 title이 어떤 ID로 매칭됐는지).
+- **첫 폴링은 baseline**(현행 관보 텍스트로 스냅샷만 생성, diff 없음). **두 번째 폴링부터** 직전 텍스트와 비교해 변경을 감지한다.
 - 변경 감지 시: 품질 게이트 통과분은 `KnowledgeDocument`로 자동 버전 생성되고(`autoIngested: true`), `regulatory_change` audit 이벤트가 기록된다.
+- 특정 법령을 추적하려면 **그 법령을 승인된 law-type 지식문서로 등록**하면 된다(예: `npm run db:seed:knowledge:law`).
 
 ## 트러블슈팅
 
 - `{"failed":N}` 이고 audit에 `poll_failed` — MCP 호출 실패(네트워크/OC 키/IP 미등록) 또는 해시 불일치. `journalctl`과 audit 로그의 `error` 메시지 확인.
-- `{"skipped":N}` 이고 `poll_skipped` reason `missing_law_identifier` — `url`에 식별자 미입력. `empty_law_text` — MCP가 빈 본문 반환(식별자 오류 가능).
+- `{"skipped":N}` 이고 `poll_skipped` reason `law_id_unresolved` — 문서 title로 `search_law`가 법령을 못 찾음(이름 표기 상이 가능, title 확인). `empty_law_text` — MCP가 빈 본문 반환(식별자 오류 가능).
 - 두 번째 폴링부터 계속 `poll_failed`면 직전 저장 텍스트와 최신 스냅샷 해시가 어긋난 것(예: EC2 리부트로 `/tmp` 초기화돼 텍스트 파일은 사라졌는데 DB 스냅샷은 남은 경우, 또는 스냅샷 생성 후 텍스트 저장 전에 중단된 경우). 에러 메시지는 `previousNormalizedText is required...`(파일 없음) 또는 `does not match the latest snapshot`(내용 불일치)로 나뉜다.
   - **복구: 스토리지 텍스트가 아니라 해당 소스의 최신 `RegulatorySnapshot` DB 레코드를 삭제**한다. 그러면 다음 폴링에서 `getLatestRegulatorySnapshot`이 null을 반환해 `baselineOnly`로 새 스냅샷+텍스트 파일을 다시 만들고 정상화된다. (스토리지 텍스트 파일만 지우면 DB 스냅샷이 남아 `previousNormalizedText is required` 로 계속 실패하므로 금물.)
 
