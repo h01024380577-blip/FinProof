@@ -93,6 +93,7 @@ function hideUploadedFileNames(text: string, evidence: Evidence[]): string {
 function hideInternalEvidenceReferences(text: string): string {
   return text
     .replace(/\s*,?\s*approvedKnowledgeEvidence\s*#?\s*\d+\b/gi, "")
+    .replace(/law-mcp-[\w가-힣·-]+/gi, "")
     .replace(/\(\s*,\s*/g, "(")
     .replace(/,\s*\)/g, ")")
     .replace(/\(\s*\)/g, "")

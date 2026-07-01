@@ -94,6 +94,12 @@ export async function* streamReviewChat(
         label: "법제처 실시간 조회 실패 — 등록된 근거로 답변합니다"
       };
     }
+  } else if (intent === "law_search" && !covered) {
+    yield {
+      type: "stage",
+      stage: "knowledge_hit",
+      label: "법령명을 인식하지 못했습니다 — 등록된 근거로 답변합니다"
+    };
   } else {
     yield { type: "stage", stage: "knowledge_hit", label: "등록된 근거로 답변 작성 중" };
   }
@@ -122,7 +128,8 @@ export function ndjsonStream(
         for await (const event of events) {
           controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
         }
-      } catch {
+      } catch (error) {
+        console.error("[review-chat-stream] streaming error:", error);
         controller.enqueue(
           encoder.encode(
             `${JSON.stringify({ type: "error", message: "질문 요청을 처리하지 못했습니다." })}\n`

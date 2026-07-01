@@ -49,6 +49,21 @@ describe("review AI service", () => {
     );
   });
 
+  it("strips law-mcp evidence identifiers from the model answer", async () => {
+    const provider = modelProvider("근거: 「전자금융거래법」 (law-mcp-12345678) 참고");
+    const response = await answerReviewQuestionWithModel(
+      {
+        review,
+        issue,
+        question: "전자금융거래법 관련 조항 찾아줘",
+        knowledgeEvidence: []
+      },
+      provider
+    );
+
+    expect(response.content).not.toContain("law-mcp-12345678");
+  });
+
   it("includes prior chat turns in the RAG chat prompt", async () => {
     const provider = modelProvider("이전 대화를 반영한 답변");
     await answerReviewQuestionWithModel(
