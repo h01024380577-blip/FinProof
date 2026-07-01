@@ -17,6 +17,52 @@ export function extractLawName(question: string): string | undefined {
   return undefined;
 }
 
+// Prose (issue title/description) tends to embed the statute name mid-sentence,
+// so we prefer a contiguous law token and avoid capturing preceding connective
+// words the way the question patterns intentionally do for spaced short names.
+const ISSUE_LAW_NAME_PATTERNS: RegExp[] = [
+  /[가-힣]{2,}(?:\s+[가-힣]{2,})*\s*에\s*관한\s*법률/,
+  /[가-힣]{2,20}법(?:률)?/
+];
+
+function extractLawNameFromText(text: string): string | undefined {
+  for (const pattern of ISSUE_LAW_NAME_PATTERNS) {
+    const match = text.match(pattern);
+
+    if (match) {
+      return match[0].trim();
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Falls back to the issue text when the question itself only mentions "법령"
+ * generically (e.g. "예금자 보호문구 관련 법령 찾아줘"). Scans the issue title,
+ * description, and target text for a recognizable law name so the live law
+ * lookup can still run.
+ */
+export function extractLawNameFromIssue(issue: {
+  title?: string;
+  description?: string;
+  targetText?: string;
+}): string | undefined {
+  for (const text of [issue.title, issue.description, issue.targetText]) {
+    if (!text) {
+      continue;
+    }
+
+    const found = extractLawNameFromText(text);
+
+    if (found) {
+      return found;
+    }
+  }
+
+  return undefined;
+}
+
 export function assessLawCoverage(
   evidence: Evidence[],
   question: string,

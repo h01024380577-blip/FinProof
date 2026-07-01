@@ -94,6 +94,8 @@ function hideInternalEvidenceReferences(text: string): string {
   return text
     .replace(/\s*,?\s*approvedKnowledgeEvidence\s*#?\s*\d+\b/gi, "")
     .replace(/law-mcp-[\w가-힣·-]+/gi, "")
+    .replace(/\bauthoritativeLawEvidence\b/gi, "국가법령정보센터에서 확인된 현행 법령 조문")
+    .replace(/\bapprovedKnowledgeEvidence\b/gi, "승인된 지식문서")
     .replace(/\(\s*,\s*/g, "(")
     .replace(/,\s*\)/g, ")")
     .replace(/\(\s*\)/g, "")

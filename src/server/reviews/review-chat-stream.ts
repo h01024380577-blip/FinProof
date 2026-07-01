@@ -1,7 +1,7 @@
 import type { ChatProgressEvent, ReviewChatResponse } from "@/domain/chat";
 import type { Evidence, ReviewCase, ReviewIssue } from "@/domain/types";
 import type { LawSearchIntent } from "@/server/ai/law-search-intent";
-import { assessLawCoverage, extractLawName } from "@/server/ai/law-coverage";
+import { assessLawCoverage, extractLawName, extractLawNameFromIssue } from "@/server/ai/law-coverage";
 import type { KoreanLawMcpClient } from "@/server/regulatory/korean-law-mcp-client";
 import { mapLawTextToEvidence } from "./mcp-law-evidence";
 
@@ -43,7 +43,10 @@ export async function* streamReviewChat(
 
   let authoritativeLawEvidence: Evidence[] = [];
   const covered = assessLawCoverage(knowledgeEvidence, question, deps.coverageMinScore);
-  const lawName = intent === "law_search" ? extractLawName(question) : undefined;
+  const lawName =
+    intent === "law_search"
+      ? extractLawName(question) ?? extractLawNameFromIssue(issue)
+      : undefined;
 
   if (intent === "law_search" && !covered && lawName) {
     yield { type: "stage", stage: "knowledge_miss", label: "지식문서에 없음 — 국가법령정보 조회" };

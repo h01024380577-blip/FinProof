@@ -64,6 +64,26 @@ describe("review AI service", () => {
     expect(response.content).not.toContain("law-mcp-12345678");
   });
 
+  it("replaces raw internal field names with human-readable Korean labels", async () => {
+    const provider = modelProvider(
+      "이번 입력에는 authoritativeLawEvidence가 비어 있고 approvedKnowledgeEvidence만 있습니다."
+    );
+    const response = await answerReviewQuestionWithModel(
+      {
+        review,
+        issue,
+        question: "예금자 보호문구 관련 법령 찾아줘",
+        knowledgeEvidence: []
+      },
+      provider
+    );
+
+    expect(response.content).not.toContain("authoritativeLawEvidence");
+    expect(response.content).not.toContain("approvedKnowledgeEvidence");
+    expect(response.content).toContain("국가법령정보센터에서 확인된 현행 법령 조문");
+    expect(response.content).toContain("승인된 지식문서");
+  });
+
   it("includes prior chat turns in the RAG chat prompt", async () => {
     const provider = modelProvider("이전 대화를 반영한 답변");
     await answerReviewQuestionWithModel(
