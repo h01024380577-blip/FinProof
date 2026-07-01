@@ -198,6 +198,49 @@ describe("createRegulatorySourcePoller (knowledge-document anchored)", () => {
     expect(d.storage.putRegulatoryLawId).toHaveBeenCalled();
   });
 
+  it("skips curated excerpt documents ('정식명 — 용도') without searching", async () => {
+    const d = deps({
+      store: {
+        ...deps().store,
+        listKnowledgeDocuments: vi.fn(async () => [
+          lawDoc({ id: "ex", title: "은행법 — 예금·대출 광고 및 금리 표시" })
+        ])
+      }
+    });
+    const summary = await createRegulatorySourcePoller(d as never).pollAll(context);
+
+    expect(d.lawClient.searchLaw).not.toHaveBeenCalled();
+    expect(d.lawClient.searchAdminRule).not.toHaveBeenCalled();
+    expect(d.runSourceCheck).not.toHaveBeenCalled();
+    expect(summary.skipped).toBe(1);
+    expect(d.store.recordAuditEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ afterValue: expect.objectContaining({ reason: "excerpt_not_tracked" }) })
+    );
+  });
+
+  it("resolves an aliased title to its official law name for search and matching", async () => {
+    const d = deps({
+      store: {
+        ...deps().store,
+        listKnowledgeDocuments: vi.fn(async () => [
+          lawDoc({ id: "al", title: "여신전문금융업법 (원문)" })
+        ])
+      },
+      lawClient: {
+        ...deps().lawClient,
+        searchLaw: vi.fn(async () => ({ lawId: "77", title: "여신전문금융업법" }))
+      }
+    });
+    const summary = await createRegulatorySourcePoller(d as never).pollAll(context);
+
+    expect(d.lawClient.searchLaw).toHaveBeenCalledWith("여신전문금융업법");
+    expect(d.storage.putRegulatoryLawId).toHaveBeenCalledWith(
+      expect.objectContaining({ lawId: "lawId=77" })
+    );
+    expect(summary.checked).toBe(1);
+  });
+
   it("ignores non-law, unapproved, superseded and auto-ingested documents", async () => {
     const d = deps({
       store: {
