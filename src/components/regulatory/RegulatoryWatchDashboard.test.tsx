@@ -463,6 +463,13 @@ describe("RegulatoryWatchDashboard", () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
+          running: false,
+          state: { status: "done", summary: { checked: 1, changed: 1, skipped: 0, failed: 0 } }
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
           sources: [
             {
               id: "reg-source-knowledge-deposit",
@@ -535,7 +542,7 @@ describe("RegulatoryWatchDashboard", () => {
     });
     await click;
     await screen.findByText(
-      "법령 변경 추적을 시작했습니다. 잠시 후 변경이 감지되면 알림으로 표시됩니다."
+      "추적 완료 — 검토 1건 · 변경 1건 · 제외 0건 · 변경이 감지되어 알림으로 표시됩니다."
     );
     expect(await screen.findByText("예금 광고 내부 기준")).toBeInTheDocument();
     expect(screen.getByText("최고금리 표시 기준이 신설되었습니다.")).toBeInTheDocument();
