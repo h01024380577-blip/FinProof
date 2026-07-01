@@ -43,4 +43,50 @@ describe("mock review store knowledge search", () => {
       title: "금융규제 가이드라인"
     });
   });
+
+  it("uses knowledgeMinScore as the retrieval floor when it is lower than minScore", async () => {
+    const store = createMockReviewStore([]);
+    const document = await store.createKnowledgeDocument(scope, {
+      id: "knowledge-loan-checklist",
+      documentType: "checklist",
+      productType: "loan",
+      title: "대출 광고 심의 체크리스트",
+      version: "2026.05",
+      effectiveFrom: "2026-05-27",
+      storageKey: "local/knowledge-documents/knowledge-loan-checklist/checklist.pdf"
+    });
+    await store.approveKnowledgeDocument(scope, document.id);
+    await store.replaceKnowledgeDocumentChunks(scope, document.id, [
+      {
+        id: "chunk-loan-checklist-001",
+        tenantId: scope.tenantId,
+        knowledgeDocumentId: document.id,
+        chunkText: "연이자율과 연체이자율, 중도상환수수료를 광고에 표시해야 한다.",
+        chunkSummary: "대출 광고 금리 표시 점검",
+        embeddingModel: "text-embedding-3-small",
+        embeddingId: "embedding-loan-checklist-001",
+        metadata: { source: "knowledge_document" }
+      }
+    ]);
+
+    // A partial-overlap query lands between the two thresholds.
+    const query = "대출 광고 최저금리 연 3.9% 중도상환수수료 면제 누구나 즉시 승인";
+
+    const excluded = await store.searchKnowledgeEvidence(scope, {
+      query,
+      productType: "loan",
+      topK: 4,
+      minScore: 0.99
+    });
+    expect(excluded).toHaveLength(0);
+
+    const included = await store.searchKnowledgeEvidence(scope, {
+      query,
+      productType: "loan",
+      topK: 4,
+      minScore: 0.99,
+      knowledgeMinScore: 0.05
+    });
+    expect(included.map((item) => item.documentId)).toContain(document.id);
+  });
 });
