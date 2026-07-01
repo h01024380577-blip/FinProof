@@ -121,6 +121,35 @@ describe("review AI service", () => {
     );
   });
 
+  it("injects authoritative law evidence as a separate prompt axis", async () => {
+    const provider = modelProvider("법령 원문 기반 답변");
+    await answerReviewQuestionWithModel(
+      {
+        review,
+        issue,
+        question: "전자금융거래법 관련 조항 찾아줘",
+        knowledgeEvidence: [],
+        authoritativeLawEvidence: [
+          {
+            id: "law-mcp-123456",
+            sourceType: "law",
+            title: "전자금융거래법",
+            quoteSummary: "제1조 목적 ...",
+            relevanceScore: 0.9,
+            effectiveFrom: "2026-07-01",
+            section: "[현행]"
+          }
+        ]
+      },
+      provider
+    );
+
+    const call = vi.mocked(provider.generateText).mock.calls[0]?.[0];
+    expect(call?.input).toContain("authoritativeLawEvidence");
+    expect(call?.input).toContain("전자금융거래법");
+    expect(call?.instructions).toContain("authoritativeLawEvidence");
+  });
+
   it("removes uploaded file names from chat answer text", async () => {
     const uploadedFileName = "finproof-pipeline-retest-20260527.txt";
     const provider = modelProvider(
