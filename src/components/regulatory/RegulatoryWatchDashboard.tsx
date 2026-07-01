@@ -14,12 +14,9 @@ type RegulatoryChangeSetsResponse = {
   changeSets?: RegulatoryChangeSet[];
 };
 
-type TrackKnowledgeDocumentsResponse = {
-  result?: {
-    checkedDocumentCount?: number;
-    changeSetCount?: number;
-    activatedDocumentIds?: string[];
-  };
+type PollRegulatorySourcesResponse = {
+  started?: boolean;
+  alreadyRunning?: boolean;
 };
 
 function fetchInit(headers: HeadersInit | undefined): RequestInit | undefined {
@@ -239,22 +236,22 @@ export function RegulatoryWatchDashboard(): JSX.Element {
 
     try {
       const headers = roleContext?.apiHeaders();
-      const response = await fetch("/api/v1/regulatory-sources/track-knowledge-documents", {
+      const response = await fetch("/api/v1/regulatory-sources/poll", {
         method: "POST",
         body: "{}",
         ...fetchInit(headers)
       });
 
       if (!response.ok) {
-        throw new Error("등록 지식문서 변경 추적에 실패했습니다.");
+        throw new Error("법령 변경 추적 실행에 실패했습니다.");
       }
 
-      const body = (await response.json()) as TrackKnowledgeDocumentsResponse;
-      const checkedDocumentCount = body.result?.checkedDocumentCount ?? 0;
-      const changeSetCount = body.result?.changeSetCount ?? 0;
+      const body = (await response.json()) as PollRegulatorySourcesResponse;
 
       setTrackStatus(
-        `등록 지식문서 ${checkedDocumentCount}건을 확인했고 변경 ${changeSetCount}건을 감지했습니다.`
+        body.alreadyRunning
+          ? "이미 법령 변경 추적이 진행 중입니다. 변경이 감지되면 알림으로 표시됩니다."
+          : "법령 변경 추적을 시작했습니다. 잠시 후 변경이 감지되면 알림으로 표시됩니다."
       );
       const result = await fetchRegulatoryWatch(headers);
       setSources(result.sources);
@@ -262,7 +259,7 @@ export function RegulatoryWatchDashboard(): JSX.Element {
       setStatus(null);
     } catch (error) {
       setTrackStatus(
-        error instanceof Error ? error.message : "등록 지식문서 변경 추적에 실패했습니다."
+        error instanceof Error ? error.message : "법령 변경 추적 실행에 실패했습니다."
       );
     } finally {
       setIsTracking(false);

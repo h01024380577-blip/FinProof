@@ -526,21 +526,17 @@ describe("RegulatoryWatchDashboard", () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      "/api/v1/regulatory-sources/track-knowledge-documents",
+      "/api/v1/regulatory-sources/poll",
       expect.objectContaining({ method: "POST" })
     );
     resolveTrackRequest({
       ok: true,
-      json: async () => ({
-        result: {
-          checkedDocumentCount: 1,
-          changeSetCount: 1,
-          activatedDocumentIds: ["knowledge-auto-reg-change-001"]
-        }
-      })
+      json: async () => ({ started: true, alreadyRunning: false })
     });
     await click;
-    await screen.findByText("등록 지식문서 1건을 확인했고 변경 1건을 감지했습니다.");
+    await screen.findByText(
+      "법령 변경 추적을 시작했습니다. 잠시 후 변경이 감지되면 알림으로 표시됩니다."
+    );
     expect(await screen.findByText("예금 광고 내부 기준")).toBeInTheDocument();
     expect(screen.getByText("최고금리 표시 기준이 신설되었습니다.")).toBeInTheDocument();
   });
