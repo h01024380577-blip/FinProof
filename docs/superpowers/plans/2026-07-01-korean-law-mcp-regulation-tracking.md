@@ -12,6 +12,23 @@
 
 ---
 
+## ⚠️ Revision R1 (2026-07-01): 대상 범위를 "등록된 법령 지식문서"로 축소
+
+**변경 배경(사용자 지시):** "지식문서에 등록된 자료들만 변경을 감지하면 된다. 모든 법령 추적은 오버스펙." 초기 설계는 별도 `RegulatorySource` 감시목록을 손으로 등록해야 해서 법령을 두 번 등록하게 만드는 문제가 있었다.
+
+**개정 아키텍처:** 폴러의 대상 목록을 `listRegulatorySources`가 아니라 **`listKnowledgeDocuments` 중 `documentType==="law"` & approved & non-superseded & !autoIngested** 에서 파생한다. 각 문서를 `stableRegulatorySourceId(doc)`로 그룹화(기존 track 경로와 동일 규칙 → 중복 소스 방지)하고, 없으면 `createRegulatorySource`로 소스 행을 만든다. 법령ID는 지식문서에 없으므로(이름만 존재) **MCP `search_law(title)`로 해석하고 storage 어댑터에 캐시**한다(실 store에 `updateRegulatorySource`가 없어 `RegulatorySource.url` 갱신 불가 → Task 2와 동일한 storage 캐시 패턴 사용). 이후 per-source 폴 본체(`get_law_text` → `runSourceCheck` → 텍스트 저장)는 원안과 동일. 비교 baseline은 최초 폴링 시점의 현행 관보 텍스트(semantics A); 등록본의 사전 드리프트 감지는 범위 밖(옵션).
+
+**R1 델타 작업:**
+- **R1-a (MCP 클라이언트):** `searchLaw(query)` 추가 — tools/call `search_law`, `{ lawId?, mst?, title? }` 파싱.
+- **R1-b (storage 어댑터):** `putRegulatoryLawId`/`getRegulatoryLawId` 추가(Task 2 미러). 키 `regulatory/law-id/<tenant>/<sourceId>.txt`.
+- **R1-c (review-service):** `stableRegulatorySourceId`, `regulatorySourceTypeForDocument`, `regulatoryTrustLevelForDocument` 에 `export` 추가(폴러 재사용).
+- **R1-d (폴러 재작성):** 소스 목록을 지식문서에서 파생; 소스 행 보장; lawId 해석(캐시 ▸ url ▸ `search_law`)+캐시; 해석 실패 시 skip+audit. 나머지 폴 본체는 유지. 테스트 갱신.
+- **R1-e (문서):** systemd 문서에서 "RegulatorySource 수동 등록" 절 삭제 → "등록된 법령 지식문서를 자동 추적, lawId는 자동 해석·캐시"로 교체.
+
+아래 Task 1·2·4·5는 그대로 유효(클라이언트·storage·CLI·systemd). **Task 3(폴러)만 R1-d로 대체**된다.
+
+---
+
 ## 사전 확인된 코드 사실 (구현 시 변경 금지 기준점)
 
 - `createRegulatoryKnowledgeService().runSourceCheck(context, input)` — `src/server/regulatory/regulatory-knowledge-service.ts:202`
