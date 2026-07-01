@@ -65,6 +65,19 @@ describe("createKoreanLawMcpClient", () => {
     expect(body.params.arguments.query).toBe("금융소비자 보호에 관한 법률");
   });
 
+  it("searchLaw does not mistake an MST-only response for a lawId", async () => {
+    const fetchImpl = mockFetch({
+      content: [{ type: "text", text: "법령명: 어떤 규정\nMST: 267581" }]
+    });
+    const client = createKoreanLawMcpClient(
+      { KOREAN_LAW_MCP_URL: "https://example.test/mcp", LAW_API_OC: "x" },
+      fetchImpl as never
+    );
+    const result = await client.searchLaw("어떤 규정");
+    expect(result.lawId).toBeUndefined();
+    expect(result.mst).toBe("267581");
+  });
+
   it("searchLaw returns empty object when nothing parses", async () => {
     const fetchImpl = mockFetch({ content: [{ type: "text", text: "검색 결과가 없습니다." }] });
     const client = createKoreanLawMcpClient(

@@ -132,10 +132,11 @@ export function createKoreanLawMcpClient(
     async searchLaw(query) {
       const text = await callTool("search_law", { query, display: 1 });
 
+      const mst = text.match(/(?:MST|일련번호)\s*[:：]?\s*(\d{4,})/)?.[1];
+      const hasMstLabel = /(?:MST|일련번호)\s*[:：]/.test(text);
       const lawId =
         text.match(/(?:법령ID|lawId|LawId|ID)\s*[:：]?\s*(\d{4,})/)?.[1] ??
-        text.match(/\b(\d{6,})\b/)?.[1];
-      const mst = text.match(/(?:MST|일련번호)\s*[:：]?\s*(\d{4,})/)?.[1];
+        (hasMstLabel ? undefined : text.match(/\b(\d{6,})\b/)?.[1]);
       const title = text.match(/(?:법령명|법령명한글|title)\s*[:：]?\s*(.+)/)?.[1]?.trim();
 
       return {

@@ -114,6 +114,24 @@ describe("createRegulatorySourcePoller (knowledge-document anchored)", () => {
     );
   });
 
+  it("audits the search_law resolution with the matched title", async () => {
+    const d = deps({
+      lawClient: {
+        ...deps().lawClient,
+        searchLaw: vi.fn(async () => ({ lawId: "001234", title: "금융소비자 보호에 관한 법률" }))
+      }
+    });
+    await createRegulatorySourcePoller(d as never).pollAll(context);
+
+    expect(d.store.recordAuditEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: "regulatory_source.law_id_resolved",
+        afterValue: expect.objectContaining({ resolvedIdentifier: "lawId=001234", method: "search_law" })
+      })
+    );
+  });
+
   it("ignores non-law, unapproved, superseded and auto-ingested documents", async () => {
     const d = deps({
       store: {

@@ -49,8 +49,8 @@ function parseLawIdentifier(value: string | null | undefined): { lawId?: string;
 
 function latestDocument(documents: KnowledgeDocument[]): KnowledgeDocument {
   return [...documents].sort((left, right) => {
-    const leftKey = [left.effectiveFrom ?? "", left.version, left.createdAt, left.id].join(" ");
-    const rightKey = [right.effectiveFrom ?? "", right.version, right.createdAt, right.id].join(" ");
+    const leftKey = [left.effectiveFrom ?? "", left.version, left.createdAt, left.id].join("\0");
+    const rightKey = [right.effectiveFrom ?? "", right.version, right.createdAt, right.id].join("\0");
     return leftKey.localeCompare(rightKey);
   })[documents.length - 1];
 }
@@ -137,6 +137,17 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
               continue;
             }
             await storage.putRegulatoryLawId({ sourceId, tenantId: context.tenantId, lawId: resolved });
+            await safeAudit({
+              action: "regulatory_source.law_id_resolved",
+              targetType: "regulatory_source",
+              targetId: sourceId,
+              afterValue: {
+                resolvedIdentifier: resolved,
+                matchedTitle: found.title ?? null,
+                method: "search_law",
+                query: document.title
+              }
+            });
             identifier = parseLawIdentifier(resolved);
           }
 
