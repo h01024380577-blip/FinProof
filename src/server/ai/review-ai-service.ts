@@ -19,6 +19,7 @@ type AnswerQuestionInput = {
   issue: ReviewIssue;
   question: string;
   knowledgeEvidence?: Evidence[];
+  authoritativeLawEvidence?: Evidence[];
   history?: Array<{
     question: string;
     answer: string;
@@ -92,6 +93,7 @@ function hideUploadedFileNames(text: string, evidence: Evidence[]): string {
 function hideInternalEvidenceReferences(text: string): string {
   return text
     .replace(/\s*,?\s*approvedKnowledgeEvidence\s*#?\s*\d+\b/gi, "")
+    .replace(/law-mcp-[\w가-힣·-]+/gi, "")
     .replace(/\(\s*,\s*/g, "(")
     .replace(/,\s*\)/g, ")")
     .replace(/\(\s*\)/g, "")
@@ -120,7 +122,10 @@ export async function answerReviewQuestionWithModel(
   input: AnswerQuestionInput,
   provider: ModelProvider = defaultModelProvider()
 ): Promise<ReviewChatResponse> {
-  const evidence = mergeEvidence(input.issue.evidence, input.knowledgeEvidence);
+  const evidence = mergeEvidence(input.issue.evidence, [
+    ...(input.knowledgeEvidence ?? []),
+    ...(input.authoritativeLawEvidence ?? [])
+  ]);
   const issueWithKnowledgeEvidence = { ...input.issue, evidence };
   const fallback = answerReviewQuestion({ ...input, issue: issueWithKnowledgeEvidence });
   const result = await provider.generateText({
@@ -133,6 +138,7 @@ export async function answerReviewQuestionWithModel(
     input: JSON.stringify({
       review: reviewSummary(input.review),
       issue: issueWithKnowledgeEvidence,
+      authoritativeLawEvidence: input.authoritativeLawEvidence ?? [],
       approvedKnowledgeEvidence: input.knowledgeEvidence ?? [],
       question: input.question,
       conversationHistory: input.history ?? [],

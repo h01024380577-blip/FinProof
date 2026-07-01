@@ -9,6 +9,28 @@ export type ReviewChatResponse = {
   requiredMaterials: string[];
 };
 
+export type ChatProgressStage =
+  | "analyzing_intent"
+  | "searching_knowledge"
+  | "knowledge_hit"
+  | "knowledge_miss"
+  | "mcp_failed"
+  | "generating_answer";
+
+export type ChatProgressEvent =
+  | { type: "stage"; stage: ChatProgressStage; label: string }
+  | { type: "mcp"; stage: "mcp_search_law" | "mcp_get_law_text"; tool: string; query: string; label: string }
+  | { type: "done"; response: ReviewChatResponse }
+  | { type: "error"; message: string };
+
+export function chatProgressLabel(event: ChatProgressEvent | null): string {
+  if (!event || event.type === "done" || event.type === "error") {
+    return "답변 생성 중";
+  }
+
+  return event.label;
+}
+
 /**
  * Language the review opinion draft should be written in.
  *

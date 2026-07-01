@@ -103,6 +103,17 @@ vi.mock("@/server/analysis/provider-config", () => ({
   })
 }));
 
+vi.mock("@/server/ai/law-search-intent", () => ({
+  classifyLawSearchIntent: vi.fn(async () => "none" as const)
+}));
+
+vi.mock("@/server/regulatory/korean-law-mcp-client", () => ({
+  createKoreanLawMcpClient: () => ({
+    searchLaw: vi.fn(),
+    getLawText: vi.fn()
+  })
+}));
+
 import { POST } from "./route";
 
 describe("review case chat route", () => {
@@ -128,6 +139,16 @@ describe("review case chat route", () => {
     });
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/x-ndjson");
+
+    const streamText = await response.text();
+    const events = streamText
+      .trim()
+      .split("\n")
+      .filter((line) => line.length > 0)
+      .map((line) => JSON.parse(line) as { type: string });
+    expect(events.some((event) => event.type === "done")).toBe(true);
+
     expect(mocks.service.searchKnowledgeEvidence).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId: "tenant-demo",

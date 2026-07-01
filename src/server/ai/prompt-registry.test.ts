@@ -1,4 +1,8 @@
-import { multilingualTranslatorRiskPrompt } from "./prompt-registry";
+import {
+  LAW_SEARCH_INTENT_PROMPT,
+  multilingualTranslatorRiskPrompt,
+  RAG_CHAT_PROMPT
+} from "./prompt-registry";
 
 describe("prompt registry", () => {
   it("gives multilingual translator risk agents concrete translation and compliance duties", () => {
@@ -17,5 +21,17 @@ describe("prompt registry", () => {
     expect(prompt).toContain("suggestedCopyKoreanMeaning");
     expect(prompt).toContain("Do not create a finding unless the segment contains financial-advertising copy");
     expect(prompt).toContain("Common Risk Policy");
+  });
+});
+
+describe("law MCP prompt additions", () => {
+  it("RAG_CHAT_PROMPT prioritizes authoritative law evidence", () => {
+    expect(RAG_CHAT_PROMPT).toContain("authoritativeLawEvidence");
+    expect(RAG_CHAT_PROMPT).toContain("시행일");
+  });
+
+  it("LAW_SEARCH_INTENT_PROMPT returns a single classification token", () => {
+    expect(LAW_SEARCH_INTENT_PROMPT).toContain("LAW_SEARCH");
+    expect(LAW_SEARCH_INTENT_PROMPT).toContain("NONE");
   });
 });

@@ -3331,6 +3331,14 @@ a.review-table__row:hover {
   font-weight: 800;
 }
 
+.chat-message__progress-tool {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
 .typing-dots {
   display: inline-flex;
   gap: 4px;
@@ -9381,6 +9389,14 @@ body:has(.landing-page)::before {
   font-weight: 800;
 }
 
+.chat-message__progress-tool {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
 .typing-dots {
   display: inline-flex;
   gap: 4px;
@@ -10565,11 +10581,19 @@ body:has(.landing-page)::before {
   flex-shrink: 0;
 }
 
+.revision-diff__doc-field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .revision-diff__doc-select select {
   appearance: none;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 5px 10px;
+  padding: 5px 32px 5px 10px;
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--text);
@@ -10580,6 +10604,20 @@ body:has(.landing-page)::before {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.revision-diff__doc-field:hover select {
+  border-color: var(--line-strong, var(--line));
+  background: var(--surface-subtle);
+}
+
+.revision-diff__doc-chevron {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-soft);
+  pointer-events: none;
 }
 
 .revision-diff__badge {

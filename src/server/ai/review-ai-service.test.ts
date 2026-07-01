@@ -49,6 +49,21 @@ describe("review AI service", () => {
     );
   });
 
+  it("strips law-mcp evidence identifiers from the model answer", async () => {
+    const provider = modelProvider("근거: 「전자금융거래법」 (law-mcp-12345678) 참고");
+    const response = await answerReviewQuestionWithModel(
+      {
+        review,
+        issue,
+        question: "전자금융거래법 관련 조항 찾아줘",
+        knowledgeEvidence: []
+      },
+      provider
+    );
+
+    expect(response.content).not.toContain("law-mcp-12345678");
+  });
+
   it("includes prior chat turns in the RAG chat prompt", async () => {
     const provider = modelProvider("이전 대화를 반영한 답변");
     await answerReviewQuestionWithModel(
@@ -118,6 +133,40 @@ describe("review AI service", () => {
           "최고금리는 우대조건 및 적용대상과 함께 명확히 표시해야 합니다."
         )
       })
+    );
+  });
+
+  it("injects authoritative law evidence as a separate prompt axis", async () => {
+    const provider = modelProvider("법령 원문 기반 답변");
+    const response = await answerReviewQuestionWithModel(
+      {
+        review,
+        issue,
+        question: "전자금융거래법 관련 조항 찾아줘",
+        knowledgeEvidence: [],
+        authoritativeLawEvidence: [
+          {
+            id: "law-mcp-123456",
+            sourceType: "law",
+            title: "전자금융거래법",
+            quoteSummary: "제1조 목적 ...",
+            relevanceScore: 0.9,
+            effectiveFrom: "2026-07-01",
+            section: "[현행]"
+          }
+        ]
+      },
+      provider
+    );
+
+    const call = vi.mocked(provider.generateText).mock.calls[0]?.[0];
+    expect(call?.input).toContain("authoritativeLawEvidence");
+    expect(call?.input).toContain("전자금융거래법");
+    expect(call?.instructions).toContain("authoritativeLawEvidence");
+    expect(response.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "law-mcp-123456", title: "전자금융거래법" })
+      ])
     );
   });
 

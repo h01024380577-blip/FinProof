@@ -1,5 +1,6 @@
 import {
   answerReviewQuestion,
+  chatProgressLabel,
   detectReviewDraftLanguage,
   generateDraftWithChatContext,
   generateIssueBasedOpinionDraft
@@ -75,6 +76,19 @@ describe("review chat guardrails", () => {
     expect(draft).toContain(issue.description);
     expect(draft).toContain(issue.suggestedCopy);
     expect(draft).toContain(issue.evidence[0].title);
+  });
+});
+
+describe("chatProgressLabel", () => {
+  it("returns the event label for a stage event", () => {
+    expect(
+      chatProgressLabel({ type: "stage", stage: "searching_knowledge", label: "등록된 지식문서 검색 중" })
+    ).toBe("등록된 지식문서 검색 중");
+  });
+
+  it("returns the default label for null, done, or error events", () => {
+    expect(chatProgressLabel(null)).toBe("답변 생성 중");
+    expect(chatProgressLabel({ type: "error", message: "x" })).toBe("답변 생성 중");
   });
 });
 

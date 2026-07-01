@@ -8,6 +8,7 @@ import { useRole } from "./RoleContext";
 const POLL_INTERVAL_MS = 30_000;
 const NEW_REVIEW_STATUSES = new Set<ReviewStatus>(["submitted", "analysis_waiting"]);
 const COMPLETED_REQUEST_STATUSES = new Set<ReviewStatus>(["approved", "rejected"]);
+const MAX_REGULATORY_NOTIFICATIONS = 20;
 
 type NotificationRoleContext = {
   activeRole: RoleId;
@@ -34,6 +35,15 @@ type NotificationItem = {
   reviewId: string;
   result?: "승인" | "반려";
 };
+
+type NotificationChangeSet = {
+  id: string;
+  changeSummary?: string;
+  changedSections?: unknown[];
+  createdAt?: string;
+};
+
+type ChangeSetListResponse = { changeSets?: NotificationChangeSet[] };
 
 type ReadNotifications = {
   scopeKey: string;
@@ -98,6 +108,47 @@ async function fetchNotificationReviews(
   return parseReviewList(payload);
 }
 
+// 법령 변경 추적 폴러(자동/수동)가 변경을 감지하면 RegulatoryChangeSet 행을 만든다.
+// 심의자/관리자에게는 그 변경세트를 인앱 알림으로 파생해 보여준다.
+async function fetchRegulatoryChangeSets(
+  apiHeaders: NotificationRoleContext["apiHeaders"]
+): Promise<NotificationChangeSet[]> {
+  try {
+    const response = await fetch("/api/v1/regulatory-change-sets", { headers: apiHeaders() });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const payload = (await response.json()) as ChangeSetListResponse;
+
+    return payload.changeSets ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function buildRegulatoryNotifications(
+  changeSets: NotificationChangeSet[],
+  activeRole: RoleId
+): NotificationItem[] {
+  if (!isReviewerRole(activeRole)) {
+    return [];
+  }
+
+  return changeSets
+    .filter((changeSet) => (changeSet.changedSections?.length ?? 0) > 0)
+    .slice()
+    .sort((left, right) => (right.createdAt ?? "").localeCompare(left.createdAt ?? ""))
+    .slice(0, MAX_REGULATORY_NOTIFICATIONS)
+    .map((changeSet) => ({
+      id: `reg-${changeSet.id}`,
+      message: "법령 변경이 감지되었습니다",
+      title: normalizeText(changeSet.changeSummary) || changeSet.id,
+      reviewId: changeSet.id
+    }));
+}
+
 function buildNotifications(
   reviews: NotificationReview[],
   activeRole: RoleId,
@@ -144,6 +195,7 @@ export function NotificationCenter() {
   const isAuthenticated = roleContext.isAuthenticated === true;
   const notificationScopeKey = `${activeRole}:${currentUser?.userId ?? ""}:${currentUser?.name ?? ""}`;
   const [reviews, setReviews] = useState<NotificationReview[]>([]);
+  const [changeSets, setChangeSets] = useState<NotificationChangeSet[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [readNotifications, setReadNotifications] = useState<ReadNotifications>(() => ({
     scopeKey: "",
@@ -152,8 +204,11 @@ export function NotificationCenter() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const markNotificationsAsRead = useCallback(
-    (nextReviews: NotificationReview[]) => {
-      const nextNotifications = buildNotifications(nextReviews, activeRole, currentUser?.name);
+    (nextReviews: NotificationReview[], nextChangeSets: NotificationChangeSet[]) => {
+      const nextNotifications = [
+        ...buildNotifications(nextReviews, activeRole, currentUser?.name),
+        ...buildRegulatoryNotifications(nextChangeSets, activeRole)
+      ];
 
       if (nextNotifications.length === 0) {
         return;
@@ -177,26 +232,33 @@ export function NotificationCenter() {
     [activeRole, currentUser?.name, notificationScopeKey]
   );
 
-  const loadReviews = useCallback(
+  const refresh = useCallback(
     async (options: { markAsRead?: boolean } = {}) => {
       if (!isAuthenticated) {
         setReviews([]);
+        setChangeSets([]);
         setErrorMessage("");
         return;
       }
 
       try {
-        const nextReviews = await fetchNotificationReviews(apiHeaders);
+        const [nextReviews, nextChangeSets] = await Promise.all([
+          fetchNotificationReviews(apiHeaders),
+          isReviewerRole(activeRole)
+            ? fetchRegulatoryChangeSets(apiHeaders)
+            : Promise.resolve<NotificationChangeSet[]>([])
+        ]);
         setReviews(nextReviews);
+        setChangeSets(nextChangeSets);
         if (options.markAsRead) {
-          markNotificationsAsRead(nextReviews);
+          markNotificationsAsRead(nextReviews, nextChangeSets);
         }
         setErrorMessage("");
       } catch {
         setErrorMessage("알림을 불러오지 못했습니다.");
       }
     },
-    [apiHeaders, isAuthenticated, markNotificationsAsRead]
+    [activeRole, apiHeaders, isAuthenticated, markNotificationsAsRead]
   );
 
   useEffect(() => {
@@ -204,49 +266,28 @@ export function NotificationCenter() {
       return;
     }
 
-    let isActive = true;
-
-    void fetchNotificationReviews(apiHeaders)
-      .then((nextReviews) => {
-        if (!isActive) {
-          return;
-        }
-
-        setReviews(nextReviews);
-        setErrorMessage("");
-      })
-      .catch(() => {
-        if (isActive) {
-          setErrorMessage("알림을 불러오지 못했습니다.");
-        }
-      });
+    // Kick off async data loading on mount; state updates happen after await.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refresh();
 
     const intervalId = window.setInterval(() => {
-      void fetchNotificationReviews(apiHeaders)
-        .then((nextReviews) => {
-          if (!isActive) {
-            return;
-          }
-
-          setReviews(nextReviews);
-          setErrorMessage("");
-        })
-        .catch(() => {
-          if (isActive) {
-            setErrorMessage("알림을 불러오지 못했습니다.");
-          }
-        });
+      void refresh();
     }, POLL_INTERVAL_MS);
 
     return () => {
-      isActive = false;
       window.clearInterval(intervalId);
     };
-  }, [apiHeaders, isAuthenticated]);
+  }, [isAuthenticated, refresh]);
 
   const notifications = useMemo(
-    () => (isAuthenticated ? buildNotifications(reviews, activeRole, currentUser?.name) : []),
-    [activeRole, currentUser?.name, isAuthenticated, reviews]
+    () =>
+      isAuthenticated
+        ? [
+            ...buildNotifications(reviews, activeRole, currentUser?.name),
+            ...buildRegulatoryNotifications(changeSets, activeRole)
+          ]
+        : [],
+    [activeRole, changeSets, currentUser?.name, isAuthenticated, reviews]
   );
   const readNotificationIds =
     readNotifications.scopeKey === notificationScopeKey ? readNotifications.ids : new Set<string>();
@@ -260,8 +301,8 @@ export function NotificationCenter() {
     setIsOpen(nextIsOpen);
 
     if (nextIsOpen) {
-      markNotificationsAsRead(reviews);
-      void loadReviews({ markAsRead: true });
+      markNotificationsAsRead(reviews, changeSets);
+      void refresh({ markAsRead: true });
     }
   };
 
@@ -296,7 +337,7 @@ export function NotificationCenter() {
             <button
               aria-label="알림 새로고침"
               className="notification-center__refresh"
-              onClick={() => void loadReviews({ markAsRead: true })}
+              onClick={() => void refresh({ markAsRead: true })}
               type="button"
             >
               <RefreshCw size={15} aria-hidden="true" />

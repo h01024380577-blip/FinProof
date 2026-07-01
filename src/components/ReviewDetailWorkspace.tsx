@@ -21,7 +21,8 @@ import {
   Send,
   X
 } from "lucide-react";
-import type { ReviewChatResponse } from "@/domain/chat";
+import { chatProgressLabel } from "@/domain/chat";
+import type { ChatProgressEvent, ReviewChatResponse } from "@/domain/chat";
 import type { ReviewReport } from "@/domain/reports";
 import { productLabels, statusLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, ReviewVersion, RiskLevel, RoleId } from "@/domain/types";
@@ -429,6 +430,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const [isAskingQuestion, setIsAskingQuestion] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
+  const [chatProgress, setChatProgress] = useState<ChatProgressEvent | null>(null);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -702,6 +704,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     setInteractionError(null);
     setIsAskingQuestion(true);
     setPendingQuestion({ issueId, question: submittedQuestion });
+    setChatProgress(null);
     setQuestion("");
     try {
       const apiResponse = await fetch(`/api/v1/review-cases/${reviewCaseId}/chat`, {
@@ -717,11 +720,46 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         })
       });
 
-      if (!apiResponse.ok) {
+      if (!apiResponse.ok || !apiResponse.body) {
         throw new Error("질문 요청을 처리하지 못했습니다.");
       }
 
-      const body = (await apiResponse.json()) as { response: ReviewChatResponse };
+      const reader = apiResponse.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let finalResponse: ReviewChatResponse | null = null;
+
+      for (;;) {
+        const { value, done } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (line.trim().length === 0) {
+            continue;
+          }
+
+          const event = JSON.parse(line) as ChatProgressEvent;
+
+          if (event.type === "done") {
+            finalResponse = event.response;
+          } else if (event.type !== "error") {
+            setChatProgress(event);
+          }
+        }
+      }
+
+      if (!finalResponse) {
+        throw new Error("질문 요청을 처리하지 못했습니다.");
+      }
+
+      const answered = finalResponse;
 
       setChatResponsesByReviewId((current) => {
         const currentReviewResponses = current[reviewCaseId] ?? {};
@@ -730,7 +768,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
           ...current,
           [reviewCaseId]: {
             ...currentReviewResponses,
-            [issueId]: [...(currentReviewResponses[issueId] ?? []), body.response]
+            [issueId]: [...(currentReviewResponses[issueId] ?? []), answered]
           }
         };
       });
@@ -743,6 +781,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     } finally {
       setIsAskingQuestion(false);
       setPendingQuestion(null);
+      setChatProgress(null);
     }
   }
 
@@ -1191,7 +1230,12 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                 AI
               </span>
               <div className="chat-message__bubble chat-message__bubble--loading">
-                <span>답변 생성 중</span>
+                <span>{chatProgressLabel(chatProgress)}</span>
+                {chatProgress?.type === "mcp" ? (
+                  <span className="chat-message__progress-tool">
+                    {chatProgress.tool} · {chatProgress.query}
+                  </span>
+                ) : null}
                 <span className="typing-dots" aria-hidden="true">
                   <i />
                   <i />

@@ -60,6 +60,22 @@ function params<T extends Record<string, string>>(value: T) {
   return { params: Promise.resolve(value) };
 }
 
+async function readChatStreamResponse(response: Response): Promise<ReviewChatResponse> {
+  const text = await response.text();
+  const events = text
+    .trim()
+    .split("\n")
+    .filter((line) => line.length > 0)
+    .map((line) => JSON.parse(line) as { type: string; response?: ReviewChatResponse });
+  const done = events.find((event) => event.type === "done");
+
+  if (!done?.response) {
+    throw new Error("chat stream did not include a done event");
+  }
+
+  return done.response;
+}
+
 async function zipBody(entries: Record<string, string>) {
   const zip = new JSZip();
 
@@ -1078,10 +1094,10 @@ describe("review API routes", () => {
       }),
       params({ caseId: "rc-demo-deposit-001" })
     );
-    const missingTermsBody = await missingTermsResponse.json();
-
     expect(missingTermsResponse.status).toBe(200);
-    expect(missingTermsBody.response).toMatchObject({
+    const missingTermsChat = await readChatStreamResponse(missingTermsResponse);
+
+    expect(missingTermsChat).toMatchObject({
       answerType: "insufficient_evidence",
       requiredMaterials: ["약관"]
     });
@@ -1093,13 +1109,11 @@ describe("review API routes", () => {
       }),
       params({ caseId: "rc-demo-deposit-001" })
     );
-    const evidenceChatBody = (await evidenceChatResponse.json()) as {
-      response: ReviewChatResponse;
-    };
+    const evidenceChat = await readChatStreamResponse(evidenceChatResponse);
 
     const draftResponse = await draftPOST(
       jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/draft", {
-        chatResponses: [evidenceChatBody.response]
+        chatResponses: [evidenceChat]
       }),
       params({ caseId: "rc-demo-deposit-001" })
     );

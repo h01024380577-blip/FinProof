@@ -184,7 +184,12 @@ export function createCohereReranker(
               title: candidate.title,
               sourceType: candidate.sourceType
             })),
-            top_n: config.topK,
+            // Return Cohere's relevance score for EVERY candidate (not just the top
+            // config.topK). Cohere scores the whole set internally regardless, so this
+            // is free; truncating to top_n let low-relevance candidates keep their
+            // (inflated) cosine score via parseRerankResponse instead of being demoted.
+            // Final selection is still capped downstream by selectEvidenceCandidates.
+            top_n: candidates.length,
             return_documents: false
           })
         });
