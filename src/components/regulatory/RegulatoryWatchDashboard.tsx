@@ -19,8 +19,50 @@ type PollRegulatorySourcesResponse = {
   alreadyRunning?: boolean;
 };
 
+type PollSummary = { checked: number; changed: number; skipped: number; failed: number };
+
+type PollStatusResponse = {
+  running?: boolean;
+  state?: {
+    status?: "idle" | "running" | "done" | "error";
+    summary?: PollSummary;
+    error?: string;
+  };
+};
+
+const POLL_STATUS_INTERVAL_MS = 3000;
+const POLL_STATUS_MAX_ATTEMPTS = 60; // ~3분까지 대기 후 포기
+
 function fetchInit(headers: HeadersInit | undefined): RequestInit | undefined {
   return headers ? { headers } : undefined;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// 온디맨드 폴은 백그라운드로 돌기 때문에, GET으로 상태를 폴링해 완료 요약을 받아온다.
+async function waitForPollResult(
+  headers: HeadersInit | undefined
+): Promise<{ summary?: PollSummary; error?: string } | null> {
+  for (let attempt = 0; attempt < POLL_STATUS_MAX_ATTEMPTS; attempt += 1) {
+    const response = await fetch("/api/v1/regulatory-sources/poll", fetchInit(headers));
+    if (response.ok) {
+      const body = (await response.json()) as PollStatusResponse;
+      const status = body.state?.status;
+
+      if (status === "done") {
+        return { summary: body.state?.summary };
+      }
+      if (status === "error") {
+        return { error: body.state?.error };
+      }
+    }
+    // running / idle → 잠시 뒤 재조회
+    await delay(POLL_STATUS_INTERVAL_MS);
+  }
+
+  return null; // 타임아웃
 }
 
 async function fetchRegulatoryWatch(headers: HeadersInit | undefined) {
@@ -250,9 +292,29 @@ export function RegulatoryWatchDashboard(): JSX.Element {
 
       setTrackStatus(
         body.alreadyRunning
-          ? "이미 법령 변경 추적이 진행 중입니다. 변경이 감지되면 알림으로 표시됩니다."
-          : "법령 변경 추적을 시작했습니다. 잠시 후 변경이 감지되면 알림으로 표시됩니다."
+          ? "이미 진행 중인 추적의 결과를 기다리는 중입니다…"
+          : "법령 변경을 추적하는 중입니다… (최대 1~2분 소요)"
       );
+
+      const outcome = await waitForPollResult(headers);
+
+      if (outcome?.summary) {
+        const s = outcome.summary;
+        setTrackStatus(
+          `추적 완료 — 검토 ${s.checked}건 · 변경 ${s.changed}건 · 제외 ${s.skipped}건` +
+            (s.failed ? ` · 실패 ${s.failed}건` : "") +
+            (s.changed > 0
+              ? " · 변경이 감지되어 알림으로 표시됩니다."
+              : " · 변경 없음.")
+        );
+      } else if (outcome?.error) {
+        setTrackStatus(`추적 중 오류가 발생했습니다: ${outcome.error}`);
+      } else {
+        setTrackStatus(
+          "추적을 시작했습니다. 완료까지 시간이 걸려, 변경이 감지되면 알림으로 표시됩니다."
+        );
+      }
+
       const result = await fetchRegulatoryWatch(headers);
       setSources(result.sources);
       setChangeSets(result.changeSets);
