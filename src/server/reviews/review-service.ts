@@ -11,6 +11,11 @@ import {
   extractKnowledgeDocumentText
 } from "@/server/knowledge/knowledge-ingestion";
 import { createRegulatoryKnowledgeService } from "@/server/regulatory/regulatory-knowledge-service";
+import {
+  regulatorySourceTypeForDocument,
+  regulatoryTrustLevelForDocument,
+  stableRegulatorySourceId
+} from "@/server/regulatory/knowledge-document-source-mapping";
 import { expandArchiveUploads } from "@/server/storage/archive-extraction";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
 import type { KnowledgeDocument, ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
@@ -109,36 +114,6 @@ function scopeFromContext(context: RequestContext): ReviewStoreScope {
     actorRole: context.role,
     ipAddress: context.ipAddress
   };
-}
-
-export function regulatorySourceTypeForDocument(
-  document: KnowledgeDocument
-): CreateRegulatorySourceInput["sourceType"] {
-  return document.documentType === "law" ? "law_portal" : "internal_policy_repo";
-}
-
-export function regulatoryTrustLevelForDocument(
-  document: KnowledgeDocument
-): CreateRegulatorySourceInput["trustLevel"] {
-  return document.documentType === "law" ? "official" : "internal";
-}
-
-export function stableRegulatorySourceId(document: KnowledgeDocument) {
-  const rawKey = [
-    document.canonicalKey,
-    document.documentType,
-    document.productType ?? "all",
-    document.title
-  ]
-    .filter(Boolean)
-    .join("-");
-  const normalized = rawKey
-    .toLowerCase()
-    .replace(/[^a-z0-9가-힣]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 72);
-
-  return `reg-source-knowledge-${normalized || document.id}`;
 }
 
 function sortKnowledgeDocumentsForTracking(documents: KnowledgeDocument[]) {
