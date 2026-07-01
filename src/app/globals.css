@@ -2539,15 +2539,21 @@ a.review-table__row:hover {
 }
 
 .issue-list {
-  display: grid;
-  align-content: start;
-  gap: 10px;
+  /* Block flow (not grid): grid tracks were pinned to each card's min-height,
+     trapping the <button> cards at a fixed height so long content overflowed
+     and overlapped the next card. Block layout lets each card grow to fit. */
+  display: block;
   flex: 1;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
   padding-right: 6px;
   scrollbar-width: thin;
+}
+
+/* Block layout ignores `gap`; restore the 10px rhythm between cards. */
+.issue-list > * + * {
+  margin-top: 10px;
 }
 
 .issue-card {
