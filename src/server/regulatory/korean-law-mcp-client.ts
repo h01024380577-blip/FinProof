@@ -64,8 +64,12 @@ function extractMcpText(result: unknown): string {
 }
 
 function parseHeaderDate(text: string, label: string): string | undefined {
-  const match = text.match(new RegExp(`${label}\\s*[:：]\\s*([0-9]{4}-[0-9]{2}-[0-9]{2})`));
-  return match?.[1];
+  // law.go.kr returns dates as either "YYYY-MM-DD" or bare "YYYYMMDD"; normalize to ISO.
+  const match = text.match(new RegExp(`${label}\\s*[:：]\\s*([0-9]{4})-?([0-9]{2})-?([0-9]{2})`));
+  if (!match) {
+    return undefined;
+  }
+  return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
 export function createKoreanLawMcpClient(
@@ -85,7 +89,11 @@ export function createKoreanLawMcpClient(
     const response = await fetchImpl(url, {
       method: "POST",
       signal: AbortSignal.timeout(Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 60000),
-      headers: { "content-type": "application/json", accept: "application/json" },
+      // MCP streamable HTTP transport requires both media types in Accept, else 406.
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream"
+      },
       body: JSON.stringify({
         jsonrpc: "2.0",
         id: 1,

@@ -35,6 +35,36 @@ describe("createKoreanLawMcpClient", () => {
     expect(body.params.arguments.lawId).toBe("123456");
   });
 
+  it("sends Accept: application/json, text/event-stream (MCP streamable HTTP requires it)", async () => {
+    const fetchImpl = mockFetch({ content: [{ type: "text", text: "제1조" }] });
+    const client = createKoreanLawMcpClient(
+      { KOREAN_LAW_MCP_URL: "https://example.test/mcp", LAW_API_OC: "x" },
+      fetchImpl as never
+    );
+
+    await client.getLawText({ lawId: "1" });
+
+    const [, init] = fetchImpl.mock.calls[0];
+    const headers = (init as RequestInit).headers as Record<string, string>;
+    expect(headers.accept).toContain("text/event-stream");
+    expect(headers.accept).toContain("application/json");
+  });
+
+  it("parses bare YYYYMMDD dates from get_law_text into ISO", async () => {
+    const fetchImpl = mockFetch({
+      content: [{ type: "text", text: "법령명: 금융소비자 보호에 관한 법률\n공포일: 20251001\n시행일: 20260102\n제1조" }]
+    });
+    const client = createKoreanLawMcpClient(
+      { KOREAN_LAW_MCP_URL: "https://example.test/mcp", LAW_API_OC: "x" },
+      fetchImpl as never
+    );
+
+    const result = await client.getLawText({ lawId: "013704" });
+
+    expect(result.effectiveFrom).toBe("2026-01-02");
+    expect(result.promulgatedAt).toBe("2025-10-01");
+  });
+
   it("falls back to the public fly.dev endpoint when KOREAN_LAW_MCP_URL is unset", async () => {
     const fetchImpl = mockFetch({ content: [{ type: "text", text: "[현행]\n제1조" }] });
     const client = createKoreanLawMcpClient({ LAW_API_OC: "honggildong" }, fetchImpl as never);
