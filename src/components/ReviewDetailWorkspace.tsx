@@ -720,39 +720,47 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
         })
       });
 
-      if (!apiResponse.ok || !apiResponse.body) {
+      if (!apiResponse.ok) {
         throw new Error("질문 요청을 처리하지 못했습니다.");
       }
 
-      const reader = apiResponse.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
       let finalResponse: ReviewChatResponse | null = null;
 
-      for (;;) {
-        const { value, done } = await reader.read();
+      if (apiResponse.body) {
+        // 기본 경로: NDJSON 진행 스트림(단계/MCP 이벤트 + 마지막 done).
+        const reader = apiResponse.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
 
-        if (done) {
-          break;
-        }
+        for (;;) {
+          const { value, done } = await reader.read();
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (line.trim().length === 0) {
-            continue;
+          if (done) {
+            break;
           }
 
-          const event = JSON.parse(line) as ChatProgressEvent;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
 
-          if (event.type === "done") {
-            finalResponse = event.response;
-          } else if (event.type !== "error") {
-            setChatProgress(event);
+          for (const line of lines) {
+            if (line.trim().length === 0) {
+              continue;
+            }
+
+            const event = JSON.parse(line) as ChatProgressEvent;
+
+            if (event.type === "done") {
+              finalResponse = event.response;
+            } else if (event.type !== "error") {
+              setChatProgress(event);
+            }
           }
         }
+      } else {
+        // 폴백: 스트림이 아닌 단일 JSON({ response }) 응답도 허용.
+        const payload = (await apiResponse.json()) as { response?: ReviewChatResponse };
+        finalResponse = payload.response ?? null;
       }
 
       if (!finalResponse) {
