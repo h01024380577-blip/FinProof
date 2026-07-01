@@ -27,9 +27,27 @@ export type SearchLawResult = {
   title?: string;
 };
 
+export type SearchAdminRuleResult = {
+  /** 행정규칙일련번호 — get_admin_rule의 id 파라미터로 사용한다. */
+  serialNo?: string;
+  adminRuleId?: string;
+  title?: string;
+  promulgatedAt?: string;
+};
+
+export type GetAdminRuleTextResult = {
+  text: string;
+  effectiveFrom?: string;
+  promulgatedAt?: string;
+};
+
 export type KoreanLawMcpClient = {
   getLawText(params: GetLawTextParams): Promise<GetLawTextResult>;
   searchLaw(query: string): Promise<SearchLawResult>;
+  /** 행정규칙(감독규정·시행세칙·심의규정·지침 등) 검색. */
+  searchAdminRule(query: string): Promise<SearchAdminRuleResult>;
+  /** 행정규칙 전문 조회. serialNo = 행정규칙일련번호. */
+  getAdminRuleText(serialNo: string): Promise<GetAdminRuleTextResult>;
 };
 
 function envValue(env: Env, key: string): string | undefined {
@@ -142,8 +160,9 @@ export function createKoreanLawMcpClient(
 
       const mst = text.match(/(?:MST|일련번호)\s*[:：]?\s*(\d{4,})/)?.[1];
       const hasMstLabel = /(?:MST|일련번호)\s*[:：]/.test(text);
+      // Only "법령ID" — a bare "ID" alternative would also match "행정규칙ID" in fallback output.
       const lawId =
-        text.match(/(?:법령ID|lawId|LawId|ID)\s*[:：]?\s*(\d{4,})/)?.[1] ??
+        text.match(/(?:법령ID|lawId|LawId)\s*[:：]?\s*(\d{4,})/)?.[1] ??
         (hasMstLabel ? undefined : text.match(/\b(\d{6,})\b/)?.[1]);
       const title = text.match(/(?:법령명|법령명한글|title)\s*[:：]?\s*(.+)/)?.[1]?.trim();
 
@@ -151,6 +170,38 @@ export function createKoreanLawMcpClient(
         ...(lawId ? { lawId } : {}),
         ...(mst ? { mst } : {}),
         ...(title ? { title } : {})
+      };
+    },
+
+    async searchAdminRule(query) {
+      // 행정규칙(감독규정 등)은 법령 API가 아니라 execute_tool 프록시로 접근한다.
+      const text = await callTool("execute_tool", {
+        tool_name: "search_admin_rule",
+        params: { query }
+      });
+
+      const serialNo = text.match(/행정규칙일련번호\s*[:：]?\s*(\d{6,})/)?.[1];
+      const adminRuleId = text.match(/행정규칙ID\s*[:：]?\s*(\d+)/)?.[1];
+      const title = text.match(/^\s*1\.\s*(.+?)\s*$/m)?.[1]?.trim();
+
+      return {
+        ...(serialNo ? { serialNo } : {}),
+        ...(adminRuleId ? { adminRuleId } : {}),
+        ...(title ? { title } : {}),
+        ...(parseHeaderDate(text, "공포일") ? { promulgatedAt: parseHeaderDate(text, "공포일") } : {})
+      };
+    },
+
+    async getAdminRuleText(serialNo) {
+      const text = await callTool("execute_tool", {
+        tool_name: "get_admin_rule",
+        params: { id: serialNo }
+      });
+
+      return {
+        text,
+        effectiveFrom: parseHeaderDate(text, "시행일"),
+        promulgatedAt: parseHeaderDate(text, "공포일")
       };
     }
   };

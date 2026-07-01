@@ -51,7 +51,9 @@ function deps(overrides: Record<string, unknown> = {}) {
     },
     lawClient: {
       getLawText: vi.fn(async () => ({ text: "시행일: 2026-07-01\n[현행]\n제1조 v1", effectiveFrom: "2026-07-01", isCurrent: true })),
-      searchLaw: vi.fn(async () => ({ lawId: "001234" }))
+      searchLaw: vi.fn(async () => ({ lawId: "001234" })),
+      searchAdminRule: vi.fn(async () => ({ serialNo: "2100000276850", title: "금융소비자 보호에 관한 감독규정" })),
+      getAdminRuleText: vi.fn(async () => ({ text: "제1조(목적) 행정규칙 본문 v1" }))
     }
   };
   return { ...base, ...overrides };
@@ -130,6 +132,27 @@ describe("createRegulatorySourcePoller (knowledge-document anchored)", () => {
         afterValue: expect.objectContaining({ resolvedIdentifier: "lawId=001234", method: "search_law" })
       })
     );
+  });
+
+  it("routes admin-rule documents through search_admin_rule / get_admin_rule", async () => {
+    const d = deps({
+      store: {
+        ...deps().store,
+        listKnowledgeDocuments: vi.fn(async () => [
+          lawDoc({ id: "ar", title: "금융소비자 보호에 관한 감독규정" })
+        ])
+      }
+    });
+    const summary = await createRegulatorySourcePoller(d as never).pollAll(context);
+
+    expect(d.lawClient.searchAdminRule).toHaveBeenCalledWith("금융소비자 보호에 관한 감독규정");
+    expect(d.lawClient.searchLaw).not.toHaveBeenCalled();
+    expect(d.storage.putRegulatoryLawId).toHaveBeenCalledWith(
+      expect.objectContaining({ lawId: "admin=2100000276850" })
+    );
+    expect(d.lawClient.getAdminRuleText).toHaveBeenCalledWith("2100000276850");
+    expect(d.lawClient.getLawText).not.toHaveBeenCalled();
+    expect(summary.checked).toBe(1);
   });
 
   it("ignores non-law, unapproved, superseded and auto-ingested documents", async () => {
