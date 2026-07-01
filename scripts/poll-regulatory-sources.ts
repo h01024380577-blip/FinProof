@@ -1,6 +1,7 @@
 import "dotenv/config";
 import type { RequestContext } from "@/server/auth/request-context";
 import { createRegulatorySourcePoller } from "@/server/regulatory/regulatory-source-poller";
+import { assessRegulatoryStorageDurability } from "@/server/regulatory/storage-durability";
 
 function reviewerContext(): RequestContext {
   return {
@@ -17,6 +18,19 @@ function sleep(ms: number) {
 async function main() {
   const args = new Set(process.argv.slice(2));
   const loop = args.has("--loop");
+
+  // Guard against the ephemeral-storage footgun: baseline text under /tmp is lost on
+  // reboot, which then fails every subsequent poll. Warn loudly; block if the deploy
+  // opts into strict mode via FINPROOF_REGULATORY_REQUIRE_DURABLE_STORAGE.
+  const durability = assessRegulatoryStorageDurability();
+  if (!durability.durable) {
+    console.warn(`[regulatory-poll] ⚠️  스토리지 경고: ${durability.detail}`);
+    if ((process.env.FINPROOF_REGULATORY_REQUIRE_DURABLE_STORAGE ?? "").trim()) {
+      console.error("[regulatory-poll] 내구성 스토리지 요구(FINPROOF_REGULATORY_REQUIRE_DURABLE_STORAGE) 설정으로 중단합니다.");
+      process.exit(1);
+    }
+  }
+
   const intervalMs = Number(process.env.FINPROOF_REGULATORY_POLL_INTERVAL_MS ?? "86400000");
   const poller = createRegulatorySourcePoller({
     onChange: (info) =>

@@ -9,6 +9,7 @@ import {
   regulatoryTrustLevelForDocument,
   stableRegulatorySourceId
 } from "./knowledge-document-source-mapping";
+import { resolveTrackingTitle } from "./regulatory-title-aliases";
 
 type PollerScope = {
   tenantId: string;
@@ -125,6 +126,21 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
         const document = latestDocument(groupedDocuments);
 
         try {
+          // 별칭/발췌 해석: 발췌 큐레이션본은 전문 대조가 부적합하므로 추적 제외.
+          const resolution = resolveTrackingTitle(document.title);
+          if (resolution.kind === "excerpt") {
+            summary.skipped += 1;
+            await safeAudit({
+              action: "regulatory_source.poll_skipped",
+              targetType: "regulatory_source",
+              targetId: sourceId,
+              afterValue: { reason: "excerpt_not_tracked", title: document.title }
+            });
+            continue;
+          }
+          const trackingTitle =
+            resolution.kind === "alias" ? resolution.officialTitle : document.title;
+
           let source = (await store.getRegulatorySource(scope, sourceId)) as
             | { id: string; url?: string }
             | undefined;
@@ -138,7 +154,7 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
             });
           }
 
-          const isAdmin = isAdminRuleTitle(document.title);
+          const isAdmin = isAdminRuleTitle(trackingTitle);
 
           // 해석 우선순위: 캐시 ▸ (법령만) source.url ▸ search_law / search_admin_rule.
           // 캐시/최종 형식: "lawId=...", "mst=...", "admin=<행정규칙일련번호>".
@@ -149,11 +165,11 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
           if (!resolved) {
             let matchedTitle: string | null = null;
             if (isAdmin) {
-              const found = await lawClient.searchAdminRule(document.title);
+              const found = await lawClient.searchAdminRule(trackingTitle);
               resolved = found.serialNo ? `admin=${found.serialNo}` : null;
               matchedTitle = found.title ?? null;
             } else {
-              const found = await lawClient.searchLaw(document.title);
+              const found = await lawClient.searchLaw(trackingTitle);
               resolved = found.lawId ? `lawId=${found.lawId}` : found.mst ? `mst=${found.mst}` : null;
               matchedTitle = found.title ?? null;
             }
@@ -168,7 +184,7 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
               continue;
             }
             // Exact-title guard: only accept a hit whose name matches the document title.
-            if (!titlesMatch(matchedTitle, document.title)) {
+            if (!titlesMatch(matchedTitle, trackingTitle)) {
               summary.skipped += 1;
               await safeAudit({
                 action: "regulatory_source.poll_skipped",
@@ -193,7 +209,7 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
                 resolvedIdentifier: resolved,
                 matchedTitle,
                 method: isAdmin ? "search_admin_rule" : "search_law",
-                query: document.title
+                query: trackingTitle
               }
             });
           }
