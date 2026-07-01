@@ -1884,7 +1884,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     },
 
     async searchKnowledgeEvidence(scope: ReviewStoreScope, input: KnowledgeEvidenceSearchInput) {
-      const minScore = input.minScore ?? 0.5;
+      const minScore = input.knowledgeMinScore ?? input.minScore ?? 0.5;
       const topK = input.topK ?? 4;
 
       const knowledgeMatches = Array.from(evidenceChunks.values()).flatMap((chunk) => {

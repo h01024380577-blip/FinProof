@@ -11,6 +11,7 @@ type RagConfig =
       provider: "deterministic";
       topK: number;
       minScore: number;
+      knowledgeMinScore: number;
       maxContextChars: number;
     }
   | {
@@ -18,6 +19,7 @@ type RagConfig =
       databaseConfigured: boolean;
       topK: number;
       minScore: number;
+      knowledgeMinScore: number;
       maxContextChars: number;
     };
 
@@ -72,6 +74,10 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
     value(env, "FINPROOF_RAG_PROVIDER") === "postgres" ? "postgres" : "deterministic";
   const topK = positiveNumber(env, "FINPROOF_RAG_TOP_K", 4);
   const minScore = positiveNumber(env, "FINPROOF_RAG_MIN_SCORE", 0.5);
+  // Knowledge-corpus retrieval uses a lower cosine floor than product docs: Korean
+  // ad-copy↔regulation cosine tops out ~0.6, so an on-point checklist can sit at ~0.46
+  // and would be dropped by the product-doc `minScore` before reranking ever sees it.
+  const knowledgeMinScore = positiveNumber(env, "FINPROOF_RAG_KNOWLEDGE_MIN_SCORE", 0.4);
   const maxContextChars = positiveNumber(env, "FINPROOF_RAG_MAX_CONTEXT_CHARS", 6000);
   const rerankProviderValue = value(env, "FINPROOF_RERANK_PROVIDER");
   const rerankProvider =
@@ -138,12 +144,14 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
             databaseConfigured: Boolean(databaseUrl),
             topK,
             minScore,
+            knowledgeMinScore,
             maxContextChars
           }
         : {
             provider: "deterministic",
             topK,
             minScore,
+            knowledgeMinScore,
             maxContextChars
           },
     rerank:
