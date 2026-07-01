@@ -23,6 +23,10 @@ describe("prefilterLawSearchIntent", () => {
   it("returns ambiguous when a legal hint exists but intent is unclear", () => {
     expect(prefilterLawSearchIntent("이 문구는 규정에 맞나요?")).toBe("ambiguous");
   });
+
+  it("does not treat a bare article-reference judgment question as law_search", () => {
+    expect(prefilterLawSearchIntent("어떤 조항 위반인지 알려주세요")).toBe("ambiguous");
+  });
 });
 
 describe("classifyLawSearchIntent", () => {
@@ -46,5 +50,12 @@ describe("classifyLawSearchIntent", () => {
     const model = provider("NONE");
     const result = await classifyLawSearchIntent("이 문구는 규정에 맞나요?", model);
     expect(result).toBe("none");
+  });
+
+  it("short-circuits on a confident none prefilter without calling the model", async () => {
+    const model = provider("LAW_SEARCH");
+    const result = await classifyLawSearchIntent("이 배너 문구 더 짧게 다듬어줘", model);
+    expect(result).toBe("none");
+    expect(model.generateText).not.toHaveBeenCalled();
   });
 });
