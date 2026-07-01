@@ -203,7 +203,8 @@ describe("NotificationCenter", () => {
 
     render(<NotificationCenter />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    // Reviewers fetch both review cases and regulatory change sets per refresh.
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     expect(screen.queryByText("1")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /알림/ }));
@@ -245,22 +246,68 @@ describe("NotificationCenter", () => {
 
     render(<NotificationCenter />);
 
+    // Each reviewer refresh issues two fetches: review cases + regulatory change sets.
     await act(async () => {
       await Promise.resolve();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByRole("button", { name: /알림/ }));
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
+    fireEvent.click(screen.getByRole("button", { name: /알림/ }));
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+
     fireEvent.click(screen.getByRole("button", { name: "알림 새로고침" }));
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
 
     await act(async () => {
       vi.advanceTimersByTime(30_000);
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(fetchMock).toHaveBeenCalledTimes(8);
+  });
+
+  it("surfaces regulatory change sets as notifications for reviewers", async () => {
+    fetchMock.mockImplementation(async (url: string) => {
+      if (typeof url === "string" && url.includes("/regulatory-change-sets")) {
+        return new Response(
+          JSON.stringify({
+            changeSets: [
+              {
+                id: "reg-change-001",
+                changeSummary: "금융소비자 보호에 관한 감독규정 개정: 제22조",
+                changedSections: [{ sectionId: "s-22" }],
+                createdAt: "2026-07-01T00:00:00.000Z"
+              },
+              {
+                id: "reg-change-nochange",
+                changeSummary: "변경 없음",
+                changedSections: [],
+                createdAt: "2026-06-30T00:00:00.000Z"
+              }
+            ]
+          }),
+          { headers: { "content-type": "application/json" }, status: 200 }
+        );
+      }
+
+      return new Response(JSON.stringify([]), {
+        headers: { "content-type": "application/json" },
+        status: 200
+      });
+    });
+
+    render(<NotificationCenter />);
+
+    expect(await screen.findByText("1")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /알림/ }));
+
+    const popover = screen.getByRole("dialog", { name: "알림 목록" });
+    expect(within(popover).getByText("법령 변경이 감지되었습니다")).toBeInTheDocument();
+    expect(
+      within(popover).getByText("금융소비자 보호에 관한 감독규정 개정: 제22조")
+    ).toBeInTheDocument();
+    // A change set with no changed sections must not produce a notification.
+    expect(within(popover).queryByText("변경 없음")).not.toBeInTheDocument();
   });
 
   it("does not fetch while unauthenticated", async () => {
