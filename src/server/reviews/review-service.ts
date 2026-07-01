@@ -111,19 +111,19 @@ function scopeFromContext(context: RequestContext): ReviewStoreScope {
   };
 }
 
-function regulatorySourceTypeForDocument(
+export function regulatorySourceTypeForDocument(
   document: KnowledgeDocument
 ): CreateRegulatorySourceInput["sourceType"] {
   return document.documentType === "law" ? "law_portal" : "internal_policy_repo";
 }
 
-function regulatoryTrustLevelForDocument(
+export function regulatoryTrustLevelForDocument(
   document: KnowledgeDocument
 ): CreateRegulatorySourceInput["trustLevel"] {
   return document.documentType === "law" ? "official" : "internal";
 }
 
-function stableRegulatorySourceId(document: KnowledgeDocument) {
+export function stableRegulatorySourceId(document: KnowledgeDocument) {
   const rawKey = [
     document.canonicalKey,
     document.documentType,
