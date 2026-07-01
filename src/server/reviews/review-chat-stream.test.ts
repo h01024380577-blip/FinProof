@@ -85,6 +85,33 @@ describe("streamReviewChat", () => {
         authoritativeLawEvidence: [expect.objectContaining({ title: "전자금융거래법" })]
       })
     );
+    const mcpStages = events
+      .filter((e) => e.type === "mcp")
+      .map((e) => (e as { stage: string }).stage);
+    expect(mcpStages).toEqual(["mcp_search_law", "mcp_get_law_text"]);
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+  });
+
+  it("emits mcp_failed and RAG-only answer when search returns no identifier", async () => {
+    const deps = baseDeps({
+      classifyIntent: vi.fn().mockResolvedValue("law_search"),
+      searchKnowledge: vi.fn().mockResolvedValue([]),
+      lawClient: {
+        searchLaw: vi.fn().mockResolvedValue({ title: "전자금융거래법" }),
+        getLawText: vi.fn()
+      }
+    });
+
+    const events = await collect(
+      streamReviewChat({ review, issue, question: "전자금융거래법 조항 찾아줘" }, deps)
+    );
+
+    expect(deps.lawClient.getLawText).not.toHaveBeenCalled();
+    expect(events.some((e) => e.type === "stage" && e.stage === "mcp_failed")).toBe(true);
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+    expect(deps.answer).toHaveBeenCalledWith(
+      expect.objectContaining({ authoritativeLawEvidence: [] })
+    );
   });
 
   it("degrades to RAG-only when the MCP throws", async () => {
@@ -129,5 +156,26 @@ describe("ndjsonStream", () => {
     const lines = text.trim().split("\n");
     expect(lines).toHaveLength(2);
     expect(JSON.parse(lines[0])).toMatchObject({ stage: "analyzing_intent" });
+  });
+
+  it("emits a sentinel error line when the generator throws mid-stream", async () => {
+    async function* throwing(): AsyncGenerator<ChatProgressEvent> {
+      yield { type: "stage", stage: "analyzing_intent", label: "의도 분석" };
+      throw new Error("boom");
+    }
+
+    const stream = ndjsonStream(throwing());
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let text = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      text += decoder.decode(value);
+    }
+
+    const lines = text.trim().split("\n");
+    expect(lines).toHaveLength(2);
+    expect(JSON.parse(lines[1])).toMatchObject({ type: "error" });
   });
 });

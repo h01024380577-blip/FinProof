@@ -73,7 +73,19 @@ export async function* streamReviewChat(
 
         if (lawText.text.trim().length > 0) {
           authoritativeLawEvidence = [mapLawTextToEvidence(found, lawText, lawName)];
+        } else {
+          yield {
+            type: "stage",
+            stage: "mcp_failed",
+            label: "법제처 조문을 가져오지 못했습니다 — 등록된 근거로 답변합니다"
+          };
         }
+      } else {
+        yield {
+          type: "stage",
+          stage: "mcp_failed",
+          label: "법제처에서 해당 법령을 찾지 못했습니다 — 등록된 근거로 답변합니다"
+        };
       }
     } catch {
       yield {
