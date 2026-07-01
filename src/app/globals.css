@@ -2557,7 +2557,6 @@ a.review-table__row:hover {
   min-width: 0;
   height: auto;
   min-height: var(--issue-card-min-height, 132px);
-  max-height: 220px;
   padding: 12px 14px 14px;
   border: 1px solid var(--line);
   border-radius: 2px;
@@ -2566,8 +2565,7 @@ a.review-table__row:hover {
   text-align: left;
   white-space: normal;
   cursor: pointer;
-  overflow: hidden;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .issue-card__content {
