@@ -1,9 +1,15 @@
-import { NextResponse } from "next/server";
 import type { Evidence, ReviewCase, ReviewIssue } from "@/domain/types";
 import { getAnalysisProviderConfig } from "@/server/analysis/provider-config";
 import { createReranker } from "@/server/analysis/rerank-provider";
+import { classifyLawSearchIntent } from "@/server/ai/law-search-intent";
 import { answerReviewQuestionWithModel } from "@/server/ai/review-ai-service";
 import { createEmbeddingProvider } from "@/server/knowledge/embedding-provider";
+import { createKoreanLawMcpClient } from "@/server/regulatory/korean-law-mcp-client";
+import {
+  ndjsonStream,
+  streamReviewChat,
+  type ReviewChatStreamDeps
+} from "@/server/reviews/review-chat-stream";
 import { createReviewService } from "@/server/reviews/review-service";
 import {
   jsonError,
@@ -66,31 +72,46 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
 
   const analysisConfig = getAnalysisProviderConfig();
   const knowledgeQuery = chatKnowledgeQuery(review, issue, body.question);
-  const queryEmbedding = await createQueryEmbedding(knowledgeQuery);
-  const knowledgeCandidates = await service.searchKnowledgeEvidence(contextValue, {
-    query: knowledgeQuery,
-    productType: review.productType,
-    effectiveOn: review.plannedPublishDate,
-    topK: analysisConfig.rag.topK * 2,
-    minScore: analysisConfig.rag.minScore,
-    queryEmbedding
-  });
-  const knowledgeEvidence: Evidence[] = knowledgeCandidates.length
-    ? (
+
+  const deps: ReviewChatStreamDeps = {
+    classifyIntent: (question) => classifyLawSearchIntent(question),
+    searchKnowledge: async () => {
+      const queryEmbedding = await createQueryEmbedding(knowledgeQuery);
+      const knowledgeCandidates = await service.searchKnowledgeEvidence(contextValue, {
+        query: knowledgeQuery,
+        productType: review.productType,
+        effectiveOn: review.plannedPublishDate,
+        topK: analysisConfig.rag.topK * 2,
+        minScore: analysisConfig.rag.minScore,
+        queryEmbedding
+      });
+
+      if (!knowledgeCandidates.length) {
+        return [] as Evidence[];
+      }
+
+      return (
         await createReranker().rerank({
           query: knowledgeQuery,
           candidates: knowledgeCandidates
         })
-      ).slice(0, analysisConfig.rerank.topK)
-    : [];
+      ).slice(0, analysisConfig.rerank.topK);
+    },
+    lawClient: createKoreanLawMcpClient(),
+    answer: (input) => answerReviewQuestionWithModel(input),
+    coverageMinScore: analysisConfig.rag.minScore
+  };
 
-  const response = await answerReviewQuestionWithModel({
-    review,
-    issue,
-    question: body.question,
-    history: body.history,
-    knowledgeEvidence
+  const events = streamReviewChat(
+    { review, issue, question: body.question, history: body.history },
+    deps
+  );
+
+  return new Response(ndjsonStream(events), {
+    headers: {
+      "content-type": "application/x-ndjson; charset=utf-8",
+      "cache-control": "no-cache, no-transform",
+      "x-accel-buffering": "no"
+    }
   });
-
-  return NextResponse.json({ response });
 }
