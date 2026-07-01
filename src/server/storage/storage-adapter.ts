@@ -39,4 +39,8 @@ export interface ReviewStorageAdapter {
   putRegulatorySourceText(input: { sourceId: string; tenantId: string; text: string }): Promise<void>;
   /** 직전 정규화 텍스트를 반환한다. 없으면 null. */
   getRegulatorySourceText(input: { sourceId: string; tenantId: string }): Promise<string | null>;
+  /** search_law로 해석한 법령ID를 캐시한다(재검색 방지). */
+  putRegulatoryLawId(input: { sourceId: string; tenantId: string; lawId: string }): Promise<void>;
+  /** 캐시된 법령ID를 반환한다. 없으면 null. */
+  getRegulatoryLawId(input: { sourceId: string; tenantId: string }): Promise<string | null>;
 }

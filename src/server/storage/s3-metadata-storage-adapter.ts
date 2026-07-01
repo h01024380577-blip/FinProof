@@ -188,6 +188,49 @@ export function createS3MetadataStorageAdapter({
 
         throw error;
       }
+    },
+
+    async putRegulatoryLawId(input: {
+      sourceId: string;
+      tenantId: string;
+      lawId: string;
+    }): Promise<void> {
+      const key = `regulatory/law-id/${input.tenantId}/${input.sourceId}.txt`;
+
+      await client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: key,
+          Body: input.lawId,
+          ContentType: "text/plain; charset=utf-8"
+        })
+      );
+    },
+
+    async getRegulatoryLawId(input: {
+      sourceId: string;
+      tenantId: string;
+    }): Promise<string | null> {
+      const key = `regulatory/law-id/${input.tenantId}/${input.sourceId}.txt`;
+
+      try {
+        const response = (await client.send(
+          new GetObjectCommand({
+            Bucket: bucket,
+            Key: key
+          })
+        )) as { Body?: { transformToString: (encoding?: string) => Promise<string> } };
+
+        return (await response.Body?.transformToString("utf-8")) ?? null;
+      } catch (error) {
+        const name = (error as { name?: string }).name;
+
+        if (name === "NoSuchKey" || name === "NotFound") {
+          return null;
+        }
+
+        throw error;
+      }
     }
   };
 }
