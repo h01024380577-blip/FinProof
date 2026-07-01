@@ -51,7 +51,7 @@ function deps(overrides: Record<string, unknown> = {}) {
     },
     lawClient: {
       getLawText: vi.fn(async () => ({ text: "시행일: 2026-07-01\n[현행]\n제1조 v1", effectiveFrom: "2026-07-01", isCurrent: true })),
-      searchLaw: vi.fn(async () => ({ lawId: "001234" })),
+      searchLaw: vi.fn(async () => ({ lawId: "001234", title: "금융소비자 보호에 관한 법률" })),
       searchAdminRule: vi.fn(async () => ({ serialNo: "2100000276850", title: "금융소비자 보호에 관한 감독규정" })),
       getAdminRuleText: vi.fn(async () => ({ text: "제1조(목적) 행정규칙 본문 v1" }))
     }
@@ -153,6 +153,49 @@ describe("createRegulatorySourcePoller (knowledge-document anchored)", () => {
     expect(d.lawClient.getAdminRuleText).toHaveBeenCalledWith("2100000276850");
     expect(d.lawClient.getLawText).not.toHaveBeenCalled();
     expect(summary.checked).toBe(1);
+  });
+
+  it("skips + audits ambiguous_match when the search hit title differs from the document title", async () => {
+    const d = deps({
+      store: {
+        ...deps().store,
+        listKnowledgeDocuments: vi.fn(async () => [lawDoc({ id: "ar", title: "은행업감독규정" })])
+      },
+      lawClient: {
+        ...deps().lawClient,
+        searchAdminRule: vi.fn(async () => ({ serialNo: "2100000272466", title: "상호저축은행업감독규정" }))
+      }
+    });
+    const summary = await createRegulatorySourcePoller(d as never).pollAll(context);
+
+    expect(d.runSourceCheck).not.toHaveBeenCalled();
+    expect(d.storage.putRegulatoryLawId).not.toHaveBeenCalled();
+    expect(summary.skipped).toBe(1);
+    expect(d.store.recordAuditEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        afterValue: expect.objectContaining({ reason: "ambiguous_match", matchedTitle: "상호저축은행업감독규정" })
+      })
+    );
+  });
+
+  it("matches titles ignoring parenthetical suffixes and middots", async () => {
+    const d = deps({
+      store: {
+        ...deps().store,
+        listKnowledgeDocuments: vi.fn(async () => [
+          lawDoc({ id: "px", title: "표시·광고의 공정화에 관한 법률 (표시광고법)" })
+        ])
+      },
+      lawClient: {
+        ...deps().lawClient,
+        searchLaw: vi.fn(async () => ({ lawId: "005", title: "표시ㆍ광고의 공정화에 관한 법률" }))
+      }
+    });
+    const summary = await createRegulatorySourcePoller(d as never).pollAll(context);
+
+    expect(summary.checked).toBe(1);
+    expect(d.storage.putRegulatoryLawId).toHaveBeenCalled();
   });
 
   it("ignores non-law, unapproved, superseded and auto-ingested documents", async () => {

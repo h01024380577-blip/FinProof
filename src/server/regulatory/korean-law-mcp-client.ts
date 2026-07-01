@@ -164,7 +164,10 @@ export function createKoreanLawMcpClient(
       const lawId =
         text.match(/(?:법령ID|lawId|LawId)\s*[:：]?\s*(\d{4,})/)?.[1] ??
         (hasMstLabel ? undefined : text.match(/\b(\d{6,})\b/)?.[1]);
-      const title = text.match(/(?:법령명|법령명한글|title)\s*[:：]?\s*(.+)/)?.[1]?.trim();
+      // search_law lists hits as "1. <법령명> [현행]"; fall back to a "법령명:" label form.
+      const title =
+        text.match(/^\s*(?:📍\s*)?1\.\s*(.+?)(?:\s*\[[^\]]*\])?\s*$/m)?.[1]?.trim() ??
+        text.match(/(?:법령명|법령명한글|title)\s*[:：]?\s*(.+)/)?.[1]?.trim();
 
       return {
         ...(lawId ? { lawId } : {}),
@@ -182,7 +185,7 @@ export function createKoreanLawMcpClient(
 
       const serialNo = text.match(/행정규칙일련번호\s*[:：]?\s*(\d{6,})/)?.[1];
       const adminRuleId = text.match(/행정규칙ID\s*[:：]?\s*(\d+)/)?.[1];
-      const title = text.match(/^\s*1\.\s*(.+?)\s*$/m)?.[1]?.trim();
+      const title = text.match(/^\s*1\.\s*(.+?)(?:\s*\[[^\]]*\])?\s*$/m)?.[1]?.trim();
 
       return {
         ...(serialNo ? { serialNo } : {}),
