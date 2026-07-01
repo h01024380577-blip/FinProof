@@ -22,6 +22,16 @@ describe("mapLawTextToEvidence", () => {
     expect(evidence.relevanceScore).toBeGreaterThan(0.5);
   });
 
+  it("truncates quoteSummary to at most 600 characters for long law text", () => {
+    const longText = "제1조 ".repeat(300);
+    const evidence = mapLawTextToEvidence(
+      { lawId: "999999", title: "테스트법" },
+      { text: longText, isCurrent: false },
+      "테스트법"
+    );
+    expect(evidence.quoteSummary.length).toBeLessThanOrEqual(600);
+  });
+
   it("falls back to the searched law name when the search result has no title", () => {
     const evidence = mapLawTextToEvidence(
       { mst: "267581" },
@@ -32,5 +42,6 @@ describe("mapLawTextToEvidence", () => {
     expect(evidence.id).toBe("law-mcp-267581");
     expect(evidence.title).toBe("어떤 규정법");
     expect(evidence.section).toBeUndefined();
+    expect(evidence.effectiveFrom).toBeUndefined();
   });
 });
