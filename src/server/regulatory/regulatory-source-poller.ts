@@ -49,6 +49,20 @@ function isAdminRuleTitle(title: string): boolean {
   return /규정|고시|훈령|예규|지침|세칙/.test(title);
 }
 
+// 정확명 일치 가드용 정규화: 괄호그룹·공백·가운뎃점 제거 후 비교.
+// 이름 검색이 유사명(예: 은행업감독규정→상호저축은행업감독규정)을 잡아도 잘못된 법을 추적하지 않도록 한다.
+function normalizeTitle(value: string): string {
+  return value
+    .replace(/[（(][^）)]*[）)]/g, "")
+    .replace(/[\s·ㆍ‧・]/g, "")
+    .toLowerCase();
+}
+
+function titlesMatch(candidate: string | null | undefined, documentTitle: string): boolean {
+  if (!candidate) return false;
+  return normalizeTitle(candidate) === normalizeTitle(documentTitle);
+}
+
 function parseLawIdentifier(value: string | null | undefined): { lawId?: string; mst?: string } | null {
   if (!value) return null;
   const trimmed = value.trim();
@@ -150,6 +164,23 @@ export function createRegulatorySourcePoller(deps: RegulatorySourcePollerDeps = 
                 targetType: "regulatory_source",
                 targetId: sourceId,
                 afterValue: { reason: "law_id_unresolved", title: document.title, kind: isAdmin ? "admin_rule" : "law" }
+              });
+              continue;
+            }
+            // Exact-title guard: only accept a hit whose name matches the document title.
+            if (!titlesMatch(matchedTitle, document.title)) {
+              summary.skipped += 1;
+              await safeAudit({
+                action: "regulatory_source.poll_skipped",
+                targetType: "regulatory_source",
+                targetId: sourceId,
+                afterValue: {
+                  reason: "ambiguous_match",
+                  title: document.title,
+                  matchedTitle,
+                  resolvedIdentifier: resolved,
+                  kind: isAdmin ? "admin_rule" : "law"
+                }
               });
               continue;
             }
