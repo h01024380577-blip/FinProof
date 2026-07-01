@@ -2,7 +2,7 @@ import type { Evidence } from "@/domain/types";
 
 const LAW_NAME_PATTERNS: RegExp[] = [
   /[가-힣]{2,}(?:\s+[가-힣]{2,})*\s*에\s*관한\s*법률/,
-  /[가-힣A-Za-z0-9·]{2,}법(?:률)?/
+  /[가-힣A-Za-z0-9·]{2,}(?:\s[가-힣A-Za-z0-9·]{1,10})?법(?:률)?/
 ];
 
 export function extractLawName(question: string): string | undefined {

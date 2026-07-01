@@ -18,7 +18,11 @@ describe("extractLawName", () => {
   });
 
   it("extracts an '…에 관한 법률' form", () => {
-    expect(extractLawName("금융소비자 보호에 관한 법률 조항 알려줘")).toContain("관한 법률");
+    expect(extractLawName("금융소비자 보호에 관한 법률 조항 알려줘")).toBe("금융소비자 보호에 관한 법률");
+  });
+
+  it("extracts a spaced two-part short name in full", () => {
+    expect(extractLawName("개인정보 보호법 조항 찾아줘")).toBe("개인정보 보호법");
   });
 
   it("returns undefined when no law name is present", () => {
@@ -48,6 +52,12 @@ describe("assessLawCoverage", () => {
   it("is not covered when matching evidence is below threshold", () => {
     expect(
       assessLawCoverage([lawEvidence("전자금융거래법", 0.3)], "전자금융거래법 조항 찾아줘", minScore)
+    ).toBe(false);
+  });
+
+  it("does not treat a different 보호법 as coverage for a spaced law name", () => {
+    expect(
+      assessLawCoverage([lawEvidence("금융소비자보호법", 0.8)], "개인정보 보호법 조항 찾아줘", minScore)
     ).toBe(false);
   });
 });
