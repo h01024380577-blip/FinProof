@@ -21,8 +21,15 @@ export type GetLawTextResult = {
   isCurrent: boolean;
 };
 
+export type SearchLawResult = {
+  lawId?: string;
+  mst?: string;
+  title?: string;
+};
+
 export type KoreanLawMcpClient = {
   getLawText(params: GetLawTextParams): Promise<GetLawTextResult>;
+  searchLaw(query: string): Promise<SearchLawResult>;
 };
 
 function envValue(env: Env, key: string): string | undefined {
@@ -71,46 +78,70 @@ export function createKoreanLawMcpClient(
   const timeoutMs = Number(envValue(env, "KOREAN_LAW_MCP_TIMEOUT_MS") ?? "60000");
   const url = oc ? `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}oc=${encodeURIComponent(oc)}` : baseUrl;
 
+  async function callTool(
+    toolName: string,
+    args: Record<string, unknown>
+  ): Promise<string> {
+    const response = await fetchImpl(url, {
+      method: "POST",
+      signal: AbortSignal.timeout(Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 60000),
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: toolName,
+          arguments: args
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `korean-law-mcp ${toolName} failed: ${response.status ?? "unknown"} ${
+          response.statusText ?? ""
+        }`.trim()
+      );
+    }
+
+    const body = (await response.json()) as { result?: unknown; error?: { message?: string } };
+    if (body.error) {
+      throw new Error(`korean-law-mcp returned error: ${body.error.message ?? "unknown"}`);
+    }
+
+    return extractMcpText(body.result).trim();
+  }
+
   return {
     async getLawText(params) {
-      const response = await fetchImpl(url, {
-        method: "POST",
-        signal: AbortSignal.timeout(Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 60000),
-        headers: { "content-type": "application/json", accept: "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "tools/call",
-          params: {
-            name: "get_law_text",
-            arguments: {
-              ...(params.lawId ? { lawId: params.lawId } : {}),
-              ...(params.mst ? { MST: params.mst } : {}), // law.go.kr API expects uppercase "MST"
-              ...(params.jo ? { jo: params.jo } : {})
-            }
-          }
-        })
+      const text = await callTool("get_law_text", {
+        ...(params.lawId ? { lawId: params.lawId } : {}),
+        ...(params.mst ? { MST: params.mst } : {}), // law.go.kr API expects uppercase "MST"
+        ...(params.jo ? { jo: params.jo } : {})
       });
 
-      if (!response.ok) {
-        throw new Error(
-          `korean-law-mcp get_law_text failed: ${response.status ?? "unknown"} ${
-            response.statusText ?? ""
-          }`.trim()
-        );
-      }
-
-      const body = (await response.json()) as { result?: unknown; error?: { message?: string } };
-      if (body.error) {
-        throw new Error(`korean-law-mcp returned error: ${body.error.message ?? "unknown"}`);
-      }
-
-      const text = extractMcpText(body.result).trim();
       return {
         text,
         effectiveFrom: parseHeaderDate(text, "시행일"),
         promulgatedAt: parseHeaderDate(text, "공포일"),
         isCurrent: text.includes("[현행]")
+      };
+    },
+
+    async searchLaw(query) {
+      const text = await callTool("search_law", { query, display: 1 });
+
+      const lawId =
+        text.match(/(?:법령ID|lawId|LawId|ID)\s*[:：]?\s*(\d{4,})/)?.[1] ??
+        text.match(/\b(\d{6,})\b/)?.[1];
+      const mst = text.match(/(?:MST|일련번호)\s*[:：]?\s*(\d{4,})/)?.[1];
+      const title = text.match(/(?:법령명|법령명한글|title)\s*[:：]?\s*(.+)/)?.[1]?.trim();
+
+      return {
+        ...(lawId ? { lawId } : {}),
+        ...(mst ? { mst } : {}),
+        ...(title ? { title } : {})
       };
     }
   };
