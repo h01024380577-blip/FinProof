@@ -28,14 +28,13 @@ const OVERCLAIM_TERMS = [
 
 const CONDITION_TERMS = [
   "credit review",
-  "review",
   "screening",
   "may vary",
   "subject to",
   "depending",
   "eligibility",
   "심사",
-  "신용",
+  "신용심사",
   "변동",
   "달라질",
   "조건",
@@ -43,9 +42,20 @@ const CONDITION_TERMS = [
   "기준"
 ];
 
-function matchedTerms(haystack: string, terms: string[]): string[] {
+function matchedTerms(haystack: string, terms: string[], guardNegation = false): string[] {
   const lower = haystack.toLowerCase();
-  return terms.filter((term) => lower.includes(term.toLowerCase()));
+  return terms.filter((term) => {
+    const needle = term.toLowerCase();
+    const idx = lower.indexOf(needle);
+    if (idx === -1) {
+      return false;
+    }
+    if (!guardNegation) {
+      return true;
+    }
+    const prefix = lower.slice(Math.max(0, idx - 7), idx);
+    return !/\b(no|not|never|cannot)\s+$/.test(prefix);
+  });
 }
 
 function clamp01(value: number): number {
@@ -64,8 +74,8 @@ export function deriveSemanticRelation(input: {
   missingConditionTerms: string[];
   overclaimTerms: string[];
 } {
-  const overclaimInHypothesis = matchedTerms(input.hypothesis, OVERCLAIM_TERMS);
-  const overclaimInPremise = matchedTerms(input.premise, OVERCLAIM_TERMS);
+  const overclaimInHypothesis = matchedTerms(input.hypothesis, OVERCLAIM_TERMS, true);
+  const overclaimInPremise = matchedTerms(input.premise, OVERCLAIM_TERMS, true);
   const overclaimTerms = overclaimInHypothesis.filter(
     (term) => !overclaimInPremise.includes(term)
   );
@@ -102,11 +112,16 @@ function reconcileMqm(finding: LocalizedRiskFinding): LocalizedRiskFinding {
     return finding;
   }
 
-  let mqm = finding.mqm;
+  const original = finding.mqm;
+  let mqm = original;
   if (relation === "contradiction" || relation === "missing-condition") {
     mqm = { ...mqm, recommendedAction: "change_request" };
   }
-  if (relation === "missing-condition" && mqm.errorType === "omission" && mqm.severity === "minor") {
+  if (
+    relation === "missing-condition" &&
+    original.errorType === "omission" &&
+    original.severity === "minor"
+  ) {
     mqm = { ...mqm, severity: "major" };
   }
 

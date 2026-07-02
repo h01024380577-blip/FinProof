@@ -73,6 +73,24 @@ describe("deriveSemanticRelation", () => {
     });
     expect(result.relation).toBe("equivalent");
   });
+
+  it("returns weaker when entailment is mid-range with no term drift", () => {
+    const result = deriveSemanticRelation({
+      scores: { entailment: 0.5, neutral: 0.4, contradiction: 0.1 },
+      premise: "Our service is available online.",
+      hypothesis: "Processing is fast."
+    });
+    expect(result.relation).toBe("weaker");
+  });
+
+  it("does not flag a negated overclaim phrase as stronger", () => {
+    const result = deriveSemanticRelation({
+      scores: { entailment: 0.4, neutral: 0.5, contradiction: 0.1 },
+      premise: "대출은 신용심사 결과에 따라 승인 여부와 금리가 달라질 수 있습니다.",
+      hypothesis: "There is no guaranteed approval; results depend on review."
+    });
+    expect(result.overclaimTerms).not.toContain("guaranteed");
+  });
 });
 
 describe("enrichSemanticPreservation", () => {
