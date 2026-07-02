@@ -9,11 +9,19 @@ export const MIN_MATCHED_EVIDENCE_SCORE = 0.5;
 // citing only the ad itself. Mirrors the retrieval/selection knowledge floors.
 export const KNOWLEDGE_MATCHED_EVIDENCE_SCORE = 0.1;
 
-export function isMatchedEvidence(evidence: Pick<Evidence, "relevanceScore">) {
-  return evidence.relevanceScore >= MIN_MATCHED_EVIDENCE_SCORE;
+function isRegisteredKnowledgeSource(sourceType: Evidence["sourceType"]) {
+  return sourceType === "law" || sourceType === "internal_policy";
 }
 
-export function filterMatchedEvidence<T extends Pick<Evidence, "relevanceScore">>(
+export function isMatchedEvidence(evidence: Pick<Evidence, "relevanceScore" | "sourceType">) {
+  const floor = isRegisteredKnowledgeSource(evidence.sourceType)
+    ? KNOWLEDGE_MATCHED_EVIDENCE_SCORE
+    : MIN_MATCHED_EVIDENCE_SCORE;
+
+  return evidence.relevanceScore >= floor;
+}
+
+export function filterMatchedEvidence<T extends Pick<Evidence, "relevanceScore" | "sourceType">>(
   evidence: T[]
 ): T[] {
   return evidence.filter(isMatchedEvidence);
