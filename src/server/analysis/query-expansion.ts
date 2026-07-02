@@ -9,6 +9,8 @@ const INSTRUCTIONS = [
 
 const MAX_CONCEPT_CHARS = 400;
 
+const NON_ANSWER = /^(없음|해당\s*없음|해당사항\s*없음|키워드.*없|.*찾을\s*수\s*없)/;
+
 /**
  * Expands a short ad into Korean compliance-risk concept keywords so that knowledge
  * retrieval/reranking can bridge the vocabulary gap between marketing copy and formal
@@ -33,11 +35,13 @@ export async function expandComplianceQuery(
       fallback: ""
     });
 
-    return text
+    const normalized = text
       .replace(/[-•*\d.,:;!?()[\]{}"'`~|\\/]+/g, " ")
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, MAX_CONCEPT_CHARS);
+
+    return NON_ANSWER.test(normalized) ? "" : normalized;
   } catch {
     return "";
   }

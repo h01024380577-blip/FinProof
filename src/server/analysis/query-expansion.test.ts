@@ -34,4 +34,17 @@ describe("expandComplianceQuery", () => {
     const result = await expandComplianceQuery("긴급특판", provider);
     expect(result).toBe("한정판매 선착순 희소성");
   });
+
+  it("treats a Korean non-answer response as empty", async () => {
+    for (const nonAnswer of ["해당 없음", "없음", "키워드를 찾을 수 없습니다", "해당사항 없음"]) {
+      const provider = modelProvider(nonAnswer);
+      expect(await expandComplianceQuery("긴급특판", provider)).toBe("");
+    }
+  });
+
+  it("keeps concept terms that merely contain a risk keyword unrelated to '없음'", async () => {
+    // Guard must not over-trigger: real concept output should pass through.
+    const provider = modelProvider("한정판매 선착순 과장광고");
+    expect(await expandComplianceQuery("긴급특판", provider)).toBe("한정판매 선착순 과장광고");
+  });
 });
