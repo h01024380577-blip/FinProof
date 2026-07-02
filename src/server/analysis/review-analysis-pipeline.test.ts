@@ -1095,6 +1095,50 @@ describe("review analysis pipeline", () => {
     });
   });
 
+  it("reranks against extracted document text, not placeholder intake metadata", async () => {
+    // Regression: uploaded cases keep placeholder intake metadata (promotionalCopy /
+    // disclosure / productDescription are boilerplate until a human edits them). If the
+    // reranker is fed the metadata-only query, it scores real regulation chunks against
+    // "분석 대기" boilerplate and crushes every knowledge candidate to ~noise, so issues
+    // end up citing only the uploaded ad. The rerank query must reflect the extracted ad.
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const placeholderReview: ReviewCase = {
+      ...review,
+      promotionalCopy: "실제 업로드 자료 분석 대기",
+      disclosure: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
+      productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다."
+    };
+    const rerank = vi.fn(async ({ candidates }) => candidates);
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence: vi.fn(async () => []) },
+      reranker: { provider: "fixture-reranker", rerank },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "누구나 무조건 최고 연 5.0% 우대금리 제공",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    await pipeline.run({ review: placeholderReview, scope });
+
+    expect(rerank).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: expect.stringContaining("누구나 무조건 최고 연 5.0%")
+      })
+    );
+  });
+
   it("builds the knowledge retrieval query from extracted document text, not only intake metadata", async () => {
     // Uploaded cases carry placeholder intake metadata; the real ad content only exists
     // in the OCR-extracted documents. Knowledge retrieval must query the extracted text.

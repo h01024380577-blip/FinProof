@@ -1597,7 +1597,6 @@ export function createReviewAnalysisPipeline({
     },
     async run({ review, scope }) {
       const config = getAnalysisProviderConfig();
-      const query = reviewRagQuery(review);
       // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
       // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
       const [rawExtractedDocuments] = await Promise.all([
@@ -1617,8 +1616,12 @@ export function createReviewAnalysisPipeline({
         extractedDocuments: analysisDocuments,
         scope
       });
+      // Rerank with the same OCR-enriched query used for retrieval. Uploaded cases carry
+      // placeholder intake metadata, so a metadata-only query (reviewRagQuery) makes the
+      // reranker score real regulation chunks against boilerplate and crush every knowledge
+      // candidate to ~noise — see selectEvidenceCandidates for the downstream impact.
       const rerankedCandidates = await reranker.rerank({
-        query,
+        query: analysisRagQuery(review, analysisDocuments),
         candidates: retrievedCandidates
       });
       const evidenceCandidates = selectEvidenceCandidates(rerankedCandidates, {
