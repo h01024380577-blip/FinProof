@@ -4330,18 +4330,22 @@ a.review-table__row:hover {
   top: calc(100% + 10px);
   right: 0;
   z-index: 30;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   width: min(360px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: var(--shadow-elevated);
+  overflow: hidden;
 }
 
 .notification-center__header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -4372,6 +4376,9 @@ a.review-table__row:hover {
   gap: 8px;
   margin: 0;
   padding: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
 }
 
