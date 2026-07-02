@@ -2,7 +2,18 @@ import type { ReviewCase } from "@/domain/types";
 import type { ModelProvider } from "@/server/ai/model-provider";
 import { runMultilingualRiskTeam } from "./multilingual-risk-team";
 import type { MultilingualSegment } from "./multilingual";
-import type { RagEvidenceCandidate } from "./review-analysis-pipeline";
+import { segmentMultilingualDocuments } from "./multilingual";
+import type { RagEvidenceCandidate, ExtractedDocument } from "./review-analysis-pipeline";
+
+function document(text: string): ExtractedDocument {
+  return {
+    fileId: "file-1",
+    fileName: "poster.txt",
+    text,
+    confidence: 0.94,
+    provider: "local-text-extractor"
+  };
+}
 
 const review: ReviewCase = {
   id: "rc-multilingual-001",
@@ -689,6 +700,106 @@ describe("runMultilingualRiskTeam", () => {
     ]);
   });
 
+  it("normalizes an mqm block on localized findings", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            complianceMeaning: "승인 확정처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["guaranteed approval"],
+            riskLevelHint: "high",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.88,
+            mqm: {
+              errorType: "addition",
+              complianceRiskType: "approval_guarantee",
+              severity: "major",
+              targetSpan: "Guaranteed approval",
+              evidenceType: "product_doc",
+              recommendedAction: "change_request"
+            }
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({ mappings: [] })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes"
+        })
+      ],
+      evidenceCandidates: [],
+      provider
+    });
+
+    expect(result.localizedRiskFindings[0]?.mqm).toEqual({
+      errorType: "addition",
+      complianceRiskType: "approval_guarantee",
+      severity: "major",
+      targetSpan: "Guaranteed approval",
+      evidenceType: "product_doc",
+      recommendedAction: "change_request"
+    });
+  });
+
+  it("falls back to safe mqm defaults on unknown enum values", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            complianceMeaning: "승인 확정처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["guaranteed approval"],
+            riskLevelHint: "caution",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.8,
+            mqm: {
+              errorType: "not_a_real_type",
+              complianceRiskType: "approval_guarantee",
+              severity: "spicy",
+              targetSpan: "Guaranteed approval",
+              evidenceType: "vibes",
+              recommendedAction: "change_request"
+            }
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({ mappings: [] })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: [
+        segment({
+          id: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes"
+        })
+      ],
+      evidenceCandidates: [],
+      provider
+    });
+
+    expect(result.localizedRiskFindings[0]?.mqm).toEqual({
+      errorType: "terminology",
+      complianceRiskType: "approval_guarantee",
+      severity: "minor",
+      targetSpan: "Guaranteed approval",
+      evidenceType: "product_doc",
+      recommendedAction: "change_request"
+    });
+  });
+
   it("treats malformed JSON fragments as empty agent output", async () => {
     const provider = providerReturning({
       english_translator_risk: '[{"segmentId":"seg-en-001","confidence":0.}]'
@@ -711,5 +822,46 @@ describe("runMultilingualRiskTeam", () => {
     expect(result.koreanComplianceMappings).toEqual([]);
     expect(result.agentFindings).toEqual([]);
     expect(result.errors).toEqual([]);
+  });
+
+  it("enriches findings with semanticPreservation when an nli client is supplied", async () => {
+    const provider = providerReturning({
+      english_translator_risk: JSON.stringify({
+        findings: [
+          {
+            segmentId: "seg-en-001",
+            language: "en",
+            complianceMeaning: "승인 확정처럼 표현합니다.",
+            riskCategory: "both",
+            riskSignals: ["guaranteed approval"],
+            riskLevelHint: "caution",
+            suggestedCopyKoreanMeaning: "승인은 심사 후 달라질 수 있습니다.",
+            confidence: 0.8,
+            mqm: {
+              errorType: "omission",
+              complianceRiskType: "required_disclosure_missing",
+              severity: "minor",
+              targetSpan: "Guaranteed approval",
+              evidenceType: "product_doc",
+              recommendedAction: "hold"
+            }
+          }
+        ]
+      }),
+      korean_compliance_mapping: JSON.stringify({ mappings: [] })
+    });
+
+    const result = await runMultilingualRiskTeam({
+      review,
+      segments: segmentMultilingualDocuments([
+        document("대출 광고\nGuaranteed approval in 3 minutes\n금리는 심사 후 확정")
+      ]),
+      evidenceCandidates: [],
+      provider,
+      nliClient: { classify: async () => ({ entailment: 0.1, neutral: 0.2, contradiction: 0.7 }) }
+    });
+
+    expect(result.localizedRiskFindings[0]?.semanticPreservation?.semanticRelation).toBe("contradiction");
+    expect(result.localizedRiskFindings[0]?.mqm?.recommendedAction).toBe("change_request");
   });
 });

@@ -1,5 +1,6 @@
 import type { ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import type { ModelProvider } from "@/server/ai/model-provider";
+import type { NliClient } from "@/server/ai/nli-client";
 import {
   KOREAN_COMPLIANCE_MAPPING_PROMPT,
   multilingualTranslatorRiskPrompt
@@ -19,6 +20,7 @@ import {
   normalizeAiSuggestedAction,
   normalizeAnalysisRiskLevel
 } from "./risk-policy";
+import { enrichSemanticPreservation } from "./semantic-preservation";
 
 type LanguageAgentId =
   | "english_translator_risk"
@@ -154,6 +156,45 @@ function normalizeAction(value: unknown): ReviewIssue["suggestedAction"] {
   return normalizeAiSuggestedAction(value);
 }
 
+// keep the runtime arrays below in sync with the MQM unions in multilingual.ts
+const MQM_ERROR_TYPES = [
+  "mistranslation",
+  "omission",
+  "addition",
+  "terminology",
+  "inconsistency",
+  "locale_convention"
+] as const;
+
+const MQM_SEVERITIES = ["minor", "major", "critical"] as const;
+const MQM_EVIDENCE_TYPES = ["product_doc", "internal_policy", "law", "case_history"] as const;
+
+function normalizeMqm(value: unknown): LocalizedRiskFinding["mqm"] {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const fields = value as Record<string, unknown>;
+  const errorType = (MQM_ERROR_TYPES as ReadonlyArray<unknown>).includes(fields.errorType)
+    ? (fields.errorType as (typeof MQM_ERROR_TYPES)[number])
+    : "terminology";
+  const severity = (MQM_SEVERITIES as ReadonlyArray<unknown>).includes(fields.severity)
+    ? (fields.severity as (typeof MQM_SEVERITIES)[number])
+    : "minor";
+  const evidenceType = (MQM_EVIDENCE_TYPES as ReadonlyArray<unknown>).includes(fields.evidenceType)
+    ? (fields.evidenceType as (typeof MQM_EVIDENCE_TYPES)[number])
+    : "product_doc";
+
+  return {
+    errorType,
+    complianceRiskType: stringField(fields.complianceRiskType),
+    severity,
+    targetSpan: stringField(fields.targetSpan),
+    evidenceType,
+    recommendedAction: normalizeAction(fields.recommendedAction)
+  };
+}
+
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
@@ -212,7 +253,7 @@ function languageAgentInput(input: {
     evidenceCandidates: evidencePayload(input.evidenceCandidates),
     outputSchema: {
       findings:
-        "array of { id, segmentId, language, originalText, literalTranslation, complianceMeaning, riskCategory, riskSignals, riskLevelHint, suggestedCopyOriginalLanguage, suggestedCopyKoreanMeaning, confidence }. id must be unique per localized risk finding.",
+        "array of { id, segmentId, language, originalText, literalTranslation, complianceMeaning, riskCategory, riskSignals, riskLevelHint, suggestedCopyOriginalLanguage, suggestedCopyKoreanMeaning, confidence, mqm }. mqm is { errorType, complianceRiskType, severity, targetSpan, evidenceType, recommendedAction }. id must be unique per localized risk finding.",
       allowedRiskCategories: ["expression_risk", "compliance_risk", "both"],
       allowedRiskLevelHints: analysisRiskLevels
     }
@@ -271,7 +312,8 @@ function normalizeLocalizedFinding(
       segment.originalText
     ),
     suggestedCopyKoreanMeaning: stringField(fields.suggestedCopyKoreanMeaning),
-    confidence: clampConfidence(fields.confidence)
+    confidence: clampConfidence(fields.confidence),
+    mqm: normalizeMqm(fields.mqm)
   };
 }
 
@@ -473,6 +515,7 @@ export async function runMultilingualRiskTeam(input: {
   segments: MultilingualSegment[];
   evidenceCandidates: RagEvidenceCandidate[];
   provider: ModelProvider;
+  nliClient?: NliClient;
 }): Promise<MultilingualRiskTeamResult> {
   const localizedRiskFindings: LocalizedRiskFinding[] = [];
   const errors: MultilingualAgentError[] = [];
@@ -513,6 +556,22 @@ export async function runMultilingualRiskTeam(input: {
         agentType,
         language,
         message: errorMessage(error)
+      });
+    }
+  }
+
+  if (input.nliClient && localizedRiskFindings.length > 0) {
+    try {
+      const enriched = await enrichSemanticPreservation({
+        findings: localizedRiskFindings,
+        review: input.review,
+        client: input.nliClient
+      });
+      localizedRiskFindings.splice(0, localizedRiskFindings.length, ...enriched);
+    } catch (error) {
+      errors.push({
+        agentType: "korean_compliance_mapping",
+        message: `nli_enrichment_failed: ${errorMessage(error)}`
       });
     }
   }

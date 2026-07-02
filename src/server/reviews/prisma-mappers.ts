@@ -148,6 +148,86 @@ function riskCategory(value: unknown): MultilingualIssueContext["riskCategory"] 
     : undefined;
 }
 
+const SEMANTIC_RELATIONS = [
+  "equivalent",
+  "stronger",
+  "weaker",
+  "contradiction",
+  "missing-condition"
+] as const;
+const MQM_ERROR_TYPES = [
+  "mistranslation",
+  "omission",
+  "addition",
+  "terminology",
+  "inconsistency",
+  "locale_convention"
+] as const;
+const MQM_SEVERITIES = ["minor", "major", "critical"] as const;
+const MQM_EVIDENCE_TYPES = ["product_doc", "internal_policy", "law", "case_history"] as const;
+const SUGGESTED_ACTIONS = ["approve", "change_request", "reject", "hold"] as const;
+
+function numberOr(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function semanticPreservationValue(
+  value: unknown
+): MultilingualIssueContext["semanticPreservation"] {
+  const obj = objectValue(value);
+  const probs = objectValue(obj?.nliProbabilities);
+  const relation = stringValue(obj?.semanticRelation);
+
+  if (!obj || !probs || !relation || !(SEMANTIC_RELATIONS as ReadonlyArray<unknown>).includes(relation)) {
+    return undefined;
+  }
+
+  return {
+    semanticRelation: relation as (typeof SEMANTIC_RELATIONS)[number],
+    semanticShiftScore: numberOr(obj.semanticShiftScore),
+    missingConditionTerms: stringArray(obj.missingConditionTerms),
+    overclaimTerms: stringArray(obj.overclaimTerms),
+    nliProbabilities: {
+      entailment: numberOr(probs.entailment),
+      neutral: numberOr(probs.neutral),
+      contradiction: numberOr(probs.contradiction)
+    },
+    model: stringValue(obj.model) ?? ""
+  };
+}
+
+function mqmValue(value: unknown): MultilingualIssueContext["mqm"] {
+  const obj = objectValue(value);
+  const errorType = stringValue(obj?.errorType);
+  const severity = stringValue(obj?.severity);
+  const evidenceType = stringValue(obj?.evidenceType);
+  const action = stringValue(obj?.recommendedAction);
+
+  if (
+    !obj ||
+    !errorType ||
+    !(MQM_ERROR_TYPES as ReadonlyArray<unknown>).includes(errorType) ||
+    !severity ||
+    !(MQM_SEVERITIES as ReadonlyArray<unknown>).includes(severity) ||
+    !evidenceType ||
+    !(MQM_EVIDENCE_TYPES as ReadonlyArray<unknown>).includes(evidenceType)
+  ) {
+    return undefined;
+  }
+
+  return {
+    errorType: errorType as (typeof MQM_ERROR_TYPES)[number],
+    complianceRiskType: stringValue(obj.complianceRiskType) ?? "",
+    severity: severity as (typeof MQM_SEVERITIES)[number],
+    targetSpan: stringValue(obj.targetSpan) ?? "",
+    evidenceType: evidenceType as (typeof MQM_EVIDENCE_TYPES)[number],
+    recommendedAction:
+      action && (SUGGESTED_ACTIONS as ReadonlyArray<unknown>).includes(action)
+        ? (action as (typeof SUGGESTED_ACTIONS)[number])
+        : "hold"
+  };
+}
+
 function multilingualContextFromSnapshot(snapshot: unknown): MultilingualIssueContext | undefined {
   const outputSnapshot = objectValue(snapshot);
   const localized = objectValue(outputSnapshot?.localizedRiskFinding);
@@ -194,7 +274,9 @@ function multilingualContextFromSnapshot(snapshot: unknown): MultilingualIssueCo
     koreanComplianceReason,
     evidenceQuery,
     suggestedCopyOriginalLanguage,
-    suggestedCopyKoreanMeaning
+    suggestedCopyKoreanMeaning,
+    semanticPreservation: semanticPreservationValue(localized?.semanticPreservation),
+    mqm: mqmValue(localized?.mqm)
   };
 }
 

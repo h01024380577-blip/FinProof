@@ -86,6 +86,105 @@ describe("issue generation", () => {
     });
   });
 
+  it("carries semanticPreservation and mqm from localizedRiskFinding to multilingualContext", () => {
+    const review = getReviewCaseById("rc-demo-loan-001")!;
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-05-26T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-loan-poster",
+          fileName: "loan-poster.txt",
+          text: "Guaranteed approval in 3 minutes",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "ev-approval",
+          sourceType: "product_doc",
+          title: "loan-poster.txt",
+          quoteSummary: "Guaranteed approval in 3 minutes",
+          relevanceScore: 0.93,
+          sourceFileId: "file-loan-poster"
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-multilingual-002",
+          agent: "korean_compliance_mapping",
+          issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+          riskLevel: "high",
+          title: "승인 보장 오인 표현",
+          targetText: "Guaranteed approval in 3 minutes",
+          description: "심사와 무관하게 승인이 확정되는 것처럼 해석될 수 있음",
+          suggestedAction: "change_request",
+          suggestedCopy: "Apply in 3 minutes. Approval is subject to credit review.",
+          evidenceCandidateIds: ["ev-approval"],
+          confidence: 0.91,
+          localizedRiskFinding: {
+            id: "risk-en-approval",
+            segmentId: "seg-en-001",
+            language: "en",
+            originalText: "Guaranteed approval in 3 minutes",
+            literalTranslation: "3분 안에 승인 보장",
+            complianceMeaning: "심사와 무관하게 승인 확정처럼 해석될 수 있음",
+            riskCategory: "both",
+            riskSignals: ["approval_guarantee"],
+            riskLevelHint: "high",
+            suggestedCopyOriginalLanguage:
+              "Apply in 3 minutes. Approval is subject to credit review.",
+            suggestedCopyKoreanMeaning:
+              "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음.",
+            confidence: 0.91,
+            semanticPreservation: {
+              semanticRelation: "stronger",
+              semanticShiftScore: 0.8,
+              missingConditionTerms: [],
+              overclaimTerms: ["guaranteed"],
+              nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+              model: "mDeBERTa-v3-base-mnli-xnli"
+            },
+            mqm: {
+              errorType: "addition",
+              complianceRiskType: "approval_guarantee",
+              severity: "major",
+              targetSpan: "Guaranteed approval",
+              evidenceType: "product_doc",
+              recommendedAction: "change_request"
+            }
+          },
+          koreanComplianceMapping: {
+            localizedFindingId: "risk-en-approval",
+            issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+            koreanComplianceCategory: "승인 보장 오인 표현",
+            koreanComplianceReason: "대출 승인 가능성을 확정적으로 고지하는 표현으로 볼 수 있음",
+            evidenceQuery: "대출 광고 승인 보장 금지 표현",
+            suggestedAction: "change_request"
+          }
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    expect(issues[0].multilingualContext?.semanticPreservation).toEqual({
+      semanticRelation: "stronger",
+      semanticShiftScore: 0.8,
+      missingConditionTerms: [],
+      overclaimTerms: ["guaranteed"],
+      nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+      model: "mDeBERTa-v3-base-mnli-xnli"
+    });
+    expect(issues[0].multilingualContext?.mqm).toEqual({
+      errorType: "addition",
+      complianceRiskType: "approval_guarantee",
+      severity: "major",
+      targetSpan: "Guaranteed approval",
+      evidenceType: "product_doc",
+      recommendedAction: "change_request"
+    });
+  });
+
   it("turns model subagent findings into review issues with matched evidence", () => {
     const review = getReviewCaseById("rc-demo-deposit-001")!;
     const artifacts: AnalysisArtifacts = {
