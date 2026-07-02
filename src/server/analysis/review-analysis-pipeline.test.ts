@@ -1208,6 +1208,7 @@ describe("review analysis pipeline", () => {
       reviewStore: { searchKnowledgeEvidence },
       reranker: { provider: "fixture-reranker", rerank },
       modelProvider: { generateText },
+      subAgentOrchestrator: { run: vi.fn(async () => []) },
       ocrProvider: {
         async extract(input) {
           return input.files.map((file) => ({
