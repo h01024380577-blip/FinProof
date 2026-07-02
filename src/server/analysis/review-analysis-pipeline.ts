@@ -220,12 +220,15 @@ const MAX_RAG_QUERY_CHARS = 2000;
  * Uploaded cases keep placeholder intake metadata (promotionalCopy / disclosure /
  * productDescription are template defaults until a human edits them), so a query built
  * from metadata alone never reflects the real ad. The actual content lives in the
- * OCR-extracted documents, which are only available after extraction — so this enriches
- * the metadata query with the extracted text. When no text was extracted it falls back
- * to the metadata-only query.
+ * OCR-extracted documents, which are only available after extraction.
+ *
+ * Once extracted text exists it IS the authoritative content under review, so the query
+ * is built from it alone — the placeholder metadata is not merely useless but actively
+ * harmful: for short ads its ~120-char "분석 대기" boilerplate dominates the embedding and
+ * pulls off-target regulation to the top of cosine retrieval. Metadata is used only as a
+ * fallback when nothing was extracted.
  */
 function analysisRagQuery(review: ReviewCase, documents: ExtractedDocument[]): string {
-  const metadataQuery = reviewRagQuery(review);
   const extractedText = documents
     .map((document) => document.text)
     .join(" ")
@@ -233,10 +236,10 @@ function analysisRagQuery(review: ReviewCase, documents: ExtractedDocument[]): s
     .trim();
 
   if (!extractedText) {
-    return metadataQuery;
+    return reviewRagQuery(review);
   }
 
-  return `${metadataQuery} ${extractedText}`.trim().slice(0, MAX_RAG_QUERY_CHARS);
+  return extractedText.slice(0, MAX_RAG_QUERY_CHARS);
 }
 
 function isTextLikeFile(file: ReviewFile) {

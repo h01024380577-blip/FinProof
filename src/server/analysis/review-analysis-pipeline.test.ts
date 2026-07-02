@@ -1139,6 +1139,53 @@ describe("review analysis pipeline", () => {
     );
   });
 
+  it("excludes placeholder intake metadata from the query once extracted text exists", async () => {
+    // Even prepended, placeholder boilerplate ("실제 업로드 자료 분석 대기 …") pollutes the
+    // embedding: for short ads the ~120-char notice dominates and pulls off-target
+    // regulation to the top of cosine retrieval (e.g. broadcast-review rules). When the
+    // OCR-extracted ad exists it is the authoritative content — the query must not carry
+    // the placeholder metadata at all.
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const placeholderReview: ReviewCase = {
+      ...review,
+      promotionalCopy: "실제 업로드 자료 분석 대기",
+      disclosure: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
+      productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다."
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => []);
+    const rerank = vi.fn(async ({ candidates }) => candidates);
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence },
+      reranker: { provider: "fixture-reranker", rerank },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "긴급특판 연 5.5% 한도 소진 시 조기 종료",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    await pipeline.run({ review: placeholderReview, scope });
+
+    expect(searchKnowledgeEvidence).toHaveBeenCalledWith(
+      scope,
+      expect.objectContaining({ query: expect.not.stringContaining("분석 대기") })
+    );
+    expect(rerank).toHaveBeenCalledWith(
+      expect.objectContaining({ query: expect.not.stringContaining("분석 대기") })
+    );
+  });
+
   it("builds the knowledge retrieval query from extracted document text, not only intake metadata", async () => {
     // Uploaded cases carry placeholder intake metadata; the real ad content only exists
     // in the OCR-extracted documents. Knowledge retrieval must query the extracted text.
