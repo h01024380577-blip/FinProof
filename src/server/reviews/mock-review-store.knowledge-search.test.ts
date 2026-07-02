@@ -89,4 +89,40 @@ describe("mock review store knowledge search", () => {
     });
     expect(included.map((item) => item.documentId)).toContain(document.id);
   });
+
+  it("includes checklist/guide documents even when product_type does not match the query", async () => {
+    const store = createMockReviewStore([]);
+    const document = await store.createKnowledgeDocument(scope, {
+      id: "knowledge-deposit-checklist",
+      documentType: "checklist",
+      productType: "deposit",
+      title: "예금 광고 심의 체크리스트",
+      version: "2026.05",
+      effectiveFrom: "2026-05-27",
+      storageKey: "local/knowledge-documents/knowledge-deposit-checklist/checklist.pdf"
+    });
+    await store.approveKnowledgeDocument(scope, document.id);
+    await store.replaceKnowledgeDocumentChunks(scope, document.id, [
+      {
+        id: "chunk-deposit-checklist-001",
+        tenantId: scope.tenantId,
+        knowledgeDocumentId: document.id,
+        chunkText: "한정 수량·선착순 등 희소성 오인유도 표현을 광고에 사용하지 않아야 한다.",
+        chunkSummary: "예금 광고 희소성 표현 점검",
+        embeddingModel: "text-embedding-3-small",
+        embeddingId: "embedding-deposit-checklist-001",
+        metadata: { source: "knowledge_document" }
+      }
+    ]);
+
+    // productType 'card' does NOT match the checklist's 'deposit', but a checklist must
+    // still be eligible.
+    const included = await store.searchKnowledgeEvidence(scope, {
+      query: "한정 선착순 희소성 광고",
+      productType: "card",
+      topK: 10,
+      knowledgeMinScore: 0.05
+    });
+    expect(included.map((item) => item.documentId)).toContain(document.id);
+  });
 });
