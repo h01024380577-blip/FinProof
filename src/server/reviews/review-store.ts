@@ -296,6 +296,13 @@ export type KnowledgeEvidenceSearchInput = {
   effectiveOn?: string;
   topK?: number;
   minScore?: number;
+  /**
+   * Retrieval floor for knowledge-corpus candidates. Lower than `minScore` because
+   * Korean ad-copy↔regulation cosine tops out ~0.6, so an on-point checklist can sit
+   * below the product-doc `minScore` yet still be the correct regulatory basis.
+   * Falls back to `minScore` when unset.
+   */
+  knowledgeMinScore?: number;
   queryEmbedding?: number[];
 };
 

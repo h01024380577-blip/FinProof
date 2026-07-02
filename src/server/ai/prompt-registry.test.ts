@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import {
   LAW_SEARCH_INTENT_PROMPT,
   multilingualTranslatorRiskPrompt,
@@ -21,6 +22,15 @@ describe("prompt registry", () => {
     expect(prompt).toContain("suggestedCopyKoreanMeaning");
     expect(prompt).toContain("Do not create a finding unless the segment contains financial-advertising copy");
     expect(prompt).toContain("Common Risk Policy");
+  });
+});
+
+describe("multilingualTranslatorRiskPrompt", () => {
+  it("instructs the agent to emit an mqm block with the six error types", () => {
+    const prompt = multilingualTranslatorRiskPrompt("en");
+    expect(prompt).toContain("mqm");
+    expect(prompt).toContain("omission");
+    expect(prompt).toContain("locale_convention");
   });
 });
 

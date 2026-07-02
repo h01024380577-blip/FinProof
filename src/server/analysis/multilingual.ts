@@ -14,6 +14,43 @@ export type MultilingualSegment = {
   confidence: number;
 };
 
+export type SemanticRelation =
+  | "equivalent"
+  | "stronger"
+  | "weaker"
+  | "contradiction"
+  | "missing-condition";
+
+export type SemanticPreservation = {
+  semanticRelation: SemanticRelation;
+  semanticShiftScore: number;
+  missingConditionTerms: string[];
+  overclaimTerms: string[];
+  nliProbabilities: { entailment: number; neutral: number; contradiction: number };
+  model: string;
+};
+
+export type MqmErrorType =
+  | "mistranslation"
+  | "omission"
+  | "addition"
+  | "terminology"
+  | "inconsistency"
+  | "locale_convention";
+
+export type MqmSeverity = "minor" | "major" | "critical";
+
+export type MqmEvidenceType = "product_doc" | "internal_policy" | "law" | "case_history";
+
+export type MqmAssessment = {
+  errorType: MqmErrorType;
+  complianceRiskType: string;
+  severity: MqmSeverity;
+  targetSpan: string;
+  evidenceType: MqmEvidenceType;
+  recommendedAction: ReviewIssue["suggestedAction"];
+};
+
 export type LocalizedRiskFinding = {
   id: string;
   segmentId: string;
@@ -27,6 +64,8 @@ export type LocalizedRiskFinding = {
   suggestedCopyOriginalLanguage: string;
   suggestedCopyKoreanMeaning: string;
   confidence: number;
+  semanticPreservation?: SemanticPreservation;
+  mqm?: MqmAssessment;
 };
 
 export type KoreanComplianceMapping = {

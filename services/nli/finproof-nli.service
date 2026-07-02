@@ -1,0 +1,13 @@
+[Unit]
+Description=FinProof NLI (mDeBERTa) service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ec2-user/FinProof/services/nli
+ExecStart=/home/ec2-user/FinProof/services/nli/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8001
+Restart=on-failure
+Environment=OMP_NUM_THREADS=2
+
+[Install]
+WantedBy=multi-user.target
