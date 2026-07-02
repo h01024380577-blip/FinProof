@@ -154,6 +154,44 @@ function normalizeAction(value: unknown): ReviewIssue["suggestedAction"] {
   return normalizeAiSuggestedAction(value);
 }
 
+const MQM_ERROR_TYPES = [
+  "mistranslation",
+  "omission",
+  "addition",
+  "terminology",
+  "inconsistency",
+  "locale_convention"
+] as const;
+
+const MQM_SEVERITIES = ["minor", "major", "critical"] as const;
+const MQM_EVIDENCE_TYPES = ["product_doc", "internal_policy", "law", "case_history"] as const;
+
+function normalizeMqm(value: unknown): LocalizedRiskFinding["mqm"] {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const fields = value as Record<string, unknown>;
+  const errorType = MQM_ERROR_TYPES.includes(fields.errorType as never)
+    ? (fields.errorType as (typeof MQM_ERROR_TYPES)[number])
+    : "terminology";
+  const severity = MQM_SEVERITIES.includes(fields.severity as never)
+    ? (fields.severity as (typeof MQM_SEVERITIES)[number])
+    : "minor";
+  const evidenceType = MQM_EVIDENCE_TYPES.includes(fields.evidenceType as never)
+    ? (fields.evidenceType as (typeof MQM_EVIDENCE_TYPES)[number])
+    : "product_doc";
+
+  return {
+    errorType,
+    complianceRiskType: stringField(fields.complianceRiskType),
+    severity,
+    targetSpan: stringField(fields.targetSpan),
+    evidenceType,
+    recommendedAction: normalizeAction(fields.recommendedAction)
+  };
+}
+
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
@@ -271,7 +309,8 @@ function normalizeLocalizedFinding(
       segment.originalText
     ),
     suggestedCopyKoreanMeaning: stringField(fields.suggestedCopyKoreanMeaning),
-    confidence: clampConfidence(fields.confidence)
+    confidence: clampConfidence(fields.confidence),
+    mqm: normalizeMqm(fields.mqm)
   };
 }
 
