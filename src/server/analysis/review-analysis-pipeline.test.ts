@@ -360,7 +360,12 @@ describe("review analysis pipeline", () => {
       })
     ]);
     expect(artifacts.multilingualSegments).toBeUndefined();
-    expect(provider.generateText).not.toHaveBeenCalled();
+    // The only permitted direct model call from the main pipeline is the compliance
+    // query expansion used to enrich retrieval — never a multilingual/domain agent.
+    const providerTasks = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.map(
+      ([input]) => input.task
+    );
+    expect(providerTasks).toEqual(["retrieval_query"]);
     expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
       expect.objectContaining({
         extractedDocuments: [
@@ -1095,6 +1100,140 @@ describe("review analysis pipeline", () => {
     });
   });
 
+  it("reranks against extracted document text, not placeholder intake metadata", async () => {
+    // Regression: uploaded cases keep placeholder intake metadata (promotionalCopy /
+    // disclosure / productDescription are boilerplate until a human edits them). If the
+    // reranker is fed the metadata-only query, it scores real regulation chunks against
+    // "분석 대기" boilerplate and crushes every knowledge candidate to ~noise, so issues
+    // end up citing only the uploaded ad. The rerank query must reflect the extracted ad.
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const placeholderReview: ReviewCase = {
+      ...review,
+      promotionalCopy: "실제 업로드 자료 분석 대기",
+      disclosure: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
+      productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다."
+    };
+    const rerank = vi.fn(async ({ candidates }) => candidates);
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence: vi.fn(async () => []) },
+      reranker: { provider: "fixture-reranker", rerank },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "누구나 무조건 최고 연 5.0% 우대금리 제공",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    await pipeline.run({ review: placeholderReview, scope });
+
+    expect(rerank).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: expect.stringContaining("누구나 무조건 최고 연 5.0%")
+      })
+    );
+  });
+
+  it("excludes placeholder intake metadata from the query once extracted text exists", async () => {
+    // Even prepended, placeholder boilerplate ("실제 업로드 자료 분석 대기 …") pollutes the
+    // embedding: for short ads the ~120-char notice dominates and pulls off-target
+    // regulation to the top of cosine retrieval (e.g. broadcast-review rules). When the
+    // OCR-extracted ad exists it is the authoritative content — the query must not carry
+    // the placeholder metadata at all.
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const placeholderReview: ReviewCase = {
+      ...review,
+      promotionalCopy: "실제 업로드 자료 분석 대기",
+      disclosure: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
+      productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다."
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => []);
+    const rerank = vi.fn(async ({ candidates }) => candidates);
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence },
+      reranker: { provider: "fixture-reranker", rerank },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "긴급특판 연 5.5% 한도 소진 시 조기 종료",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    await pipeline.run({ review: placeholderReview, scope });
+
+    expect(searchKnowledgeEvidence).toHaveBeenCalledWith(
+      scope,
+      expect.objectContaining({ query: expect.not.stringContaining("분석 대기") })
+    );
+    expect(rerank).toHaveBeenCalledWith(
+      expect.objectContaining({ query: expect.not.stringContaining("분석 대기") })
+    );
+  });
+
+  it("appends expanded compliance concepts to the retrieval and rerank query", async () => {
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => []);
+    const rerank = vi.fn(async ({ candidates }) => candidates);
+    const generateText = vi.fn(async () => ({
+      provider: "openai" as const,
+      model: "gpt",
+      text: "한정판매 선착순 희소성"
+    }));
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence },
+      reranker: { provider: "fixture-reranker", rerank },
+      modelProvider: { generateText },
+      subAgentOrchestrator: { run: vi.fn(async () => []) },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "긴급특판 한도 소진 시 조기 종료",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    await pipeline.run({ review, scope });
+
+    expect(searchKnowledgeEvidence).toHaveBeenCalledWith(
+      scope,
+      expect.objectContaining({ query: expect.stringContaining("한정판매 선착순 희소성") })
+    );
+    expect(rerank).toHaveBeenCalledWith(
+      expect.objectContaining({ query: expect.stringContaining("한정판매 선착순 희소성") })
+    );
+  });
+
   it("builds the knowledge retrieval query from extracted document text, not only intake metadata", async () => {
     // Uploaded cases carry placeholder intake metadata; the real ad content only exists
     // in the OCR-extracted documents. Knowledge retrieval must query the extracted text.
@@ -1130,7 +1269,7 @@ describe("review analysis pipeline", () => {
     );
   });
 
-  it("drops reranked evidence candidates below the configured matching threshold", async () => {
+  it("guarantees the best knowledge candidate but drops additional low-reranked knowledge", async () => {
     const scope: ReviewStoreScope = {
       tenantId: "tenant-demo",
       actorUserId: "user-reviewer-demo",
@@ -1138,20 +1277,33 @@ describe("review analysis pipeline", () => {
     };
     const searchKnowledgeEvidence = vi.fn(async () => [
       {
-        id: "knowledge-evidence-low-rerank",
+        id: "knowledge-evidence-best",
         sourceType: "internal_policy" as const,
-        documentId: "knowledge-low-rerank",
-        chunkId: "chunk-knowledge-low-rerank-011",
+        documentId: "knowledge-best",
+        chunkId: "chunk-knowledge-best-011",
+        title: "대출 광고 심의 체크리스트",
+        quoteSummary: "연이자율과 중도상환수수료를 광고에 표시해야 한다.",
+        relevanceScore: 0.6
+      },
+      {
+        id: "knowledge-evidence-noise",
+        sourceType: "internal_policy" as const,
+        documentId: "knowledge-noise",
+        chunkId: "chunk-knowledge-noise-011",
         title: "금융규제 가이드라인",
         quoteSummary: "추천·보증 등의 내용은 실제 경험한 사실에 부합하여야 한다.",
-        relevanceScore: 0.88
+        relevanceScore: 0.55
       }
     ]);
+    // The reranker under-scores both knowledge chunks; the best (0.35) must still be
+    // attached, while the second (0.03, below the knowledge secondary floor) is dropped.
     const rerank = vi.fn(async ({ candidates }) =>
       candidates.map((candidate) =>
-        candidate.id === "knowledge-evidence-low-rerank"
-          ? { ...candidate, relevanceScore: 0.03 }
-          : candidate
+        candidate.id === "knowledge-evidence-best"
+          ? { ...candidate, relevanceScore: 0.35 }
+          : candidate.id === "knowledge-evidence-noise"
+            ? { ...candidate, relevanceScore: 0.03 }
+            : candidate
       )
     );
     const pipeline = createReviewAnalysisPipeline({
@@ -1176,14 +1328,9 @@ describe("review analysis pipeline", () => {
 
     const artifacts = await pipeline.run({ review, scope });
 
-    expect(artifacts.evidenceCandidates).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: "knowledge-evidence-low-rerank",
-          relevanceScore: 0.03
-        })
-      ])
-    );
+    const ids = artifacts.evidenceCandidates.map((candidate) => candidate.id);
+    expect(ids).toContain("knowledge-evidence-best"); // guaranteed despite low rerank
+    expect(ids).not.toContain("knowledge-evidence-noise"); // below knowledge secondary floor
   });
 
   it("retrieves case history evidence from the review store when a scoped analysis runs", async () => {
@@ -1268,6 +1415,12 @@ describe("review analysis pipeline", () => {
     const provider: ModelProvider = {
       generateText: vi
         .fn()
+        // First model call is the compliance query expansion for retrieval enrichment.
+        .mockResolvedValueOnce({
+          provider: "openai",
+          model: "gpt-5.2",
+          text: "[]"
+        })
         .mockResolvedValueOnce({
           provider: "openai",
           model: "gpt-5.2",
@@ -1400,6 +1553,7 @@ describe("review analysis pipeline", () => {
       ([input]) => input.task
     );
     expect(calledTasks).toEqual([
+      "retrieval_query",
       "creative_review",
       "product_terms",
       "regulation_agent",
@@ -1527,6 +1681,7 @@ describe("review analysis pipeline", () => {
       ([input]) => input.task
     );
     expect(calledTasks).toEqual([
+      "retrieval_query",
       "creative_review",
       "product_terms",
       "regulation_agent",
@@ -1652,7 +1807,7 @@ describe("review analysis pipeline", () => {
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["vietnamese_translator_risk"]);
+    expect(provider.calls).toEqual(["retrieval_query", "vietnamese_translator_risk"]);
   });
 
   it("routes Myanmar OCR text through the Myanmar translator risk agent", async () => {
@@ -1667,7 +1822,7 @@ describe("review analysis pipeline", () => {
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["myanmar_translator_risk"]);
+    expect(provider.calls).toEqual(["retrieval_query", "myanmar_translator_risk"]);
   });
 
   it("routes Khmer OCR text through the Khmer translator risk agent", async () => {
@@ -1682,7 +1837,7 @@ describe("review analysis pipeline", () => {
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["khmer_translator_risk"]);
+    expect(provider.calls).toEqual(["retrieval_query", "khmer_translator_risk"]);
   });
 
   it("routes mixed English Vietnamese Myanmar and Khmer OCR text through all multilingual agents and mapping", async () => {
@@ -1755,6 +1910,7 @@ describe("review analysis pipeline", () => {
     await pipeline.run({ review });
 
     expect(provider.calls).toEqual([
+      "retrieval_query",
       "english_translator_risk",
       "vietnamese_translator_risk",
       "myanmar_translator_risk",
@@ -1774,7 +1930,7 @@ describe("review analysis pipeline", () => {
     const artifacts = await pipeline.run({ review });
 
     expect(artifacts.multilingualSegments).toBeUndefined();
-    expect(provider.calls).toEqual([]);
+    expect(provider.calls).toEqual(["retrieval_query"]);
   });
 
   it("keeps Korean-only OCR unchanged and skips multilingual model tasks", async () => {
@@ -2027,19 +2183,51 @@ function ragCandidate(overrides: Partial<RagEvidenceCandidate>): RagEvidenceCand
 }
 
 describe("selectEvidenceCandidates", () => {
-  it("drops candidates below the matching threshold (preserves 9800ef8 behavior)", () => {
+  it("drops non-knowledge candidates below the matching threshold", () => {
     const candidates: RagEvidenceCandidate[] = [
       ragCandidate({ id: "product-high", sourceType: "product_doc", relevanceScore: 0.7 }),
-      ragCandidate({
-        id: "knowledge-low",
-        sourceType: "internal_policy",
-        relevanceScore: 0.03
-      })
+      ragCandidate({ id: "product-low", sourceType: "product_doc", relevanceScore: 0.03 })
     ];
 
     const selected = selectEvidenceCandidates(candidates, { minScore: 0.55, topK: 4 });
 
-    expect(selected.map((candidate) => candidate.id)).not.toContain("knowledge-low");
+    expect(selected.map((candidate) => candidate.id)).not.toContain("product-low");
+  });
+
+  it("guarantees the single best knowledge candidate even below the matching threshold", () => {
+    // The reranker routinely under-scores Korean regulation/checklist text relative to
+    // verbatim-overlapping product docs; the best knowledge candidate already cleared the
+    // retrieval floor, so it must not be dropped by the product-doc matching threshold.
+    const candidates: RagEvidenceCandidate[] = [
+      ragCandidate({ id: "product-high", sourceType: "product_doc", relevanceScore: 0.82 }),
+      ragCandidate({ id: "knowledge-low", sourceType: "internal_policy", relevanceScore: 0.35 })
+    ];
+
+    const selected = selectEvidenceCandidates(candidates, {
+      minScore: 0.5,
+      topK: 4,
+      knowledgeMinScore: 0.1
+    });
+
+    expect(selected.map((candidate) => candidate.id)).toContain("knowledge-low");
+  });
+
+  it("reserves additional knowledge only when it clears the knowledge threshold", () => {
+    const candidates: RagEvidenceCandidate[] = [
+      ragCandidate({ id: "product-high", sourceType: "product_doc", relevanceScore: 0.82 }),
+      ragCandidate({ id: "knowledge-good", sourceType: "law", relevanceScore: 0.4 }),
+      ragCandidate({ id: "knowledge-noise", sourceType: "internal_policy", relevanceScore: 0.05 })
+    ];
+
+    const selected = selectEvidenceCandidates(candidates, {
+      minScore: 0.5,
+      topK: 4,
+      knowledgeMinScore: 0.1
+    });
+
+    const ids = selected.map((candidate) => candidate.id);
+    expect(ids).toContain("knowledge-good"); // guaranteed top-1 knowledge
+    expect(ids).not.toContain("knowledge-noise"); // below knowledgeMinScore, not guaranteed
   });
 
   it("guarantees above-threshold knowledge evidence is not crowded out by product docs", () => {

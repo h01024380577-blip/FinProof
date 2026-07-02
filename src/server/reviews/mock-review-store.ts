@@ -535,7 +535,11 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         { effectiveFrom: document.effectiveFrom, effectiveTo: document.effectiveTo },
         input
       ) &&
-      (!input.productType || !document.productType || document.productType === input.productType) &&
+      (!input.productType ||
+        !document.productType ||
+        document.productType === input.productType ||
+        document.documentType === "checklist" ||
+        document.documentType === "guide") &&
       (!input.affiliateId || !document.affiliateId || document.affiliateId === input.affiliateId)
     );
   }
@@ -1884,7 +1888,7 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
     },
 
     async searchKnowledgeEvidence(scope: ReviewStoreScope, input: KnowledgeEvidenceSearchInput) {
-      const minScore = input.minScore ?? 0.5;
+      const minScore = input.knowledgeMinScore ?? input.minScore ?? 0.5;
       const topK = input.topK ?? 4;
 
       const knowledgeMatches = Array.from(evidenceChunks.values()).flatMap((chunk) => {

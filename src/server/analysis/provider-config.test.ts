@@ -9,6 +9,7 @@ describe("analysis provider config", () => {
       provider: "deterministic",
       topK: 4,
       minScore: 0.5,
+      knowledgeMinScore: 0.4,
       maxContextChars: 6000
     });
     expect(config.rerank).toEqual({
@@ -87,6 +88,7 @@ describe("analysis provider config", () => {
       DATABASE_URL: "postgresql://example",
       FINPROOF_RAG_TOP_K: "8",
       FINPROOF_RAG_MIN_SCORE: "0.81",
+      FINPROOF_RAG_KNOWLEDGE_MIN_SCORE: "0.33",
       FINPROOF_RAG_MAX_CONTEXT_CHARS: "12000"
     });
 
@@ -95,6 +97,7 @@ describe("analysis provider config", () => {
       databaseConfigured: true,
       topK: 8,
       minScore: 0.81,
+      knowledgeMinScore: 0.33,
       maxContextChars: 12000
     });
   });

@@ -33,6 +33,7 @@ import {
 } from "./multilingual";
 import { runMultilingualRiskTeam } from "./multilingual-risk-team";
 import { getAnalysisProviderConfig } from "./provider-config";
+import { expandComplianceQuery } from "./query-expansion";
 import { createReranker, type Reranker } from "./rerank-provider";
 import {
   createReviewSubAgentOrchestrator,
@@ -110,6 +111,7 @@ type RagRetrieveInput = {
   review: ReviewCase;
   extractedDocuments: ExtractedDocument[];
   scope?: ReviewStoreScope;
+  queryConcepts?: string;
 };
 
 export type RagRetriever = {
@@ -220,23 +222,29 @@ const MAX_RAG_QUERY_CHARS = 2000;
  * Uploaded cases keep placeholder intake metadata (promotionalCopy / disclosure /
  * productDescription are template defaults until a human edits them), so a query built
  * from metadata alone never reflects the real ad. The actual content lives in the
- * OCR-extracted documents, which are only available after extraction — so this enriches
- * the metadata query with the extracted text. When no text was extracted it falls back
- * to the metadata-only query.
+ * OCR-extracted documents, which are only available after extraction.
+ *
+ * Once extracted text exists it IS the authoritative content under review, so the query
+ * is built from it alone — the placeholder metadata is not merely useless but actively
+ * harmful: for short ads its ~120-char "분석 대기" boilerplate dominates the embedding and
+ * pulls off-target regulation to the top of cosine retrieval. Metadata is used only as a
+ * fallback when nothing was extracted.
  */
-function analysisRagQuery(review: ReviewCase, documents: ExtractedDocument[]): string {
-  const metadataQuery = reviewRagQuery(review);
+function analysisRagQuery(
+  review: ReviewCase,
+  documents: ExtractedDocument[],
+  conceptTerms = ""
+): string {
   const extractedText = documents
     .map((document) => document.text)
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!extractedText) {
-    return metadataQuery;
-  }
+  const base = extractedText || reviewRagQuery(review);
+  const concepts = conceptTerms.trim();
 
-  return `${metadataQuery} ${extractedText}`.trim().slice(0, MAX_RAG_QUERY_CHARS);
+  return (concepts ? `${base} ${concepts}` : base).slice(0, MAX_RAG_QUERY_CHARS);
 }
 
 function isTextLikeFile(file: ReviewFile) {
@@ -1063,6 +1071,7 @@ function createLexicalRagRetriever(
             productType: review.productType,
             topK: config.rag.topK * 2,
             minScore: config.rag.minScore,
+            knowledgeMinScore: config.rag.knowledgeMinScore,
             queryEmbedding
           })
         : Promise.resolve([]),
@@ -1087,9 +1096,9 @@ function createLexicalRagRetriever(
       cachedKnowledgeCaseCandidates = await fetchKnowledgeCaseCandidates(review, scope, query);
     },
 
-    async retrieve({ review, extractedDocuments, scope }) {
+    async retrieve({ review, extractedDocuments, scope, queryConcepts }) {
       const searchableDocuments = documentsForAnalysis(extractedDocuments, review);
-      const query = analysisRagQuery(review, searchableDocuments);
+      const query = analysisRagQuery(review, searchableDocuments, queryConcepts);
 
       const productDocumentCandidates = searchableDocuments
         .map((document, index) => ({
@@ -1122,38 +1131,73 @@ function isKnowledgeCorpusEvidence(candidate: RagEvidenceCandidate) {
   return candidate.sourceType === "law" || candidate.sourceType === "internal_policy";
 }
 
+// Rerank floor for knowledge-corpus evidence beyond the guaranteed top-1 slot. The
+// reranker under-scores Korean regulation text, so this sits well below the product-doc
+// `minScore`; the single best knowledge candidate is attached regardless (see
+// selectEvidenceCandidates).
+const KNOWLEDGE_SECONDARY_MIN_SCORE = 0.1;
+
 /**
  * Selects the final evidence candidates from a reranked list.
  *
- * Reranking scores uploaded package documents (product_doc) very highly because
- * they overlap the ad copy verbatim, which can fill every topK slot and crowd out
- * knowledge-corpus evidence (the law / internal_policy basis for an issue). This
- * reserves up to half of the topK slots for above-threshold knowledge evidence so
- * the regulatory basis survives, while still honoring the matching threshold
- * (candidates reranked below `minScore` are dropped) and the overall topK cap.
+ * Reranking scores uploaded package documents (product_doc) very highly because they
+ * overlap the ad copy verbatim, while the reranker routinely under-scores Korean
+ * regulation/checklist text — so the law / internal_policy basis for an issue would be
+ * dropped by the product-doc matching threshold and every issue ends up citing only the
+ * ad itself. To keep the regulatory basis attached:
+ *
+ * - The single best knowledge candidate (already past the retrieval floor) is guaranteed
+ *   a slot regardless of its rerank score.
+ * - Up to half of the topK slots are reserved for knowledge; additional knowledge beyond
+ *   the guaranteed first must clear the lower `knowledgeMinScore`.
+ * - Non-knowledge candidates (product_doc / case_history) still honor the standard
+ *   `minScore`, and the overall topK cap is respected.
  */
 export function selectEvidenceCandidates(
   candidates: RagEvidenceCandidate[],
-  { minScore, topK }: { minScore: number; topK: number }
+  {
+    minScore,
+    topK,
+    knowledgeMinScore
+  }: { minScore: number; topK: number; knowledgeMinScore?: number }
 ): RagEvidenceCandidate[] {
-  const eligible = candidates.filter((candidate) => candidate.relevanceScore >= minScore);
+  const secondaryKnowledgeMin = knowledgeMinScore ?? minScore;
 
-  if (eligible.length <= topK) {
-    return eligible;
+  const knowledgeByScore = candidates
+    .filter(isKnowledgeCorpusEvidence)
+    .sort((left, right) => right.relevanceScore - left.relevanceScore);
+  const reservedKnowledgeCap =
+    knowledgeByScore.length === 0 ? 0 : Math.max(1, Math.floor(topK / 2));
+
+  const reservedKnowledge: RagEvidenceCandidate[] = [];
+  for (const candidate of knowledgeByScore) {
+    if (reservedKnowledge.length >= reservedKnowledgeCap) {
+      break;
+    }
+    const isGuaranteedFirst = reservedKnowledge.length === 0;
+    if (isGuaranteedFirst || candidate.relevanceScore >= secondaryKnowledgeMin) {
+      reservedKnowledge.push(candidate);
+    } else {
+      break; // sorted descending: once one fails the threshold, the rest do too
+    }
   }
 
-  const knowledgeCandidates = eligible.filter(isKnowledgeCorpusEvidence);
-  const reservedKnowledgeCount = Math.min(
-    knowledgeCandidates.length,
-    Math.max(1, Math.floor(topK / 2))
-  );
-  const reservedKnowledge = knowledgeCandidates.slice(0, reservedKnowledgeCount);
   const reservedIds = new Set(reservedKnowledge.map((candidate) => candidate.id));
-  const remainder = eligible.filter((candidate) => !reservedIds.has(candidate.id));
-  const selectedIds = new Set([...reservedKnowledge, ...remainder].slice(0, topK).map((c) => c.id));
+  const remainingSlots = Math.max(0, topK - reservedKnowledge.length);
+  const filler = candidates
+    .filter((candidate) => !reservedIds.has(candidate.id))
+    .filter((candidate) =>
+      isKnowledgeCorpusEvidence(candidate)
+        ? candidate.relevanceScore >= secondaryKnowledgeMin
+        : candidate.relevanceScore >= minScore
+    )
+    .sort((left, right) => right.relevanceScore - left.relevanceScore)
+    .slice(0, remainingSlots);
 
-  // Preserve the rerank ordering for display, but only over the guaranteed selection.
-  return eligible.filter((candidate) => selectedIds.has(candidate.id));
+  const selectedIds = new Set([...reservedKnowledge, ...filler].map((candidate) => candidate.id));
+
+  // Preserve the incoming rerank ordering for display.
+  return candidates.filter((candidate) => selectedIds.has(candidate.id));
 }
 
 function defaultFileBodyReader(): ReviewFileBodyReader {
@@ -1561,7 +1605,6 @@ export function createReviewAnalysisPipeline({
     },
     async run({ review, scope }) {
       const config = getAnalysisProviderConfig();
-      const query = reviewRagQuery(review);
       // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
       // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
       const [rawExtractedDocuments] = await Promise.all([
@@ -1576,18 +1619,25 @@ export function createReviewAnalysisPipeline({
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.
+      const conceptTerms = await expandComplianceQuery(
+        analysisDocuments.map((document) => document.text).join(" "),
+        modelProvider
+      );
       const retrievedCandidates = await ragRetriever.retrieve({
         review,
         extractedDocuments: analysisDocuments,
-        scope
+        scope,
+        queryConcepts: conceptTerms
       });
+      // Rerank with the same expanded, OCR-enriched query used for retrieval.
       const rerankedCandidates = await reranker.rerank({
-        query,
+        query: analysisRagQuery(review, analysisDocuments, conceptTerms),
         candidates: retrievedCandidates
       });
       const evidenceCandidates = selectEvidenceCandidates(rerankedCandidates, {
         minScore: config.rag.minScore,
-        topK: config.rerank.topK
+        topK: config.rerank.topK,
+        knowledgeMinScore: KNOWLEDGE_SECONDARY_MIN_SCORE
       });
       const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =

@@ -1027,7 +1027,11 @@ export function createPrismaReviewStore(): ReviewStore {
 
     async searchKnowledgeEvidence(scope, input: KnowledgeEvidenceSearchInput) {
       const topK = input.topK ?? 4;
-      const minScore = input.minScore ?? 0.5;
+      // Knowledge corpus uses a lower retrieval floor than product docs: Korean
+      // ad-copy↔regulation cosine tops out ~0.6, so an on-point checklist can sit below
+      // the product-doc minScore yet still be the correct basis. Reranking + evidence
+      // selection then decide final attachment.
+      const minScore = input.knowledgeMinScore ?? input.minScore ?? 0.5;
       const queryVector = vectorLiteral(input.queryEmbedding);
       let vectorEvidence: Evidence[] = [];
       const effectiveOn = input.effectiveOn ? plannedDate(input.effectiveOn) : undefined;
@@ -1050,7 +1054,7 @@ export function createPrismaReviewStore(): ReviewStore {
         if (input.productType) {
           params.push(input.productType);
           whereParts.push(
-            `(kd."product_type" = $${params.length}::"ProductType" OR kd."product_type" IS NULL)`
+            `(kd."product_type" = $${params.length}::"ProductType" OR kd."product_type" IS NULL OR kd."document_type" IN ('checklist', 'guide'))`
           );
         }
 
@@ -1146,7 +1150,11 @@ export function createPrismaReviewStore(): ReviewStore {
 
       if (input.productType) {
         documentFilters.push({
-          OR: [{ productType: input.productType }, { productType: null }]
+          OR: [
+            { productType: input.productType },
+            { productType: null },
+            { documentType: { in: ["checklist", "guide"] } }
+          ]
         });
       }
 
