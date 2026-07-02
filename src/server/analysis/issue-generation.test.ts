@@ -272,6 +272,113 @@ describe("issue generation", () => {
     );
   });
 
+  it("attaches registered knowledge evidence the reranker under-scored (below the product-doc floor)", () => {
+    // Cohere systematically under-scores Korean regulation text; an on-point checklist can
+    // land at ~0.2 (below MIN_MATCHED_EVIDENCE_SCORE=0.5) yet still be the correct basis.
+    // Knowledge-corpus evidence uses the lower KNOWLEDGE_MATCHED_EVIDENCE_SCORE floor so it
+    // attaches instead of falling back to the product doc.
+    const review = getReviewCaseById("rc-demo-loan-001")!;
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-05T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "loan-copy.txt",
+          text: "신청 즉시 100% 당일 승인",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "knowledge-underscored-checklist",
+          sourceType: "internal_policy",
+          documentId: "knowledge-underscored-checklist",
+          chunkId: "chunk-underscored-checklist-001",
+          title: "대출 광고 심의 체크리스트",
+          quoteSummary: "확정적 승인·즉시 승인 등 오인 유발 표현을 사용하지 않아야 한다.",
+          relevanceScore: 0.2
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-main-001",
+          agent: "main",
+          title: "확정적 승인 보장 표현",
+          issueType: "guarantee",
+          riskLevel: "reject_recommended",
+          targetText: "신청 즉시 100% 당일 승인",
+          description: "승인이 보장되는 것처럼 오인시킬 수 있습니다.",
+          suggestedAction: "reject",
+          suggestedCopy: "심사 결과에 따라 승인 여부가 달라질 수 있습니다.",
+          evidenceCandidateIds: ["knowledge-underscored-checklist"],
+          confidence: 0.86
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues[0].evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          documentId: "knowledge-underscored-checklist",
+          sourceType: "internal_policy"
+        })
+      ])
+    );
+  });
+
+  it("keeps the standard floor for non-knowledge candidates (case_history stays excluded below 0.5)", () => {
+    // Only registered knowledge (law/internal_policy) gets the lower floor. A case_history
+    // candidate at 0.2 must stay below MIN_MATCHED_EVIDENCE_SCORE and NOT attach.
+    const review = getReviewCaseById("rc-demo-loan-001")!;
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-05T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "loan-copy.txt",
+          text: "신청 즉시 100% 당일 승인",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "case-underscored",
+          sourceType: "case_history",
+          documentId: "case-underscored",
+          chunkId: "chunk-case-underscored-001",
+          title: "유사 심의 사례",
+          quoteSummary: "즉시 승인 표현 관련 과거 심의 사례.",
+          relevanceScore: 0.2
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-main-001",
+          agent: "main",
+          title: "확정적 승인 보장 표현",
+          issueType: "guarantee",
+          riskLevel: "reject_recommended",
+          targetText: "신청 즉시 100% 당일 승인",
+          description: "승인이 보장되는 것처럼 오인시킬 수 있습니다.",
+          suggestedAction: "reject",
+          suggestedCopy: "심사 결과에 따라 승인 여부가 달라질 수 있습니다.",
+          evidenceCandidateIds: ["case-underscored"],
+          confidence: 0.86
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues[0].evidence).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ sourceType: "case_history" })])
+    );
+  });
+
   it("uses registered knowledge evidence instead of case history for model subagent findings", () => {
     const review = getReviewCaseById("rc-demo-deposit-001")!;
     const artifacts: AnalysisArtifacts = {

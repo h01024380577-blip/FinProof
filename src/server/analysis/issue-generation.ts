@@ -1,5 +1,5 @@
 import type { Evidence, ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
-import { MIN_MATCHED_EVIDENCE_SCORE } from "@/domain/evidence";
+import { KNOWLEDGE_MATCHED_EVIDENCE_SCORE, MIN_MATCHED_EVIDENCE_SCORE } from "@/domain/evidence";
 import type { AnalysisArtifacts, RagEvidenceCandidate } from "./review-analysis-pipeline";
 import { normalizeAiSuggestedAction, normalizeAnalysisRiskLevel, riskRank } from "./risk-policy";
 
@@ -51,7 +51,13 @@ function isNotCaseHistoryEvidence(candidate: RagEvidenceCandidate) {
 }
 
 function isReliableEvidenceCandidate(candidate: RagEvidenceCandidate, minEvidenceScore: number) {
-  return candidate.relevanceScore >= minEvidenceScore;
+  // Registered knowledge evidence (law/internal_policy) clears a lower floor because the
+  // reranker under-scores regulation text; product_doc / case_history keep minEvidenceScore.
+  const floor = isRegisteredKnowledgeEvidence(candidate)
+    ? Math.min(minEvidenceScore, KNOWLEDGE_MATCHED_EVIDENCE_SCORE)
+    : minEvidenceScore;
+
+  return candidate.relevanceScore >= floor;
 }
 
 function isVisualCreativeUpload(file: ReviewCase["files"][number]) {
