@@ -33,6 +33,7 @@ import {
 } from "./multilingual";
 import { runMultilingualRiskTeam } from "./multilingual-risk-team";
 import { getAnalysisProviderConfig } from "./provider-config";
+import { expandComplianceQuery } from "./query-expansion";
 import { createReranker, type Reranker } from "./rerank-provider";
 import {
   createReviewSubAgentOrchestrator,
@@ -110,6 +111,7 @@ type RagRetrieveInput = {
   review: ReviewCase;
   extractedDocuments: ExtractedDocument[];
   scope?: ReviewStoreScope;
+  queryConcepts?: string;
 };
 
 export type RagRetriever = {
@@ -228,18 +230,21 @@ const MAX_RAG_QUERY_CHARS = 2000;
  * pulls off-target regulation to the top of cosine retrieval. Metadata is used only as a
  * fallback when nothing was extracted.
  */
-function analysisRagQuery(review: ReviewCase, documents: ExtractedDocument[]): string {
+function analysisRagQuery(
+  review: ReviewCase,
+  documents: ExtractedDocument[],
+  conceptTerms = ""
+): string {
   const extractedText = documents
     .map((document) => document.text)
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!extractedText) {
-    return reviewRagQuery(review);
-  }
+  const base = extractedText || reviewRagQuery(review);
+  const concepts = conceptTerms.trim();
 
-  return extractedText.slice(0, MAX_RAG_QUERY_CHARS);
+  return (concepts ? `${base} ${concepts}` : base).slice(0, MAX_RAG_QUERY_CHARS);
 }
 
 function isTextLikeFile(file: ReviewFile) {
@@ -1091,9 +1096,9 @@ function createLexicalRagRetriever(
       cachedKnowledgeCaseCandidates = await fetchKnowledgeCaseCandidates(review, scope, query);
     },
 
-    async retrieve({ review, extractedDocuments, scope }) {
+    async retrieve({ review, extractedDocuments, scope, queryConcepts }) {
       const searchableDocuments = documentsForAnalysis(extractedDocuments, review);
-      const query = analysisRagQuery(review, searchableDocuments);
+      const query = analysisRagQuery(review, searchableDocuments, queryConcepts);
 
       const productDocumentCandidates = searchableDocuments
         .map((document, index) => ({
@@ -1614,17 +1619,19 @@ export function createReviewAnalysisPipeline({
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.
+      const conceptTerms = await expandComplianceQuery(
+        analysisDocuments.map((document) => document.text).join(" "),
+        modelProvider
+      );
       const retrievedCandidates = await ragRetriever.retrieve({
         review,
         extractedDocuments: analysisDocuments,
-        scope
+        scope,
+        queryConcepts: conceptTerms
       });
-      // Rerank with the same OCR-enriched query used for retrieval. Uploaded cases carry
-      // placeholder intake metadata, so a metadata-only query (reviewRagQuery) makes the
-      // reranker score real regulation chunks against boilerplate and crush every knowledge
-      // candidate to ~noise — see selectEvidenceCandidates for the downstream impact.
+      // Rerank with the same expanded, OCR-enriched query used for retrieval.
       const rerankedCandidates = await reranker.rerank({
-        query: analysisRagQuery(review, analysisDocuments),
+        query: analysisRagQuery(review, analysisDocuments, conceptTerms),
         candidates: retrievedCandidates
       });
       const evidenceCandidates = selectEvidenceCandidates(rerankedCandidates, {

@@ -360,7 +360,12 @@ describe("review analysis pipeline", () => {
       })
     ]);
     expect(artifacts.multilingualSegments).toBeUndefined();
-    expect(provider.generateText).not.toHaveBeenCalled();
+    // The only permitted direct model call from the main pipeline is the compliance
+    // query expansion used to enrich retrieval — never a multilingual/domain agent.
+    const providerTasks = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.map(
+      ([input]) => input.task
+    );
+    expect(providerTasks).toEqual(["retrieval_query"]);
     expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
       expect.objectContaining({
         extractedDocuments: [
@@ -1186,6 +1191,48 @@ describe("review analysis pipeline", () => {
     );
   });
 
+  it("appends expanded compliance concepts to the retrieval and rerank query", async () => {
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => []);
+    const rerank = vi.fn(async ({ candidates }) => candidates);
+    const generateText = vi.fn(async () => ({
+      provider: "openai" as const,
+      model: "gpt",
+      text: "한정판매 선착순 희소성"
+    }));
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence },
+      reranker: { provider: "fixture-reranker", rerank },
+      modelProvider: { generateText },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "긴급특판 한도 소진 시 조기 종료",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    await pipeline.run({ review, scope });
+
+    expect(searchKnowledgeEvidence).toHaveBeenCalledWith(
+      scope,
+      expect.objectContaining({ query: expect.stringContaining("한정판매 선착순 희소성") })
+    );
+    expect(rerank).toHaveBeenCalledWith(
+      expect.objectContaining({ query: expect.stringContaining("한정판매 선착순 희소성") })
+    );
+  });
+
   it("builds the knowledge retrieval query from extracted document text, not only intake metadata", async () => {
     // Uploaded cases carry placeholder intake metadata; the real ad content only exists
     // in the OCR-extracted documents. Knowledge retrieval must query the extracted text.
@@ -1367,6 +1414,12 @@ describe("review analysis pipeline", () => {
     const provider: ModelProvider = {
       generateText: vi
         .fn()
+        // First model call is the compliance query expansion for retrieval enrichment.
+        .mockResolvedValueOnce({
+          provider: "openai",
+          model: "gpt-5.2",
+          text: "[]"
+        })
         .mockResolvedValueOnce({
           provider: "openai",
           model: "gpt-5.2",
@@ -1499,6 +1552,7 @@ describe("review analysis pipeline", () => {
       ([input]) => input.task
     );
     expect(calledTasks).toEqual([
+      "retrieval_query",
       "creative_review",
       "product_terms",
       "regulation_agent",
@@ -1626,6 +1680,7 @@ describe("review analysis pipeline", () => {
       ([input]) => input.task
     );
     expect(calledTasks).toEqual([
+      "retrieval_query",
       "creative_review",
       "product_terms",
       "regulation_agent",
@@ -1751,7 +1806,7 @@ describe("review analysis pipeline", () => {
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["vietnamese_translator_risk"]);
+    expect(provider.calls).toEqual(["retrieval_query", "vietnamese_translator_risk"]);
   });
 
   it("routes Myanmar OCR text through the Myanmar translator risk agent", async () => {
@@ -1766,7 +1821,7 @@ describe("review analysis pipeline", () => {
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["myanmar_translator_risk"]);
+    expect(provider.calls).toEqual(["retrieval_query", "myanmar_translator_risk"]);
   });
 
   it("routes Khmer OCR text through the Khmer translator risk agent", async () => {
@@ -1781,7 +1836,7 @@ describe("review analysis pipeline", () => {
 
     await pipeline.run({ review });
 
-    expect(provider.calls).toEqual(["khmer_translator_risk"]);
+    expect(provider.calls).toEqual(["retrieval_query", "khmer_translator_risk"]);
   });
 
   it("routes mixed English Vietnamese Myanmar and Khmer OCR text through all multilingual agents and mapping", async () => {
@@ -1854,6 +1909,7 @@ describe("review analysis pipeline", () => {
     await pipeline.run({ review });
 
     expect(provider.calls).toEqual([
+      "retrieval_query",
       "english_translator_risk",
       "vietnamese_translator_risk",
       "myanmar_translator_risk",
@@ -1873,7 +1929,7 @@ describe("review analysis pipeline", () => {
     const artifacts = await pipeline.run({ review });
 
     expect(artifacts.multilingualSegments).toBeUndefined();
-    expect(provider.calls).toEqual([]);
+    expect(provider.calls).toEqual(["retrieval_query"]);
   });
 
   it("keeps Korean-only OCR unchanged and skips multilingual model tasks", async () => {
