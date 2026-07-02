@@ -938,6 +938,313 @@ git commit -m "feat(multilingual): wire NLI enrichment into risk team behind FIN
 
 ---
 
+## Task 6b: MultilingualIssueContext 캐리스루 (finding → 이슈 카드 → DB 왕복)
+
+신규 `semanticPreservation`/`mqm` 값을 (1) 분석 파이프라인의 forward 투영(`multilingualContextFromFinding`)과 (2) DB 스냅샷 복원(`multilingualContextFromSnapshot`) 양쪽에서 이슈 컨텍스트로 통과시킨다. 두 경로 모두 optional이므로 기존 필수 필드 가드는 건드리지 않는다.
+
+**Files:**
+- Modify: `src/server/analysis/issue-generation.ts:228-241` (`multilingualContextFromFinding`)
+- Modify: `src/server/reviews/prisma-mappers.ts:151-199` (`multilingualContextFromSnapshot`)
+- Test: `src/server/analysis/issue-generation.test.ts`
+- Test: `src/server/reviews/prisma-mappers.test.ts`
+
+- [ ] **Step 1: forward 투영 실패 테스트 추가**
+
+`src/server/analysis/issue-generation.test.ts`의 `describe("issue generation", ...)` 안에 새 테스트 추가. 첫 테스트 fixture를 재사용하되 finding에 신규 필드를 넣는다:
+
+```ts
+it("carries semanticPreservation and mqm onto the multilingual context", () => {
+  const review = getReviewCaseById("rc-demo-loan-001")!;
+  const artifacts: AnalysisArtifacts = {
+    generatedAt: "2026-05-26T00:00:00.000Z",
+    extractedDocuments: [
+      {
+        fileId: "file-loan-poster",
+        fileName: "loan-poster.txt",
+        text: "Guaranteed approval in 3 minutes",
+        confidence: 0.95,
+        provider: "fixture"
+      }
+    ],
+    evidenceCandidates: [
+      {
+        id: "ev-approval",
+        sourceType: "product_doc",
+        title: "loan-poster.txt",
+        quoteSummary: "Guaranteed approval in 3 minutes",
+        relevanceScore: 0.93,
+        sourceFileId: "file-loan-poster"
+      }
+    ],
+    agentFindings: [
+      {
+        id: "finding-multilingual-002",
+        agent: "korean_compliance_mapping",
+        issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+        riskLevel: "high",
+        title: "승인 보장 오인 표현",
+        targetText: "Guaranteed approval in 3 minutes",
+        description: "심사와 무관하게 승인이 확정되는 것처럼 해석될 수 있음",
+        suggestedAction: "change_request",
+        suggestedCopy: "Apply in 3 minutes. Approval is subject to credit review.",
+        evidenceCandidateIds: ["ev-approval"],
+        confidence: 0.91,
+        localizedRiskFinding: {
+          id: "risk-en-approval",
+          segmentId: "seg-en-001",
+          language: "en",
+          originalText: "Guaranteed approval in 3 minutes",
+          literalTranslation: "3분 안에 승인 보장",
+          complianceMeaning: "심사와 무관하게 승인 확정처럼 해석될 수 있음",
+          riskCategory: "both",
+          riskSignals: ["approval_guarantee"],
+          riskLevelHint: "high",
+          suggestedCopyOriginalLanguage:
+            "Apply in 3 minutes. Approval is subject to credit review.",
+          suggestedCopyKoreanMeaning:
+            "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음.",
+          confidence: 0.91,
+          semanticPreservation: {
+            semanticRelation: "stronger",
+            semanticShiftScore: 0.8,
+            missingConditionTerms: [],
+            overclaimTerms: ["guaranteed"],
+            nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+            model: "mDeBERTa-v3-base-mnli-xnli"
+          },
+          mqm: {
+            errorType: "addition",
+            complianceRiskType: "approval_guarantee",
+            severity: "major",
+            targetSpan: "Guaranteed approval",
+            evidenceType: "product_doc",
+            recommendedAction: "change_request"
+          }
+        },
+        koreanComplianceMapping: {
+          localizedFindingId: "risk-en-approval",
+          issueType: "MULTILINGUAL_APPROVAL_GUARANTEE",
+          koreanComplianceCategory: "승인 보장 오인 표현",
+          koreanComplianceReason: "대출 승인 가능성을 확정적으로 고지하는 표현으로 볼 수 있음",
+          evidenceQuery: "대출 광고 승인 보장 금지 표현",
+          suggestedAction: "change_request"
+        }
+      }
+    ]
+  };
+
+  const issues = buildAnalysisIssues(review, artifacts);
+
+  expect(issues[0].multilingualContext?.semanticPreservation).toEqual({
+    semanticRelation: "stronger",
+    semanticShiftScore: 0.8,
+    missingConditionTerms: [],
+    overclaimTerms: ["guaranteed"],
+    nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+    model: "mDeBERTa-v3-base-mnli-xnli"
+  });
+  expect(issues[0].multilingualContext?.mqm).toEqual({
+    errorType: "addition",
+    complianceRiskType: "approval_guarantee",
+    severity: "major",
+    targetSpan: "Guaranteed approval",
+    evidenceType: "product_doc",
+    recommendedAction: "change_request"
+  });
+});
+```
+
+- [ ] **Step 2: 테스트 실패 확인**
+
+Run: `npm run test -- issue-generation`
+Expected: FAIL — `semanticPreservation`/`mqm`가 undefined
+
+- [ ] **Step 3: forward 투영에 passthrough 추가**
+
+`src/server/analysis/issue-generation.ts`의 `multilingualContextFromFinding` return 객체(228-241줄)에서 `suggestedCopyKoreanMeaning: localized.suggestedCopyKoreanMeaning` 줄을 다음으로 교체:
+
+```ts
+    suggestedCopyOriginalLanguage: localized.suggestedCopyOriginalLanguage,
+    suggestedCopyKoreanMeaning: localized.suggestedCopyKoreanMeaning,
+    semanticPreservation: localized.semanticPreservation,
+    mqm: localized.mqm
+```
+
+(주의: 위에서 `suggestedCopyOriginalLanguage` 줄은 이미 존재하므로 중복 추가하지 말고, `suggestedCopyKoreanMeaning` 줄 뒤에 두 줄만 append하면 된다.)
+
+- [ ] **Step 4: 테스트 통과 확인**
+
+Run: `npm run test -- issue-generation`
+Expected: PASS (기존 `toEqual` 테스트는 undefined 필드를 동등 취급하므로 무손상)
+
+- [ ] **Step 5: 스냅샷 복원 실패 테스트 추가**
+
+`src/server/reviews/prisma-mappers.test.ts`의 `row` fixture(51-76줄 `outputSnapshot.localizedRiskFinding`)에 신규 필드를 추가한다. `confidence: 0.91` 줄 뒤에 삽입:
+
+```ts
+            confidence: 0.91,
+            semanticPreservation: {
+              semanticRelation: "stronger",
+              semanticShiftScore: 0.8,
+              missingConditionTerms: [],
+              overclaimTerms: ["guaranteed"],
+              nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+              model: "mDeBERTa-v3-base-mnli-xnli"
+            },
+            mqm: {
+              errorType: "addition",
+              complianceRiskType: "approval_guarantee",
+              severity: "major",
+              targetSpan: "Guaranteed approval",
+              evidenceType: "product_doc",
+              recommendedAction: "change_request"
+            }
+```
+
+그리고 `describe("prisma review mappers", ...)` 안에 새 테스트 추가:
+
+```ts
+it("reconstructs semanticPreservation and mqm from the stored snapshot", () => {
+  const mapped = toReviewCase(row);
+  expect(mapped.issues[0]?.multilingualContext?.semanticPreservation).toEqual({
+    semanticRelation: "stronger",
+    semanticShiftScore: 0.8,
+    missingConditionTerms: [],
+    overclaimTerms: ["guaranteed"],
+    nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+    model: "mDeBERTa-v3-base-mnli-xnli"
+  });
+  expect(mapped.issues[0]?.multilingualContext?.mqm).toEqual({
+    errorType: "addition",
+    complianceRiskType: "approval_guarantee",
+    severity: "major",
+    targetSpan: "Guaranteed approval",
+    evidenceType: "product_doc",
+    recommendedAction: "change_request"
+  });
+});
+```
+
+(참고: `toReviewCase`가 이미 import되어 있는지 확인. 없으면 파일 상단 import에서 이미 쓰는 매퍼 이름을 grep으로 확인: `grep -n "toReviewCase" src/server/reviews/prisma-mappers.test.ts`.)
+
+- [ ] **Step 6: 테스트 실패 확인**
+
+Run: `npm run test -- prisma-mappers`
+Expected: FAIL — `semanticPreservation`/`mqm`가 undefined
+
+- [ ] **Step 7: 스냅샷 파서 헬퍼 추가**
+
+`src/server/reviews/prisma-mappers.ts`의 `multilingualContextFromSnapshot`(151줄) **바로 위**에 삽입:
+
+```ts
+const SEMANTIC_RELATIONS = [
+  "equivalent",
+  "stronger",
+  "weaker",
+  "contradiction",
+  "missing-condition"
+] as const;
+const MQM_ERROR_TYPES = [
+  "mistranslation",
+  "omission",
+  "addition",
+  "terminology",
+  "inconsistency",
+  "locale_convention"
+] as const;
+const MQM_SEVERITIES = ["minor", "major", "critical"] as const;
+const MQM_EVIDENCE_TYPES = ["product_doc", "internal_policy", "law", "case_history"] as const;
+const SUGGESTED_ACTIONS = ["approve", "change_request", "reject", "hold"] as const;
+
+function numberOr(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function semanticPreservationValue(
+  value: unknown
+): MultilingualIssueContext["semanticPreservation"] {
+  const obj = objectValue(value);
+  const probs = objectValue(obj?.nliProbabilities);
+  const relation = stringValue(obj?.semanticRelation);
+
+  if (!obj || !probs || !relation || !SEMANTIC_RELATIONS.includes(relation as never)) {
+    return undefined;
+  }
+
+  return {
+    semanticRelation: relation as (typeof SEMANTIC_RELATIONS)[number],
+    semanticShiftScore: numberOr(obj.semanticShiftScore),
+    missingConditionTerms: stringArray(obj.missingConditionTerms),
+    overclaimTerms: stringArray(obj.overclaimTerms),
+    nliProbabilities: {
+      entailment: numberOr(probs.entailment),
+      neutral: numberOr(probs.neutral),
+      contradiction: numberOr(probs.contradiction)
+    },
+    model: stringValue(obj.model) ?? ""
+  };
+}
+
+function mqmValue(value: unknown): MultilingualIssueContext["mqm"] {
+  const obj = objectValue(value);
+  const errorType = stringValue(obj?.errorType);
+  const severity = stringValue(obj?.severity);
+  const evidenceType = stringValue(obj?.evidenceType);
+  const action = stringValue(obj?.recommendedAction);
+
+  if (
+    !obj ||
+    !errorType ||
+    !MQM_ERROR_TYPES.includes(errorType as never) ||
+    !severity ||
+    !MQM_SEVERITIES.includes(severity as never) ||
+    !evidenceType ||
+    !MQM_EVIDENCE_TYPES.includes(evidenceType as never)
+  ) {
+    return undefined;
+  }
+
+  return {
+    errorType: errorType as (typeof MQM_ERROR_TYPES)[number],
+    complianceRiskType: stringValue(obj.complianceRiskType) ?? "",
+    severity: severity as (typeof MQM_SEVERITIES)[number],
+    targetSpan: stringValue(obj.targetSpan) ?? "",
+    evidenceType: evidenceType as (typeof MQM_EVIDENCE_TYPES)[number],
+    recommendedAction:
+      action && SUGGESTED_ACTIONS.includes(action as never)
+        ? (action as (typeof SUGGESTED_ACTIONS)[number])
+        : "hold"
+  };
+}
+```
+
+- [ ] **Step 8: 복원 return에 passthrough 추가**
+
+같은 파일 `multilingualContextFromSnapshot`의 최종 return 객체(185-198줄)에서 `suggestedCopyKoreanMeaning` 줄을 다음으로 교체:
+
+```ts
+    suggestedCopyOriginalLanguage,
+    suggestedCopyKoreanMeaning,
+    semanticPreservation: semanticPreservationValue(localized?.semanticPreservation),
+    mqm: mqmValue(localized?.mqm)
+```
+
+(주의: `suggestedCopyOriginalLanguage`는 이미 존재하므로 `suggestedCopyKoreanMeaning` 뒤에 두 줄만 append.)
+
+- [ ] **Step 9: 테스트 통과 확인**
+
+Run: `npm run test -- prisma-mappers`
+Expected: PASS (기존 `toMatchObject` 테스트 무손상)
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add src/server/analysis/issue-generation.ts src/server/analysis/issue-generation.test.ts src/server/reviews/prisma-mappers.ts src/server/reviews/prisma-mappers.test.ts
+git commit -m "feat(multilingual): carry semanticPreservation and mqm through issue context and snapshot round-trip"
+```
+
+---
+
 ## Task 7: Python NLI 마이크로서비스
 
 **Files:**
