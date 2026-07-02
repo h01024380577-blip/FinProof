@@ -154,6 +154,7 @@ function normalizeAction(value: unknown): ReviewIssue["suggestedAction"] {
   return normalizeAiSuggestedAction(value);
 }
 
+// keep the runtime arrays below in sync with the MQM unions in multilingual.ts
 const MQM_ERROR_TYPES = [
   "mistranslation",
   "omission",
@@ -172,13 +173,13 @@ function normalizeMqm(value: unknown): LocalizedRiskFinding["mqm"] {
   }
 
   const fields = value as Record<string, unknown>;
-  const errorType = MQM_ERROR_TYPES.includes(fields.errorType as never)
+  const errorType = (MQM_ERROR_TYPES as ReadonlyArray<unknown>).includes(fields.errorType)
     ? (fields.errorType as (typeof MQM_ERROR_TYPES)[number])
     : "terminology";
-  const severity = MQM_SEVERITIES.includes(fields.severity as never)
+  const severity = (MQM_SEVERITIES as ReadonlyArray<unknown>).includes(fields.severity)
     ? (fields.severity as (typeof MQM_SEVERITIES)[number])
     : "minor";
-  const evidenceType = MQM_EVIDENCE_TYPES.includes(fields.evidenceType as never)
+  const evidenceType = (MQM_EVIDENCE_TYPES as ReadonlyArray<unknown>).includes(fields.evidenceType)
     ? (fields.evidenceType as (typeof MQM_EVIDENCE_TYPES)[number])
     : "product_doc";
 

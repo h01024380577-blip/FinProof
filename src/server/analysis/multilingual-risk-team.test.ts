@@ -779,10 +779,13 @@ describe("runMultilingualRiskTeam", () => {
       provider
     });
 
-    expect(result.localizedRiskFindings[0]?.mqm).toMatchObject({
+    expect(result.localizedRiskFindings[0]?.mqm).toEqual({
       errorType: "terminology",
+      complianceRiskType: "approval_guarantee",
       severity: "minor",
-      evidenceType: "product_doc"
+      targetSpan: "Guaranteed approval",
+      evidenceType: "product_doc",
+      recommendedAction: "change_request"
     });
   });
 
