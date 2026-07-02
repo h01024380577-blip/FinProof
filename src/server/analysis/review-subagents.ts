@@ -193,6 +193,34 @@ function stringField(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
 }
 
+// Internal orchestration jargon and raw schema field names occasionally leak from the
+// sub-agent prompts into the model's Korean reviewer-facing text (e.g. "prior finding",
+// "evidenceCandidateIds"). Reviewers should never see these internal identifiers, so we
+// map them to natural Korean wording before an issue card is built. Order matters:
+// longer/more specific patterns run before generic ones.
+const INTERNAL_TERM_REPLACEMENTS: Array<[RegExp, string]> = [
+  [/\bprior\s*findings?\b/gi, "기존 지적 사항"],
+  [/\bfindings?\b/gi, "지적 사항"],
+  [/\bevidenceCandidateIds?\b/gi, "제시된 근거"],
+  [/\bevidenceCandidates?\b/gi, "제시된 근거"],
+  [/\bquoteSummary\b/gi, "근거 요지"],
+  [/\btargetText\b/gi, "지적 문구"],
+  [/\bsuggestedCopy\b/gi, "권고 문구"],
+  [/\bsuggestedAction\b/gi, "권고 조치"],
+  [/\briskLevel\b/gi, "위험도"],
+  [/\bsourceType\b/gi, "근거 유형"],
+  [/\bissueType\b/gi, "이슈 유형"],
+  [/\boutputSchema\b/gi, "출력 형식"]
+];
+
+export function sanitizeReviewerText(value: string): string {
+  let result = value;
+  for (const [pattern, replacement] of INTERNAL_TERM_REPLACEMENTS) {
+    result = result.replace(pattern, replacement);
+  }
+  return result.replace(/[ \t]{2,}/g, " ").trim();
+}
+
 function knownEvidenceIds(candidates: RagEvidenceCandidate[]) {
   return new Set(candidates.map((candidate) => candidate.id));
 }
@@ -222,7 +250,7 @@ function normalizeFinding(
   }
 
   const fields = item as Record<string, unknown>;
-  const title = stringField(fields.title, "");
+  const title = sanitizeReviewerText(stringField(fields.title, ""));
 
   if (!title) {
     return undefined;
@@ -234,12 +262,13 @@ function normalizeFinding(
     issueType: stringField(fields.issueType, `ai_${agent}`),
     riskLevel: normalizeRiskLevel(fields.riskLevel),
     title,
-    targetText: stringField(fields.targetText, title),
-    description: stringField(fields.description, "모델 분석 결과 추가 확인이 필요합니다."),
+    targetText: sanitizeReviewerText(stringField(fields.targetText, title)),
+    description: sanitizeReviewerText(
+      stringField(fields.description, "모델 분석 결과 추가 확인이 필요합니다.")
+    ),
     suggestedAction: normalizeAction(fields.suggestedAction),
-    suggestedCopy: stringField(
-      fields.suggestedCopy,
-      "조건, 제한 사항, 적용 기준을 인접 영역에 명시해 주세요."
+    suggestedCopy: sanitizeReviewerText(
+      stringField(fields.suggestedCopy, "조건, 제한 사항, 적용 기준을 인접 영역에 명시해 주세요.")
     ),
     evidenceCandidateIds: normalizeEvidenceIds(fields.evidenceCandidateIds, evidenceCandidates),
     confidence: clampConfidence(fields.confidence),

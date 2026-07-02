@@ -51,6 +51,9 @@ Use high only when uploaded ad text directly matches supplied law, internal poli
 When evidence is weak, missing, or the issue is based mainly on AI inference, use caution or info instead of escalating.
 Do not state final approval or rejection. The human reviewer makes final decisions.
 
+Reviewer-Facing Wording:
+The title, targetText, description, and suggestedCopy fields are shown directly to a Korean human reviewer. Write them in natural Korean and never expose internal orchestration terms or raw schema field names. Do not write words such as "finding", "prior finding", "priorFindings", "evidenceCandidateIds", "targetText", "suggestedCopy", "suggestedAction", "riskLevel", "sourceType", "issueType", or "outputSchema" in these fields. When you must refer to an earlier sub-agent's finding, use Korean phrasing such as "기존 지적 사항" or "앞선 분석" instead.
+
 Shared Common JSON Instructions:
 Return strict JSON only. Use the exact supplied evidenceCandidateIds. If there is no actionable issue, return [].
 Do not invent facts outside the uploaded documents.`;
