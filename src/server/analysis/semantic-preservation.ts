@@ -106,26 +106,36 @@ export function deriveSemanticRelation(input: {
   return { relation, missingConditionTerms, overclaimTerms };
 }
 
-function reconcileMqm(finding: LocalizedRiskFinding): LocalizedRiskFinding {
+function reconcileFinding(finding: LocalizedRiskFinding): LocalizedRiskFinding {
   const relation = finding.semanticPreservation?.semanticRelation;
-  if (!finding.mqm || !relation) {
+  if (!relation) {
     return finding;
   }
 
-  const original = finding.mqm;
-  let mqm = original;
-  if (relation === "contradiction" || relation === "missing-condition") {
-    mqm = { ...mqm, recommendedAction: "change_request" };
-  }
-  if (
-    relation === "missing-condition" &&
-    original.errorType === "omission" &&
-    original.severity === "minor"
-  ) {
-    mqm = { ...mqm, severity: "major" };
+  let next = finding;
+
+  // Overclaimed (stronger) copy should not stay at "info"; never auto-escalate to "high".
+  if (relation === "stronger" && next.riskLevelHint === "info") {
+    next = { ...next, riskLevelHint: "caution" };
   }
 
-  return { ...finding, mqm };
+  if (next.mqm) {
+    const original = next.mqm;
+    let mqm = original;
+    if (relation === "contradiction" || relation === "missing-condition") {
+      mqm = { ...mqm, recommendedAction: "change_request" };
+    }
+    if (
+      relation === "missing-condition" &&
+      original.errorType === "omission" &&
+      original.severity === "minor"
+    ) {
+      mqm = { ...mqm, severity: "major" };
+    }
+    next = { ...next, mqm };
+  }
+
+  return next;
 }
 
 export async function enrichSemanticPreservation(input: {
@@ -161,7 +171,7 @@ export async function enrichSemanticPreservation(input: {
         model: input.model ?? DEFAULT_MODEL
       };
 
-      enriched.push(reconcileMqm({ ...finding, semanticPreservation }));
+      enriched.push(reconcileFinding({ ...finding, semanticPreservation }));
     } catch {
       enriched.push(finding);
     }

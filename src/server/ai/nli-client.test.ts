@@ -28,4 +28,21 @@ describe("createHttpNliClient", () => {
     const client = createHttpNliClient({ baseUrl: "http://localhost:8001" });
     await expect(client.classify({ premise: "가", hypothesis: "나" })).rejects.toThrow();
   });
+
+  it("retries once when the first attempt fails, then succeeds", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network blip"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ scores: { entailment: 0.6, neutral: 0.3, contradiction: 0.1 } })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = createHttpNliClient({ baseUrl: "http://localhost:8001" });
+    const scores = await client.classify({ premise: "가", hypothesis: "나" });
+
+    expect(scores.entailment).toBe(0.6);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
 });

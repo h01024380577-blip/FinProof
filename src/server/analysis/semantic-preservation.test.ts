@@ -123,4 +123,15 @@ describe("enrichSemanticPreservation", () => {
     expect(enriched.semanticPreservation).toBeUndefined();
     expect(enriched.mqm).toEqual(baseFinding.mqm);
   });
+
+  it("elevates riskLevelHint from info to caution on a stronger relation", async () => {
+    const infoFinding = { ...baseFinding, riskLevelHint: "info" as const };
+    const [enriched] = await enrichSemanticPreservation({
+      findings: [infoFinding],
+      review,
+      client: stubClient({ entailment: 0.2, neutral: 0.5, contradiction: 0.3 })
+    });
+    expect(enriched.semanticPreservation?.semanticRelation).toBe("stronger");
+    expect(enriched.riskLevelHint).toBe("caution");
+  });
 });

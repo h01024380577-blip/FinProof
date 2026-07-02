@@ -83,7 +83,8 @@ export type MultilingualAgentError = {
     | "vietnamese_translator_risk"
     | "myanmar_translator_risk"
     | "khmer_translator_risk"
-    | "korean_compliance_mapping";
+    | "korean_compliance_mapping"
+    | "nli_enrichment";
   language?: SupportedReviewLanguage;
   message: string;
 };

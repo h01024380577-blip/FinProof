@@ -570,7 +570,7 @@ export async function runMultilingualRiskTeam(input: {
       localizedRiskFindings.splice(0, localizedRiskFindings.length, ...enriched);
     } catch (error) {
       errors.push({
-        agentType: "korean_compliance_mapping",
+        agentType: "nli_enrichment",
         message: `nli_enrichment_failed: ${errorMessage(error)}`
       });
     }
