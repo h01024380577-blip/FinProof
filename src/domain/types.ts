@@ -83,6 +83,22 @@ export type MultilingualIssueContext = {
   evidenceQuery: string;
   suggestedCopyOriginalLanguage: string;
   suggestedCopyKoreanMeaning: string;
+  semanticPreservation?: {
+    semanticRelation: "equivalent" | "stronger" | "weaker" | "contradiction" | "missing-condition";
+    semanticShiftScore: number;
+    missingConditionTerms: string[];
+    overclaimTerms: string[];
+    nliProbabilities: { entailment: number; neutral: number; contradiction: number };
+    model: string;
+  };
+  mqm?: {
+    errorType: "mistranslation" | "omission" | "addition" | "terminology" | "inconsistency" | "locale_convention";
+    complianceRiskType: string;
+    severity: "minor" | "major" | "critical";
+    targetSpan: string;
+    evidenceType: "product_doc" | "internal_policy" | "law" | "case_history";
+    recommendedAction: ReviewIssue["suggestedAction"];
+  };
 };
 
 export type ReviewIssue = {
