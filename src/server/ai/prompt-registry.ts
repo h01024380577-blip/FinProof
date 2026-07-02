@@ -505,7 +505,14 @@ For each finding:
 - set riskLevelHint conservatively under the supplied riskPolicy;
 - write suggestedCopyOriginalLanguage as a safer replacement in the same original language when a wording change is useful;
 - write suggestedCopyKoreanMeaning as the Korean meaning of that safer replacement, not a separate new issue;
-- lower confidence when OCR quality, mixed-language segmentation, ambiguous grammar, or missing context limits certainty.
+- lower confidence when OCR quality, mixed-language segmentation, ambiguous grammar, or missing context limits certainty;
+- also include an "mqm" object standardizing the error using MQM translation-quality typology adapted to Korean financial-advertising compliance:
+  - errorType: exactly one of "mistranslation" (상품 조건 오역), "omission" (필수 고지 누락), "addition" (원문에 없는 혜택 추가), "terminology" (금융용어 불일치), "inconsistency" (약관/금리표/랜딩 간 불일치), "locale_convention" (국가/언어권 표기 혼선);
+  - complianceRiskType: short snake_case tag, e.g. "required_disclosure_missing";
+  - severity: "minor", "major", or "critical";
+  - targetSpan: the offending original-language span;
+  - evidenceType: one of "product_doc", "internal_policy", "law", "case_history";
+  - recommendedAction: "approve", "change_request", or "hold".
 
 Use evidenceCandidates only to ground risk severity and terminology. Do not cite or invent evidenceCandidateIds in this translator output unless the supplied outputSchema explicitly asks for them. If evidence is weak or missing, keep the riskLevelHint at "caution" or "info" rather than escalating.
 

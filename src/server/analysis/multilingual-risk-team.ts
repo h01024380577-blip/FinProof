@@ -251,7 +251,7 @@ function languageAgentInput(input: {
     evidenceCandidates: evidencePayload(input.evidenceCandidates),
     outputSchema: {
       findings:
-        "array of { id, segmentId, language, originalText, literalTranslation, complianceMeaning, riskCategory, riskSignals, riskLevelHint, suggestedCopyOriginalLanguage, suggestedCopyKoreanMeaning, confidence }. id must be unique per localized risk finding.",
+        "array of { id, segmentId, language, originalText, literalTranslation, complianceMeaning, riskCategory, riskSignals, riskLevelHint, suggestedCopyOriginalLanguage, suggestedCopyKoreanMeaning, confidence, mqm }. mqm is { errorType, complianceRiskType, severity, targetSpan, evidenceType, recommendedAction }. id must be unique per localized risk finding.",
       allowedRiskCategories: ["expression_risk", "compliance_risk", "both"],
       allowedRiskLevelHints: analysisRiskLevels
     }
