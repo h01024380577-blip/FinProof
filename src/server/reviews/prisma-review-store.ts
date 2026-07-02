@@ -1054,7 +1054,7 @@ export function createPrismaReviewStore(): ReviewStore {
         if (input.productType) {
           params.push(input.productType);
           whereParts.push(
-            `(kd."product_type" = $${params.length}::"ProductType" OR kd."product_type" IS NULL)`
+            `(kd."product_type" = $${params.length}::"ProductType" OR kd."product_type" IS NULL OR kd."document_type" IN ('checklist', 'guide'))`
           );
         }
 
@@ -1150,7 +1150,11 @@ export function createPrismaReviewStore(): ReviewStore {
 
       if (input.productType) {
         documentFilters.push({
-          OR: [{ productType: input.productType }, { productType: null }]
+          OR: [
+            { productType: input.productType },
+            { productType: null },
+            { documentType: { in: ["checklist", "guide"] } }
+          ]
         });
       }
 

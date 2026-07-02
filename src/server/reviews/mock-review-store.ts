@@ -535,7 +535,11 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
         { effectiveFrom: document.effectiveFrom, effectiveTo: document.effectiveTo },
         input
       ) &&
-      (!input.productType || !document.productType || document.productType === input.productType) &&
+      (!input.productType ||
+        !document.productType ||
+        document.productType === input.productType ||
+        document.documentType === "checklist" ||
+        document.documentType === "guide") &&
       (!input.affiliateId || !document.affiliateId || document.affiliateId === input.affiliateId)
     );
   }
