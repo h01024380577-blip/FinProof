@@ -63,6 +63,7 @@ export type CreateReviewCaseFromUploadedFilesInput = {
   title: string;
   affiliate: string;
   requestDepartment?: string;
+  requestMemo?: string;
   productType: ProductType;
   channelType: string[];
   plannedPublishDate: string;
@@ -425,10 +426,7 @@ export interface ReviewStore {
     reviewCaseId: string,
     input: CreateReviewCaseRevisionInput
   ): Promise<ReviewCase | undefined>;
-  listReviewVersions(
-    scope: ReviewStoreScope,
-    reviewCaseId: string
-  ): Promise<ReviewVersion[]>;
+  listReviewVersions(scope: ReviewStoreScope, reviewCaseId: string): Promise<ReviewVersion[]>;
   /**
    * 케이스의 현재 버전 문서들에 대해 영속화된 OCR 추출 텍스트(EvidenceChunk, source=review_file)를
    * 파일별로 반환한다. 재업로드 변경분석(diff)의 "현재 버전" 비교 소스로 사용한다.

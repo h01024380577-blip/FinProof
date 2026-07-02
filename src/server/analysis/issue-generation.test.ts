@@ -146,6 +146,65 @@ describe("issue generation", () => {
     );
   });
 
+  it("turns social context risk findings into review issues with the social agent source", () => {
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-07-02T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "poster.txt",
+          text: "탱크데이 혜택 폭격 이벤트",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "ev-social-symbol",
+          sourceType: "internal_policy",
+          title: "02_상징_이미지_체크리스트.md",
+          quoteSummary:
+            "무기, 폭발, 군사적 상징은 캠페인 맥락에 따라 사회적 논란 가능성을 확인한다.",
+          relevanceScore: 0.91
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-social-context-001",
+          agent: "social_context_risk",
+          title: "군사적 상징 연상 가능성",
+          issueType: "SOCIAL_CONTEXT_SYMBOL_DATE",
+          riskLevel: "caution",
+          targetText: "탱크데이 혜택 폭격",
+          description: "캠페인명과 문구가 군사적 상징을 연상시킬 수 있어 PR 확인이 필요합니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "캠페인명과 혜택 문구를 중립적 표현으로 조정해 주세요.",
+          evidenceCandidateIds: ["ev-social-symbol"],
+          confidence: 0.82
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          issueType: "SOCIAL_CONTEXT_SYMBOL_DATE",
+          title: "군사적 상징 연상 가능성",
+          sourceAgents: ["social_context_risk"],
+          suggestedAction: "hold",
+          evidence: [
+            expect.objectContaining({
+              title: "02_상징_이미지_체크리스트.md"
+            })
+          ]
+        })
+      ])
+    );
+  });
+
   it("attaches the most issue-relevant regulation to each issue, not the globally top one", () => {
     const review = getReviewCaseById("rc-demo-deposit-001")!;
     const rateRule = {

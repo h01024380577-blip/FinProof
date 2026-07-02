@@ -2664,6 +2664,23 @@ a.review-table__row:hover {
   text-align: left;
 }
 
+.issue-card__agent-badge,
+.issue-agent-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px 7px;
+  border: 1px solid #7c3aed;
+  border-radius: 999px;
+  background: #f5f3ff;
+  color: #4c1d95;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
 .issue-empty-state {
   display: grid;
   gap: 8px;
@@ -2824,6 +2841,13 @@ a.review-table__row:hover {
   margin-top: 13px;
   padding-bottom: 13px;
   border-bottom: 1px solid var(--line);
+}
+
+.issue-summary-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
 
 .evidence-panel__summary h4,
@@ -10736,13 +10760,7 @@ body:has(.landing-page)::before {
 }
 
 .revision-diff__line--empty {
-  background: repeating-linear-gradient(
-    45deg,
-    #fafbfc,
-    #fafbfc 6px,
-    #f3f4f6 6px,
-    #f3f4f6 12px
-  );
+  background: repeating-linear-gradient(45deg, #fafbfc, #fafbfc 6px, #f3f4f6 6px, #f3f4f6 12px);
 }
 
 .revision-diff__line--empty .revision-diff__gutter {

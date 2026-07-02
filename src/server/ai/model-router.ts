@@ -13,6 +13,7 @@ export type ModelRouteTask =
   | "product_terms"
   | "regulation_agent"
   | "internal_policy_agent"
+  | "social_context_risk"
   | "case_search"
   | "english_translator_risk"
   | "vietnamese_translator_risk"

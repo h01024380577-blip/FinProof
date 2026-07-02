@@ -48,9 +48,16 @@ export function IssueDetailTabs(props: IssueDetailTabsProps): JSX.Element {
 }
 
 function ChecklistPanel({ issue }: { issue: ReviewIssue }): JSX.Element {
+  const isSocialContextIssue =
+    issue.sourceAgents.includes("social_context_risk") ||
+    issue.issueType.toUpperCase().startsWith("SOCIAL_CONTEXT_");
+
   return (
     <div className="evidence-panel__summary">
-      <RiskBadge level={issue.riskLevel} />
+      <div className="issue-summary-badges">
+        <RiskBadge level={issue.riskLevel} />
+        {isSocialContextIssue ? <span className="issue-agent-badge">사회맥락 리스크</span> : null}
+      </div>
       <h4>{issue.title}</h4>
       <p>{issue.description}</p>
       <MultilingualContextBlock issue={issue} />

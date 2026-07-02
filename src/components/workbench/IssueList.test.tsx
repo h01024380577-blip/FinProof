@@ -104,6 +104,27 @@ describe("IssueList", () => {
     expect(within(card).getByText("#1")).toHaveClass("issue-card__index");
   });
 
+  it("labels social-context issues without changing the risk label model", () => {
+    render(
+      <IssueList
+        issues={[
+          {
+            ...issues[0],
+            issueType: "SOCIAL_CONTEXT_SYMBOL_DATE",
+            sourceAgents: ["social_context_risk"],
+            title: "민감일과 캠페인명 충돌 가능성"
+          }
+        ]}
+        selectedIssueId="issue-1"
+        onSelectIssue={() => undefined}
+      />
+    );
+
+    const card = screen.getByRole("button", { name: /민감일과 캠페인명/ });
+    expect(within(card).getByText("사회맥락")).toHaveClass("issue-card__agent-badge");
+    expect(within(card).queryByText("위험")).not.toBeInTheDocument();
+  });
+
   it("does not show the manual issue button by default", () => {
     render(<IssueList issues={issues} selectedIssueId="issue-1" onSelectIssue={() => undefined} />);
 

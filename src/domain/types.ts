@@ -381,6 +381,7 @@ export type AgentType =
   | "product_terms"
   | "regulation"
   | "internal_policy"
+  | "social_context_risk"
   | "case_search"
   | "english_translator_risk"
   | "vietnamese_translator_risk"

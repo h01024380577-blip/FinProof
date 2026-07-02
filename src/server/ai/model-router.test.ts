@@ -126,4 +126,20 @@ describe("model router", () => {
       escalationReason: "korean_compliance_mapping"
     });
   });
+
+  it("routes social context risk like a normal domain agent unless risk is high", () => {
+    expect(selectModelRoute("social_context_risk", {})).toEqual({
+      task: "social_context_risk",
+      provider: "openai",
+      model: "gpt-5-mini",
+      modelTier: "default_text"
+    });
+    expect(selectModelRoute("social_context_risk", { riskLevel: "high" })).toEqual({
+      task: "social_context_risk",
+      provider: "openai",
+      model: "gpt-5.4",
+      modelTier: "escalation_text",
+      escalationReason: "risk_level_high"
+    });
+  });
 });

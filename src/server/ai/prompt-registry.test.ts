@@ -1,5 +1,6 @@
 import {
   LAW_SEARCH_INTENT_PROMPT,
+  SOCIAL_CONTEXT_RISK_PROMPT,
   multilingualTranslatorRiskPrompt,
   RAG_CHAT_PROMPT
 } from "./prompt-registry";
@@ -19,8 +20,22 @@ describe("prompt registry", () => {
     expect(prompt).toContain("riskSignals");
     expect(prompt).toContain("suggestedCopyOriginalLanguage");
     expect(prompt).toContain("suggestedCopyKoreanMeaning");
-    expect(prompt).toContain("Do not create a finding unless the segment contains financial-advertising copy");
+    expect(prompt).toContain(
+      "Do not create a finding unless the segment contains financial-advertising copy"
+    );
     expect(prompt).toContain("Common Risk Policy");
+  });
+
+  it("keeps the social context risk agent scoped to non-legal controversy detection", () => {
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain(
+      "You are the FinProof social_context_risk agent for Korean financial advertising review."
+    );
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain(
+      "Do not decide whether the advertisement violates law"
+    );
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain("Do not use live news");
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain("Do not recommend rejection");
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain("public controversy potential");
   });
 });
 

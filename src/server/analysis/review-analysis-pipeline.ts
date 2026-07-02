@@ -209,7 +209,20 @@ function overlapScore(query: string, text: string) {
 }
 
 function reviewRagQuery(review: ReviewCase): string {
-  return [review.promotionalCopy, review.disclosure, review.productDescription].join(" ");
+  return [
+    `캠페인명/심의 제목: ${review.title}`,
+    `계열사: ${review.affiliate}`,
+    `상품군: ${review.productType}`,
+    `채널: ${review.channelType.join(", ")}`,
+    `게시 예정일: ${review.plannedPublishDate}`,
+    review.requestDepartment ? `요청 부서: ${review.requestDepartment}` : "",
+    review.promotionalCopy,
+    review.disclosure,
+    review.productDescription,
+    review.missingMaterials.length > 0 ? `누락 자료: ${review.missingMaterials.join(", ")}` : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 const MAX_RAG_QUERY_CHARS = 2000;
@@ -515,6 +528,69 @@ function documentsForAnalysis(documents: ExtractedDocument[], review?: ReviewCas
       document.text.trim().length > 0 &&
       !isNonReviewUploadFile(fileById.get(document.fileId))
   );
+}
+
+function isPlaceholderReviewText(value: string) {
+  return (
+    value === "실제 업로드 자료 분석 대기" ||
+    value === "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다." ||
+    value === "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
+  );
+}
+
+function optionalReviewContextLine(label: string, value: string | undefined) {
+  const trimmed = value?.trim();
+
+  if (!trimmed || isPlaceholderReviewText(trimmed)) {
+    return "";
+  }
+
+  return `${label}: ${trimmed}`;
+}
+
+function reviewContextDocument(review: ReviewCase): ExtractedDocument | undefined {
+  const primaryFile = review.files[0];
+  const text = [
+    "심의 요청 메타데이터",
+    `심의 요청 제목: ${review.title}`,
+    `계열사: ${review.affiliate}`,
+    `상품군: ${review.productType}`,
+    review.channelType.length > 0 ? `게시 채널: ${review.channelType.join(", ")}` : "",
+    review.plannedPublishDate ? `게시 예정일: ${review.plannedPublishDate}` : "",
+    optionalReviewContextLine("요청 부서", review.requestDepartment),
+    optionalReviewContextLine("홍보/요청 문구", review.promotionalCopy),
+    optionalReviewContextLine("고지/추가 안내", review.disclosure),
+    optionalReviewContextLine("상품/대상 설명", review.productDescription),
+    review.missingMaterials.length > 0 ? `누락 자료: ${review.missingMaterials.join(", ")}` : ""
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  if (!text.trim()) {
+    return undefined;
+  }
+
+  return {
+    fileId: primaryFile?.id ?? `${review.id}-review-context`,
+    fileName: "심의 요청 메타데이터",
+    storageKey: primaryFile?.storageKey,
+    text,
+    confidence: 0.82,
+    provider: "review-metadata"
+  };
+}
+
+function documentsWithReviewContext(
+  documents: ExtractedDocument[],
+  review: ReviewCase
+): ExtractedDocument[] {
+  if (documents.length > 0) {
+    return documents;
+  }
+
+  const contextDocument = reviewContextDocument(review);
+
+  return contextDocument ? [contextDocument] : documents;
 }
 
 function extractionDiagnosticsFrom(documents: ExtractedDocument[]): ExtractionDiagnostic[] {
@@ -1429,6 +1505,7 @@ function agentTypeForIssue(issue: ReviewIssue): AgentType {
     sourceAgent === "product_terms" ||
     sourceAgent === "regulation" ||
     sourceAgent === "internal_policy" ||
+    sourceAgent === "social_context_risk" ||
     sourceAgent === "case_search"
   ) {
     return sourceAgent;
@@ -1572,7 +1649,10 @@ export function createReviewAnalysisPipeline({
       // segmentation, findings, or persistence. Mis-encoded uploads (e.g. UTF-16 Vietnamese
       // text decoded as UTF-8) otherwise carry NUL bytes that Postgres refuses to store.
       const extractedDocuments = rawExtractedDocuments.map(sanitizeExtractedDocument);
-      const analysisDocuments = documentsForAnalysis(extractedDocuments, review);
+      const analysisDocuments = documentsWithReviewContext(
+        documentsForAnalysis(extractedDocuments, review),
+        review
+      );
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.

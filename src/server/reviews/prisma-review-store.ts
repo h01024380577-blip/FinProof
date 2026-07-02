@@ -97,6 +97,21 @@ const reviewInclude = {
 } as const;
 
 const uploadAnalysisNotice = "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.";
+
+function uploadPromotionalCopy(
+  input: Pick<
+    CreateReviewCaseFromUploadedFilesInput,
+    "title" | "plannedPublishDate" | "requestMemo"
+  >
+) {
+  return [
+    `심의 요청 제목: ${input.title}`,
+    `게시 예정일: ${input.plannedPublishDate}`,
+    input.requestMemo?.trim() ? `요청 메모: ${input.requestMemo.trim()}` : ""
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
 const reReviewNotice = "재업로드된 수정본입니다. AI 재분석 없이 직전 버전과 비교해 재검토하세요.";
 
 const longWriteTransactionOptions = {
@@ -417,6 +432,7 @@ function agentTypeFromSourceAgents(sourceAgents: string[]): AgentFindingCandidat
     sourceAgent === "product_terms" ||
     sourceAgent === "regulation" ||
     sourceAgent === "internal_policy" ||
+    sourceAgent === "social_context_risk" ||
     sourceAgent === "case_search"
   ) {
     return sourceAgent;
@@ -2115,9 +2131,9 @@ export function createPrismaReviewStore(): ReviewStore {
           requesterName: scope.actorUserName?.trim() || "업로드 요청자",
           requestDepartment: input.requestDepartment?.trim() || "",
           reviewerName: "",
-          promotionalCopy: "실제 업로드 자료 분석 대기",
+          promotionalCopy: uploadPromotionalCopy(input),
           disclosure: uploadAnalysisNotice,
-          productDescription: "실제 업로드 파일의 본문 추출은 아직 적용되지 않았습니다.",
+          productDescription: "업로드 홍보물과 요청 메타데이터를 함께 분석합니다.",
           missingMaterials,
           expectedDraft: defaultExpectedDraft(input.productType),
           analysisNotice: uploadAnalysisNotice,

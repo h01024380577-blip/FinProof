@@ -23,6 +23,13 @@ function issueCardStyle(issue: ReviewIssue): CSSProperties {
   } as CSSProperties;
 }
 
+function isSocialContextIssue(issue: ReviewIssue): boolean {
+  return (
+    issue.sourceAgents.includes("social_context_risk") ||
+    issue.issueType.toUpperCase().startsWith("SOCIAL_CONTEXT_")
+  );
+}
+
 export type IssueListProps = {
   issues: ReviewIssue[];
   selectedIssueId?: string;
@@ -98,6 +105,9 @@ export function IssueList({
               <span className="issue-card__content">
                 <span className="issue-card__top">
                   <small className="issue-card__index">#{index + 1}</small>
+                  {isSocialContextIssue(issue) ? (
+                    <small className="issue-card__agent-badge">사회맥락</small>
+                  ) : null}
                 </span>
                 <strong className="issue-card__title">{issue.title}</strong>
                 <span className="issue-card__excerpt">{issue.targetText}</span>
