@@ -86,8 +86,17 @@ export function deriveSemanticRelation(input: {
   // copy states none in its own language.
   const conditionsInPremise = matchedTerms(input.premise, CONDITION_TERMS);
   const conditionsInHypothesis = matchedTerms(input.hypothesis, CONDITION_TERMS);
+  // The condition-term lists are English/Korean only, so a faithful non-EN/KO
+  // translation that keeps the condition (in its own language) looks like a
+  // dropped condition to the term heuristic. A near-perfect cross-lingual
+  // entailment score means the meaning is preserved, so it must override the
+  // term heuristic instead of the other way around.
+  const STRONG_ENTAILMENT = 0.85;
+  const stronglyEntailed = input.scores.entailment >= STRONG_ENTAILMENT;
   const conditionsDropped =
-    conditionsInPremise.length > 0 && conditionsInHypothesis.length === 0;
+    !stronglyEntailed &&
+    conditionsInPremise.length > 0 &&
+    conditionsInHypothesis.length === 0;
   const missingConditionTerms = conditionsDropped ? conditionsInPremise : [];
 
   let relation: SemanticRelation;

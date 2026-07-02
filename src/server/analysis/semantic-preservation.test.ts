@@ -91,6 +91,21 @@ describe("deriveSemanticRelation", () => {
     });
     expect(result.overclaimTerms).not.toContain("guaranteed");
   });
+
+  it("treats high-entailment cross-lingual copy as equivalent when the condition wording is non-EN/KO", () => {
+    // Faithful Vietnamese translation that DOES state the review condition, but
+    // in Vietnamese. The English/Korean CONDITION_TERMS list cannot match it, so
+    // the term-only path wrongly reports a dropped condition. A near-perfect
+    // cross-lingual entailment score must win over that heuristic.
+    const result = deriveSemanticRelation({
+      scores: { entailment: 0.99, neutral: 0.008, contradiction: 0.002 },
+      premise: "대출 승인 여부와 금리는 신용심사 결과에 따라 달라질 수 있습니다.",
+      hypothesis:
+        "Việc phê duyệt khoản vay và lãi suất tùy thuộc vào kết quả thẩm định tín dụng."
+    });
+    expect(result.relation).toBe("equivalent");
+    expect(result.missingConditionTerms).toHaveLength(0);
+  });
 });
 
 describe("enrichSemanticPreservation", () => {
