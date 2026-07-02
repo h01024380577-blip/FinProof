@@ -279,6 +279,7 @@ async function createFromMultipart(request: Request) {
         title: readString(formData, "title", "실제 업로드 심의 요청"),
         affiliate: readString(formData, "affiliate", "광주은행"),
         requestDepartment: readString(formData, "requestDepartment"),
+        requestMemo: readString(formData, "memo"),
         productType,
         channelType: channelType.length > 0 ? channelType : ["poster"],
         plannedPublishDate: readString(formData, "plannedPublishDate", "2026-06-20"),

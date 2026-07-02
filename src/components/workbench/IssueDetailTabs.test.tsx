@@ -151,6 +151,30 @@ describe("IssueDetailTabs", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("labels social-context risk issues in the checklist summary", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          issueType: "SOCIAL_CONTEXT_SENSITIVE_DATE",
+          sourceAgents: ["social_context_risk"]
+        }}
+        activeTab="checklist"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("사회맥락 리스크")).toHaveClass("issue-agent-badge");
+  });
+
   it("formats evidence metadata in Korean and hides missing location fields", () => {
     render(
       <IssueDetailTabs

@@ -259,6 +259,7 @@ export const AgentType = {
   product_terms: 'product_terms',
   regulation: 'regulation',
   internal_policy: 'internal_policy',
+  social_context_risk: 'social_context_risk',
   case_search: 'case_search',
   english_translator_risk: 'english_translator_risk',
   vietnamese_translator_risk: 'vietnamese_translator_risk',

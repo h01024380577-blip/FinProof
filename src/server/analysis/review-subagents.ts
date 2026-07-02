@@ -8,7 +8,8 @@ import {
   INTERNAL_POLICY_AGENT_PROMPT,
   MAIN_COMPLIANCE_PROMPT,
   PRODUCT_TERMS_PROMPT,
-  REGULATION_AGENT_PROMPT
+  REGULATION_AGENT_PROMPT,
+  SOCIAL_CONTEXT_RISK_PROMPT
 } from "@/server/ai/prompt-registry";
 import type { KoreanComplianceMapping, LocalizedRiskFinding } from "./multilingual";
 import type { ExtractedDocument, RagEvidenceCandidate } from "./review-analysis-pipeline";
@@ -25,6 +26,7 @@ export type ReviewSubAgentId =
   | "product_terms"
   | "regulation"
   | "internal_policy"
+  | "social_context_risk"
   | "evidence_verification"
   | "case_search"
   | "english_translator_risk"
@@ -85,6 +87,11 @@ const domainSubAgents: ReviewSubAgentDefinition[] = [
     id: "internal_policy",
     task: "internal_policy_agent",
     instructions: INTERNAL_POLICY_AGENT_PROMPT
+  },
+  {
+    id: "social_context_risk",
+    task: "social_context_risk",
+    instructions: SOCIAL_CONTEXT_RISK_PROMPT
   }
 ];
 
@@ -356,6 +363,18 @@ function compactPriorFindings(findings: AgentFinding[]) {
   }));
 }
 
+function finalOrchestratedFindings(findings: AgentFinding[], mainFindings: AgentFinding[]) {
+  if (mainFindings.length === 0) {
+    return findings;
+  }
+
+  const preservedSocialContextFindings = findings.filter(
+    (finding) => finding.agent === "social_context_risk"
+  );
+
+  return [...preservedSocialContextFindings, ...mainFindings];
+}
+
 function bestEvidenceScore(evidenceCandidates: RagEvidenceCandidate[]) {
   return Math.max(0, ...evidenceCandidates.map((candidate) => candidate.relevanceScore));
 }
@@ -533,7 +552,7 @@ export function createReviewSubAgentOrchestrator(
         }
       });
 
-      return mainFindings.length > 0 ? mainFindings : findings;
+      return finalOrchestratedFindings(findings, mainFindings);
     }
   };
 }

@@ -300,7 +300,14 @@ describe("review analysis pipeline", () => {
         }
       });
 
-      expect(artifacts.extractedDocuments).toEqual([]);
+      expect(artifacts.extractedDocuments).toEqual([
+        expect.objectContaining({
+          fileId: "file-upload-001",
+          fileName: "심의 요청 메타데이터",
+          provider: "review-metadata",
+          text: expect.stringContaining("심의 요청 제목")
+        })
+      ]);
       expect(artifacts.extractionDiagnostics).toEqual([
         expect.objectContaining({
           fileId: "file-upload-001",
@@ -487,10 +494,21 @@ describe("review analysis pipeline", () => {
       }
     });
 
-    expect(artifacts.extractedDocuments).toEqual([]);
+    expect(artifacts.extractedDocuments).toEqual([
+      expect.objectContaining({
+        fileName: "심의 요청 메타데이터",
+        provider: "review-metadata",
+        text: expect.stringContaining("심의 요청 제목")
+      })
+    ]);
     expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
       expect.objectContaining({
-        extractedDocuments: []
+        extractedDocuments: [
+          expect.objectContaining({
+            fileName: "심의 요청 메타데이터",
+            provider: "review-metadata"
+          })
+        ]
       })
     );
   });
@@ -1442,6 +1460,12 @@ describe("review analysis pipeline", () => {
     );
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
+        task: "social_context_risk",
+        instructions: expect.stringContaining("FinProof social_context_risk agent")
+      })
+    );
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
         task: "evidence_verification",
         instructions: expect.stringContaining("FinProof evidence_verification agent")
       })
@@ -1503,6 +1527,7 @@ describe("review analysis pipeline", () => {
       "product_terms",
       "regulation_agent",
       "internal_policy_agent",
+      "social_context_risk",
       "main_compliance"
     ]);
   });
@@ -1630,6 +1655,7 @@ describe("review analysis pipeline", () => {
       "product_terms",
       "regulation_agent",
       "internal_policy_agent",
+      "social_context_risk",
       "evidence_verification",
       "case_search",
       "main_compliance"
@@ -1676,6 +1702,107 @@ describe("review analysis pipeline", () => {
         title: "팀장 검토: 최고 금리 표현 수정 필요"
       })
     ]);
+  });
+
+  it("preserves social context findings when the main compliance lead consolidates final judgment", async () => {
+    const provider: ModelProvider = {
+      generateText: vi.fn(async ({ task }) => {
+        if (task === "social_context_risk") {
+          return {
+            provider: "openai",
+            model: "gpt-5.2",
+            text: JSON.stringify([
+              {
+                title: "캠페인명의 사회맥락상 표현 점검 필요",
+                issueType: "social_context_wording",
+                riskLevel: "caution",
+                targetText: "탱크데이 혜택 폭격",
+                description:
+                  "캠페인명과 문구가 군사적 상징 및 공격적 표현으로 해석될 수 있어 확인이 필요합니다.",
+                suggestedAction: "change_request",
+                suggestedCopy: "캠페인명과 혜택 문구를 중립적 표현으로 조정해 주세요.",
+                evidenceCandidateIds: ["upload-evidence", "social-guidance"],
+                confidence: 0.87
+              }
+            ])
+          };
+        }
+
+        if (task === "main_compliance") {
+          return {
+            provider: "openai",
+            model: "gpt-5.2",
+            text: JSON.stringify([
+              {
+                title: "팀장 검토: 사회맥락 표현 완화 권고",
+                issueType: "wording",
+                riskLevel: "caution",
+                targetText: "탱크데이 혜택 폭격",
+                description: "사회맥락 Agent의 의견을 반영해 표현 완화가 적절합니다.",
+                suggestedAction: "change_request",
+                suggestedCopy: "혜택 집중 이벤트처럼 중립적 표현으로 변경해 주세요.",
+                evidenceCandidateIds: ["upload-evidence", "social-guidance"],
+                confidence: 0.89
+              }
+            ])
+          };
+        }
+
+        return {
+          provider: "openai",
+          model: "gpt-5.2",
+          text: "[]"
+        };
+      })
+    };
+    const pipeline = createReviewAnalysisPipeline({
+      modelProvider: provider,
+      ragRetriever: {
+        async retrieve() {
+          return [
+            {
+              id: "upload-evidence",
+              sourceType: "product_doc",
+              title: "social-context-risk-test-ad.txt",
+              quoteSummary: "탱크데이 혜택 폭격 카드 이벤트",
+              relevanceScore: 0.95,
+              sourceFileId: "file-upload-001"
+            },
+            {
+              id: "social-guidance",
+              sourceType: "internal_policy",
+              title: "03_문구_캠페인명_체크리스트.md",
+              quoteSummary: "군사적, 공격적 표현은 캠페인명과 문구의 사회맥락을 확인한다.",
+              relevanceScore: 0.93
+            }
+          ];
+        }
+      },
+      ocrProvider: fixedOcrProvider("탱크데이 혜택 폭격 카드 이벤트")
+    });
+
+    const artifacts = await pipeline.run({ review });
+
+    expect(artifacts.agentFindings).toEqual([
+      expect.objectContaining({
+        agent: "social_context_risk",
+        issueType: "social_context_wording",
+        title: "캠페인명의 사회맥락상 표현 점검 필요"
+      }),
+      expect.objectContaining({
+        agent: "main",
+        issueType: "wording",
+        title: "팀장 검토: 사회맥락 표현 완화 권고"
+      })
+    ]);
+    expect(artifacts.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agentType: "social_context_risk",
+          title: "캠페인명의 사회맥락상 표현 점검 필요"
+        })
+      ])
+    );
   });
 
   it("integrates English multilingual findings before domain subagents run", async () => {
