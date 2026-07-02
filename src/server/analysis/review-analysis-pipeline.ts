@@ -32,6 +32,7 @@ import {
   type MultilingualSegment
 } from "./multilingual";
 import { runMultilingualRiskTeam } from "./multilingual-risk-team";
+import { createHttpNliClient } from "@/server/ai/nli-client";
 import { getAnalysisProviderConfig } from "./provider-config";
 import { createReranker, type Reranker } from "./rerank-provider";
 import {
@@ -1639,7 +1640,11 @@ export function createReviewAnalysisPipeline({
               review,
               segments: multilingualSegments,
               evidenceCandidates,
-              provider: modelProvider
+              provider: modelProvider,
+              nliClient:
+                process.env.FINPROOF_NLI_ENABLED === "true" && process.env.FINPROOF_NLI_URL
+                  ? createHttpNliClient({ baseUrl: process.env.FINPROOF_NLI_URL })
+                  : undefined
             })
           : {
               localizedRiskFindings: [],

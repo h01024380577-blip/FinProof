@@ -1,5 +1,6 @@
 import type { ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import type { ModelProvider } from "@/server/ai/model-provider";
+import type { NliClient } from "@/server/ai/nli-client";
 import {
   KOREAN_COMPLIANCE_MAPPING_PROMPT,
   multilingualTranslatorRiskPrompt
@@ -19,6 +20,7 @@ import {
   normalizeAiSuggestedAction,
   normalizeAnalysisRiskLevel
 } from "./risk-policy";
+import { enrichSemanticPreservation } from "./semantic-preservation";
 
 type LanguageAgentId =
   | "english_translator_risk"
@@ -513,6 +515,7 @@ export async function runMultilingualRiskTeam(input: {
   segments: MultilingualSegment[];
   evidenceCandidates: RagEvidenceCandidate[];
   provider: ModelProvider;
+  nliClient?: NliClient;
 }): Promise<MultilingualRiskTeamResult> {
   const localizedRiskFindings: LocalizedRiskFinding[] = [];
   const errors: MultilingualAgentError[] = [];
@@ -553,6 +556,22 @@ export async function runMultilingualRiskTeam(input: {
         agentType,
         language,
         message: errorMessage(error)
+      });
+    }
+  }
+
+  if (input.nliClient && localizedRiskFindings.length > 0) {
+    try {
+      const enriched = await enrichSemanticPreservation({
+        findings: localizedRiskFindings,
+        review: input.review,
+        client: input.nliClient
+      });
+      localizedRiskFindings.splice(0, localizedRiskFindings.length, ...enriched);
+    } catch (error) {
+      errors.push({
+        agentType: "korean_compliance_mapping",
+        message: `nli_enrichment_failed: ${errorMessage(error)}`
       });
     }
   }
