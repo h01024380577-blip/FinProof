@@ -237,7 +237,9 @@ function multilingualContextFromFinding(
     koreanComplianceReason: mapping.koreanComplianceReason,
     evidenceQuery: mapping.evidenceQuery,
     suggestedCopyOriginalLanguage: localized.suggestedCopyOriginalLanguage,
-    suggestedCopyKoreanMeaning: localized.suggestedCopyKoreanMeaning
+    suggestedCopyKoreanMeaning: localized.suggestedCopyKoreanMeaning,
+    semanticPreservation: localized.semanticPreservation,
+    mqm: localized.mqm
   };
 }
 

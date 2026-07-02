@@ -63,7 +63,23 @@ const row = {
               "Apply in 3 minutes. Approval is subject to credit review.",
             suggestedCopyKoreanMeaning:
               "3분 신청 가능. 승인은 신용심사 결과에 따라 달라질 수 있음.",
-            confidence: 0.91
+            confidence: 0.91,
+            semanticPreservation: {
+              semanticRelation: "stronger",
+              semanticShiftScore: 0.8,
+              missingConditionTerms: [],
+              overclaimTerms: ["guaranteed"],
+              nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+              model: "mDeBERTa-v3-base-mnli-xnli"
+            },
+            mqm: {
+              errorType: "addition",
+              complianceRiskType: "approval_guarantee",
+              severity: "major",
+              targetSpan: "Guaranteed approval",
+              evidenceType: "product_doc",
+              recommendedAction: "change_request"
+            }
           },
           koreanComplianceMapping: {
             localizedFindingId: "risk-en-approval",
@@ -192,6 +208,26 @@ describe("prisma review mappers", () => {
     }
 
     expect(toReviewCase(malformedRow).issues[0].multilingualContext).toBeUndefined();
+  });
+
+  it("reconstructs semanticPreservation and mqm from the stored snapshot", () => {
+    const mapped = toReviewCase(row);
+    expect(mapped.issues[0]?.multilingualContext?.semanticPreservation).toEqual({
+      semanticRelation: "stronger",
+      semanticShiftScore: 0.8,
+      missingConditionTerms: [],
+      overclaimTerms: ["guaranteed"],
+      nliProbabilities: { entailment: 0.2, neutral: 0.5, contradiction: 0.3 },
+      model: "mDeBERTa-v3-base-mnli-xnli"
+    });
+    expect(mapped.issues[0]?.multilingualContext?.mqm).toEqual({
+      errorType: "addition",
+      complianceRiskType: "approval_guarantee",
+      severity: "major",
+      targetSpan: "Guaranteed approval",
+      evidenceType: "product_doc",
+      recommendedAction: "change_request"
+    });
   });
 
   it("maps a review summary row", () => {
