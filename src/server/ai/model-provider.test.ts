@@ -54,7 +54,7 @@ describe("model provider", () => {
         }),
         body: JSON.stringify({
           model: "claude-sonnet-4-6",
-          max_tokens: 4096,
+          max_tokens: 64000,
           system: "Answer with evidence",
           messages: [{ role: "user", content: "question" }]
         })
@@ -65,6 +65,57 @@ describe("model provider", () => {
       model: "claude-sonnet-4-6",
       text: "model generated text"
     });
+  });
+
+  it("defaults max_tokens to each model's maximum output", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ content: [{ type: "text", text: "긴 초안" }] })
+    });
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "sk-ant-test",
+        ANTHROPIC_MODEL: "claude-opus-4-8"
+      },
+      fetchMock
+    );
+
+    await provider.generateText({
+      task: "opinion_draft",
+      instructions: "Write a draft",
+      input: "context",
+      fallback: "fallback"
+    });
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { max_tokens: number };
+    expect(body.max_tokens).toBe(128000);
+  });
+
+  it("lets FINPROOF_MODEL_MAX_TOKENS override the model default", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ content: [{ type: "text", text: "짧은 답" }] })
+    });
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "sk-ant-test",
+        ANTHROPIC_MODEL: "claude-sonnet-4-6",
+        FINPROOF_MODEL_MAX_TOKENS: "1000"
+      },
+      fetchMock
+    );
+
+    await provider.generateText({
+      task: "chat",
+      instructions: "Answer",
+      input: "q",
+      fallback: "fb"
+    });
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { max_tokens: number };
+    expect(body.max_tokens).toBe(1000);
   });
 
   it("still constructs OpenAI Responses API requests for gpt-* models", async () => {
@@ -158,7 +209,7 @@ describe("model provider", () => {
       expect.objectContaining({
         body: JSON.stringify({
           model: "claude-sonnet-5",
-          max_tokens: 4096,
+          max_tokens: 64000,
           system: "Answer with evidence",
           messages: [{ role: "user", content: "question" }]
         })
@@ -199,7 +250,7 @@ describe("model provider", () => {
       expect.objectContaining({
         body: JSON.stringify({
           model: "claude-sonnet-5",
-          max_tokens: 4096,
+          max_tokens: 64000,
           system: "Read image",
           messages: [{ role: "user", content: "image payload" }]
         })

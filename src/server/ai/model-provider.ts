@@ -51,6 +51,27 @@ function positiveNumber(env: Env, key: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+/**
+ * Anthropic's Messages API requires max_tokens, so it cannot be omitted. Default
+ * it to each model's synchronous maximum output so answers/drafts are never
+ * artificially truncated; FINPROOF_MODEL_MAX_TOKENS still overrides. Unknown
+ * models get a conservative floor (undershooting only truncates, whereas
+ * exceeding a model's real cap would be a hard API error).
+ */
+function maxOutputTokensFor(model: string): number {
+  const normalized = model.trim().toLowerCase();
+
+  if (normalized.startsWith("claude-opus")) {
+    return 128_000;
+  }
+
+  if (normalized.startsWith("claude-sonnet")) {
+    return 64_000;
+  }
+
+  return 8192;
+}
+
 export function extractOpenAIText(body: unknown): string {
   if (
     body &&
@@ -190,7 +211,7 @@ export function createModelProvider(
     };
   }
 
-  const modelTimeoutMs = positiveNumber(env, "FINPROOF_MODEL_TIMEOUT_MS", 120_000);
+  const modelTimeoutMs = positiveNumber(env, "FINPROOF_MODEL_TIMEOUT_MS", 300_000);
 
   if (provider === "router") {
     return {
@@ -237,7 +258,7 @@ function createProviderForRoute(
           throw new Error("ANTHROPIC_API_KEY is required when routing to a Claude model");
         }
 
-        const maxTokens = positiveNumber(env, "FINPROOF_MODEL_MAX_TOKENS", 4096);
+        const maxTokens = positiveNumber(env, "FINPROOF_MODEL_MAX_TOKENS", maxOutputTokensFor(model));
         const anthropicVersion = envValue(env, "ANTHROPIC_VERSION") ?? "2023-06-01";
 
         const response = await fetchImpl("https://api.anthropic.com/v1/messages", {
