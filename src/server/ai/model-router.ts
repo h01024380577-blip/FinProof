@@ -33,8 +33,6 @@ export type ModelTier =
   | "default_text"
   | "escalation_text"
   | "highest_precision_text"
-  | "multimodal"
-  | "multimodal_escalation"
   | "embedding"
   | "embedding_escalation";
 
@@ -67,8 +65,6 @@ export type ModelRoutingConfig = {
   defaultTextModel: string;
   escalationTextModel: string;
   highestPrecisionTextModel: string;
-  multimodalModel: string;
-  multimodalEscalationModel: string;
   embeddingModel: string;
   embeddingEscalationModel: string;
 };
@@ -101,12 +97,6 @@ export function getModelRoutingConfig(env: Env = process.env): ModelRoutingConfi
       env,
       "FINPROOF_MODEL_HIGHEST_PRECISION_TEXT",
       "gpt-5.5"
-    ),
-    multimodalModel: nonGeminiModel(env, "FINPROOF_MODEL_MULTIMODAL", "gpt-5-mini"),
-    multimodalEscalationModel: nonGeminiModel(
-      env,
-      "FINPROOF_MODEL_MULTIMODAL_ESCALATION",
-      "gpt-5.4"
     ),
     embeddingModel: nonGeminiModel(env, "FINPROOF_EMBEDDING_MODEL", "text-embedding-3-small"),
     embeddingEscalationModel: nonGeminiModel(

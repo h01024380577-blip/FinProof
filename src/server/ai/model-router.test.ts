@@ -6,8 +6,6 @@ describe("model router", () => {
       defaultTextModel: "gpt-5-mini",
       escalationTextModel: "gpt-5.4",
       highestPrecisionTextModel: "gpt-5.5",
-      multimodalModel: "gpt-5-mini",
-      multimodalEscalationModel: "gpt-5.4",
       embeddingModel: "text-embedding-3-small",
       embeddingEscalationModel: "text-embedding-3-large"
     });
@@ -17,13 +15,11 @@ describe("model router", () => {
     expect(
       getModelRoutingConfig({
         FINPROOF_MODEL_DEFAULT_TEXT: "gemini-2.5-flash",
-        FINPROOF_MODEL_MULTIMODAL: "gemini-2.5-flash",
-        FINPROOF_MODEL_MULTIMODAL_ESCALATION: "gemini-2.5-pro"
+        FINPROOF_MODEL_ESCALATION_TEXT: "gemini-2.5-pro"
       })
     ).toMatchObject({
       defaultTextModel: "gpt-5-mini",
-      multimodalModel: "gpt-5-mini",
-      multimodalEscalationModel: "gpt-5.4"
+      escalationTextModel: "gpt-5.4"
     });
   });
 

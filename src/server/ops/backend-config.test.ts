@@ -311,9 +311,7 @@ describe("backend runtime config", () => {
     expect(config.model.provider).toBe("router");
     expect(config.model).toMatchObject({
       defaultTextModel: "gpt-5-mini",
-      escalationTextModel: "gpt-5.4",
-      multimodalModel: "gpt-5-mini",
-      multimodalEscalationModel: "gpt-5.4"
+      escalationTextModel: "gpt-5.4"
     });
     expect(config.missing).not.toContain("GEMINI_API_KEY");
   });
