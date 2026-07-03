@@ -2655,6 +2655,7 @@ a.review-table__row:hover {
 
 .issue-card__top {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-start;
   gap: 8px;
   align-items: center;
@@ -2677,14 +2678,80 @@ a.review-table__row:hover {
   width: fit-content;
   max-width: 100%;
   padding: 3px 7px;
-  border: 1px solid #7c3aed;
+  border: 1px solid #94a3b8;
   border-radius: 999px;
-  background: #f5f3ff;
-  color: #4c1d95;
+  background: #f8fafc;
+  color: #334155;
   font-size: 0.68rem;
   font-weight: 900;
   line-height: 1;
   overflow-wrap: anywhere;
+}
+
+.issue-agent-badge--main {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.issue-agent-badge--creative {
+  border-color: #d97706;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.issue-agent-badge--product {
+  border-color: #0d9488;
+  background: #f0fdfa;
+  color: #115e59;
+}
+
+.issue-agent-badge--regulation {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.issue-agent-badge--policy {
+  border-color: #475569;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.issue-agent-badge--social {
+  border-color: #7c3aed;
+  background: #f5f3ff;
+  color: #4c1d95;
+}
+
+.issue-agent-badge--evidence {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.issue-agent-badge--case {
+  border-color: #0891b2;
+  background: #ecfeff;
+  color: #155e75;
+}
+
+.issue-agent-badge--multilingual {
+  border-color: #db2777;
+  background: #fdf2f8;
+  color: #9d174d;
+}
+
+.issue-agent-badge--manual {
+  border-color: #64748b;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.issue-agent-badge--system {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
 }
 
 .issue-empty-state {

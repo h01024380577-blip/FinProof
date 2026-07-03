@@ -156,6 +156,110 @@ describe("createReviewSubAgentOrchestrator", () => {
     expect(combined).not.toMatch(/\bfindings?\b/i);
     expect(result[0]?.title).toBe("제출 증거와 기존 지적 사항 근거의 불일치");
   });
+
+  it("prioritizes and requires social-context evidence for social context findings", async () => {
+    const socialEvidenceCandidates: RagEvidenceCandidate[] = [
+      {
+        id: "ev-generic-card-policy",
+        sourceType: "internal_policy",
+        title: "금융위·금감원 금융상품 광고 규제 가이드",
+        quoteSummary: "금융상품 광고는 소비자가 조건을 오인하지 않도록 표시해야 한다.",
+        relevanceScore: 0.94
+      },
+      {
+        id: "ev-uploaded-poster",
+        sourceType: "product_doc",
+        title: "tank-day-poster.txt",
+        quoteSummary: "탱크데이 혜택 폭격 이벤트",
+        relevanceScore: 0.95
+      },
+      {
+        id: "ev-social-campaign-name",
+        sourceType: "internal_policy",
+        title: "03_문구_캠페인명_체크리스트.md",
+        quoteSummary: "군사적, 공격적 표현은 캠페인명과 문구의 사회맥락을 확인한다.",
+        relevanceScore: 0.2
+      }
+    ];
+    const provider = providerReturning({
+      social_context_risk: JSON.stringify({
+        findings: [
+          {
+            title: "군사·폭력 은유 표현의 사회적 논란 가능성",
+            issueType: "SOCIAL_CONTEXT_CAMPAIGN_COPY",
+            riskLevel: "caution",
+            targetText: "탱크데이 혜택 폭격",
+            description: "캠페인명과 홍보 문구가 공격적 표현으로 해석될 수 있습니다.",
+            suggestedAction: "hold",
+            suggestedCopy: "캠페인명과 혜택 문구를 중립적 표현으로 조정해 주세요.",
+            evidenceCandidateIds: ["ev-generic-card-policy"],
+            confidence: 0.82
+          }
+        ]
+      })
+    });
+
+    const result = await createReviewSubAgentOrchestrator(provider).run({
+      review,
+      extractedDocuments,
+      evidenceCandidates: socialEvidenceCandidates
+    });
+    const socialCall = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([input]) => input.task === "social_context_risk"
+    )?.[0];
+    const socialInput = JSON.parse(String(socialCall?.input));
+
+    expect(
+      socialInput.evidenceCandidates.slice(0, 2).map((candidate: { id: string }) => candidate.id)
+    ).toEqual(["ev-social-campaign-name", "ev-uploaded-poster"]);
+    expect(result).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agent: "social_context_risk",
+          evidenceCandidateIds: ["ev-uploaded-poster", "ev-social-campaign-name"]
+        })
+      ])
+    );
+  });
+
+  it("drops social context findings when no social-context evidence candidate is available", async () => {
+    const genericSociallyWordedCandidates: RagEvidenceCandidate[] = [
+      {
+        id: "ev-generic-common-checklist",
+        sourceType: "internal_policy",
+        title: "금융상품 광고 준법심의 공통 체크리스트",
+        quoteSummary: "소비자 정서와 사회적 논란 가능성을 고려해 오인 표현을 점검해야 한다.",
+        relevanceScore: 0.91
+      }
+    ];
+    const provider = providerReturning({
+      social_context_risk: JSON.stringify({
+        findings: [
+          {
+            title: "게시 예정일의 사회적 민감성 추가 확인 필요",
+            issueType: "SOCIAL_CONTEXT_SENSITIVE_DATE",
+            riskLevel: "caution",
+            targetText: "게시 예정일: 2026-04-16",
+            description: "민감일 근접 여부를 확인해야 합니다.",
+            suggestedAction: "hold",
+            suggestedCopy: "게시일을 민감일과 겹치지 않도록 점검해 주세요.",
+            evidenceCandidateIds: ["evidence-rate-rule"],
+            confidence: 0.75
+          }
+        ]
+      })
+    });
+
+    const result = await createReviewSubAgentOrchestrator(provider).run({
+      review,
+      extractedDocuments,
+      evidenceCandidates: genericSociallyWordedCandidates
+    });
+
+    expect(result).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ agent: "social_context_risk" })])
+    );
+  });
 });
 
 describe("sanitizeReviewerText", () => {
@@ -170,7 +274,9 @@ describe("sanitizeReviewerText", () => {
   it("replaces leaked internal field names", () => {
     expect(sanitizeReviewerText("evidenceCandidateIds가 누락됨")).toBe("제시된 근거가 누락됨");
     expect(sanitizeReviewerText("riskLevel을 낮춰야 함")).toBe("위험도을 낮춰야 함");
-    expect(sanitizeReviewerText("targetText와 suggestedCopy 확인")).toBe("지적 문구와 권고 문구 확인");
+    expect(sanitizeReviewerText("targetText와 suggestedCopy 확인")).toBe(
+      "지적 문구와 권고 문구 확인"
+    );
   });
 
   it("leaves normal Korean reviewer text untouched", () => {

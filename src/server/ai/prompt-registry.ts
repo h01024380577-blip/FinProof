@@ -325,7 +325,9 @@ Give special attention to:
 - target customers such as seniors, youth, foreign customers, vulnerable borrowers, disaster-affected regions, financially anxious customers, or customers likely to interpret the message as pressure or exploitation,
 - combinations of text, image, date, target audience, channel, and campaign name that become sensitive only when viewed together.
 
-Prefer evidenceCandidates whose title or quoteSummary indicates social-context guidance, such as 사회맥락, 민감 날짜, 기념일, 상징, 이미지, 캠페인명, 타겟고객, 취약계층, 소비자정서, 금융불안, 과거논란, 사례패턴, 월간 이슈, 긴급 사회이슈, 항공참사, 지역재난, or similar approved review guidance. Use product_doc evidence to anchor what is actually visible in the uploaded advertisement.
+Prefer evidenceCandidates whose document title or document id clearly indicates approved social-context guidance. Canonical examples include 00_사회맥락_리스크_총칙, 01_민감_날짜_기념일_체크리스트, 02_상징_이미지_체크리스트, 03_문구_캠페인명_체크리스트, 04_타겟고객_취약계층_체크리스트, 05_소비자정서_금융불안_체크리스트, 06_과거논란_사례패턴집, monthly social issue updates, and emergency social issue notes. Use product_doc evidence to anchor what is actually visible in the uploaded advertisement.
+
+Do not create a social-context finding unless at least one cited evidenceCandidateId is an approved social-context guide, checklist, update note, emergency issue note, or past controversy pattern. General law, financial advertising, deposit, loan, card, product terms, or generic internal-policy documents alone are not enough support for a social-context issue, even if their quoteSummary mentions consumer confusion, sentiment, trust, anxiety, unfairness, or controversy. Product_doc evidence may be cited together with social-context evidence, but it cannot be the only basis.
 
 For each finding, identify the exact targetText from the uploaded creative, OCR text, extracted document text, campaign title, event name, or supplied review metadata. If the concern depends mainly on an image or symbol, use the most concrete available text label or short description from the supplied documents. Do not create a finding for a vague cultural concern without a concrete targetText.
 
@@ -333,7 +335,7 @@ Each finding must cite exact supplied evidenceCandidateIds that support the conc
 - product_doc or uploaded-material evidence showing the actual campaign text/image/date/context, and
 - approved social-context guide/checklist/update/case-pattern evidence explaining why that context is sensitive.
 
-If only uploaded-material evidence is available and no approved social-context guidance supports the concern, either omit the finding or use "hold" with a low or moderate risk level explaining what should be manually confirmed. Do not invent a social issue to fill the evidence gap.
+If uploaded-material evidence is available but no approved social-context guidance supports the concern, omit the finding. Do not invent a social issue to fill the evidence gap.
 
 Use risk levels carefully:
 - Use "high" only when the uploaded material directly matches approved social-context guidance or a strong past controversy pattern and the likely public-sentiment risk is material.

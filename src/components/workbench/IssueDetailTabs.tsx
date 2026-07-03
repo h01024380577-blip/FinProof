@@ -5,7 +5,9 @@ import { LoaderCircle } from "lucide-react";
 import { Tabs } from "@/components/ui";
 import { RiskBadge } from "@/components/Badges";
 import { riskLabels } from "@/domain/reviews";
+import { isSocialContextEvidence } from "@/domain/social-context";
 import type { Evidence, ReviewIssue, RiskLevel } from "@/domain/types";
+import { issueAgentBadges } from "./agent-badges";
 
 export type IssueDetailTabKey = "checklist" | "evidence" | "opinion";
 
@@ -48,15 +50,15 @@ export function IssueDetailTabs(props: IssueDetailTabsProps): JSX.Element {
 }
 
 function ChecklistPanel({ issue }: { issue: ReviewIssue }): JSX.Element {
-  const isSocialContextIssue =
-    issue.sourceAgents.includes("social_context_risk") ||
-    issue.issueType.toUpperCase().startsWith("SOCIAL_CONTEXT_");
-
   return (
     <div className="evidence-panel__summary">
       <div className="issue-summary-badges">
         <RiskBadge level={issue.riskLevel} />
-        {isSocialContextIssue ? <span className="issue-agent-badge">사회맥락 리스크</span> : null}
+        {issueAgentBadges(issue).map((badge) => (
+          <span key={badge.key} className={`issue-agent-badge issue-agent-badge--${badge.tone}`}>
+            {badge.detailLabel}
+          </span>
+        ))}
       </div>
       <h4>{issue.title}</h4>
       <p>{issue.description}</p>
@@ -214,7 +216,9 @@ function EvidenceSection({ title, children }: { title: string; children: ReactNo
 }
 
 function EvidencePanel({ issue }: { issue: ReviewIssue }): JSX.Element {
-  const evidenceItems: EvidenceDisplayItem[] = issue.evidence;
+  const evidenceItems: EvidenceDisplayItem[] = issue.evidence.map((evidence) =>
+    isSocialContextEvidence(evidence) ? { ...evidence, sourceLabel: "사회맥락 기준" } : evidence
+  );
   const adEvidence = evidenceItems.filter((evidence) => evidence.sourceType === "product_doc");
   const regulatoryEvidence = evidenceItems.filter(isRegulatoryEvidence);
   const caseHistoryEvidence = evidenceItems.filter(

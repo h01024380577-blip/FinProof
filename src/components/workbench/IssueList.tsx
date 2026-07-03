@@ -3,6 +3,7 @@
 import { useMemo, useState, type CSSProperties, type JSX } from "react";
 import { riskLabels } from "@/domain/reviews";
 import type { ReviewIssue, RiskLevel } from "@/domain/types";
+import { issueAgentBadges } from "./agent-badges";
 
 const riskOrder: RiskLevel[] = ["high", "caution", "info"];
 const riskRank: Record<RiskLevel, number> = { high: 0, caution: 1, info: 2 };
@@ -21,13 +22,6 @@ function issueCardStyle(issue: ReviewIssue): CSSProperties {
   return {
     "--issue-card-min-height": `${minHeight}px`
   } as CSSProperties;
-}
-
-function isSocialContextIssue(issue: ReviewIssue): boolean {
-  return (
-    issue.sourceAgents.includes("social_context_risk") ||
-    issue.issueType.toUpperCase().startsWith("SOCIAL_CONTEXT_")
-  );
 }
 
 export type IssueListProps = {
@@ -105,9 +99,14 @@ export function IssueList({
               <span className="issue-card__content">
                 <span className="issue-card__top">
                   <small className="issue-card__index">#{index + 1}</small>
-                  {isSocialContextIssue(issue) ? (
-                    <small className="issue-card__agent-badge">사회맥락</small>
-                  ) : null}
+                  {issueAgentBadges(issue).map((badge) => (
+                    <small
+                      key={badge.key}
+                      className={`issue-card__agent-badge issue-agent-badge--${badge.tone}`}
+                    >
+                      {badge.listLabel}
+                    </small>
+                  ))}
                 </span>
                 <strong className="issue-card__title">{issue.title}</strong>
                 <span className="issue-card__excerpt">{issue.targetText}</span>

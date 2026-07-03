@@ -37,6 +37,13 @@ describe("prompt registry", () => {
     expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain("Do not use live news");
     expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain("Do not recommend rejection");
     expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain("public controversy potential");
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain(
+      "Do not create a social-context finding unless at least one cited evidenceCandidateId"
+    );
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain("03_문구_캠페인명_체크리스트");
+    expect(SOCIAL_CONTEXT_RISK_PROMPT).toContain(
+      "General law, financial advertising, deposit, loan, card, product terms, or generic internal-policy documents alone are not enough"
+    );
   });
 });
 

@@ -112,7 +112,16 @@ describe("IssueList", () => {
             ...issues[0],
             issueType: "SOCIAL_CONTEXT_SYMBOL_DATE",
             sourceAgents: ["social_context_risk"],
-            title: "민감일과 캠페인명 충돌 가능성"
+            title: "민감일과 캠페인명 충돌 가능성",
+            evidence: [
+              {
+                id: "ev-social-campaign-name",
+                sourceType: "internal_policy",
+                title: "03_문구_캠페인명_체크리스트.md",
+                quoteSummary: "군사적, 공격적 표현은 캠페인명과 문구의 사회맥락을 확인한다.",
+                relevanceScore: 0.82
+              }
+            ]
           }
         ]}
         selectedIssueId="issue-1"
@@ -123,6 +132,56 @@ describe("IssueList", () => {
     const card = screen.getByRole("button", { name: /민감일과 캠페인명/ });
     expect(within(card).getByText("사회맥락")).toHaveClass("issue-card__agent-badge");
     expect(within(card).queryByText("위험")).not.toBeInTheDocument();
+  });
+
+  it("does not label generic policy findings as social-context issues", () => {
+    render(
+      <IssueList
+        issues={[
+          {
+            ...issues[0],
+            issueType: "SOCIAL_CONTEXT_CONSUMER_SENTIMENT",
+            sourceAgents: ["social_context_risk"],
+            title: "최고금리 표시 소비자 오인 가능성",
+            evidence: [
+              {
+                id: "ev-generic-deposit-policy",
+                sourceType: "internal_policy",
+                title: "예금·적금 광고 심의 체크리스트",
+                quoteSummary:
+                  "최고 금리 표시 시 우대조건과 기본금리를 병기해야 소비자 오인을 줄일 수 있다.",
+                relevanceScore: 0.83
+              }
+            ]
+          }
+        ]}
+        selectedIssueId="issue-1"
+        onSelectIssue={() => undefined}
+      />
+    );
+
+    const card = screen.getByRole("button", { name: /최고금리 표시/ });
+    expect(within(card).queryByText("사회맥락")).not.toBeInTheDocument();
+  });
+
+  it("labels non-social agent sources on issue cards", () => {
+    render(
+      <IssueList
+        issues={[
+          {
+            ...issues[0],
+            sourceAgents: ["product_terms", "regulation"],
+            title: "상품 조건과 법령 근거 확인 필요"
+          }
+        ]}
+        selectedIssueId="issue-1"
+        onSelectIssue={() => undefined}
+      />
+    );
+
+    const card = screen.getByRole("button", { name: /상품 조건과 법령/ });
+    expect(within(card).getByText("상품")).toHaveClass("issue-card__agent-badge");
+    expect(within(card).getByText("법령")).toHaveClass("issue-card__agent-badge");
   });
 
   it("does not show the manual issue button by default", () => {
