@@ -10,8 +10,10 @@ import {
   createModelProvider,
   extractOpenAIText,
   extractGeminiText,
+  extractAnthropicText,
   type ModelProvider
 } from "@/server/ai/model-provider";
+import { providerForModel } from "@/server/ai/model-router";
 import {
   createEmbeddingProvider,
   type EmbeddingProvider
@@ -769,7 +771,7 @@ function openAiOcrModel(env: Record<string, string | undefined>) {
   const configuredModel = env.FINPROOF_OCR_MODEL?.trim();
 
   if (!configuredModel || /^gemini[-\w.]*/i.test(configuredModel)) {
-    return "gpt-5-mini";
+    return "claude-opus-4-8";
   }
 
   return configuredModel;
@@ -808,6 +810,49 @@ async function openAiOcrContentParts(
   ];
 }
 
+async function anthropicOcrContentBlocks(
+  mimeType: string,
+  body: Uint8Array,
+  env: Record<string, string | undefined>
+) {
+  if (mimeType === "application/pdf") {
+    const renderedPages = await renderPdfPages(body, env);
+
+    if (renderedPages.length > 0) {
+      return renderedPages.map((page) => ({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: page.mimeType,
+          data: Buffer.from(page.body).toString("base64")
+        }
+      }));
+    }
+
+    return [
+      {
+        type: "document",
+        source: {
+          type: "base64",
+          media_type: "application/pdf",
+          data: Buffer.from(body).toString("base64")
+        }
+      }
+    ];
+  }
+
+  return [
+    {
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: mimeType,
+        data: Buffer.from(body).toString("base64")
+      }
+    }
+  ];
+}
+
 async function geminiOcrInlineParts(
   mimeType: string,
   body: Uint8Array,
@@ -839,12 +884,17 @@ async function geminiOcrInlineParts(
 type OpenAiOcrOptions = {
   apiKey: string;
   model: string;
+  visionProvider: "anthropic" | "openai";
   maxInlineBytes: number;
   ocrTimeoutMs: number;
 };
 
 function resolveOpenAiOcrOptions(env: Record<string, string | undefined>): OpenAiOcrOptions | null {
-  const apiKey = env.OPENAI_API_KEY?.trim();
+  const model = openAiOcrModel(env);
+  const visionProvider = providerForModel(model);
+  const apiKey = (
+    visionProvider === "anthropic" ? env.ANTHROPIC_API_KEY : env.OPENAI_API_KEY
+  )?.trim();
 
   if (!apiKey) {
     return null;
@@ -852,7 +902,8 @@ function resolveOpenAiOcrOptions(env: Record<string, string | undefined>): OpenA
 
   return {
     apiKey,
-    model: openAiOcrModel(env),
+    model,
+    visionProvider,
     maxInlineBytes: positiveInteger(env, "FINPROOF_OCR_MAX_INLINE_BYTES", 20 * 1024 * 1024),
     ocrTimeoutMs: positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000)
   };
@@ -884,41 +935,66 @@ async function extractFileViaOpenAi(
     return null;
   }
 
-  const response = await fetchImpl("https://api.openai.com/v1/responses", {
-    method: "POST",
-    signal: AbortSignal.timeout(options.ocrTimeoutMs),
-    headers: {
-      authorization: `Bearer ${options.apiKey}`,
-      "content-type": "application/json"
-    },
-    body: JSON.stringify({
-      model: options.model,
-      input: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: `${openAiOcrInstruction()}\n\n${geminiOcrUserPrompt(review, file)}`
-            },
-            ...(await openAiOcrContentParts(file, mimeType, body, env))
-          ]
-        }
-      ],
-      max_output_tokens: 2000
-    })
-  });
+  const promptText = `${openAiOcrInstruction()}\n\n${geminiOcrUserPrompt(review, file)}`;
+
+  const response =
+    options.visionProvider === "anthropic"
+      ? await fetchImpl("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          signal: AbortSignal.timeout(options.ocrTimeoutMs),
+          headers: {
+            "x-api-key": options.apiKey,
+            "anthropic-version": env.ANTHROPIC_VERSION?.trim() || "2023-06-01",
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            model: options.model,
+            max_tokens: 2000,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: promptText },
+                  ...(await anthropicOcrContentBlocks(mimeType, body, env))
+                ]
+              }
+            ]
+          })
+        })
+      : await fetchImpl("https://api.openai.com/v1/responses", {
+          method: "POST",
+          signal: AbortSignal.timeout(options.ocrTimeoutMs),
+          headers: {
+            authorization: `Bearer ${options.apiKey}`,
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            model: options.model,
+            input: [
+              {
+                role: "user",
+                content: [
+                  { type: "input_text", text: promptText },
+                  ...(await openAiOcrContentParts(file, mimeType, body, env))
+                ]
+              }
+            ],
+            max_output_tokens: 2000
+          })
+        });
 
   if (!response.ok) {
     throw new Error(
-      `OpenAI OCR request failed: ${response.status ?? "unknown"} ${
-        response.statusText ?? ""
-      }`.trim()
+      `OCR request failed: ${response.status ?? "unknown"} ${response.statusText ?? ""}`.trim()
     );
   }
 
   const rawJson = await response.json();
-  const extracted = parseOcrText(extractOpenAIText(rawJson));
+  const extracted = parseOcrText(
+    options.visionProvider === "anthropic"
+      ? extractAnthropicText(rawJson)
+      : extractOpenAIText(rawJson)
+  );
 
   if (!extracted.text) {
     return null;
@@ -944,7 +1020,9 @@ export function createOpenAiOcrProvider(
       const options = resolveOpenAiOcrOptions(env);
 
       if (!options) {
-        throw new Error("OPENAI_API_KEY is required when FINPROOF_OCR_PROVIDER=openai");
+        throw new Error(
+          "ANTHROPIC_API_KEY (or OPENAI_API_KEY for a gpt-* model) is required when FINPROOF_OCR_PROVIDER=openai"
+        );
       }
 
       return Promise.all(

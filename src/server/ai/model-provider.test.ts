@@ -1,4 +1,9 @@
-import { createModelProvider, extractGeminiText, extractOpenAIText } from "./model-provider";
+import {
+  createModelProvider,
+  extractAnthropicText,
+  extractGeminiText,
+  extractOpenAIText
+} from "./model-provider";
 
 describe("model provider", () => {
   it("uses deterministic generation by default", async () => {
@@ -17,7 +22,52 @@ describe("model provider", () => {
     });
   });
 
-  it("constructs OpenAI Responses API requests", async () => {
+  it("constructs Anthropic Messages API requests", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ content: [{ type: "text", text: "model generated text" }] })
+    });
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "sk-ant-test",
+        ANTHROPIC_MODEL: "claude-sonnet-4-6"
+      },
+      fetchMock
+    );
+
+    const result = await provider.generateText({
+      task: "chat",
+      instructions: "Answer with evidence",
+      input: "question",
+      fallback: "fallback answer"
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.anthropic.com/v1/messages",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "x-api-key": "sk-ant-test",
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
+        }),
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 4096,
+          system: "Answer with evidence",
+          messages: [{ role: "user", content: "question" }]
+        })
+      })
+    );
+    expect(result).toEqual({
+      provider: "anthropic",
+      model: "claude-sonnet-4-6",
+      text: "model generated text"
+    });
+  });
+
+  it("still constructs OpenAI Responses API requests for gpt-* models", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ output_text: "model generated text" })
@@ -82,15 +132,15 @@ describe("model provider", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("routes text tasks through the Obsidian model baseline", async () => {
+  it("routes text tasks through the Claude model baseline", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ output_text: "routed text" })
+      json: async () => ({ content: [{ type: "text", text: "routed text" }] })
     });
     const provider = createModelProvider(
       {
         FINPROOF_MODEL_PROVIDER: "router",
-        OPENAI_API_KEY: "sk-test"
+        ANTHROPIC_API_KEY: "sk-ant-test"
       },
       fetchMock
     );
@@ -104,33 +154,34 @@ describe("model provider", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.openai.com/v1/responses",
+      "https://api.anthropic.com/v1/messages",
       expect.objectContaining({
         body: JSON.stringify({
-          model: "gpt-5.4",
-          instructions: "Answer with evidence",
-          input: "question"
+          model: "claude-sonnet-5",
+          max_tokens: 4096,
+          system: "Answer with evidence",
+          messages: [{ role: "user", content: "question" }]
         })
       })
     );
     expect(result).toMatchObject({
-      provider: "openai",
-      model: "gpt-5.4",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
       modelTier: "escalation_text",
       escalationReason: "risk_level_high",
       text: "routed text"
     });
   });
 
-  it("routes multimodal tasks through OpenAI escalation", async () => {
+  it("routes visual-understanding tasks through Claude escalation", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ output_text: "visual analysis" })
+      json: async () => ({ content: [{ type: "text", text: "visual analysis" }] })
     });
     const provider = createModelProvider(
       {
         FINPROOF_MODEL_PROVIDER: "router",
-        OPENAI_API_KEY: "sk-test"
+        ANTHROPIC_API_KEY: "sk-ant-test"
       },
       fetchMock
     );
@@ -144,18 +195,19 @@ describe("model provider", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.openai.com/v1/responses",
+      "https://api.anthropic.com/v1/messages",
       expect.objectContaining({
         body: JSON.stringify({
-          model: "gpt-5.4",
-          instructions: "Read image",
-          input: "image payload"
+          model: "claude-sonnet-5",
+          max_tokens: 4096,
+          system: "Read image",
+          messages: [{ role: "user", content: "image payload" }]
         })
       })
     );
     expect(result).toMatchObject({
-      provider: "openai",
-      model: "gpt-5.4",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
       modelTier: "escalation_text",
       escalationReason: "complex_visual",
       text: "visual analysis"
@@ -175,6 +227,14 @@ describe("model provider", () => {
     ).toBe("nested text");
   });
 
+  it("extracts text from Anthropic content blocks", () => {
+    expect(
+      extractAnthropicText({
+        content: [{ type: "text", text: "claude text" }]
+      })
+    ).toBe("claude text");
+  });
+
   it("extracts text from Gemini candidates", () => {
     expect(
       extractGeminiText({
@@ -191,7 +251,7 @@ describe("model provider", () => {
 });
 
 describe("model provider fetch timeouts", () => {
-  it("passes AbortSignal to OpenAI responses fetch", async () => {
+  it("passes AbortSignal to Anthropic messages fetch", async () => {
     const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
       expect(init?.signal).toBeDefined();
       expect(init?.signal).toBeInstanceOf(AbortSignal);
@@ -200,15 +260,15 @@ describe("model provider fetch timeouts", () => {
         status: 200,
         statusText: "OK",
         async json() {
-          return { output_text: "결과" };
+          return { content: [{ type: "text", text: "결과" }] };
         }
       };
     });
 
     const provider = createModelProvider(
       {
-        FINPROOF_MODEL_PROVIDER: "openai",
-        OPENAI_API_KEY: "test-key",
+        FINPROOF_MODEL_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "test-key",
         FINPROOF_MODEL_TIMEOUT_MS: "5000"
       },
       fetchImpl

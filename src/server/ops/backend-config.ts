@@ -1,4 +1,8 @@
-import { getModelRoutingConfig, type ModelRoutingConfig } from "@/server/ai/model-router";
+import {
+  getModelRoutingConfig,
+  providerForModel,
+  type ModelRoutingConfig
+} from "@/server/ai/model-router";
 
 type Env = Record<string, string | undefined>;
 
@@ -99,9 +103,24 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   const reviewStore = value(env, "FINPROOF_REVIEW_STORE") === "prisma" ? "prisma" : "mock";
   const modelProviderValue = value(env, "FINPROOF_MODEL_PROVIDER");
   const modelProvider =
-    modelProviderValue === "openai" || modelProviderValue === "router"
+    modelProviderValue === "anthropic" ||
+    modelProviderValue === "openai" ||
+    modelProviderValue === "router"
       ? modelProviderValue
       : "deterministic";
+  const singleTextModel =
+    value(env, "ANTHROPIC_MODEL") ??
+    value(env, "OPENAI_MODEL") ??
+    (modelProviderValue === "openai" ? "gpt-5-mini" : "claude-sonnet-4-6");
+  // Text generation now defaults to Claude; the required secret follows whichever
+  // provider the configured text model name implies, so env-only rollback to a
+  // `gpt-*` model automatically requires OPENAI_API_KEY again instead.
+  const textModelProvider =
+    modelProvider === "router"
+      ? providerForModel(getModelRoutingConfig(env).defaultTextModel)
+      : providerForModel(singleTextModel);
+  const textProviderSecret =
+    textModelProvider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
   const ocrProviderValue = value(env, "FINPROOF_OCR_PROVIDER");
   const ocrProvider =
     ocrProviderValue === "http" || ocrProviderValue === "gemini" || ocrProviderValue === "openai"
@@ -109,7 +128,10 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       : "deterministic";
   const ocrModel =
     value(env, "FINPROOF_OCR_MODEL") ??
-    (ocrProvider === "openai" ? "gpt-5-mini" : "gemini-2.5-flash-lite");
+    (ocrProvider === "openai" ? "claude-opus-4-8" : "gemini-2.5-flash-lite");
+  // The non-gemini OCR vision path serves whichever provider the OCR model name
+  // implies (Claude vision by default), so its required secret follows suit.
+  const ocrVisionProvider = providerForModel(ocrModel);
   const embeddingProviderValue = value(env, "FINPROOF_EMBEDDING_PROVIDER");
   const embeddingProvider =
     embeddingProviderValue === "openai" || embeddingProviderValue === "http"
@@ -129,7 +151,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
       : "deterministic";
   const rerankModel =
     value(env, "FINPROOF_RERANK_MODEL") ??
-    (rerankProvider === "cohere" ? "rerank-v3.5" : "bge-reranker-v2-m3");
+    (rerankProvider === "cohere" ? "rerank-v4.0-pro" : "bge-reranker-v2-m3");
   const analysisExecutionMode =
     value(env, "FINPROOF_ANALYSIS_EXECUTION_MODE") === "queued" ? "queued" : "inline";
   const uploadScanProvider =
@@ -156,13 +178,22 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   );
   requireWhen(missing, reviewStore === "prisma", env, "DATABASE_URL");
   requireWhen(missing, analysisExecutionMode === "queued", env, "FINPROOF_WORKER_TENANT_ID");
-  requireWhen(missing, modelProvider === "openai", env, "OPENAI_API_KEY");
-  requireWhen(missing, modelProvider === "router", env, "OPENAI_API_KEY");
+  requireWhen(
+    missing,
+    modelProvider === "openai" || modelProvider === "anthropic" || modelProvider === "router",
+    env,
+    textProviderSecret
+  );
   requireWhen(missing, embeddingProvider === "openai", env, "OPENAI_API_KEY");
   requireWhen(missing, embeddingProvider === "http", env, "FINPROOF_EMBEDDING_ENDPOINT");
   requireWhen(missing, ocrProvider === "http", env, "FINPROOF_OCR_ENDPOINT");
   requireWhen(missing, ocrProvider === "gemini", env, "GEMINI_API_KEY");
-  requireWhen(missing, ocrProvider === "openai", env, "OPENAI_API_KEY");
+  requireWhen(
+    missing,
+    ocrProvider === "openai",
+    env,
+    ocrVisionProvider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY"
+  );
   requireWhen(missing, ragProvider === "postgres", env, "DATABASE_URL");
   requireWhen(missing, rerankProvider === "http", env, "FINPROOF_RERANK_ENDPOINT");
   requireWhen(missing, rerankProvider === "cohere", env, "COHERE_API_KEY");
@@ -179,7 +210,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   requireProductionProvider(
     productionGaps,
     modelProvider === "deterministic",
-    "FINPROOF_MODEL_PROVIDER=router|openai"
+    "FINPROOF_MODEL_PROVIDER=router|anthropic|openai"
   );
   requireProductionProvider(
     productionGaps,
@@ -239,12 +270,12 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
     },
     model: {
       provider: modelProvider,
-      model: modelProvider === "openai" ? (value(env, "OPENAI_MODEL") ?? "gpt-5-mini") : undefined,
+      model:
+        modelProvider === "anthropic" || modelProvider === "openai" ? singleTextModel : undefined,
       ...(modelProvider === "router" ? getModelRoutingConfig(env) : {}),
       configured:
         modelProvider === "deterministic" ||
-        (modelProvider === "openai" && secretState(env, "OPENAI_API_KEY") === "set") ||
-        (modelProvider === "router" && secretState(env, "OPENAI_API_KEY") === "set")
+        secretState(env, textProviderSecret) === "set"
     },
     embedding: {
       provider: embeddingProvider,
@@ -260,7 +291,10 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
         ocrProvider === "deterministic" ||
         (ocrProvider === "http" && Boolean(value(env, "FINPROOF_OCR_ENDPOINT"))) ||
         (ocrProvider === "gemini" && Boolean(value(env, "GEMINI_API_KEY"))) ||
-        (ocrProvider === "openai" && Boolean(value(env, "OPENAI_API_KEY"))),
+        (ocrProvider === "openai" &&
+          Boolean(
+            value(env, ocrVisionProvider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY")
+          )),
       ...(ocrProvider === "gemini" || ocrProvider === "openai" ? { model: ocrModel } : {})
     },
     rag: {

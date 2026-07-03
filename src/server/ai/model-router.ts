@@ -71,11 +71,20 @@ export type ModelRoutingConfig = {
 
 export type ModelRoute = {
   task: ModelRouteTask;
-  provider: "openai" | "gemini";
+  provider: "anthropic" | "openai" | "gemini";
   model: string;
   modelTier: ModelTier;
   escalationReason?: string;
 };
+
+/**
+ * Infers the serving provider from the configured model name so that switching
+ * providers is a pure env change (e.g. reverting a Claude ID back to a `gpt-*`
+ * name automatically routes to OpenAI again). Text tiers default to Claude.
+ */
+export function providerForModel(model: string): "anthropic" | "openai" {
+  return /^claude[-\w.]*/i.test(model.trim()) ? "anthropic" : "openai";
+}
 
 function value(env: Env, key: string): string | undefined {
   const raw = env[key];
@@ -91,12 +100,12 @@ function nonGeminiModel(env: Env, key: string, fallback: string): string {
 
 export function getModelRoutingConfig(env: Env = process.env): ModelRoutingConfig {
   return {
-    defaultTextModel: nonGeminiModel(env, "FINPROOF_MODEL_DEFAULT_TEXT", "gpt-5-mini"),
-    escalationTextModel: nonGeminiModel(env, "FINPROOF_MODEL_ESCALATION_TEXT", "gpt-5.4"),
+    defaultTextModel: nonGeminiModel(env, "FINPROOF_MODEL_DEFAULT_TEXT", "claude-sonnet-4-6"),
+    escalationTextModel: nonGeminiModel(env, "FINPROOF_MODEL_ESCALATION_TEXT", "claude-sonnet-5"),
     highestPrecisionTextModel: nonGeminiModel(
       env,
       "FINPROOF_MODEL_HIGHEST_PRECISION_TEXT",
-      "gpt-5.5"
+      "claude-opus-4-8"
     ),
     embeddingModel: nonGeminiModel(env, "FINPROOF_EMBEDDING_MODEL", "text-embedding-3-small"),
     embeddingEscalationModel: nonGeminiModel(
@@ -175,10 +184,12 @@ function textRoute(
     highest_precision_text: config.highestPrecisionTextModel
   };
 
+  const model = modelByTier[tier];
+
   return {
     task,
-    provider: "openai",
-    model: modelByTier[tier],
+    provider: providerForModel(model),
+    model,
     modelTier: tier,
     ...(reason ? { escalationReason: reason } : {})
   };

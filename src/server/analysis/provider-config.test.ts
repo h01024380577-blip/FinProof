@@ -60,15 +60,29 @@ describe("analysis provider config", () => {
     expect(config.missing).not.toContain("OPENAI_API_KEY");
   });
 
-  it("requires the shared OpenAI API key when OpenAI OCR is enabled", () => {
+  it("defaults the OpenAI OCR path to Claude vision and requires the Anthropic key", () => {
     const config = getAnalysisProviderConfig({ FINPROOF_OCR_PROVIDER: "openai" });
 
     expect(config.ocr).toEqual({
       provider: "openai",
       apiKeyConfigured: false,
-      model: "gpt-5-mini"
+      model: "claude-opus-4-8"
     });
-    expect(config.missing).toContain("OPENAI_API_KEY");
+    expect(config.missing).toContain("ANTHROPIC_API_KEY");
+  });
+
+  it("configures Claude OCR vision when the Anthropic key is present", () => {
+    const config = getAnalysisProviderConfig({
+      FINPROOF_OCR_PROVIDER: "openai",
+      ANTHROPIC_API_KEY: "sk-ant-real"
+    });
+
+    expect(config.ocr).toEqual({
+      provider: "openai",
+      apiKeyConfigured: true,
+      model: "claude-opus-4-8"
+    });
+    expect(config.missing).not.toContain("ANTHROPIC_API_KEY");
   });
 
   it("requires the shared Gemini API key when Gemini OCR is enabled", () => {
@@ -127,7 +141,7 @@ describe("analysis provider config", () => {
     expect(config.rerank).toEqual({
       provider: "cohere",
       apiKeyConfigured: false,
-      model: "rerank-v3.5",
+      model: "rerank-v4.0-pro",
       topK: 3
     });
     expect(config.missing).toContain("COHERE_API_KEY");

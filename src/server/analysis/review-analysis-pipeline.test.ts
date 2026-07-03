@@ -806,7 +806,7 @@ describe("review analysis pipeline", () => {
       const provider = createOpenAiOcrProvider(
         {
           OPENAI_API_KEY: "sk-real",
-          FINPROOF_OCR_MODEL: "gemini-2.5-flash-lite"
+          FINPROOF_OCR_MODEL: "gpt-5-mini"
         },
         {
           async getReviewFileBody() {
@@ -2501,7 +2501,9 @@ describe("Phase 3 — content-based hybrid OCR provider", () => {
   const hybridEnv = {
     FINPROOF_OCR_PROVIDER: "hybrid",
     FINPROOF_OCR_ENDPOINT: "http://localhost:8000",
-    OPENAI_API_KEY: "test-key"
+    // OCR vision now defaults to Claude (claude-opus-4-8), so the hybrid path needs
+    // the Anthropic key and speaks the Messages API.
+    ANTHROPIC_API_KEY: "test-key"
   };
 
   function makeFile(over: Partial<(typeof review.files)[number]>) {
@@ -2531,7 +2533,9 @@ describe("Phase 3 — content-based hybrid OCR provider", () => {
     vi.fn(async () => ({
       ok: true,
       status: 200,
-      json: async () => ({ output_text: "비전 OCR 추출: 최저 연 4.9% 연체 최고 15%" })
+      json: async () => ({
+        content: [{ type: "text", text: "비전 OCR 추출: 최저 연 4.9% 연체 최고 15%" }]
+      })
     }));
   const serviceFetch = (provider: string) =>
     vi.fn(async () => ({

@@ -1,5 +1,6 @@
 import {
   getModelRoutingConfig,
+  providerForModel,
   selectModelRoute,
   type ModelRouteContext,
   type ModelRouteTask,
@@ -17,7 +18,7 @@ type GenerateTextInput = {
 };
 
 type GenerateTextResult = {
-  provider: "deterministic" | "openai" | "gemini";
+  provider: "deterministic" | "anthropic" | "openai" | "gemini";
   model: string;
   text: string;
   modelTier?: ModelTier;
@@ -92,6 +93,32 @@ export function extractOpenAIText(body: unknown): string {
   return "";
 }
 
+export function extractAnthropicText(body: unknown): string {
+  if (
+    !body ||
+    typeof body !== "object" ||
+    !("content" in body) ||
+    !Array.isArray(body.content)
+  ) {
+    return "";
+  }
+
+  for (const part of body.content) {
+    if (
+      part &&
+      typeof part === "object" &&
+      "type" in part &&
+      part.type === "text" &&
+      "text" in part &&
+      typeof part.text === "string"
+    ) {
+      return part.text;
+    }
+  }
+
+  return "";
+}
+
 export function extractGeminiText(body: unknown): string {
   if (
     !body ||
@@ -143,10 +170,13 @@ export function createModelProvider(
   }
 
   const provider =
-    providerValue === "openai" || providerValue === "router"
+    providerValue === "anthropic" || providerValue === "openai" || providerValue === "router"
       ? providerValue
       : "deterministic";
-  const model = envValue(env, "OPENAI_MODEL") ?? "gpt-5-mini";
+  const model =
+    envValue(env, "ANTHROPIC_MODEL") ??
+    envValue(env, "OPENAI_MODEL") ??
+    (providerValue === "openai" ? "gpt-5-mini" : "claude-sonnet-4-6");
 
   if (provider === "deterministic") {
     return {
@@ -188,16 +218,63 @@ export function createModelProvider(
     };
   }
 
-  return createProviderForRoute(env, fetchImpl, provider, model, modelTimeoutMs);
+  return createProviderForRoute(env, fetchImpl, providerForModel(model), model, modelTimeoutMs);
 }
 
 function createProviderForRoute(
   env: Env,
   fetchImpl: FetchLike,
-  provider: "openai" | "gemini",
+  provider: "anthropic" | "openai" | "gemini",
   model: string,
   modelTimeoutMs: number
 ): ModelProvider {
+  if (provider === "anthropic") {
+    return {
+      async generateText(input) {
+        const apiKey = envValue(env, "ANTHROPIC_API_KEY");
+
+        if (!apiKey) {
+          throw new Error("ANTHROPIC_API_KEY is required when routing to a Claude model");
+        }
+
+        const maxTokens = positiveNumber(env, "FINPROOF_MODEL_MAX_TOKENS", 4096);
+        const anthropicVersion = envValue(env, "ANTHROPIC_VERSION") ?? "2023-06-01";
+
+        const response = await fetchImpl("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          signal: AbortSignal.timeout(modelTimeoutMs),
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": anthropicVersion,
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: maxTokens,
+            system: input.instructions,
+            messages: [{ role: "user", content: input.input }]
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Anthropic Messages API request failed: ${response.status ?? "unknown"} ${
+              response.statusText ?? ""
+            }`.trim()
+          );
+        }
+
+        const text = extractAnthropicText(await response.json()).trim();
+
+        return {
+          provider,
+          model,
+          text: text || input.fallback
+        };
+      }
+    };
+  }
+
   if (provider === "gemini") {
     return {
       async generateText(input) {

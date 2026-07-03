@@ -1,3 +1,5 @@
+import { providerForModel } from "@/server/ai/model-router";
+
 type Env = Record<string, string | undefined>;
 
 type OcrConfig =
@@ -86,12 +88,14 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
       : "deterministic";
   const rerankModel =
     value(env, "FINPROOF_RERANK_MODEL") ??
-    (rerankProvider === "cohere" ? "rerank-v3.5" : "bge-reranker-v2-m3");
+    (rerankProvider === "cohere" ? "rerank-v4.0-pro" : "bge-reranker-v2-m3");
   const rerankTopK = positiveNumber(env, "FINPROOF_RERANK_TOP_K", topK);
   const endpoint = value(env, "FINPROOF_OCR_ENDPOINT");
   const ocrModel =
     value(env, "FINPROOF_OCR_MODEL") ??
-    (ocrProvider === "openai" ? "gpt-5-mini" : "gemini-2.5-flash-lite");
+    (ocrProvider === "openai" ? "claude-opus-4-8" : "gemini-2.5-flash-lite");
+  const ocrVisionApiKey =
+    providerForModel(ocrModel) === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
   const rerankEndpoint = value(env, "FINPROOF_RERANK_ENDPOINT");
   const databaseUrl = value(env, "DATABASE_URL");
 
@@ -101,8 +105,8 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
   if (ocrProvider === "gemini" && !value(env, "GEMINI_API_KEY")) {
     missing.push("GEMINI_API_KEY");
   }
-  if (ocrProvider === "openai" && !value(env, "OPENAI_API_KEY")) {
-    missing.push("OPENAI_API_KEY");
+  if (ocrProvider === "openai" && !value(env, ocrVisionApiKey)) {
+    missing.push(ocrVisionApiKey);
   }
 
   if (ragProvider === "postgres" && !databaseUrl) {
@@ -133,7 +137,7 @@ export function getAnalysisProviderConfig(env: Env = process.env): AnalysisProvi
           : ocrProvider === "openai"
             ? {
                 provider: "openai",
-                apiKeyConfigured: Boolean(value(env, "OPENAI_API_KEY")),
+                apiKeyConfigured: Boolean(value(env, ocrVisionApiKey)),
                 model: ocrModel
               }
             : { provider: "deterministic" },

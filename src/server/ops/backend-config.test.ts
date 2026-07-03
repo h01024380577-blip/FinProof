@@ -23,7 +23,7 @@ describe("backend runtime config", () => {
       expect.arrayContaining([
         "FINPROOF_AUTH_MODE=jwt",
         "FINPROOF_REVIEW_STORE=prisma",
-        "FINPROOF_MODEL_PROVIDER=router|openai",
+        "FINPROOF_MODEL_PROVIDER=router|anthropic|openai",
         "FINPROOF_EMBEDDING_PROVIDER=openai",
         "FINPROOF_OCR_PROVIDER=openai|gemini|http",
         "FINPROOF_RAG_PROVIDER=postgres",
@@ -46,7 +46,7 @@ describe("backend runtime config", () => {
       expect.arrayContaining([
         "FINPROOF_AUTH_MODE=jwt",
         "FINPROOF_REVIEW_STORE=prisma",
-        "FINPROOF_MODEL_PROVIDER=router|openai",
+        "FINPROOF_MODEL_PROVIDER=router|anthropic|openai",
         "FINPROOF_STORAGE_ADAPTER=s3"
       ])
     );
@@ -87,7 +87,7 @@ describe("backend runtime config", () => {
     expect(config.productionGaps).toEqual(
       expect.arrayContaining([
         "FINPROOF_REVIEW_STORE=prisma",
-        "FINPROOF_MODEL_PROVIDER=router|openai",
+        "FINPROOF_MODEL_PROVIDER=router|anthropic|openai",
         "FINPROOF_EMBEDDING_PROVIDER=openai",
         "FINPROOF_OCR_PROVIDER=openai|gemini|http",
         "FINPROOF_RAG_PROVIDER=postgres",
@@ -195,7 +195,7 @@ describe("backend runtime config", () => {
     expect(config.rerank).toEqual({
       provider: "cohere",
       configured: false,
-      model: "rerank-v3.5"
+      model: "rerank-v4.0-pro"
     });
     expect(config.missing).toContain("COHERE_API_KEY");
   });
@@ -297,10 +297,10 @@ describe("backend runtime config", () => {
     });
 
     expect(config.model.provider).toBe("deterministic");
-    expect(config.productionGaps).toContain("FINPROOF_MODEL_PROVIDER=router|openai");
+    expect(config.productionGaps).toContain("FINPROOF_MODEL_PROVIDER=router|anthropic|openai");
   });
 
-  it("requires the OpenAI key for router mode", () => {
+  it("requires the Anthropic key for router mode and exposes Claude defaults", () => {
     const config = getBackendRuntimeConfig({
       FINPROOF_AUTH_MODE: "jwt",
       FINPROOF_AUTH_JWT_SECRET: "super-secret",
@@ -310,9 +310,13 @@ describe("backend runtime config", () => {
 
     expect(config.model.provider).toBe("router");
     expect(config.model).toMatchObject({
-      defaultTextModel: "gpt-5-mini",
-      escalationTextModel: "gpt-5.4"
+      defaultTextModel: "claude-sonnet-4-6",
+      escalationTextModel: "claude-sonnet-5",
+      highestPrecisionTextModel: "claude-opus-4-8"
     });
+    // Text now routes to Claude, so router mode needs the Anthropic key even when
+    // an OpenAI key is present (the latter still covers embeddings).
+    expect(config.missing).toContain("ANTHROPIC_API_KEY");
     expect(config.missing).not.toContain("GEMINI_API_KEY");
   });
 
@@ -325,6 +329,7 @@ describe("backend runtime config", () => {
       FINPROOF_REVIEW_STORE: "prisma",
       DATABASE_URL: "postgresql://runtime",
       FINPROOF_MODEL_PROVIDER: "router",
+      ANTHROPIC_API_KEY: "sk-ant-real",
       OPENAI_API_KEY: "sk-real",
       FINPROOF_EMBEDDING_PROVIDER: "openai",
       FINPROOF_OCR_PROVIDER: "openai",
