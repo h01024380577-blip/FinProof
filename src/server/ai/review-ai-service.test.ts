@@ -64,6 +64,64 @@ describe("review AI service", () => {
     expect(response.content).not.toContain("law-mcp-12345678");
   });
 
+  it("rewrites internal field names and enum codes into reviewer-facing Korean", async () => {
+    const provider = modelProvider(
+      "이 이슈의 issueType은 symbolic_misinterpretation이며 sourceAgents는 social_context_risk입니다. " +
+        "현재 authoritativeLawEvidence가 비어 있고 approvedKnowledgeEvidence만 있습니다."
+    );
+    const response = await answerReviewQuestionWithModel(
+      {
+        review,
+        issue,
+        question: "이 문구 법적으로 문제 있나요?"
+      },
+      provider
+    );
+
+    for (const leaked of [
+      "issueType",
+      "symbolic_misinterpretation",
+      "sourceAgents",
+      "social_context_risk",
+      "authoritativeLawEvidence",
+      "approvedKnowledgeEvidence"
+    ]) {
+      expect(response.content).not.toContain(leaked);
+    }
+    expect(response.content).toContain("상징적 오해 소지");
+    expect(response.content).toContain("사회적 맥락 리스크");
+    expect(response.content).toContain("확인된 법령 근거");
+  });
+
+  it("passes the numbered issue list and current issue number to the model", async () => {
+    const provider = modelProvider("답변");
+    await answerReviewQuestionWithModel(
+      { review, issue, question: "1번 이슈 설명해줘" },
+      provider
+    );
+
+    const modelInput = vi.mocked(provider.generateText).mock.calls[0]?.[0].input as string;
+    const parsed = JSON.parse(modelInput) as {
+      issueList: Array<{ number: number; title: string }>;
+      currentIssueNumber?: number;
+    };
+    expect(parsed.issueList.length).toBe(review.issues.length);
+    expect(parsed.issueList[0]?.number).toBe(1);
+    expect(typeof parsed.currentIssueNumber).toBe("number");
+  });
+
+  it("instructs the model not to expose internal field or enum names", async () => {
+    const provider = modelProvider("답변");
+    await answerReviewQuestionWithModel(
+      { review, issue, question: "이 문구 괜찮나요?" },
+      provider
+    );
+
+    expect(vi.mocked(provider.generateText).mock.calls[0]?.[0].instructions).toContain(
+      "Never expose internal system, data-structure, or code names"
+    );
+  });
+
   it("includes prior chat turns in the RAG chat prompt", async () => {
     const provider = modelProvider("이전 대화를 반영한 답변");
     await answerReviewQuestionWithModel(

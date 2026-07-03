@@ -12,6 +12,7 @@ import {
 import type { Evidence, ReviewCase, ReviewIssue } from "@/domain/types";
 import { createModelProvider, type ModelProvider } from "./model-provider";
 import type { ModelRouteContext } from "./model-router";
+import { sortIssuesByRisk } from "@/server/reviews/issue-ordinal";
 import { OPINION_DRAFT_PROMPT, RAG_CHAT_PROMPT, REPORT_GENERATION_PROMPT } from "./prompt-registry";
 
 type AnswerQuestionInput = {
@@ -100,8 +101,53 @@ function hideInternalEvidenceReferences(text: string): string {
     .replace(/[ \t]{2,}/g, " ");
 }
 
+/**
+ * Safety net that rewrites internal field names and coded enum values into
+ * reviewer-facing Korean when the model leaks them into the answer despite the
+ * prompt instruction. Ordered longest-first so more specific tokens win. These
+ * are distinctive camelCase / snake_case identifiers that do not occur in
+ * natural Korean prose, so a global replace is safe.
+ */
+const INTERNAL_TERM_REPLACEMENTS: Array<[RegExp, string]> = [
+  // Coded enum values (issueType / sourceType / sourceAgents)
+  [/\bsymbolic_misinterpretation\b/g, "상징적 오해 소지"],
+  [/\bsocial_context_risk\b/g, "사회적 맥락 리스크"],
+  [/\bmain_compliance\b/g, "준법 심의"],
+  [/\binternal_policy\b/g, "내부 규정"],
+  [/\bcase_history\b/g, "과거 심의 사례"],
+  [/\bproduct_doc\b/g, "업로드 자료"],
+  // Field / variable names (optionally prefixed with "issue.")
+  [/\bauthoritativeLawEvidence\b/g, "확인된 법령 근거"],
+  [/\bapprovedKnowledgeEvidence\b/g, "내부 기준 근거"],
+  [/\bknowledgeEvidence\b/g, "지식 근거"],
+  [/\bconversationHistory\b/g, "이전 대화"],
+  [/\bcurrentIssueNumber\b/g, "현재 이슈 번호"],
+  [/\bissueList\b/g, "이슈 목록"],
+  [/\b(?:issue\.)?multilingualContext\b/g, "다국어 맥락"],
+  [/\b(?:issue\.)?issueType\b/g, "이슈 유형"],
+  [/\b(?:issue\.)?sourceAgents\b/g, "탐지 항목"],
+  [/\b(?:issue\.)?targetText\b/g, "대상 문구"],
+  [/\b(?:issue\.)?suggestedCopy\b/g, "수정 제안 문구"],
+  [/\b(?:issue\.)?relevanceScore\b/g, "관련도"],
+  [/\b(?:issue\.)?riskLevel\b/g, "위험도"],
+  [/\bsourceType\b/g, "근거 유형"],
+  [/\bquoteSummary\b/g, "근거 요약"],
+  [/\bpromotionalCopy\b/g, "광고 문구"],
+  [/\bmissingMaterials\b/g, "누락 자료"],
+  [/\bissue\.description\b/g, "이슈 설명"]
+];
+
+function hideInternalFieldNames(text: string): string {
+  return INTERNAL_TERM_REPLACEMENTS.reduce(
+    (current, [pattern, replacement]) => current.replace(pattern, replacement),
+    text
+  );
+}
+
 function sanitizeChatAnswerText(text: string, evidence: Evidence[]): string {
-  return hideInternalEvidenceReferences(hideUploadedFileNames(text, evidence));
+  return hideInternalFieldNames(
+    hideInternalEvidenceReferences(hideUploadedFileNames(text, evidence))
+  );
 }
 
 function draftRouteContext(
@@ -128,6 +174,18 @@ export async function answerReviewQuestionWithModel(
   ]);
   const issueWithKnowledgeEvidence = { ...input.issue, evidence };
   const fallback = answerReviewQuestion({ ...input, issue: issueWithKnowledgeEvidence });
+
+  // Numbered issue list as the reviewer sees it (risk-sorted), so the model can
+  // name the issue under discussion and understand references like "1번 이슈".
+  const orderedIssues = sortIssuesByRisk(input.review.issues);
+  const issueList = orderedIssues.map((issue, index) => ({
+    number: index + 1,
+    title: issue.title,
+    riskLevel: issue.riskLevel
+  }));
+  const currentIssueNumber =
+    orderedIssues.findIndex((issue) => issue.id === input.issue.id) + 1 || undefined;
+
   const result = await provider.generateText({
     task: "rag_chat",
     routeContext: {
@@ -138,6 +196,8 @@ export async function answerReviewQuestionWithModel(
     input: JSON.stringify({
       review: reviewSummary(input.review),
       issue: issueWithKnowledgeEvidence,
+      issueList,
+      currentIssueNumber,
       authoritativeLawEvidence: input.authoritativeLawEvidence ?? [],
       approvedKnowledgeEvidence: input.knowledgeEvidence ?? [],
       question: input.question,

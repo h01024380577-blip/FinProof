@@ -11,6 +11,7 @@ import {
   type ReviewChatStreamDeps
 } from "@/server/reviews/review-chat-stream";
 import { createReviewService } from "@/server/reviews/review-service";
+import { resolveChatIssueByOrdinal } from "@/server/reviews/issue-ordinal";
 import {
   jsonError,
   readJsonBody,
@@ -64,11 +65,16 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
   const service = createReviewService();
   const contextValue = await requestContext(request);
   const review = await service.getReviewCase(contextValue, caseId);
-  const issue = await service.getIssue(contextValue, caseId, body.issueId);
+  const selectedIssue = await service.getIssue(contextValue, caseId, body.issueId);
 
-  if (!review || !issue) {
+  if (!review || !selectedIssue) {
     return jsonError("Review case or issue not found", 404);
   }
+
+  // If the reviewer names an issue by number ("1번 이슈 설명해줘"), retarget the
+  // chat to that issue so retrieval and the answer are about the right one,
+  // regardless of which card is currently selected in the UI.
+  const { issue } = resolveChatIssueByOrdinal(review.issues, body.question, selectedIssue);
 
   const analysisConfig = getAnalysisProviderConfig();
   const knowledgeQuery = chatKnowledgeQuery(review, issue, body.question);
