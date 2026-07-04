@@ -468,38 +468,37 @@ export function QueueTable({
               onClick={(event) => event.stopPropagation()}
             >
               {showStartButton ? (
-                <button
-                  className="button button--small queue-row-action-button"
-                  type="button"
-                  disabled={!canStart || activelyAnalyzing}
-                  onClick={() => onStartAnalysis(review)}
-                >
-                  {analysisFailed ? (
-                    <>
-                      <PlayCircle size={15} aria-hidden="true" />
-                      AI 분석 재시도
-                    </>
-                  ) : activelyAnalyzing ? (
-                    <>
-                      <Loader2 className="action-spinner" size={15} aria-hidden="true" />
-                      {analysisState?.status === "queued" ? "대기중" : "분석중"}
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle size={15} aria-hidden="true" />
-                      {isReReviewPending ? "AI 재검토 시작" : "AI 분석 시작"}
-                    </>
-                  )}
-                </button>
-              ) : null}
-              {activelyAnalyzing && onOpenProgress ? (
-                <button
-                  className="button button--small button--ghost queue-row-action-button"
-                  type="button"
-                  onClick={() => onOpenProgress(review)}
-                >
-                  진행상황
-                </button>
+                activelyAnalyzing ? (
+                  <button
+                    className="button button--small queue-row-action-button"
+                    type="button"
+                    disabled={!onOpenProgress}
+                    title={onOpenProgress ? "분석 진행상황 보기" : undefined}
+                    onClick={() => onOpenProgress?.(review)}
+                  >
+                    <Loader2 className="action-spinner" size={15} aria-hidden="true" />
+                    {analysisState?.status === "queued" ? "대기중" : "분석중"}
+                  </button>
+                ) : (
+                  <button
+                    className="button button--small queue-row-action-button"
+                    type="button"
+                    disabled={!canStart}
+                    onClick={() => onStartAnalysis(review)}
+                  >
+                    {analysisFailed ? (
+                      <>
+                        <PlayCircle size={15} aria-hidden="true" />
+                        AI 분석 재시도
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle size={15} aria-hidden="true" />
+                        {isReReviewPending ? "AI 재검토 시작" : "AI 분석 시작"}
+                      </>
+                    )}
+                  </button>
+                )
               ) : null}
               {analysisFailed && analysisFailureText ? (
                 <span

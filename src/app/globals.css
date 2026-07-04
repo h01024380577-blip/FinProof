@@ -10900,13 +10900,15 @@ body:has(.landing-page)::before {
   right: 1.5rem;
   bottom: 5.5rem;
   width: 360px;
+  max-width: calc(100vw - 3rem);
   max-height: 60vh;
   overflow: auto;
   background: var(--surface, #fff);
   border: 1px solid var(--line, #e5e7eb);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
-  z-index: 60;
+  z-index: 70;
+  pointer-events: auto;
 }
 .analysis-progress__header {
   display: flex;
@@ -10987,6 +10989,7 @@ body:has(.landing-page)::before {
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
+  pointer-events: auto;
 }
 .progress-launcher:hover {
   background: var(--surface-subtle, #f9fafb);

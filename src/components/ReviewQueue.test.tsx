@@ -559,11 +559,13 @@ describe("ReviewQueue", () => {
     );
 
     await waitFor(() => {
+      // While analyzing, the button stays clickable so the reviewer can open
+      // the analysis progress popup from it.
       expect(
         within(screen.getByRole("row", { name: /첫 번째 업로드/ })).getByRole("button", {
           name: "분석중"
         })
-      ).toBeDisabled();
+      ).toBeEnabled();
       expect(
         within(screen.getByRole("row", { name: /두 번째 업로드/ })).getByRole("button", {
           name: "AI 분석 재시도"
