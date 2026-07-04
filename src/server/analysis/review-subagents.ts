@@ -460,16 +460,105 @@ function materialStatus(review: ReviewCase) {
   };
 }
 
-function finalOrchestratedFindings(findings: AgentFinding[], mainFindings: AgentFinding[]) {
+// Social-context risk is surfaced under heterogeneous, model-chosen issueTypes: the KG
+// engine, the social_context_risk sub-agent, and the main agent's consolidated finding all
+// label it differently, and the main agent's wording varies run to run (observed:
+// social_context_risk, sensitive_expression_context, disaster_sensitivity_and_symbolic_metaphor).
+// Recognize it by the owning agent or by an issueType carrying a strong social-context
+// signal. This list only needs the failure to be safe: an unmatched social issueType merely
+// leaves a duplicate for the reviewer, whereas the tokens here (deliberately excluding
+// generic compliance words like "claim"/"disclosure"/"rate") will not tag an unrelated
+// finding as social — and coverage additionally requires targetText overlap before any raw
+// finding is dropped.
+const SOCIAL_CONTEXT_ISSUE_TYPE_PATTERN =
+  /social|context|disaster|symbolic|metaphor|sensitiv|tragedy|memorial|anniversar|controvers|backlash|mourning|사회|맥락|참사|재난|민감|논란|기념일|추모/i;
+
+function isSocialContextFinding(finding: AgentFinding): boolean {
+  return (
+    finding.agent === "social_context_risk" ||
+    SOCIAL_CONTEXT_ISSUE_TYPE_PATTERN.test(finding.issueType ?? "")
+  );
+}
+
+function concernTokens(value: string): Set<string> {
+  return new Set(
+    value
+      .normalize("NFC")
+      .toLowerCase()
+      .replace(/[^0-9a-z가-힣]+/gi, " ")
+      .split(/\s+/)
+      .filter((token) => token.length >= 2)
+  );
+}
+
+// Two findings describe the same concern when their targetText shares multiple meaningful
+// tokens (e.g. the sensitive phrase and the publish date). Used only to compare a raw
+// social-context finding against the main agent's social-context finding, so incidental
+// overlap with unrelated issue types cannot cause a false match.
+function sharesConcern(a: AgentFinding, b: AgentFinding): boolean {
+  const aTokens = concernTokens(a.targetText ?? "");
+  const bTokens = concernTokens(b.targetText ?? "");
+  let overlap = 0;
+  for (const token of aTokens) {
+    if (bTokens.has(token)) {
+      overlap += 1;
+    }
+  }
+  return overlap >= 2;
+}
+
+export function finalOrchestratedFindings(
+  findings: AgentFinding[],
+  mainFindings: AgentFinding[]
+) {
   if (mainFindings.length === 0) {
     return findings;
   }
 
+  const mainSocialContextFindings = mainFindings.filter(isSocialContextFinding);
+
+  // The main_compliance agent consolidates duplicate priorFindings — including social
+  // context — into one final finding per concern and assigns the proportionate riskLevel
+  // (see MAIN_COMPLIANCE_PROMPT). We still preserve raw social_context_risk findings as a
+  // safety net so a subtle social-context risk is never silently dropped, but ONLY when
+  // the main agent did not already surface the same concern. Re-injecting a raw finding
+  // the main agent already reconciled duplicated the issue for the reviewer and reverted
+  // the main agent's risk downgrade — e.g. rc-upload-002 surfaced one 침몰/게시일 concern
+  // three times (KG high + sub-agent high + main's consolidated caution).
   const preservedSocialContextFindings = findings.filter(
-    (finding) => finding.agent === "social_context_risk"
+    (finding) =>
+      finding.agent === "social_context_risk" &&
+      !mainSocialContextFindings.some((mainFinding) => sharesConcern(mainFinding, finding))
   );
 
   return [...preservedSocialContextFindings, ...mainFindings];
+}
+
+// Concern-level dedupe for the final combined finding set. finalOrchestratedFindings only
+// governs findings produced *inside* the orchestrator; the pipeline separately re-injects
+// prior findings (the KG-engine social-context finding among them) alongside the
+// orchestrator output as a loss-prevention safety net, which resurrects a raw social finding
+// the main agent already consolidated. Applied to the merged set, this removes raw
+// social_context_risk findings (KG engine or sub-agent) once the main agent has folded the
+// same concern into its own social-context finding. Fails safe: with no matching main
+// social-context finding, nothing is dropped.
+export function dedupeConsolidatedSocialContextFindings(
+  findings: AgentFinding[]
+): AgentFinding[] {
+  const mainSocialContextFindings = findings.filter(
+    (finding) => finding.agent === "main" && isSocialContextFinding(finding)
+  );
+  if (mainSocialContextFindings.length === 0) {
+    return findings;
+  }
+
+  return findings.filter(
+    (finding) =>
+      !(
+        finding.agent === "social_context_risk" &&
+        mainSocialContextFindings.some((mainFinding) => sharesConcern(mainFinding, finding))
+      )
+  );
 }
 
 function bestEvidenceScore(evidenceCandidates: RagEvidenceCandidate[]) {
