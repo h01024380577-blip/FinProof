@@ -2563,6 +2563,34 @@ describe("Phase 3 — content-based hybrid OCR provider", () => {
     expect(document.text).toContain("연체 최고 15%");
   });
 
+  it("salvages OCR text from a truncated ```json vision response (max_tokens cut-off)", async () => {
+    // Claude wraps OCR output in a ```json fence and is verbose; content-heavy
+    // images can exceed max_tokens, cutting off the closing quote/brace/fence so
+    // JSON.parse fails. The extracted text must still be the real OCR content,
+    // never the raw fenced-JSON string.
+    const truncated = '```json\n{"text":"상품 설명서 – 실버 안심론\\n생활안정 대출 상품 설명 및 광고 심의 참고자료\\n\\n문서 구분 | 대출 심의 테스';
+    const vision = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ content: [{ type: "text", text: truncated }] })
+    }));
+    const provider = createHybridOcrProvider(
+      hybridEnv,
+      reader(new Uint8Array([1, 2, 3])),
+      vision,
+      serviceFetch("pdfplumber")
+    );
+
+    const files = [makeFile({ name: "contact_sheet.png", contentType: "image/png" })];
+    const [document] = await provider.extract({ review: { ...review, files }, files });
+
+    expect(document.provider).toBe("openai-ocr");
+    expect(document.text).toContain("상품 설명서");
+    expect(document.text).toContain("실버 안심론");
+    expect(document.text).not.toContain("```");
+    expect(document.text).not.toContain('"text"');
+  });
+
   it("routes a digital (text-layer) PDF to the Python service (not the vision LLM)", async () => {
     const vision = visionFetch();
     const service = serviceFetch("pdfplumber");

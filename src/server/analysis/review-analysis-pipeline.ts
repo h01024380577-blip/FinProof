@@ -690,10 +690,22 @@ function clampConfidence(value: unknown, fallback: number) {
   return Math.max(0.45, Math.min(0.99, value));
 }
 
+/**
+ * Strip a Markdown code fence from an LLM response. Claude wraps JSON output in
+ * a ```json … ``` block; when the response is truncated by max_tokens the closing
+ * ``` (and often the closing quote/brace) never arrives, so we strip the opening
+ * fence unconditionally and the closing fence only if present.
+ */
+function stripCodeFences(text: string): string {
+  return text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
 function parseJsonObject(text: string): Record<string, unknown> | undefined {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  const candidate = fenced ? fenced[1].trim() : trimmed;
+  const candidate = stripCodeFences(text);
 
   try {
     const parsed = JSON.parse(candidate);
@@ -706,6 +718,49 @@ function parseJsonObject(text: string): Record<string, unknown> | undefined {
   }
 }
 
+/**
+ * Recover the `"text"` field value from a possibly-truncated JSON OCR response.
+ * A content-heavy image can push Claude's output past max_tokens, cutting off the
+ * closing quote/brace/fence so JSON.parse fails. Rather than store the raw
+ * `​```json {"text":"…` string as OCR output, we walk the string after `"text":"`,
+ * honouring escapes, and take everything up to the closing quote (or the end, if
+ * truncated). Returns undefined when there is no `"text"` field to salvage.
+ */
+function salvageOcrTextField(raw: string): string | undefined {
+  const stripped = stripCodeFences(raw);
+  const match = stripped.match(/"text"\s*:\s*"/);
+
+  if (!match || match.index === undefined) {
+    return undefined;
+  }
+
+  const start = match.index + match[0].length;
+  let out = "";
+
+  for (let i = start; i < stripped.length; i += 1) {
+    const ch = stripped[i];
+
+    if (ch === "\\") {
+      const next = stripped[i + 1];
+      const unescaped =
+        next === "n" ? "\n" : next === "t" ? "\t" : next === "r" ? "\r" : (next ?? "");
+      out += unescaped;
+      i += 1;
+      continue;
+    }
+
+    if (ch === '"') {
+      break; // closing quote of the text field
+    }
+
+    out += ch;
+  }
+
+  const cleaned = out.replace(/\s+/g, " ").trim();
+
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 function parseGeminiOcrText(rawText: string) {
   const parsed = parseJsonObject(rawText);
 
@@ -716,8 +771,16 @@ function parseGeminiOcrText(rawText: string) {
     };
   }
 
+  // JSON.parse failed (commonly a truncated ```json block) — salvage the text
+  // field so we never surface raw JSON/fence syntax as extracted OCR content.
+  const salvaged = salvageOcrTextField(rawText);
+
+  if (salvaged) {
+    return { text: salvaged, confidence: 0.78 };
+  }
+
   return {
-    text: rawText.replace(/\s+/g, " ").trim(),
+    text: stripCodeFences(rawText).replace(/\s+/g, " ").trim(),
     confidence: 0.78
   };
 }
@@ -892,7 +955,15 @@ type OpenAiOcrOptions = {
   visionProvider: "anthropic" | "openai";
   maxInlineBytes: number;
   ocrTimeoutMs: number;
+  maxTokens: number;
 };
+
+// Vision OCR output budget. Content-heavy images (PDF contact sheets, multi-page
+// renders) previously overran the old 2000-token cap, truncating the JSON response
+// mid-string; the parser then fell back to storing the raw ```json fragment.
+// 8000 comfortably fits a full page/sheet of extracted text and stays well under
+// every Claude/OpenAI model's non-streaming ceiling.
+const DEFAULT_OCR_MAX_TOKENS = 8000;
 
 function resolveOpenAiOcrOptions(env: Record<string, string | undefined>): OpenAiOcrOptions | null {
   const model = openAiOcrModel(env);
@@ -910,7 +981,8 @@ function resolveOpenAiOcrOptions(env: Record<string, string | undefined>): OpenA
     model,
     visionProvider,
     maxInlineBytes: positiveInteger(env, "FINPROOF_OCR_MAX_INLINE_BYTES", 20 * 1024 * 1024),
-    ocrTimeoutMs: positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000)
+    ocrTimeoutMs: positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000),
+    maxTokens: positiveInteger(env, "FINPROOF_OCR_MAX_TOKENS", DEFAULT_OCR_MAX_TOKENS)
   };
 }
 
@@ -954,7 +1026,7 @@ async function extractFileViaOpenAi(
           },
           body: JSON.stringify({
             model: options.model,
-            max_tokens: 2000,
+            max_tokens: options.maxTokens,
             messages: [
               {
                 role: "user",
@@ -984,7 +1056,7 @@ async function extractFileViaOpenAi(
                 ]
               }
             ],
-            max_output_tokens: 2000
+            max_output_tokens: options.maxTokens
           })
         });
 
