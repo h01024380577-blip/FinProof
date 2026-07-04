@@ -66,6 +66,7 @@ export type ReviewSubAgentOrchestrator = {
     extractedDocuments: ExtractedDocument[];
     evidenceCandidates: RagEvidenceCandidate[];
     priorFindings?: AgentFinding[];
+    onEvent?: (payload: Record<string, unknown>) => void;
   }): Promise<AgentFinding[]>;
 };
 
@@ -531,7 +532,8 @@ async function runAgent({
   agent,
   input,
   priorFindings = [],
-  routeContext = {}
+  routeContext = {},
+  onEvent
 }: {
   provider: ModelProvider;
   agent: ReviewSubAgentDefinition;
@@ -542,9 +544,14 @@ async function runAgent({
   };
   priorFindings?: AgentFinding[];
   routeContext?: ModelRouteContext;
+  onEvent?: (payload: Record<string, unknown>) => void;
 }) {
+  const emit = (payload: Record<string, unknown>) => {
+    logAnalysisEvent(payload);
+    onEvent?.(payload);
+  };
   const startedAt = Date.now();
-  logAnalysisEvent({
+  emit({
     stage: "subagent",
     event: "start",
     case: input.review.id,
@@ -575,7 +582,7 @@ async function runAgent({
     )
     .filter((finding): finding is AgentFinding => Boolean(finding));
 
-  logAnalysisEvent({
+  emit({
     stage: "subagent",
     event: "done",
     case: input.review.id,
@@ -594,13 +601,15 @@ export function createReviewSubAgentOrchestrator(
 ): ReviewSubAgentOrchestrator {
   return {
     async run(input) {
+      const onEvent = input.onEvent;
       const priorFindings = input.priorFindings ?? [];
       const domainFindings = await Promise.all(
         domainSubAgents.map((agent) =>
           runAgent({
             provider,
             agent,
-            input
+            input,
+            onEvent
           })
         )
       );
@@ -617,6 +626,7 @@ export function createReviewSubAgentOrchestrator(
             agent: evidenceVerificationAgent,
             input,
             priorFindings: findings,
+            onEvent,
             routeContext: {
               riskLevel: highestFindingRisk(findings),
               evidenceContradiction: findings.some((finding) =>
@@ -634,6 +644,7 @@ export function createReviewSubAgentOrchestrator(
             agent: caseSearchAgent,
             input,
             priorFindings: findings,
+            onEvent,
             routeContext: {
               riskLevel: highestFindingRisk(findings),
               caseStronglyInfluencesJudgment:
@@ -649,6 +660,7 @@ export function createReviewSubAgentOrchestrator(
         agent: mainComplianceAgent,
         input,
         priorFindings: findings,
+        onEvent,
         routeContext: {
           riskLevel: highestFindingRisk(findings),
           agentConflict: hasMaterialAgentConflict(findings)

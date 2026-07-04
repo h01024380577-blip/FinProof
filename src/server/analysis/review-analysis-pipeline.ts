@@ -126,7 +126,11 @@ export type RagRetriever = {
 export type ReviewFileBodyReader = Pick<ReviewStorageAdapter, "getReviewFileBody">;
 
 export type ReviewAnalysisPipeline = {
-  run(input: { review: ReviewCase; scope?: ReviewStoreScope }): Promise<AnalysisArtifacts>;
+  run(input: {
+    review: ReviewCase;
+    scope?: ReviewStoreScope;
+    onEvent?: (payload: Record<string, unknown>) => void;
+  }): Promise<AnalysisArtifacts>;
   /**
    * OCR 추출만 수행하고 AI 이슈탐지(RAG·서브에이전트·이슈생성)는 건너뛴다.
    * 재업로드 재검토에서 버전 간 텍스트 비교(diff)용 추출 텍스트만 필요할 때 사용한다.
@@ -1760,10 +1764,14 @@ export function createReviewAnalysisPipeline({
       const rawExtractedDocuments = await ocrProvider.extract({ review, files: review.files });
       return rawExtractedDocuments.map(sanitizeExtractedDocument);
     },
-    async run({ review, scope }) {
+    async run({ review, scope, onEvent }) {
       const config = getAnalysisProviderConfig();
+      const emit = (payload: Record<string, unknown>) => {
+        logAnalysisEvent(payload);
+        onEvent?.(payload);
+      };
       const runStartedAt = now().getTime();
-      logAnalysisEvent({
+      emit({
         stage: "pipeline",
         event: "start",
         case: review.id,
@@ -1784,7 +1792,7 @@ export function createReviewAnalysisPipeline({
         documentsForAnalysis(extractedDocuments, review),
         review
       );
-      logAnalysisEvent({
+      emit({
         stage: "ocr",
         event: "done",
         case: review.id,
@@ -1800,7 +1808,7 @@ export function createReviewAnalysisPipeline({
         analysisDocuments.map((document) => document.text).join(" "),
         modelProvider
       );
-      logAnalysisEvent({
+      emit({
         stage: "query_expansion",
         event: "done",
         case: review.id,
@@ -1813,7 +1821,7 @@ export function createReviewAnalysisPipeline({
         scope,
         queryConcepts: conceptTerms
       });
-      logAnalysisEvent({
+      emit({
         stage: "rag_retrieve",
         event: "done",
         case: review.id,
@@ -1826,7 +1834,7 @@ export function createReviewAnalysisPipeline({
         query: analysisRagQuery(review, analysisDocuments, conceptTerms),
         candidates: retrievedCandidates
       });
-      logAnalysisEvent({
+      emit({
         stage: "rerank",
         event: "done",
         case: review.id,
@@ -1842,7 +1850,7 @@ export function createReviewAnalysisPipeline({
         topK: config.rerank.topK,
         knowledgeMinScore: KNOWLEDGE_SECONDARY_MIN_SCORE
       });
-      logAnalysisEvent({
+      emit({
         stage: "evidence_select",
         event: "done",
         case: review.id,
@@ -1872,7 +1880,7 @@ export function createReviewAnalysisPipeline({
               agentFindings: [],
               errors: []
             };
-      logAnalysisEvent({
+      emit({
         stage: "orchestrate",
         event: "start",
         case: review.id,
@@ -1883,13 +1891,14 @@ export function createReviewAnalysisPipeline({
         review,
         extractedDocuments: analysisDocuments,
         evidenceCandidates,
-        priorFindings: multilingualResult.agentFindings
+        priorFindings: multilingualResult.agentFindings,
+        onEvent
       });
       const agentFindings = combineAgentFindings(
         multilingualResult.agentFindings,
         orchestratedFindings
       );
-      logAnalysisEvent({
+      emit({
         stage: "combine",
         event: "done",
         case: review.id,
