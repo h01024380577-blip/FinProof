@@ -5,6 +5,7 @@ import {
   createReviewAnalysisPipeline,
   type ReviewAnalysisPipeline
 } from "@/server/analysis/review-analysis-pipeline";
+import { createDbAnalysisEventSink } from "@/server/analysis/analysis-event-sink";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import {
   createKnowledgeDocumentChunks,
@@ -393,7 +394,13 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         let result;
 
         try {
-          const artifacts = await analysisPipeline.run({ review: before, scope });
+          const onEvent = createDbAnalysisEventSink({
+            store,
+            scope,
+            reviewCaseId,
+            jobId: queued.jobId
+          });
+          const artifacts = await analysisPipeline.run({ review: before, scope, onEvent });
           const persisted = await store.persistAnalysisOutputs(scope, {
             reviewCaseId,
             jobId: queued.jobId,

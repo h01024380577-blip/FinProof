@@ -5,6 +5,7 @@ import {
   type ReviewAnalysisPipeline
 } from "./review-analysis-pipeline";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
+import { createDbAnalysisEventSink } from "./analysis-event-sink";
 
 const DEFAULT_STALE_JOB_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -82,7 +83,13 @@ export function createAnalysisWorker(deps: AnalysisWorkerDeps = {}) {
       let artifacts;
 
       try {
-        artifacts = await pipeline.run({ review: claimed.reviewCase, scope });
+        const onEvent = createDbAnalysisEventSink({
+          store,
+          scope,
+          reviewCaseId: claimed.reviewCaseId,
+          jobId: claimed.id
+        });
+        artifacts = await pipeline.run({ review: claimed.reviewCase, scope, onEvent });
         const persisted = await store.persistAnalysisOutputs(scope, {
           reviewCaseId: claimed.reviewCaseId,
           jobId: claimed.id,
