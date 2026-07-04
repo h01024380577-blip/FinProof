@@ -577,6 +577,59 @@ describe("ReviewQueue", () => {
     ).toBeInTheDocument();
   });
 
+  it("resumes polling for a row already analyzing on load and flips it to the workbench without a manual refresh", async () => {
+    const analyzingRow = {
+      ...reviewSummaries[1],
+      id: "rc-upload-009",
+      title: "진행 중 업로드 심의",
+      status: "analysis_in_progress",
+      availableActions: []
+    };
+    const completedRow = {
+      ...depositReview,
+      id: "rc-upload-009",
+      title: "진행 중 업로드 심의",
+      status: "analysis_complete",
+      reviewer: ""
+    };
+    const fetchMock = vi.fn((url: string) => {
+      if (url.endsWith("/analysis/status")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            reviewCaseId: "rc-upload-009",
+            status: "completed",
+            progress: 100,
+            currentStep: "worker_completed",
+            jobId: "job-9"
+          })
+        });
+      }
+      if (url === "/api/v1/review-cases/rc-upload-009") {
+        return Promise.resolve({ ok: true, json: async () => ({ reviewCase: completedRow }) });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ reviewCases: [analyzingRow] }) });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderQueue("reviewer", "reviewer.jwt");
+
+    // The row loads mid-analysis with a spinner. Without an auto-resumed poller
+    // it would keep spinning until a manual refresh; the poller must detect
+    // completion and swap in the workbench button on its own.
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole("row", { name: /진행 중 업로드 심의/ })).getByRole("button", {
+          name: "검토하기"
+        })
+      ).toBeInTheDocument()
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/review-cases/rc-upload-009/analysis/status",
+      expect.any(Object)
+    );
+  });
+
   it("uses backend pagination when the reviewer moves through queue pages", async () => {
     const user = userEvent.setup();
     const fetchMock = vi
