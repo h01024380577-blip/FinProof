@@ -110,6 +110,35 @@ describe("multilingual opinion draft", () => {
     expect(detectReviewDraftLanguage(reviewWithMultilingualIssue(vietnameseContext))).toBe("vi");
   });
 
+  it("keeps Korean when only a minority of issues carry non-Korean context", () => {
+    // A Korean package may surface a few embedded foreign-language segments. The
+    // draft must still follow the package's primary (Korean) language.
+    const koreanIssues = review.issues;
+    expect(koreanIssues.length).toBeGreaterThan(1);
+
+    const packageWithOneForeignIssue: ReviewCase = {
+      ...review,
+      issues: [
+        { ...koreanIssues[0], multilingualContext: vietnameseContext },
+        ...koreanIssues.slice(1)
+      ]
+    };
+
+    expect(detectReviewDraftLanguage(packageWithOneForeignIssue)).toBe("ko");
+  });
+
+  it("resolves ties in favor of the Korean base language", () => {
+    const packageWithTie: ReviewCase = {
+      ...review,
+      issues: [
+        { ...review.issues[0], multilingualContext: vietnameseContext },
+        { ...review.issues[0], id: `${review.issues[0].id}-ko`, multilingualContext: undefined }
+      ]
+    };
+
+    expect(detectReviewDraftLanguage(packageWithTie)).toBe("ko");
+  });
+
   it("writes the opinion draft in the detected language using original-language wording", () => {
     const draft = generateIssueBasedOpinionDraft(reviewWithMultilingualIssue(vietnameseContext));
 

@@ -238,8 +238,11 @@ export async function generateDraftWithModel(
   selectedIssueIds?: string[]
 ): Promise<string> {
   const scopedReview = scopeReviewToSelectedIssues(review, selectedIssueIds);
-  const fallback = generateDraftWithChatContext(scopedReview, chatResponses);
-  const targetLanguage = detectReviewDraftLanguage(scopedReview);
+  // Language always follows the full package, not the selected-issue subset, so a
+  // draft scoped to a few foreign-language issues is still written in the
+  // package's primary language.
+  const targetLanguage = detectReviewDraftLanguage(review);
+  const fallback = generateDraftWithChatContext(scopedReview, chatResponses, targetLanguage);
   const result = await provider.generateText({
     task: "opinion_draft",
     routeContext: draftRouteContext(scopedReview, chatResponses),
