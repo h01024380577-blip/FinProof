@@ -498,7 +498,7 @@ describe("QueueTable", () => {
     expect(deleteButtonBlock).toContain("height: 36px");
   });
 
-  it("renders retry, direct review, and audit actions for an analysis_failed row", () => {
+  it("renders retry and direct review actions for an analysis_failed row", () => {
     render(
       <QueueTable
         rows={[
@@ -518,7 +518,8 @@ describe("QueueTable", () => {
     const row = screen.getByRole("row", { name: /최고 연 5.0%/ });
     expect(within(row).getByRole("button", { name: "AI 분석 재시도" })).toBeEnabled();
     expect(within(row).getByRole("button", { name: "직접검토" })).toBeInTheDocument();
-    expect(within(row).getByRole("button", { name: "상세보기" })).toBeInTheDocument();
+    // 실패 행에서 '상세보기'는 '직접검토'와 기능이 겹쳐 노출하지 않는다.
+    expect(within(row).queryByRole("button", { name: "상세보기" })).not.toBeInTheDocument();
     expect(within(row).getByText("분석 실패")).toHaveAttribute("data-status", "analysis_failed");
   });
 
