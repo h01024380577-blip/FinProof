@@ -28,6 +28,7 @@ import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import { buildAnalysisIssues } from "./issue-generation";
 import { runCoveEvidenceVerification, type CoveVerificationArtifacts } from "./cove-verification";
+import { judgeAbsoluteClaims } from "./absolute-claim-judgment";
 import {
   segmentMultilingualDocuments,
   type KoreanComplianceMapping,
@@ -2120,8 +2121,14 @@ export function createReviewAnalysisPipeline({
           ? { socialContextKgMatches: socialContextKgResult.matches }
           : {})
       };
+      const absoluteClaimJudgment = await judgeAbsoluteClaims({
+        review,
+        extractedDocuments: analysisDocuments,
+        modelProvider
+      });
       const findings = buildAnalysisIssues(review, artifacts, {
-        minEvidenceScore: config.rag.minScore
+        minEvidenceScore: config.rag.minScore,
+        absoluteClaimDecision: absoluteClaimJudgment.decision
       }).map((issue) => issueToFinding(issue, verifiedAgentFindings, review.id));
 
       return {

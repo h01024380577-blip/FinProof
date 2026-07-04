@@ -23,6 +23,7 @@ export type ModelRouteTask =
   | "retrieval_query"
   | "evidence_verification"
   | "cove_evidence_answering"
+  | "absolute_claim_judgment"
   | "rag_chat"
   | "opinion_draft"
   | "draft_quality_review"

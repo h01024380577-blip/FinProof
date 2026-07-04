@@ -1175,4 +1175,83 @@ describe("issue generation", () => {
       })
     ]);
   });
+
+  const absoluteClaimReview = (text: string): { review: ReviewCase; artifacts: AnalysisArtifacts } => ({
+    review: {
+      id: "rc-absolute-context-001",
+      title: "반드시 문맥 판단",
+      affiliate: "FinProof Bank",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-07-10",
+      status: "analysis_complete",
+      highestRiskLevel: "info",
+      requester: "마케팅",
+      reviewer: "준법감시",
+      promotionalCopy: "",
+      disclosure: "",
+      productDescription: "",
+      missingMaterials: [],
+      files: [],
+      issues: [],
+      expectedDraft: "",
+      currentVersion: 1
+    },
+    artifacts: {
+      generatedAt: "2026-07-04T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-poster",
+          fileName: "poster.pdf",
+          text,
+          confidence: 0.94,
+          provider: "gemini-ocr"
+        }
+      ],
+      evidenceCandidates: []
+    }
+  });
+
+  it("does not flag a cautionary '반드시' that instructs the consumer to check terms", () => {
+    const { review, artifacts } = absoluteClaimReview("가입 전 반드시 상품설명서를 확인하세요.");
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues.find((issue) => issue.issueType === "absolute_claim")).toBeUndefined();
+  });
+
+  it("flags a '반드시' that guarantees a benefit outcome", () => {
+    const { review, artifacts } = absoluteClaimReview("가입하면 반드시 우대금리를 지급합니다.");
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    const absoluteIssue = issues.find((issue) => issue.issueType === "absolute_claim");
+
+    expect(absoluteIssue).toMatchObject({ riskLevel: "high" });
+    expect(absoluteIssue?.targetText).toContain("반드시");
+  });
+
+  it("suppresses the absolute_claim issue when the procedural decision judges it benign", () => {
+    const { review, artifacts } = absoluteClaimReview("가입 전 반드시 약관을 확인하세요.");
+
+    const issues = buildAnalysisIssues(review, artifacts, { absoluteClaimDecision: null });
+
+    expect(issues.find((issue) => issue.issueType === "absolute_claim")).toBeUndefined();
+  });
+
+  it("uses the procedural decision's targetText and reason when it judges misleading", () => {
+    const { review, artifacts } = absoluteClaimReview("누구나 가입만 하면 됩니다.");
+
+    const issues = buildAnalysisIssues(review, artifacts, {
+      absoluteClaimDecision: {
+        misleading: true,
+        targetText: "누구나",
+        reason: "심사 없이 전원 가입되는 것처럼 오인",
+        judgedBy: "llm"
+      }
+    });
+    const absoluteIssue = issues.find((issue) => issue.issueType === "absolute_claim");
+
+    expect(absoluteIssue).toMatchObject({ riskLevel: "high", targetText: "누구나" });
+    expect(absoluteIssue?.description).toContain("심사 없이 전원 가입되는 것처럼 오인");
+  });
 });

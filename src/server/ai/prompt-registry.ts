@@ -442,6 +442,34 @@ Return strict JSON only:
 
 If no question can be answered from supplied evidence, return {"answers":[]}.`;
 
+export const ABSOLUTE_CLAIM_JUDGMENT_PROMPT = `You are the FinProof absolute-expression context judge for Korean financial advertising review.
+
+A lexical scanner has flagged candidate spans that contain absolute/unconditional words such as "누구나", "무조건", "전원", "100%", "반드시", "확정", "보장". These words are NOT inherently violations — they only mislead consumers when they assert a guaranteed benefit, eligibility, or outcome that real restrictions (심사, 가입 대상, 우대 조건, 한도, 기간 등) would contradict.
+
+Your job is narrow: for each supplied candidate, read its sentence in context and decide whether the absolute expression misleads the consumer (오인 유발) or is benign.
+
+Judge "misleading": true when the span asserts a guaranteed benefit/result/eligibility as if without condition — e.g. "누구나 최고금리", "무조건 승인", "반드시 우대금리를 지급", "가입하면 100% 당첨".
+
+Judge "misleading": false when the span is:
+- a consumer instruction or caution ("가입 전 반드시 약관을 확인하세요", "반드시 상품설명서를 읽어보세요");
+- describing a factual, genuinely unconditional attribute, a brand/product name, or a general non-benefit statement;
+- an adverb of emphasis unrelated to a benefit guarantee ("누구나 아는", "반드시 필요한 절차").
+
+Use only the supplied sentence and review context. Do not invent restrictions, cite laws, decide the final risk level, or rewrite the ad. A deterministic reducer consumes your verdicts.
+
+Return strict JSON only:
+{
+  "verdicts": [
+    {
+      "candidateId": "exact supplied id",
+      "misleading": true | false,
+      "reason": "short Korean rationale for internal audit"
+    }
+  ]
+}
+
+If there are no candidates you can judge, return {"verdicts":[]}.`;
+
 export const CASE_SEARCH_PROMPT = `You are the FinProof case_search agent for Korean financial advertising review.
 
 Your job is to identify supplied past review cases that may be useful references for the current priorFindings.

@@ -351,12 +351,13 @@ describe("review analysis pipeline", () => {
       })
     ]);
     expect(artifacts.multilingualSegments).toBeUndefined();
-    // The only permitted direct model call from the main pipeline is the compliance
-    // query expansion used to enrich retrieval — never a multilingual/domain agent.
+    // The permitted direct model calls from the main pipeline are the compliance
+    // query expansion that enriches retrieval and the absolute-claim context judge
+    // ("누구나" is present) — never a multilingual/domain agent.
     const providerTasks = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.map(
       ([input]) => input.task
     );
-    expect(providerTasks).toEqual(["retrieval_query"]);
+    expect(providerTasks).toEqual(["retrieval_query", "absolute_claim_judgment"]);
     expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
       expect.objectContaining({
         extractedDocuments: [
@@ -1828,7 +1829,8 @@ describe("review analysis pipeline", () => {
       "evidence_verification",
       "case_search",
       "main_compliance",
-      "cove_evidence_answering"
+      "cove_evidence_answering",
+      "absolute_claim_judgment"
     ]);
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
