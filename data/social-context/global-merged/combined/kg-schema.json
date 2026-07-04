@@ -1,0 +1,46 @@
+{
+  "entityTypes": [
+    "sensitive_event",
+    "sensitive_term",
+    "financial_promo_term",
+    "derogatory_slang",
+    "visual_symbol",
+    "campaign_intent",
+    "stakeholder",
+    "region",
+    "date"
+  ],
+  "relationTypes": [
+    "associatedTerm",
+    "hasDate",
+    "occurredInOrAssociatedRegion",
+    "affectsStakeholder",
+    "evokesEvent",
+    "targetsGroup",
+    "visuallyEvokesEvent"
+  ],
+  "riskRuleFields": [
+    "id",
+    "name",
+    "conditions",
+    "riskLevel",
+    "suggestedAction",
+    "rationaleTemplate"
+  ],
+  "matchOutputShape": {
+    "riskLevel": "info|caution|high",
+    "suggestedAction": "approve|change_request|hold",
+    "matchedRuleIds": [
+      "string"
+    ],
+    "matchedPath": [
+      "entity -> relation -> entity"
+    ],
+    "targetText": "string",
+    "description": "string",
+    "evidence": [
+      "guide|prior_case|kg_path"
+    ]
+  },
+  "mergedRuntimeShape": "combined/*.json files follow the multicountry runtime shape with south_korea converted from the Korean seed package."
+}

@@ -1,0 +1,1787 @@
+[
+  {
+    "id": "khm-khmer-rouge-genocide",
+    "countryId": "cambodia",
+    "nameKo": "크메르루주 학살·캄보디아 제노사이드",
+    "nameEn": "Khmer Rouge genocide",
+    "nameLocal": "ខ្មែរក្រហម",
+    "aliases": [
+      "크메르루주 학살·캄보디아 제노사이드",
+      "Khmer Rouge genocide",
+      "ខ្មែរក្រហម",
+      "Khmer Rouge",
+      "Killing Fields"
+    ],
+    "dates": [
+      "04-17",
+      "05-20",
+      "01-07"
+    ],
+    "dateWindowDays": 7,
+    "eventType": [
+      "genocide",
+      "national_trauma",
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "Khmer Rouge",
+      "Killing Fields",
+      "Tuol Sleng",
+      "S-21",
+      "Pol Pot",
+      "Year Zero",
+      "Day of Remembrance"
+    ],
+    "stakeholderGroups": [
+      "survivors",
+      "victims_families",
+      "Cambodian_public"
+    ],
+    "associatedTermIds": [
+      "khm-term-killing-fields",
+      "khm-term-tuol-sleng",
+      "khm-term-year-zero",
+      "khm-term-pol-pot"
+    ],
+    "associatedSymbolIds": [
+      "khm-symbol-skull-memorial",
+      "khm-symbol-choeung-ek-stupa"
+    ],
+    "reviewPolicy": "제노사이드·킬링필드 표현을 금융 혜택·세일·수익률 은유로 사용하는 경우 high/hold",
+    "sourceRefs": [
+      "cambodia_genocide",
+      "cambodia_memorial_sites_reuters"
+    ]
+  },
+  {
+    "id": "khm-pchum-ben",
+    "countryId": "cambodia",
+    "nameKo": "프춤번·조상 추모 기간",
+    "nameEn": "Pchum Ben / Ancestors' Day",
+    "nameLocal": "បុណ្យភ្ជុំបិណ្ឌ",
+    "aliases": [
+      "프춤번·조상 추모 기간",
+      "Pchum Ben / Ancestors' Day",
+      "បុណ្យភ្ជុំបិណ្ឌ",
+      "ancestor day",
+      "prayers"
+    ],
+    "dates": [
+      "khmer-lunar-10th-month"
+    ],
+    "dateWindowDays": 15,
+    "eventType": [
+      "ancestor_memorial",
+      "buddhist_holiday"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "ancestor day",
+      "prayers",
+      "offerings",
+      "Buddhist Lent"
+    ],
+    "stakeholderGroups": [
+      "families",
+      "monks",
+      "Cambodian_public"
+    ],
+    "associatedTermIds": [
+      "khm-term-ancestor",
+      "khm-term-ghost",
+      "khm-term-offering"
+    ],
+    "associatedSymbolIds": [
+      "khm-symbol-pagoda",
+      "khm-symbol-monk"
+    ],
+    "reviewPolicy": "조상·죽음·영혼 관련 표현을 금융 프로모션으로 희화화하면 hold",
+    "sourceRefs": [
+      "cambodia_pchum_ben"
+    ]
+  },
+  {
+    "id": "khm-national-symbols",
+    "countryId": "cambodia",
+    "nameKo": "캄보디아 왕실·불교·앙코르와트 상징",
+    "nameEn": "Cambodian national symbols",
+    "nameLocal": "ជាតិ សាសនា ព្រះមហាក្សត្រ",
+    "aliases": [
+      "캄보디아 왕실·불교·앙코르와트 상징",
+      "Cambodian national symbols",
+      "ជាតិ សាសនា ព្រះមហាក្សត្រ",
+      "Nation Religion King",
+      "Angkor Wat"
+    ],
+    "dates": [],
+    "dateWindowDays": 0,
+    "eventType": [
+      "national_symbol",
+      "monarchy",
+      "religion"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "Nation Religion King",
+      "Angkor Wat",
+      "Buddhism",
+      "Royal family",
+      "flag"
+    ],
+    "stakeholderGroups": [
+      "Cambodian_public",
+      "Buddhist_community"
+    ],
+    "associatedTermIds": [
+      "khm-term-king",
+      "khm-term-buddhism"
+    ],
+    "associatedSymbolIds": [
+      "khm-symbol-angkor-wat",
+      "khm-symbol-flag"
+    ],
+    "reviewPolicy": "왕실·불교·앙코르와트·국기 상징을 할인·대출 밈으로 쓰는 경우 hold",
+    "sourceRefs": [
+      "cambodia_national_symbols",
+      "cambodia_national_symbols"
+    ]
+  },
+  {
+    "id": "vnm-reunification-day",
+    "countryId": "vietnam",
+    "nameKo": "베트남 통일·해방 기념일",
+    "nameEn": "Reunification Day / Liberation Day",
+    "nameLocal": "Ngày Giải phóng miền Nam, thống nhất đất nước",
+    "aliases": [
+      "베트남 통일·해방 기념일",
+      "Reunification Day / Liberation Day",
+      "Ngày Giải phóng miền Nam, thống nhất đất nước",
+      "Fall of Saigon",
+      "Reunification"
+    ],
+    "dates": [
+      "04-30"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "national_day",
+      "war_memory",
+      "reunification"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "Fall of Saigon",
+      "Reunification",
+      "Victory Day",
+      "Liberation Day"
+    ],
+    "stakeholderGroups": [
+      "Vietnamese_public",
+      "overseas_vietnamese"
+    ],
+    "associatedTermIds": [
+      "vnm-term-april30",
+      "vnm-term-saigon-fall",
+      "vnm-term-black-april"
+    ],
+    "associatedSymbolIds": [
+      "vnm-symbol-tank390",
+      "vnm-symbol-flag"
+    ],
+    "reviewPolicy": "4월30일은 베트남 내에서는 국가 기념일이지만 해외 베트남 디아스포라에는 상반된 기억이 있어 정치적 문맥 주의",
+    "sourceRefs": [
+      "vietnam_reunification_day",
+      "vietnam_public_holidays"
+    ]
+  },
+  {
+    "id": "vnm-national-day",
+    "countryId": "vietnam",
+    "nameKo": "베트남 국경일",
+    "nameEn": "Vietnam National Day",
+    "nameLocal": "Quốc khánh",
+    "aliases": [
+      "베트남 국경일",
+      "Vietnam National Day",
+      "Quốc khánh",
+      "Ho Chi Minh",
+      "Ba Dinh Square"
+    ],
+    "dates": [
+      "09-02"
+    ],
+    "dateWindowDays": 2,
+    "eventType": [
+      "national_day",
+      "independence"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "Ho Chi Minh",
+      "Ba Dinh Square",
+      "Declaration of Independence"
+    ],
+    "stakeholderGroups": [
+      "Vietnamese_public"
+    ],
+    "associatedTermIds": [
+      "vnm-term-ho-chi-minh",
+      "vnm-term-national-day"
+    ],
+    "associatedSymbolIds": [
+      "vnm-symbol-star-flag",
+      "vnm-symbol-ba-dinh"
+    ],
+    "reviewPolicy": "국기·호치민·국경일 상징은 존중 맥락만 허용; 금융 프로모션 밈화는 hold",
+    "sourceRefs": [
+      "vietnam_national_day"
+    ]
+  },
+  {
+    "id": "vnm-agent-orange-war",
+    "countryId": "vietnam",
+    "nameKo": "베트남전·고엽제 피해",
+    "nameEn": "Vietnam War / Agent Orange legacy",
+    "nameLocal": "Chất độc da cam",
+    "aliases": [
+      "베트남전·고엽제 피해",
+      "Vietnam War / Agent Orange legacy",
+      "Chất độc da cam",
+      "Agent Orange",
+      "napalm"
+    ],
+    "dates": [],
+    "dateWindowDays": 0,
+    "eventType": [
+      "war_legacy",
+      "chemical_harm",
+      "victim_memory"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "Agent Orange",
+      "napalm",
+      "war victims",
+      "birth defects",
+      "disability"
+    ],
+    "stakeholderGroups": [
+      "war_victims",
+      "families",
+      "disabled_people"
+    ],
+    "associatedTermIds": [
+      "vnm-term-agent-orange",
+      "vnm-term-napalm",
+      "vnm-term-war"
+    ],
+    "associatedSymbolIds": [
+      "vnm-symbol-orange-ribbon",
+      "vnm-symbol-war-helicopter"
+    ],
+    "reviewPolicy": "고엽제·전쟁 피해 표현을 금융 수익·혜택 은유로 사용하면 high/hold",
+    "sourceRefs": [
+      "vietnam_agent_orange"
+    ]
+  },
+  {
+    "id": "vnm-tet",
+    "countryId": "vietnam",
+    "nameKo": "베트남 설·뗏",
+    "nameEn": "Tết Lunar New Year",
+    "nameLocal": "Tết Nguyên Đán",
+    "aliases": [
+      "베트남 설·뗏",
+      "Tết Lunar New Year",
+      "Tết Nguyên Đán",
+      "family reunion",
+      "ancestors"
+    ],
+    "dates": [
+      "lunar-new-year"
+    ],
+    "dateWindowDays": 7,
+    "eventType": [
+      "family_holiday",
+      "national_holiday"
+    ],
+    "sensitivityLevel": "info",
+    "contexts": [
+      "family reunion",
+      "ancestors",
+      "lucky money"
+    ],
+    "stakeholderGroups": [
+      "families",
+      "elders"
+    ],
+    "associatedTermIds": [
+      "vnm-term-tet",
+      "vnm-term-lucky-money"
+    ],
+    "associatedSymbolIds": [
+      "vnm-symbol-apricot-blossom",
+      "vnm-symbol-red-envelope"
+    ],
+    "reviewPolicy": "뗏 프로모션은 가능하나 조상·가난·도박·미신 조롱 및 과잉 상업화 주의",
+    "sourceRefs": [
+      "vietnam_public_holidays"
+    ]
+  },
+  {
+    "id": "vnm-hung-kings",
+    "countryId": "vietnam",
+    "nameKo": "흥왕 기일",
+    "nameEn": "Hung Kings Commemoration",
+    "nameLocal": "Giỗ tổ Hùng Vương",
+    "aliases": [
+      "흥왕 기일",
+      "Hung Kings Commemoration",
+      "Giỗ tổ Hùng Vương",
+      "Hung Kings",
+      "founding ancestors"
+    ],
+    "dates": [
+      "lunar-03-10"
+    ],
+    "dateWindowDays": 2,
+    "eventType": [
+      "ancestral_origin",
+      "national_heritage"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "Hung Kings",
+      "founding ancestors",
+      "ancestor worship"
+    ],
+    "stakeholderGroups": [
+      "Vietnamese_public"
+    ],
+    "associatedTermIds": [
+      "vnm-term-hung-kings",
+      "vnm-term-ancestor"
+    ],
+    "associatedSymbolIds": [
+      "vnm-symbol-temple"
+    ],
+    "reviewPolicy": "민족 시조·조상 숭배 맥락을 금융 상품 밈으로 쓰면 caution/hold",
+    "sourceRefs": [
+      "vietnam_public_holidays"
+    ]
+  },
+  {
+    "id": "mmr-2021-coup",
+    "countryId": "myanmar",
+    "nameKo": "2021년 미얀마 군부 쿠데타",
+    "nameEn": "2021 Myanmar coup",
+    "nameLocal": "၂၀၂၁ အာဏာသိမ်း",
+    "aliases": [
+      "2021년 미얀마 군부 쿠데타",
+      "2021 Myanmar coup",
+      "၂၀၂၁ အာဏာသိမ်း",
+      "coup",
+      "Tatmadaw"
+    ],
+    "dates": [
+      "02-01"
+    ],
+    "dateWindowDays": 7,
+    "eventType": [
+      "political_crisis",
+      "military_coup",
+      "civil_disobedience"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "coup",
+      "Tatmadaw",
+      "CDM",
+      "red ribbon",
+      "three-finger salute",
+      "Aung San Suu Kyi"
+    ],
+    "stakeholderGroups": [
+      "Myanmar_public",
+      "protesters",
+      "diaspora"
+    ],
+    "associatedTermIds": [
+      "mmr-term-coup",
+      "mmr-term-tatmadaw",
+      "mmr-term-cdm",
+      "mmr-term-aung-san-suu-kyi"
+    ],
+    "associatedSymbolIds": [
+      "mmr-symbol-three-finger-salute",
+      "mmr-symbol-red-ribbon",
+      "mmr-symbol-pot-banging"
+    ],
+    "reviewPolicy": "쿠데타·시위 상징을 금융 혜택·이벤트로 소비하거나 정치 편향으로 해석될 표현은 high/hold",
+    "sourceRefs": [
+      "myanmar_coup_reuters",
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "mmr-rohingya-rakhine",
+    "countryId": "myanmar",
+    "nameKo": "로힝야·라카인 인권 위기",
+    "nameEn": "Rohingya / Rakhine crisis",
+    "nameLocal": "ရိုဟင်ဂျာ",
+    "aliases": [
+      "로힝야·라카인 인권 위기",
+      "Rohingya / Rakhine crisis",
+      "ရိုဟင်ဂျာ",
+      "Rohingya",
+      "Rakhine"
+    ],
+    "dates": [],
+    "dateWindowDays": 0,
+    "eventType": [
+      "ethnic_conflict",
+      "human_rights",
+      "refugee_crisis"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "Rohingya",
+      "Rakhine",
+      "refugee",
+      "displacement",
+      "ethnic conflict"
+    ],
+    "stakeholderGroups": [
+      "Rohingya",
+      "Rakhine_communities",
+      "refugees"
+    ],
+    "associatedTermIds": [
+      "mmr-term-rohingya",
+      "mmr-term-rakhine",
+      "mmr-term-refugee"
+    ],
+    "associatedSymbolIds": [
+      "mmr-symbol-burning-village",
+      "mmr-symbol-refugee-camp"
+    ],
+    "reviewPolicy": "로힝야·라카인·난민 표현을 금융상품 조롱·고정관념·프로모션으로 사용하면 high/hold",
+    "sourceRefs": [
+      "myanmar_rohingya"
+    ]
+  },
+  {
+    "id": "mmr-8888-uprising",
+    "countryId": "myanmar",
+    "nameKo": "8888 민주화 항쟁",
+    "nameEn": "8888 Uprising",
+    "nameLocal": "၈၈၈၈ အရေးအခင်း",
+    "aliases": [
+      "8888 민주화 항쟁",
+      "8888 Uprising",
+      "၈၈၈၈ အရေးအခင်း",
+      "8888",
+      "pro-democracy"
+    ],
+    "dates": [
+      "08-08"
+    ],
+    "dateWindowDays": 5,
+    "eventType": [
+      "democracy_movement",
+      "state_violence",
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "8888",
+      "pro-democracy",
+      "uprising",
+      "students",
+      "crackdown"
+    ],
+    "stakeholderGroups": [
+      "survivors",
+      "students",
+      "democracy_movement"
+    ],
+    "associatedTermIds": [
+      "mmr-term-8888",
+      "mmr-term-crackdown"
+    ],
+    "associatedSymbolIds": [
+      "mmr-symbol-peacock",
+      "mmr-symbol-three-finger-salute"
+    ],
+    "reviewPolicy": "8888·민주화·진압 표현을 금융 프로모션과 결합하면 high/hold",
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "mmr-thingyan",
+    "countryId": "myanmar",
+    "nameKo": "띤잔·미얀마 신년 물축제",
+    "nameEn": "Thingyan Water Festival",
+    "nameLocal": "သင်္ကြန်",
+    "aliases": [
+      "띤잔·미얀마 신년 물축제",
+      "Thingyan Water Festival",
+      "သင်္ကြန်",
+      "water festival",
+      "new year"
+    ],
+    "dates": [
+      "myanmar-new-year"
+    ],
+    "dateWindowDays": 5,
+    "eventType": [
+      "new_year",
+      "water_festival",
+      "buddhist_cultural_holiday"
+    ],
+    "sensitivityLevel": "info",
+    "contexts": [
+      "water festival",
+      "new year",
+      "merit",
+      "family"
+    ],
+    "stakeholderGroups": [
+      "families",
+      "Buddhist_community"
+    ],
+    "associatedTermIds": [
+      "mmr-term-thingyan",
+      "mmr-term-water"
+    ],
+    "associatedSymbolIds": [
+      "mmr-symbol-water-splash",
+      "mmr-symbol-pagoda"
+    ],
+    "reviewPolicy": "명절 프로모션은 가능하나 종교·정치·군부 폭력 문맥과 결합 시 주의",
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "mmr-buddhism-sacred",
+    "countryId": "myanmar",
+    "nameKo": "미얀마 불교·파고다 상징",
+    "nameEn": "Myanmar Buddhism / pagoda",
+    "nameLocal": "ဗုဒ္ဓဘာသာ",
+    "aliases": [
+      "미얀마 불교·파고다 상징",
+      "Myanmar Buddhism / pagoda",
+      "ဗုဒ္ဓဘာသာ",
+      "Buddhism",
+      "monks"
+    ],
+    "dates": [],
+    "dateWindowDays": 0,
+    "eventType": [
+      "religion",
+      "sacred_symbol"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "Buddhism",
+      "monks",
+      "pagoda",
+      "Shwedagon"
+    ],
+    "stakeholderGroups": [
+      "Buddhist_community",
+      "monks"
+    ],
+    "associatedTermIds": [
+      "mmr-term-buddhism",
+      "mmr-term-monk"
+    ],
+    "associatedSymbolIds": [
+      "mmr-symbol-shwedagon",
+      "mmr-symbol-monk"
+    ],
+    "reviewPolicy": "승려·불상·파고다를 금융상품 캐릭터·할인 밈으로 사용하면 hold",
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "chn-prc-national-day",
+    "countryId": "china",
+    "nameKo": "중국 국경절",
+    "nameEn": "PRC National Day",
+    "nameLocal": "国庆节",
+    "aliases": [
+      "중국 국경절",
+      "PRC National Day",
+      "国庆节",
+      "National Day",
+      "Golden Week"
+    ],
+    "dates": [
+      "10-01"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "national_day",
+      "sovereignty",
+      "patriotism"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "National Day",
+      "Golden Week",
+      "PRC founding",
+      "Tiananmen Square"
+    ],
+    "stakeholderGroups": [
+      "Chinese_public"
+    ],
+    "associatedTermIds": [
+      "chn-term-national-day",
+      "chn-term-golden-week"
+    ],
+    "associatedSymbolIds": [
+      "chn-symbol-prc-flag",
+      "chn-symbol-tiananmen"
+    ],
+    "reviewPolicy": "국기·국경절·천안문 광장 상징은 존중 맥락만 사용; 조롱·정치 풍자·지도 오류와 결합 시 high/hold",
+    "sourceRefs": [
+      "china_national_day"
+    ]
+  },
+  {
+    "id": "chn-taiwan-sovereignty",
+    "countryId": "china",
+    "nameKo": "대만·중국 주권 민감성",
+    "nameEn": "Taiwan / One-China sensitivity",
+    "nameLocal": "台湾",
+    "aliases": [
+      "대만·중국 주권 민감성",
+      "Taiwan / One-China sensitivity",
+      "台湾",
+      "Taiwan",
+      "Chinese Taipei"
+    ],
+    "dates": [
+      "10-10",
+      "10-25"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "sovereignty",
+      "cross_strait",
+      "territorial_sensitivity"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "Taiwan",
+      "Chinese Taipei",
+      "Double Ten",
+      "Taiwan flag",
+      "One China"
+    ],
+    "stakeholderGroups": [
+      "Chinese_public",
+      "Taiwanese_public"
+    ],
+    "associatedTermIds": [
+      "chn-term-taiwan",
+      "chn-term-chinese-taipei",
+      "chn-term-double-ten"
+    ],
+    "associatedSymbolIds": [
+      "chn-symbol-taiwan-flag",
+      "chn-symbol-map"
+    ],
+    "reviewPolicy": "국가 목록·지도·국기·대만 표기 오류는 중화권 금융 마케팅에서 high/hold",
+    "sourceRefs": [
+      "china_taiwan_flag_reuters",
+      "china_taiwan_restoration_ap"
+    ]
+  },
+  {
+    "id": "chn-hk-tibet-xinjiang",
+    "countryId": "china",
+    "nameKo": "홍콩·티베트·신장 정치 민감 이슈",
+    "nameEn": "Hong Kong / Tibet / Xinjiang sensitivity",
+    "nameLocal": "香港 / 西藏 / 新疆",
+    "aliases": [
+      "홍콩·티베트·신장 정치 민감 이슈",
+      "Hong Kong / Tibet / Xinjiang sensitivity",
+      "香港 / 西藏 / 新疆",
+      "Hong Kong",
+      "Tibet"
+    ],
+    "dates": [],
+    "dateWindowDays": 0,
+    "eventType": [
+      "political_sensitivity",
+      "autonomy",
+      "ethnic_religious_sensitivity"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "Hong Kong",
+      "Tibet",
+      "Xinjiang",
+      "separatism",
+      "human rights"
+    ],
+    "stakeholderGroups": [
+      "Chinese_public",
+      "affected_groups",
+      "diaspora"
+    ],
+    "associatedTermIds": [
+      "chn-term-hong-kong",
+      "chn-term-tibet",
+      "chn-term-xinjiang"
+    ],
+    "associatedSymbolIds": [
+      "chn-symbol-hk-protest",
+      "chn-symbol-uyghur",
+      "chn-symbol-tibetan-flag"
+    ],
+    "reviewPolicy": "해당 지명·상징·정치 슬로건을 금융 프로모션·지도·국가 목록에 부정확하게 사용하면 high/hold",
+    "sourceRefs": [
+      "china_tibet_xinjiang_hk_reuters"
+    ]
+  },
+  {
+    "id": "chn-tiananmen-june4",
+    "countryId": "china",
+    "nameKo": "천안문 6·4 사건",
+    "nameEn": "Tiananmen / June Fourth",
+    "nameLocal": "天安门 / 六四",
+    "aliases": [
+      "천안문 6·4 사건",
+      "Tiananmen / June Fourth",
+      "天安门 / 六四",
+      "Tiananmen",
+      "June Fourth"
+    ],
+    "dates": [
+      "06-04"
+    ],
+    "dateWindowDays": 5,
+    "eventType": [
+      "political_memory",
+      "state_violence",
+      "censorship_sensitive"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "Tiananmen",
+      "June Fourth",
+      "Tank Man",
+      "1989"
+    ],
+    "stakeholderGroups": [
+      "Chinese_public",
+      "diaspora"
+    ],
+    "associatedTermIds": [
+      "chn-term-tiananmen",
+      "chn-term-june-fourth",
+      "chn-term-tank-man"
+    ],
+    "associatedSymbolIds": [
+      "chn-symbol-tiananmen",
+      "chn-symbol-tank-man"
+    ],
+    "reviewPolicy": "천안문·6/4·탱크맨 표현을 금융 프로모션 은유로 쓰면 high/hold",
+    "sourceRefs": [
+      "china_tibet_xinjiang_hk_reuters"
+    ]
+  },
+  {
+    "id": "chn-lunar-new-year",
+    "countryId": "china",
+    "nameKo": "춘절·중국 설",
+    "nameEn": "Chinese New Year / Spring Festival",
+    "nameLocal": "春节",
+    "aliases": [
+      "춘절·중국 설",
+      "Chinese New Year / Spring Festival",
+      "春节",
+      "Spring Festival",
+      "red envelope"
+    ],
+    "dates": [
+      "lunar-new-year"
+    ],
+    "dateWindowDays": 7,
+    "eventType": [
+      "family_holiday",
+      "national_holiday"
+    ],
+    "sensitivityLevel": "info",
+    "contexts": [
+      "Spring Festival",
+      "red envelope",
+      "family reunion"
+    ],
+    "stakeholderGroups": [
+      "Chinese_public",
+      "families"
+    ],
+    "associatedTermIds": [
+      "chn-term-spring-festival",
+      "chn-term-red-envelope"
+    ],
+    "associatedSymbolIds": [
+      "chn-symbol-red-envelope",
+      "chn-symbol-dragon"
+    ],
+    "reviewPolicy": "춘절 마케팅은 가능하나 도박·빈곤·국가 상징 조롱과 결합 시 caution",
+    "sourceRefs": [
+      "china_national_day"
+    ]
+  },
+  {
+    "id": "tha-monarchy-article112",
+    "countryId": "thailand",
+    "nameKo": "태국 왕실·왕실모독법 민감성",
+    "nameEn": "Thai monarchy / Article 112",
+    "nameLocal": "สถาบันพระมหากษัตริย์ / มาตรา 112",
+    "aliases": [
+      "태국 왕실·왕실모독법 민감성",
+      "Thai monarchy / Article 112",
+      "สถาบันพระมหากษัตริย์ / มาตรา 112",
+      "royal family",
+      "Article 112"
+    ],
+    "dates": [],
+    "dateWindowDays": 0,
+    "eventType": [
+      "monarchy",
+      "legal_sensitivity",
+      "national_institution"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "royal family",
+      "Article 112",
+      "lèse-majesté",
+      "King",
+      "royal portrait"
+    ],
+    "stakeholderGroups": [
+      "Thai_public",
+      "royalist_groups"
+    ],
+    "associatedTermIds": [
+      "tha-term-king",
+      "tha-term-article112",
+      "tha-term-royal"
+    ],
+    "associatedSymbolIds": [
+      "tha-symbol-royal-portrait",
+      "tha-symbol-yellow-royal",
+      "tha-symbol-thai-baht"
+    ],
+    "reviewPolicy": "왕실·국왕 이미지·왕실 문장을 금융 혜택/밈/조롱에 사용하면 high/hold",
+    "sourceRefs": [
+      "thailand_lese_majeste_reuters",
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-buddhism-sacred",
+    "countryId": "thailand",
+    "nameKo": "태국 불교·사원·불상 상징",
+    "nameEn": "Thai Buddhism / sacred symbols",
+    "nameLocal": "พุทธศาสนา",
+    "aliases": [
+      "태국 불교·사원·불상 상징",
+      "Thai Buddhism / sacred symbols",
+      "พุทธศาสนา",
+      "Buddha",
+      "monks"
+    ],
+    "dates": [],
+    "dateWindowDays": 0,
+    "eventType": [
+      "religion",
+      "sacred_symbol"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "Buddha",
+      "monks",
+      "temple",
+      "wat",
+      "Buddha head"
+    ],
+    "stakeholderGroups": [
+      "Buddhist_community",
+      "monks",
+      "Thai_public"
+    ],
+    "associatedTermIds": [
+      "tha-term-buddha",
+      "tha-term-monk",
+      "tha-term-temple"
+    ],
+    "associatedSymbolIds": [
+      "tha-symbol-buddha-head",
+      "tha-symbol-temple",
+      "tha-symbol-monk"
+    ],
+    "reviewPolicy": "불상·승려·사원 상징을 금융상품 캐릭터·캐시백 밈으로 쓰면 hold",
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-songkran",
+    "countryId": "thailand",
+    "nameKo": "송끄란·태국 설 물축제",
+    "nameEn": "Songkran / Thai New Year",
+    "nameLocal": "สงกรานต์",
+    "aliases": [
+      "송끄란·태국 설 물축제",
+      "Songkran / Thai New Year",
+      "สงกรานต์",
+      "water festival",
+      "Thai New Year"
+    ],
+    "dates": [
+      "04-13",
+      "04-14",
+      "04-15"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "new_year",
+      "water_festival",
+      "family_holiday"
+    ],
+    "sensitivityLevel": "info",
+    "contexts": [
+      "water festival",
+      "Thai New Year",
+      "family",
+      "merit"
+    ],
+    "stakeholderGroups": [
+      "Thai_public",
+      "families"
+    ],
+    "associatedTermIds": [
+      "tha-term-songkran",
+      "tha-term-water"
+    ],
+    "associatedSymbolIds": [
+      "tha-symbol-water-splash",
+      "tha-symbol-floral-shirt"
+    ],
+    "reviewPolicy": "송끄란 금융 프로모션은 가능하나 불교·왕실·사고/음주운전 비하와 결합 시 caution/hold",
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-2014-coup-2020-protest",
+    "countryId": "thailand",
+    "nameKo": "태국 군부 쿠데타·민주화 시위 상징",
+    "nameEn": "Thai coup / pro-democracy protest symbols",
+    "nameLocal": "ชูสามนิ้ว",
+    "aliases": [
+      "태국 군부 쿠데타·민주화 시위 상징",
+      "Thai coup / pro-democracy protest symbols",
+      "ชูสามนิ้ว",
+      "2014 coup",
+      "2020 protests"
+    ],
+    "dates": [
+      "05-22"
+    ],
+    "dateWindowDays": 5,
+    "eventType": [
+      "political_protest",
+      "military_coup",
+      "democracy_movement"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "2014 coup",
+      "2020 protests",
+      "three-finger salute",
+      "red/yellow shirts"
+    ],
+    "stakeholderGroups": [
+      "Thai_public",
+      "protesters",
+      "political_groups"
+    ],
+    "associatedTermIds": [
+      "tha-term-coup",
+      "tha-term-three-finger",
+      "tha-term-red-yellow"
+    ],
+    "associatedSymbolIds": [
+      "tha-symbol-three-finger-salute",
+      "tha-symbol-red-yellow-shirts"
+    ],
+    "reviewPolicy": "쿠데타·시위·색깔 정치 상징을 금융 프로모션에 쓰면 high/hold",
+    "sourceRefs": [
+      "three_finger_salute",
+      "thailand_lese_majeste_reuters"
+    ]
+  },
+  {
+    "id": "tha-royal-days",
+    "countryId": "thailand",
+    "nameKo": "왕실 관련 기념일",
+    "nameEn": "Royal-related memorial/birthday days",
+    "nameLocal": "วันเฉลิมพระชนมพรรษา",
+    "aliases": [
+      "왕실 관련 기념일",
+      "Royal-related memorial/birthday days",
+      "วันเฉลิมพระชนมพรรษา",
+      "King's Birthday",
+      "Former King's Birthday"
+    ],
+    "dates": [
+      "07-28",
+      "12-05",
+      "10-13"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "royal_day",
+      "national_emotion"
+    ],
+    "sensitivityLevel": "caution",
+    "contexts": [
+      "King's Birthday",
+      "Former King's Birthday",
+      "King Bhumibol memorial"
+    ],
+    "stakeholderGroups": [
+      "Thai_public"
+    ],
+    "associatedTermIds": [
+      "tha-term-king",
+      "tha-term-royal"
+    ],
+    "associatedSymbolIds": [
+      "tha-symbol-royal-portrait",
+      "tha-symbol-yellow-royal"
+    ],
+    "reviewPolicy": "왕실 기념일에는 존중 문맥만 허용; 할인/농담/이미지 변형은 high/hold",
+    "sourceRefs": [
+      "thailand_lese_majeste_reuters"
+    ]
+  },
+  {
+    "id": "sewol-0416",
+    "countryId": "south_korea",
+    "nameKo": "세월호 참사",
+    "nameEn": "Sewol",
+    "nameLocal": "세월호 참사",
+    "aliases": [
+      "세월호",
+      "4.16",
+      "0416",
+      "Sewol",
+      "Sewol ferry"
+    ],
+    "dates": [
+      "04-16"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "national_tragedy",
+      "disaster",
+      "memorial",
+      "youth_victims"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "침몰",
+      "구조",
+      "희생자",
+      "유가족",
+      "추모",
+      "노란 리본",
+      "국가적 애도"
+    ],
+    "stakeholderGroups": [
+      "희생자",
+      "유가족",
+      "생존자",
+      "안산 지역사회",
+      "시민사회"
+    ],
+    "associatedTermIds": [
+      "term-sink",
+      "term-yellow-ribbon",
+      "term-rescue",
+      "term-disaster-victim-slang"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "진도",
+      "안산",
+      "팽목항"
+    ],
+    "reviewPolicy": "참사 핵심 표현을 금융상품 혜택·금리·수익률·이벤트 문구와 은유적으로 결합하는 경우 고위험 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "itaewon-1029",
+    "countryId": "south_korea",
+    "nameKo": "이태원 참사",
+    "nameEn": "Itaewon crowd crush",
+    "nameLocal": "이태원 참사",
+    "aliases": [
+      "이태원 참사",
+      "10.29",
+      "1029",
+      "Itaewon crowd crush",
+      "Halloween crowd crush"
+    ],
+    "dates": [
+      "10-29"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "national_tragedy",
+      "crowd_crush",
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "압사",
+      "밀집",
+      "골목",
+      "추모",
+      "할로윈",
+      "군중 안전"
+    ],
+    "stakeholderGroups": [
+      "희생자",
+      "유가족",
+      "생존자",
+      "이태원 지역사회"
+    ],
+    "associatedTermIds": [
+      "term-crowd-crush",
+      "term-alley",
+      "term-halloween"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "이태원",
+      "용산"
+    ],
+    "reviewPolicy": "압사·밀집·깔림 등 참사 표현을 금융 혜택·인기·고객 몰림 문구에 은유적으로 사용하면 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "gwangju-518",
+    "countryId": "south_korea",
+    "nameKo": "5·18 광주민주화운동",
+    "nameEn": "Gwangju Uprising",
+    "nameLocal": "5·18 광주민주화운동",
+    "aliases": [
+      "5·18",
+      "518",
+      "광주민주화운동",
+      "Gwangju Uprising"
+    ],
+    "dates": [
+      "05-18",
+      "05-27"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "democracy_movement",
+      "state_violence",
+      "memorial",
+      "regional_trauma"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "군사 진압",
+      "계엄",
+      "탱크",
+      "장갑차",
+      "민주화",
+      "희생자",
+      "유가족"
+    ],
+    "stakeholderGroups": [
+      "희생자",
+      "유가족",
+      "광주 시민",
+      "호남 지역사회"
+    ],
+    "associatedTermIds": [
+      "term-tank",
+      "term-martial-law",
+      "term-suppression",
+      "term-state-violence"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "광주",
+      "전라도",
+      "호남"
+    ],
+    "reviewPolicy": "민주화운동 기념일에 군사·진압·탱크 상징을 상업 프로모션과 결합하는 경우 고위험 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "park-jongchul-0114",
+    "countryId": "south_korea",
+    "nameKo": "박종철 고문치사 사건",
+    "nameEn": "박종철 고문치사 사건",
+    "nameLocal": "박종철 고문치사 사건",
+    "aliases": [
+      "박종철",
+      "탁 치니 억",
+      "고문치사",
+      "물고문"
+    ],
+    "dates": [
+      "01-14"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "democracy_movement",
+      "state_violence",
+      "torture",
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "고문",
+      "탁",
+      "억",
+      "민주화",
+      "국가폭력"
+    ],
+    "stakeholderGroups": [
+      "민주화운동 관련자",
+      "유가족",
+      "시민사회"
+    ],
+    "associatedTermIds": [
+      "term-tak",
+      "term-torture",
+      "term-state-violence"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "서울"
+    ],
+    "reviewPolicy": "고문·국가폭력 관련 표현을 금융 혜택 문구의 유머/효과음으로 사용하면 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "jeju-43",
+    "countryId": "south_korea",
+    "nameKo": "제주 4·3",
+    "nameEn": "Jeju 4.3",
+    "nameLocal": "제주 4·3",
+    "aliases": [
+      "제주4·3",
+      "4.3",
+      "Jeju 4.3",
+      "Jeju uprising"
+    ],
+    "dates": [
+      "04-03"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "state_violence",
+      "massacre",
+      "regional_trauma",
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "학살",
+      "토벌",
+      "희생자",
+      "추모",
+      "지역 트라우마"
+    ],
+    "stakeholderGroups": [
+      "희생자",
+      "유가족",
+      "제주 지역사회"
+    ],
+    "associatedTermIds": [
+      "term-massacre",
+      "term-crackdown",
+      "term-redbaiting"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "제주"
+    ],
+    "reviewPolicy": "토벌·학살·이념 낙인 표현을 금융 이벤트 문구에 사용하는 경우 고위험 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "sampoong-0629",
+    "countryId": "south_korea",
+    "nameKo": "삼풍백화점 붕괴 사고",
+    "nameEn": "Sampoong",
+    "nameLocal": "삼풍백화점 붕괴 사고",
+    "aliases": [
+      "삼풍",
+      "삼풍백화점",
+      "붕괴 사고",
+      "Sampoong"
+    ],
+    "dates": [
+      "06-29"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "disaster",
+      "collapse",
+      "safety_failure",
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "붕괴",
+      "무너짐",
+      "안전",
+      "희생자"
+    ],
+    "stakeholderGroups": [
+      "희생자",
+      "유가족",
+      "생존자"
+    ],
+    "associatedTermIds": [
+      "term-collapse",
+      "term-safety-failure"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "서울",
+      "서초"
+    ],
+    "reviewPolicy": "붕괴·무너짐 표현을 금리·수수료·혜택 홍보에 자극적 은유로 사용하면 주의 또는 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "daegu-subway-0218",
+    "countryId": "south_korea",
+    "nameKo": "대구 지하철 참사",
+    "nameEn": "대구 지하철 참사",
+    "nameLocal": "대구 지하철 참사",
+    "aliases": [
+      "대구 지하철",
+      "2.18",
+      "0218",
+      "지하철 참사"
+    ],
+    "dates": [
+      "02-18"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "disaster",
+      "fire",
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "화재",
+      "연기",
+      "방화",
+      "지하철",
+      "탈출",
+      "희생자"
+    ],
+    "stakeholderGroups": [
+      "희생자",
+      "유가족",
+      "대구 지역사회"
+    ],
+    "associatedTermIds": [
+      "term-fire",
+      "term-burn",
+      "term-subway"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "대구"
+    ],
+    "reviewPolicy": "화재·소각·불타는 혜택 등 표현을 금융 프로모션에 결합하면 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "cheonan-0326",
+    "countryId": "south_korea",
+    "nameKo": "천안함 피격 사건",
+    "nameEn": "Cheonan",
+    "nameLocal": "천안함 피격 사건",
+    "aliases": [
+      "천안함",
+      "3.26",
+      "0326",
+      "Cheonan"
+    ],
+    "dates": [
+      "03-26"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "military_sacrifice",
+      "sinking",
+      "memorial",
+      "national_security"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "폭침",
+      "어뢰",
+      "침몰",
+      "46용사",
+      "군 희생"
+    ],
+    "stakeholderGroups": [
+      "전사자",
+      "유가족",
+      "군 장병",
+      "보훈 대상자"
+    ],
+    "associatedTermIds": [
+      "term-torpedo",
+      "term-sink",
+      "term-bombardment",
+      "term-military-sacrifice"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "백령도",
+      "서해"
+    ],
+    "reviewPolicy": "폭침·어뢰·침몰 표현을 수수료·금리·혜택 프로모션에 사용하는 경우 고위험 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "yeonpyeong-1123",
+    "countryId": "south_korea",
+    "nameKo": "연평도 포격 사건",
+    "nameEn": "Yeonpyeong",
+    "nameLocal": "연평도 포격 사건",
+    "aliases": [
+      "연평도",
+      "11.23",
+      "1123",
+      "Yeonpyeong"
+    ],
+    "dates": [
+      "11-23"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "military_attack",
+      "civilian_damage",
+      "memorial",
+      "national_security"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "포격",
+      "포탄",
+      "민간 피해",
+      "해병",
+      "전사"
+    ],
+    "stakeholderGroups": [
+      "전사자",
+      "유가족",
+      "연평도 주민",
+      "군 장병"
+    ],
+    "associatedTermIds": [
+      "term-shelling",
+      "term-bombardment",
+      "term-military-sacrifice"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "연평도",
+      "서해"
+    ],
+    "reviewPolicy": "포격·포탄 표현을 혜택·쿠폰·캐시백에 은유적으로 사용하는 경우 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "korean-war-0625",
+    "countryId": "south_korea",
+    "nameKo": "6·25 전쟁",
+    "nameEn": "Korean War",
+    "nameLocal": "6·25 전쟁",
+    "aliases": [
+      "6.25",
+      "625",
+      "한국전쟁",
+      "Korean War"
+    ],
+    "dates": [
+      "06-25"
+    ],
+    "dateWindowDays": 3,
+    "eventType": [
+      "war",
+      "military_sacrifice",
+      "national_memory"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "전쟁",
+      "피난",
+      "전사",
+      "참전",
+      "호국"
+    ],
+    "stakeholderGroups": [
+      "참전용사",
+      "유가족",
+      "보훈 대상자"
+    ],
+    "associatedTermIds": [
+      "term-war",
+      "term-refuge",
+      "term-military-sacrifice"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "대한민국"
+    ],
+    "reviewPolicy": "전쟁·피난·전사 표현을 상업 금융 혜택과 장난스럽게 결합하는 경우 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "memorial-day-0606",
+    "countryId": "south_korea",
+    "nameKo": "현충일",
+    "nameEn": "Memorial Day",
+    "nameLocal": "현충일",
+    "aliases": [
+      "현충일",
+      "6.6",
+      "0606",
+      "Memorial Day"
+    ],
+    "dates": [
+      "06-06"
+    ],
+    "dateWindowDays": 1,
+    "eventType": [
+      "national_memorial",
+      "military_sacrifice"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "순국",
+      "호국",
+      "전사",
+      "묵념",
+      "보훈"
+    ],
+    "stakeholderGroups": [
+      "순국선열",
+      "전몰군경",
+      "유가족",
+      "보훈 대상자"
+    ],
+    "associatedTermIds": [
+      "term-memorial",
+      "term-military-sacrifice"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "대한민국"
+    ],
+    "reviewPolicy": "현충일에 특가·대출·이벤트 등 상업 금융 프로모션을 추모 표현과 결합하면 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "march-first-0301",
+    "countryId": "south_korea",
+    "nameKo": "삼일절",
+    "nameEn": "삼일절",
+    "nameLocal": "삼일절",
+    "aliases": [
+      "삼일절",
+      "3.1",
+      "0301",
+      "만세운동",
+      "독립운동"
+    ],
+    "dates": [
+      "03-01"
+    ],
+    "dateWindowDays": 1,
+    "eventType": [
+      "anti_colonial",
+      "independence",
+      "national_memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "독립운동",
+      "만세",
+      "태극기",
+      "일제강점기",
+      "순국"
+    ],
+    "stakeholderGroups": [
+      "독립운동가",
+      "순국선열",
+      "국민"
+    ],
+    "associatedTermIds": [
+      "term-independence",
+      "term-rising-sun",
+      "term-national-flag"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "대한민국"
+    ],
+    "reviewPolicy": "삼일절에 식민지·군국주의 상징이나 장난스러운 상업 프로모션을 결합하면 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "liberation-0815",
+    "countryId": "south_korea",
+    "nameKo": "광복절",
+    "nameEn": "Liberation Day",
+    "nameLocal": "광복절",
+    "aliases": [
+      "광복절",
+      "8.15",
+      "0815",
+      "Liberation Day"
+    ],
+    "dates": [
+      "08-15"
+    ],
+    "dateWindowDays": 1,
+    "eventType": [
+      "anti_colonial",
+      "liberation",
+      "national_memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "광복",
+      "일제강점기",
+      "독립",
+      "태극기",
+      "일본 제국주의"
+    ],
+    "stakeholderGroups": [
+      "독립운동가",
+      "순국선열",
+      "피해자"
+    ],
+    "associatedTermIds": [
+      "term-liberation",
+      "term-rising-sun",
+      "term-comfort-women",
+      "term-national-flag"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "대한민국"
+    ],
+    "reviewPolicy": "광복절에 욱일기·식민지 상징·피해자 상징을 카드 디자인·프로모션에 오용하면 고위험 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "comfort-women-0814",
+    "countryId": "south_korea",
+    "nameKo": "일본군 위안부 피해자 기림의 날",
+    "nameEn": "일본군 위안부 피해자 기림의 날",
+    "nameLocal": "일본군 위안부 피해자 기림의 날",
+    "aliases": [
+      "위안부 피해자 기림의 날",
+      "8.14",
+      "0814",
+      "소녀상",
+      "평화의 소녀상"
+    ],
+    "dates": [
+      "08-14"
+    ],
+    "dateWindowDays": 1,
+    "eventType": [
+      "human_rights",
+      "colonial_history",
+      "victim_memorial"
+    ],
+    "sensitivityLevel": "high",
+    "contexts": [
+      "위안부 피해자",
+      "소녀상",
+      "나비",
+      "인권",
+      "역사 기억"
+    ],
+    "stakeholderGroups": [
+      "피해자",
+      "유가족",
+      "시민사회"
+    ],
+    "associatedTermIds": [
+      "term-comfort-women",
+      "term-statue-of-peace",
+      "term-butterfly"
+    ],
+    "associatedSymbolIds": [],
+    "regions": [
+      "대한민국"
+    ],
+    "reviewPolicy": "피해자 상징을 할인·쿠폰·카드 디자인 등 상업 요소로 소비하면 고위험 보류 검토",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  }
+]

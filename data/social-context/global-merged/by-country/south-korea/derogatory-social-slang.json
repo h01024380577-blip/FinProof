@@ -1,0 +1,268 @@
+[
+  {
+    "id": "slur-hongeo",
+    "surfaceForms": [
+      "홍어"
+    ],
+    "category": "regional_derogation",
+    "targetGroups": [
+      "Jeolla",
+      "Honam",
+      "Gwangju"
+    ],
+    "normalMeanings": [
+      "fermented skate",
+      "regional food",
+      "전남 지역 음식"
+    ],
+    "highRiskWhen": [
+      "used_with_financial_promo_terms",
+      "used_as_person_or_region_label",
+      "used_with_mocking_tone",
+      "used_outside_food_context"
+    ],
+    "safeContextHints": [
+      "음식",
+      "홍어회",
+      "홍어삼합",
+      "식당",
+      "전남 특산물",
+      "로컬 맛집"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "slur-jeolla-variant",
+    "surfaceForms": [
+      "전라디언",
+      "라도"
+    ],
+    "category": "regional_derogation",
+    "targetGroups": [
+      "Jeolla",
+      "Honam"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "appears_in_marketing_copy",
+      "used_with_financial_promo_terms",
+      "used_with_mocking_tone"
+    ],
+    "safeContextHints": [
+      "혐오표현 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "meme-unji",
+    "surfaceForms": [
+      "운지"
+    ],
+    "category": "deceased_public_figure_mockery",
+    "targetGroups": [
+      "deceased_public_figure",
+      "political_group"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "used_with_financial_fall_metaphor",
+      "used_with_promo_terms",
+      "used_with_deceased_person_visual"
+    ],
+    "safeContextHints": [
+      "비하 표현 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "meme-noala",
+    "surfaceForms": [
+      "노알라",
+      "MC무현"
+    ],
+    "category": "deceased_public_figure_mockery",
+    "targetGroups": [
+      "deceased_public_figure",
+      "political_group"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "appears_in_marketing_copy",
+      "used_as_image_or_character",
+      "used_with_financial_promo_terms"
+    ],
+    "safeContextHints": [
+      "비하 표현 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "meme-no-ending-ambiguous",
+    "surfaceForms": [
+      "~노",
+      "노?"
+    ],
+    "category": "ambiguous_dialect_or_political_meme",
+    "targetGroups": [
+      "political_group"
+    ],
+    "normalMeanings": [
+      "경상도 방언 어미"
+    ],
+    "highRiskWhen": [
+      "combined_with_known_deceased_public_figure_meme",
+      "combined_with_ilbe_style_terms",
+      "used_with_mocking_visuals"
+    ],
+    "safeContextHints": [
+      "지역 방언",
+      "일반 대화체",
+      "고인·정치 밈과 무관"
+    ],
+    "defaultRisk": "caution",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "slur-momchung",
+    "surfaceForms": [
+      "맘충"
+    ],
+    "category": "gender_parenting_derogation",
+    "targetGroups": [
+      "mothers",
+      "parents"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "used_in_family_finance_ads",
+      "used_in_education_savings_ads",
+      "used_with_mocking_tone"
+    ],
+    "safeContextHints": [
+      "혐오표현 분석"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "slur-ttuldak",
+    "surfaceForms": [
+      "틀딱"
+    ],
+    "category": "age_derogation",
+    "targetGroups": [
+      "elderly"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "used_in_senior_finance_ads",
+      "used_with_pension_or_retirement_terms",
+      "used_with_mocking_tone"
+    ],
+    "safeContextHints": [
+      "혐오표현 분석"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "slur-jammini",
+    "surfaceForms": [
+      "잼민이",
+      "급식충"
+    ],
+    "category": "youth_derogation",
+    "targetGroups": [
+      "children",
+      "teenagers",
+      "students"
+    ],
+    "normalMeanings": [
+      "인터넷 은어"
+    ],
+    "highRiskWhen": [
+      "used_in_youth_card_ads",
+      "used_in_education_savings_ads",
+      "used_with_mocking_tone"
+    ],
+    "safeContextHints": [
+      "SNS 문화 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultRisk": "caution",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "slur-ableism",
+    "surfaceForms": [
+      "정신병자",
+      "장애인 비하 표현"
+    ],
+    "category": "disability_or_mental_health_derogation",
+    "targetGroups": [
+      "disabled_people",
+      "mental_health_conditions"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "appears_in_marketing_copy",
+      "used_with_insurance_or_loan_ads",
+      "used_as_metaphor_for_bad_choice"
+    ],
+    "safeContextHints": [
+      "보건·보험 약관의 중립적 의학 표현",
+      "혐오표현 분석"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "slur-nationality-cn",
+    "surfaceForms": [
+      "짱깨"
+    ],
+    "category": "nationality_ethnicity_derogation",
+    "targetGroups": [
+      "Chinese_people"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "used_in_foreigner_banking_ads",
+      "used_with_remittance_terms",
+      "appears_in_marketing_copy"
+    ],
+    "safeContextHints": [
+      "혐오표현 분석"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  },
+  {
+    "id": "slur-sea-migrant",
+    "surfaceForms": [
+      "똥남아"
+    ],
+    "category": "nationality_ethnicity_derogation",
+    "targetGroups": [
+      "Southeast_Asian_people",
+      "migrant_workers"
+    ],
+    "normalMeanings": [],
+    "highRiskWhen": [
+      "used_in_foreigner_banking_ads",
+      "used_with_remittance_or_salary_account_terms"
+    ],
+    "safeContextHints": [
+      "혐오표현 분석"
+    ],
+    "defaultRisk": "high",
+    "defaultAction": "hold"
+  }
+]

@@ -43,6 +43,8 @@ import {
   type AgentFinding,
   type ReviewSubAgentOrchestrator
 } from "./review-subagents";
+import type { SocialContextRuleMatch } from "@/domain/social-context-kg";
+import { socialContextKgArtifacts } from "./social-context-kg-engine";
 import { execFile } from "node:child_process";
 import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -99,6 +101,7 @@ export type AnalysisArtifacts = {
   localizedRiskFindings?: LocalizedRiskFinding[];
   koreanComplianceMappings?: KoreanComplianceMapping[];
   multilingualAgentErrors?: MultilingualAgentError[];
+  socialContextKgMatches?: SocialContextRuleMatch[];
 };
 
 type OcrExtractInput = {
@@ -1798,13 +1801,21 @@ export function createReviewAnalysisPipeline({
         topK: config.rerank.topK,
         knowledgeMinScore: KNOWLEDGE_SECONDARY_MIN_SCORE
       });
+      const socialContextKgResult = socialContextKgArtifacts({
+        review,
+        extractedDocuments: analysisDocuments
+      });
+      const evidenceCandidatesWithSocialContextKg = [
+        ...evidenceCandidates,
+        ...socialContextKgResult.evidenceCandidates
+      ];
       const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =
         multilingualSegments.length > 0
           ? await runMultilingualRiskTeam({
               review,
               segments: multilingualSegments,
-              evidenceCandidates,
+              evidenceCandidates: evidenceCandidatesWithSocialContextKg,
               provider: modelProvider,
               nliClient:
                 process.env.FINPROOF_NLI_ENABLED === "true" && process.env.FINPROOF_NLI_URL
@@ -1817,21 +1828,22 @@ export function createReviewAnalysisPipeline({
               agentFindings: [],
               errors: []
             };
+      const priorAgentFindings = combineAgentFindings(
+        multilingualResult.agentFindings,
+        socialContextKgResult.agentFindings
+      );
       const orchestratedFindings = await subAgentOrchestrator.run({
         review,
         extractedDocuments: analysisDocuments,
-        evidenceCandidates,
-        priorFindings: multilingualResult.agentFindings
+        evidenceCandidates: evidenceCandidatesWithSocialContextKg,
+        priorFindings: priorAgentFindings
       });
-      const agentFindings = combineAgentFindings(
-        multilingualResult.agentFindings,
-        orchestratedFindings
-      );
+      const agentFindings = combineAgentFindings(priorAgentFindings, orchestratedFindings);
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,
         ...(extractionDiagnostics.length > 0 ? { extractionDiagnostics } : {}),
-        evidenceCandidates,
+        evidenceCandidates: evidenceCandidatesWithSocialContextKg,
         ...(agentFindings.length > 0 ? { agentFindings } : {}),
         ...(multilingualSegments.length > 0 ? { multilingualSegments } : {}),
         ...(multilingualResult.localizedRiskFindings.length > 0
@@ -1842,6 +1854,9 @@ export function createReviewAnalysisPipeline({
           : {}),
         ...(multilingualResult.errors.length > 0
           ? { multilingualAgentErrors: multilingualResult.errors }
+          : {}),
+        ...(socialContextKgResult.matches.length > 0
+          ? { socialContextKgMatches: socialContextKgResult.matches }
           : {})
       };
       const findings = buildAnalysisIssues(review, artifacts, {
