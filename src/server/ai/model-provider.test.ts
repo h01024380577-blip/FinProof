@@ -2,6 +2,7 @@ import {
   createModelProvider,
   extractAnthropicText,
   extractGeminiText,
+  extractHyperclovaText,
   extractOpenAIText
 } from "./model-provider";
 
@@ -222,6 +223,85 @@ describe("model provider", () => {
       escalationReason: "risk_level_high",
       text: "routed text"
     });
+  });
+
+  it("routes pinned internal_policy through the CLOVA Studio OpenAI-compatible endpoint", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ choices: [{ message: { content: "[]" } }] })
+    });
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "router",
+        FINPROOF_MODEL_INTERNAL_POLICY: "HCX-007",
+        CLOVA_API_KEY: "clova-test"
+      },
+      fetchMock
+    );
+
+    const result = await provider.generateText({
+      task: "internal_policy_agent",
+      instructions: "Check internal policy",
+      input: "ad",
+      fallback: "[]"
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://clovastudio.stream.ntruss.com/v1/openai/chat/completions",
+      expect.objectContaining({
+        headers: expect.objectContaining({ authorization: "Bearer clova-test" }),
+        body: JSON.stringify({
+          model: "HCX-007",
+          max_completion_tokens: 32768,
+          messages: [
+            { role: "system", content: "Check internal policy" },
+            { role: "user", content: "ad" }
+          ]
+        })
+      })
+    );
+    expect(result).toMatchObject({
+      provider: "hyperclova",
+      model: "HCX-007",
+      modelTier: "default_text",
+      text: "[]"
+    });
+  });
+
+  it("retries the CLOVA request on a 429 before succeeding", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 429, json: async () => ({}) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ choices: [{ message: { content: "ok" } }] })
+      });
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "router",
+        FINPROOF_MODEL_INTERNAL_POLICY: "HCX-007",
+        CLOVA_API_KEY: "clova-test"
+      },
+      fetchMock
+    );
+
+    const result = await provider.generateText({
+      task: "internal_policy_agent",
+      instructions: "Check internal policy",
+      input: "ad",
+      fallback: "[]"
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({ provider: "hyperclova", text: "ok" });
+  });
+
+  it("extracts assistant text from a CLOVA chat-completions body", () => {
+    expect(extractHyperclovaText({ choices: [{ message: { content: "결과" } }] })).toBe("결과");
+    expect(extractHyperclovaText({ choices: [] })).toBe("");
+    expect(extractHyperclovaText({})).toBe("");
   });
 
   it("returns the supplied fallback when a routed Anthropic request is unavailable", async () => {
