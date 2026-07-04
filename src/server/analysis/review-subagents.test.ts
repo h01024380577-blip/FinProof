@@ -402,6 +402,48 @@ describe("finalOrchestratedFindings", () => {
     expect(socialContextConcerns[0]?.riskLevel).toBe("caution");
   });
 
+  it("dedupes when the main agent labels its social finding with a varying issueType", () => {
+    // Regression for the rc-upload-002 re-analysis: the main agent consolidated the concern
+    // under issueType "sensitive_expression_context" (not "social_context_risk"), and also
+    // raised a distinct overstatement finding on the same phrase. The raw social findings
+    // must collapse into the main social finding, while the overstatement finding survives.
+    const kgFinding = socialFinding({
+      id: "finding-kg",
+      issueType: "SOCIAL_CONTEXT_KG_DISASTER_DATE_FINANCIAL_METAPHOR",
+      targetText: "2026-04-16 / 침몰 / 금리"
+    });
+    const subAgentFinding = socialFinding({
+      id: "finding-subagent",
+      issueType: "disaster_sensitivity_and_symbolic_metaphor",
+      targetText: "침몰하는 금리 시장, 유일한 해답 (게시 예정일 2026-04-16)"
+    });
+    const mainSocial: AgentFinding = socialFinding({
+      id: "finding-main-social",
+      agent: "main",
+      issueType: "sensitive_expression_context",
+      riskLevel: "caution",
+      targetText: "침몰하는 금리 시장, 유일한 해답 (게시 예정일 2026-04-16)"
+    });
+    const mainOverstatement: AgentFinding = socialFinding({
+      id: "finding-main-overstated",
+      agent: "main",
+      issueType: "overstated_claim",
+      riskLevel: "caution",
+      title: "'유일한 해답' 단정적 과장 표현",
+      targetText: "침몰하는 금리 시장, 유일한 해답"
+    });
+
+    const result = finalOrchestratedFindings(
+      [kgFinding, subAgentFinding],
+      [mainSocial, mainOverstatement]
+    );
+
+    expect(result.map((finding) => finding.id)).toEqual([
+      "finding-main-social",
+      "finding-main-overstated"
+    ]);
+  });
+
   it("preserves social-context findings the main agent dropped entirely (safety net)", () => {
     const kgFinding = socialFinding({ id: "finding-kg" });
     const mainUnrelated: AgentFinding = socialFinding({
