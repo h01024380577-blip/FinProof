@@ -19,20 +19,50 @@ const AGENT_LABELS: Record<string, string> = {
   main: "최종 종합 판단"
 };
 
+const MAX_CHIPS = 5;
+
 function num(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
 }
 
+/**
+ * Reduce a raw evidence title to something a reviewer can read at a glance:
+ * strip archive/directory nesting (e.g. "a.zip/a.zip/poster.png" -> "poster.png")
+ * and any file extension, keeping human-authored knowledge titles unchanged.
+ */
+function cleanTitle(title: string): string {
+  const base = title.split("/").pop()?.trim();
+  if (!base) return title;
+  return base.replace(/\.(zip|png|jpe?g|pdf|docx?|txt|hwp|pptx?|xlsx?)$/i, "");
+}
+
+function cleanTitles(titles: string[]): string[] {
+  const seen = new Set<string>();
+  const cleaned: string[] = [];
+  for (const title of titles) {
+    const label = cleanTitle(title);
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      cleaned.push(label);
+    }
+    if (cleaned.length >= MAX_CHIPS) break;
+  }
+  return cleaned;
+}
+
 function titlesFrom(topDocs: unknown): string[] {
   if (!Array.isArray(topDocs)) return [];
-  return topDocs
+  const titles = topDocs
     .map((doc) => (doc && typeof doc === "object" ? (doc as { title?: unknown }).title : undefined))
     .filter((title): title is string => typeof title === "string");
+  return cleanTitles(titles);
 }
 
 function stringList(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
-  const titles = value.filter((item): item is string => typeof item === "string");
+  const titles = cleanTitles(
+    value.filter((item): item is string => typeof item === "string")
+  );
   return titles.length > 0 ? titles : undefined;
 }
 

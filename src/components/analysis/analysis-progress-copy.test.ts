@@ -40,6 +40,25 @@ describe("describeAnalysisEvent", () => {
     expect(line.evidence).toEqual(["전자금융감독규정 §5"]);
   });
 
+  it("cleans nested archive paths and extensions into readable, deduped chips", () => {
+    const line = describeAnalysisEvent({
+      id: "e5",
+      seq: 5,
+      stage: "evidence_select",
+      event: "done",
+      payload: {
+        selected: 3,
+        titles: [
+          "finproof_bank.zip/finproof_bank.zip/poster_daily_savings.png",
+          "finproof_bank.zip/finproof_bank.zip/poster_daily_savings.png",
+          "예금 적금 광고 심의 체크리스트"
+        ]
+      },
+      createdAt: "2026-07-04T00:00:00.000Z"
+    });
+    expect(line.evidence).toEqual(["poster_daily_savings", "예금 적금 광고 심의 체크리스트"]);
+  });
+
   it("falls back safely for unknown stages", () => {
     const line = describeAnalysisEvent({
       id: "e4",

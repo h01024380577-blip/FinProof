@@ -10937,6 +10937,12 @@ body:has(.landing-page)::before {
   align-items: flex-start;
   font-size: 0.875rem;
 }
+.analysis-progress__text {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .analysis-progress__item[data-state="running"] {
   color: #2563eb;
 }
@@ -10951,6 +10957,7 @@ body:has(.landing-page)::before {
 }
 .analysis-progress__icon {
   display: inline-flex;
+  flex: 0 0 auto;
   padding-top: 1px;
 }
 .analysis-progress__spin {
@@ -10961,13 +10968,17 @@ body:has(.landing-page)::before {
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 4px;
+  max-width: 100%;
 }
 .analysis-progress__chip {
+  max-width: 100%;
   background: #f3f4f6;
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.75rem;
   color: #374151;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 @keyframes analysis-progress-spin {
   to {
