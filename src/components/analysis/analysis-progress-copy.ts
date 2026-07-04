@@ -125,3 +125,31 @@ export function describeAnalysisEvent(event: AnalysisEventRecord): ProgressLine 
 
   return { ...base, state: "info", text: "분석을 진행하고 있어요" };
 }
+
+/**
+ * Turn the raw event stream into display lines. Sub-agents emit a `start`
+ * (spinner) and a `done` (check); once an agent's `done` has arrived we drop
+ * its `start` line so a finished agent never keeps spinning. Agents that have
+ * started but not finished still show their spinner.
+ */
+export function buildProgressLines(events: AnalysisEventRecord[]): ProgressLine[] {
+  const finishedAgents = new Set<string>();
+  for (const event of events) {
+    if (event.stage === "subagent" && event.event === "done") {
+      const agent = String((event.payload as Record<string, unknown>).agent ?? "");
+      if (agent) finishedAgents.add(agent);
+    }
+  }
+
+  const lines: ProgressLine[] = [];
+  for (const event of events) {
+    if (event.stage === "subagent" && event.event === "start") {
+      const agent = String((event.payload as Record<string, unknown>).agent ?? "");
+      if (agent && finishedAgents.has(agent)) {
+        continue;
+      }
+    }
+    lines.push(describeAnalysisEvent(event));
+  }
+  return lines;
+}
