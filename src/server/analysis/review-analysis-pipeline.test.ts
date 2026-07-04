@@ -271,7 +271,7 @@ describe("review analysis pipeline", () => {
     }
   });
 
-  it("preserves extraction diagnostics when uploaded PDF content is not analyzable", async () => {
+  it("fails instead of analyzing metadata when uploaded PDF content is not analyzable", async () => {
     const originalPdfToTextPath = process.env.FINPROOF_PDFTOTEXT_PATH;
 
     process.env.FINPROOF_PDFTOTEXT_PATH = "/tmp/finproof-missing-pdftotext";
@@ -285,38 +285,22 @@ describe("review analysis pipeline", () => {
         }
       });
 
-      const artifacts = await pipeline.run({
-        review: {
-          ...review,
-          files: [
-            {
-              ...review.files[0],
-              name: "대출광고.pdf",
-              storageProvider: "local",
-              storageKey: "local/rc-upload-001/file-upload-001/loan-ad.pdf",
-              contentType: "application/pdf"
-            }
-          ]
-        }
-      });
-
-      expect(artifacts.extractedDocuments).toEqual([
-        expect.objectContaining({
-          fileId: "file-upload-001",
-          fileName: "심의 요청 메타데이터",
-          provider: "review-metadata",
-          text: expect.stringContaining("심의 요청 제목")
+      await expect(
+        pipeline.run({
+          review: {
+            ...review,
+            files: [
+              {
+                ...review.files[0],
+                name: "대출광고.pdf",
+                storageProvider: "local",
+                storageKey: "local/rc-upload-001/file-upload-001/loan-ad.pdf",
+                contentType: "application/pdf"
+              }
+            ]
+          }
         })
-      ]);
-      expect(artifacts.extractionDiagnostics).toEqual([
-        expect.objectContaining({
-          fileId: "file-upload-001",
-          fileName: "대출광고.pdf",
-          provider: "metadata-only",
-          reason: "extraction_unavailable",
-          message: expect.stringContaining("현재 로컬 텍스트 추출 대상이 아니거나")
-        })
-      ]);
+      ).rejects.toThrow("광고 원문 추출 실패");
     } finally {
       process.env.FINPROOF_PDFTOTEXT_PATH = originalPdfToTextPath;
     }
@@ -458,7 +442,7 @@ describe("review analysis pipeline", () => {
     );
   });
 
-  it("does not route image metadata-only notices to review agents when image OCR text is unavailable", async () => {
+  it("fails before routing image metadata-only notices to review agents", async () => {
     const subAgentOrchestrator: ReviewSubAgentOrchestrator = {
       run: vi.fn(async () => [])
     };
@@ -482,40 +466,25 @@ describe("review analysis pipeline", () => {
       }
     });
 
-    const artifacts = await pipeline.run({
-      review: {
-        ...review,
-        productType: "image_test",
-        promotionalCopy: "",
-        disclosure: "",
-        productDescription: "",
-        files: [
-          {
-            ...review.files[0],
-            name: "loan-ad.jpeg",
-            contentType: "image/jpeg"
-          }
-        ]
-      }
-    });
-
-    expect(artifacts.extractedDocuments).toEqual([
-      expect.objectContaining({
-        fileName: "심의 요청 메타데이터",
-        provider: "review-metadata",
-        text: expect.stringContaining("심의 요청 제목")
+    await expect(
+      pipeline.run({
+        review: {
+          ...review,
+          productType: "image_test",
+          promotionalCopy: "",
+          disclosure: "",
+          productDescription: "",
+          files: [
+            {
+              ...review.files[0],
+              name: "loan-ad.jpeg",
+              contentType: "image/jpeg"
+            }
+          ]
+        }
       })
-    ]);
-    expect(subAgentOrchestrator.run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        extractedDocuments: [
-          expect.objectContaining({
-            fileName: "심의 요청 메타데이터",
-            provider: "review-metadata"
-          })
-        ]
-      })
-    );
+    ).rejects.toThrow("광고 원문 추출 실패");
+    expect(subAgentOrchestrator.run).not.toHaveBeenCalled();
   });
 
   it("extracts visual file text with Gemini OCR using inline file bytes", async () => {
@@ -779,6 +748,76 @@ describe("review analysis pipeline", () => {
         confidence: 0.92,
         provider: "openai-ocr"
       }
+    ]);
+  });
+
+  it("falls back to metadata when OpenAI OCR fetch fails", async () => {
+    const imageBytes = new TextEncoder().encode("fake image bytes");
+    const fetchImpl = vi.fn(async () => {
+      throw new Error("fetch failed");
+    });
+    const provider = createOpenAiOcrProvider(
+      {
+        OPENAI_API_KEY: "sk-real",
+        FINPROOF_OCR_MODEL: "gpt-5-mini"
+      },
+      {
+        async getReviewFileBody() {
+          return imageBytes;
+        }
+      },
+      fetchImpl
+    );
+
+    const documents = await provider.extract({
+      review,
+      files: [
+        {
+          ...review.files[0],
+          name: "poster.png",
+          contentType: "image/png",
+          storageKey: "s3://bucket/poster.png"
+        }
+      ]
+    });
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(documents).toEqual([
+      expect.objectContaining({
+        fileName: "poster.png",
+        provider: "metadata-only",
+        text: expect.stringContaining("파일명: poster.png")
+      })
+    ]);
+  });
+
+  it("falls back to local text and metadata when OpenAI OCR keys are missing", async () => {
+    const provider = createOpenAiOcrProvider(
+      {},
+      {
+        async getReviewFileBody() {
+          return new TextEncoder().encode("로컬 텍스트 원문");
+        }
+      }
+    );
+
+    const documents = await provider.extract({
+      review,
+      files: [
+        {
+          ...review.files[0],
+          name: "copy.txt",
+          contentType: "text/plain",
+          storageKey: "local/copy.txt"
+        }
+      ]
+    });
+
+    expect(documents).toEqual([
+      expect.objectContaining({
+        provider: "local-text-extractor",
+        text: "로컬 텍스트 원문"
+      })
     ]);
   });
 
@@ -1116,6 +1155,58 @@ describe("review analysis pipeline", () => {
       sourceType: "internal_policy",
       chunkId: "chunk-knowledge-001-001"
     });
+  });
+
+  it("continues with uploaded product evidence when external RAG stores fail", async () => {
+    const scope: ReviewStoreScope = {
+      tenantId: "tenant-demo",
+      actorUserId: "user-reviewer-demo",
+      actorRole: "reviewer"
+    };
+    const searchKnowledgeEvidence = vi.fn(async () => {
+      throw new Error("different vector dimensions 1536 and 3072");
+    });
+    const searchCaseHistoryEvidence = vi.fn(async () => {
+      throw new Error("case history unavailable");
+    });
+    const pipeline = createReviewAnalysisPipeline({
+      reviewStore: { searchKnowledgeEvidence, searchCaseHistoryEvidence },
+      modelProvider: {
+        async generateText(input) {
+          return { provider: "deterministic", model: "fixture", text: input.fallback };
+        }
+      },
+      subAgentOrchestrator: { run: vi.fn(async () => []) },
+      reranker: {
+        provider: "fixture-reranker",
+        rerank: vi.fn(async ({ candidates }) => candidates)
+      },
+      ocrProvider: {
+        async extract(input) {
+          return input.files.map((file) => ({
+            fileId: file.id,
+            fileName: file.name,
+            storageKey: file.storageKey,
+            text: "매일더함 자유적금 최고 연 4.50%. 우대조건 충족 시 적용됩니다.",
+            confidence: 0.94,
+            provider: "fixture-ocr"
+          }));
+        }
+      }
+    });
+
+    const artifacts = await pipeline.run({ review, scope });
+
+    expect(searchKnowledgeEvidence).toHaveBeenCalled();
+    expect(searchCaseHistoryEvidence).toHaveBeenCalled();
+    expect(artifacts.evidenceCandidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceType: "product_doc",
+          quoteSummary: expect.stringContaining("최고 연 4.50%")
+        })
+      ])
+    );
   });
 
   it("reranks against extracted document text, not placeholder intake metadata", async () => {
@@ -1589,7 +1680,7 @@ describe("review analysis pipeline", () => {
 
   it("uses the main compliance lead agent for final risk judgment after conditional quality agents", async () => {
     const provider: ModelProvider = {
-      generateText: vi.fn(async ({ task }) => {
+      generateText: vi.fn(async ({ task, input }) => {
         if (task === "creative_review") {
           return {
             provider: "openai",
@@ -1655,6 +1746,28 @@ describe("review analysis pipeline", () => {
           };
         }
 
+        if (task === "cove_evidence_answering") {
+          const body = JSON.parse(input) as {
+            verificationQuestions: Array<{
+              id: string;
+              evidenceCandidateIds: string[];
+            }>;
+          };
+
+          return {
+            provider: "openai",
+            model: "gpt-5.4",
+            text: JSON.stringify({
+              answers: body.verificationQuestions.map((question) => ({
+                questionId: question.id,
+                verdict: "supported",
+                rationale: "인용 근거가 해당 판단을 직접 뒷받침합니다.",
+                citedEvidenceCandidateIds: question.evidenceCandidateIds
+              }))
+            })
+          };
+        }
+
         return {
           provider: "openai",
           model: "gpt-5.2",
@@ -1714,7 +1827,8 @@ describe("review analysis pipeline", () => {
       "social_context_risk",
       "evidence_verification",
       "case_search",
-      "main_compliance"
+      "main_compliance",
+      "cove_evidence_answering"
     ]);
     expect(provider.generateText).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -2042,7 +2156,8 @@ describe("review analysis pipeline", () => {
       "vietnamese_translator_risk",
       "myanmar_translator_risk",
       "khmer_translator_risk",
-      "korean_compliance_mapping"
+      "korean_compliance_mapping",
+      "cove_evidence_answering"
     ]);
   });
 

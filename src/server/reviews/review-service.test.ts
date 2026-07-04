@@ -166,6 +166,24 @@ describe("review service", () => {
     );
   });
 
+  it("starts inline analysis without exposing a queued job to workers", async () => {
+    const store = createMockReviewStore();
+
+    await store.createReviewCaseFromSamplePackage(reviewerStoreScope, {
+      samplePackageId: "rc-demo-deposit-001"
+    });
+
+    const begun = await store.beginInlineAnalysis(reviewerStoreScope, "rc-demo-deposit-001");
+    const claimed = await store.claimNextAnalysisJob("tenant-demo", "worker-001");
+
+    expect(begun).toMatchObject({
+      id: "job-rc-demo-deposit-001-001",
+      status: "running",
+      currentStep: "inline_running"
+    });
+    expect(claimed).toBeUndefined();
+  });
+
   it("deletes a registered knowledge document and records audit", async () => {
     const store = createMockReviewStore();
     const service = createReviewService({ store });

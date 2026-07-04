@@ -2245,9 +2245,9 @@ export function createPrismaReviewStore(): ReviewStore {
       };
     },
 
-    async enqueueAnalysis(scope, reviewCaseId) {
-      try {
-        return await prisma.$transaction(async (tx) => {
+	    async enqueueAnalysis(scope, reviewCaseId) {
+	      try {
+	        return await prisma.$transaction(async (tx) => {
           const review = await tx.reviewCase.findFirst({
             where: { id: reviewCaseId, tenantId: scope.tenantId },
             include: reviewInclude
@@ -2309,8 +2309,70 @@ export function createPrismaReviewStore(): ReviewStore {
       }
     },
 
-    async claimNextAnalysisJob(tenantId, workerId) {
-      void workerId;
+    async beginInlineAnalysis(scope, reviewCaseId) {
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const review = await tx.reviewCase.findFirst({
+            where: { id: reviewCaseId, tenantId: scope.tenantId },
+            include: reviewInclude
+          });
+
+          if (!review) {
+            return undefined;
+          }
+
+          const activeJob = await tx.analysisJob.findFirst({
+            where: {
+              tenantId: scope.tenantId,
+              reviewCaseId,
+              status: { in: ["queued", "running"] }
+            },
+            select: { id: true }
+          });
+
+          if (activeJob) {
+            return undefined;
+          }
+
+          const now = new Date();
+          const job = await tx.analysisJob.create({
+            data: {
+              id: `job-${randomUUID()}`,
+              tenantId: scope.tenantId,
+              reviewCaseId,
+              status: "running",
+              progress: 20,
+              currentStep: "inline_running",
+              startedByUserId: scope.actorUserId,
+              startedAt: now
+            }
+          });
+          const updated = await tx.reviewCase.update({
+            where: { id: reviewCaseId },
+            data: {
+              status: "analysis_in_progress",
+              analysisStartedAt: now,
+              analysisCompletedAt: null
+            },
+            include: reviewInclude
+          });
+
+          return {
+            ...toAnalysisJob(job),
+            reviewCase: toReviewCase(reviewRow(updated))
+          };
+        });
+      } catch (error) {
+        if (isUniqueConstraintError(error)) {
+          return undefined;
+        }
+
+        throw error;
+      }
+    },
+
+	    async claimNextAnalysisJob(tenantId, workerId) {
+	      void workerId;
 
       const queued = await prisma.analysisJob.findFirst({
         where: { tenantId, status: "queued" },

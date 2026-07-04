@@ -389,13 +389,13 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         return queued;
       }
 
-      const queued = await store.enqueueAnalysis(scope, reviewCaseId);
+      const claimed = await store.beginInlineAnalysis(scope, reviewCaseId);
 
-      if (queued) {
-        await recordAnalysisStart(queued);
+      if (claimed) {
+        await recordAnalysisStart({ status: "analysis_in_progress", jobId: claimed.id });
       }
 
-      if (queued && before) {
+      if (claimed && before) {
         let result;
 
         try {
@@ -403,23 +403,27 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
             store,
             scope,
             reviewCaseId,
-            jobId: queued.jobId
+            jobId: claimed.id
           });
-          const artifacts = await analysisPipeline.run({ review: before, scope, onEvent });
+          const artifacts = await analysisPipeline.run({
+            review: claimed.reviewCase,
+            scope,
+            onEvent
+          });
           const persisted = await store.persistAnalysisOutputs(scope, {
             reviewCaseId,
-            jobId: queued.jobId,
+            jobId: claimed.id,
             artifacts
           });
 
           if (!persisted) {
-            throw new Error(`Analysis outputs were not persisted for job ${queued.jobId}`);
+            throw new Error(`Analysis outputs were not persisted for job ${claimed.id}`);
           }
 
-          const completed = await store.completeAnalysisJob(scope, queued.jobId, artifacts);
+          const completed = await store.completeAnalysisJob(scope, claimed.id, artifacts);
 
           if (!completed) {
-            throw new Error(`Analysis job ${queued.jobId} was not completed`);
+            throw new Error(`Analysis job ${claimed.id} was not completed`);
           }
 
           result = {
@@ -427,7 +431,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
             issueCount: persisted.issueCount
           };
         } catch (error) {
-          await store.failAnalysisJob(scope, queued.jobId, errorMessage(error));
+          await store.failAnalysisJob(scope, claimed.id, errorMessage(error));
           throw error;
         }
 
@@ -440,7 +444,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         return result;
       }
 
-      return queued;
+      return undefined;
     },
 
     async getLatestAnalysisJob(context: RequestContext, reviewCaseId: string) {
