@@ -70,14 +70,19 @@ describe("EC2 deployment artifacts", () => {
     expect(releaseEnv).toContain("DATABASE_URL=");
   });
 
-  it("keeps S3 enabled only for the EC2 runtime template", () => {
+  it("enables shared S3 for local and runtime templates without leaking AWS secrets", () => {
     const localEnvExample = readFileSync(".env.example", "utf8");
     const runtimeEnv = renderEc2RuntimeEnvExample();
     const releaseEnv = renderEc2ReleaseEnvExample();
 
-    expect(localEnvExample).toContain('FINPROOF_STORAGE_ADAPTER="local-metadata"');
-    expect(localEnvExample).toContain('FINPROOF_S3_BUCKET=""');
-    expect(localEnvExample).toContain('AWS_REGION=""');
+    // 로컬 개발도 공유 S3로 통일한다. 공유 DB에 local-metadata로 업로드하면
+    // 파일 바이트가 로컬 디스크에만 남아 오펀 업로드가 되기 때문이다.
+    expect(localEnvExample).toContain('FINPROOF_STORAGE_ADAPTER="s3"');
+    expect(localEnvExample).toContain('FINPROOF_S3_BUCKET="finproof-s3-seoul"');
+    expect(localEnvExample).toContain('AWS_REGION="ap-northeast-2"');
+    // 시크릿 키는 예시 파일에 비워 두어 커밋 유출을 막는다.
+    expect(localEnvExample).toContain('AWS_ACCESS_KEY_ID=""');
+    expect(localEnvExample).toContain('AWS_SECRET_ACCESS_KEY=""');
     expect(runtimeEnv).toContain("FINPROOF_STORAGE_ADAPTER=s3");
     expect(runtimeEnv).toContain("FINPROOF_S3_BUCKET=finproof-s3-seoul");
     expect(runtimeEnv).toContain("AWS_REGION=ap-northeast-2");
