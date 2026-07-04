@@ -153,26 +153,27 @@ const riskRank: Record<ReviewIssue["riskLevel"], number> = {
 };
 
 /**
- * Detects the dominant non-Korean language across analyzed issues.
+ * Detects the package's dominant language across analyzed issues so the draft is
+ * always written in the language of the reviewed package (Korean package →
+ * Korean, Vietnamese package → Vietnamese, and so on).
  *
  * Each issue may carry a multilingualContext produced by the translator-risk
- * agents. When one or more issues reference a non-Korean source language, the
- * most frequent language wins (ties resolve to the earliest-detected language).
- * Returns "ko" when no multilingual context is present.
+ * agents when its target text is non-Korean; issues without one describe Korean
+ * source text and therefore count toward the Korean ("ko") base. The most
+ * frequent language wins, which reflects the package's primary language rather
+ * than merely the presence of a few embedded foreign-language segments. Ties
+ * resolve to Korean, the base language of the review workflow.
  */
 export function detectReviewDraftLanguage(review: ReviewCase): DraftLanguage {
   const counts = new Map<DraftLanguage, number>();
 
   for (const issue of review.issues) {
-    const language = issue.multilingualContext?.language;
-
-    if (language) {
-      counts.set(language, (counts.get(language) ?? 0) + 1);
-    }
+    const language = issue.multilingualContext?.language ?? "ko";
+    counts.set(language, (counts.get(language) ?? 0) + 1);
   }
 
   let detected: DraftLanguage = "ko";
-  let highestCount = 0;
+  let highestCount = counts.get("ko") ?? 0;
 
   for (const [language, count] of counts) {
     if (count > highestCount) {
@@ -250,9 +251,10 @@ export function answerReviewQuestion({
 
 export function generateDraftWithChatContext(
   review: ReviewCase,
-  chatResponses: ReviewChatResponse[]
+  chatResponses: ReviewChatResponse[],
+  language: DraftLanguage = detectReviewDraftLanguage(review)
 ): string {
-  const baseDraft = generateIssueBasedOpinionDraft(review);
+  const baseDraft = generateIssueBasedOpinionDraft(review, language);
   const evidenceTitles = Array.from(
     new Set(
       chatResponses.flatMap((response) => response.evidence.map((evidence) => evidence.title))
@@ -263,17 +265,19 @@ export function generateDraftWithChatContext(
     return baseDraft;
   }
 
-  const labels = draftLabelsByLanguage[detectReviewDraftLanguage(review)];
+  const labels = draftLabelsByLanguage[language];
 
   return `${baseDraft}\n\n${labels.chatReflection(evidenceTitles.join(", "))}`;
 }
 
-export function generateIssueBasedOpinionDraft(review: ReviewCase): string {
+export function generateIssueBasedOpinionDraft(
+  review: ReviewCase,
+  language: DraftLanguage = detectReviewDraftLanguage(review)
+): string {
   if (review.issues.length === 0) {
     return review.expectedDraft;
   }
 
-  const language = detectReviewDraftLanguage(review);
   const labels = draftLabelsByLanguage[language];
   const issues = [...review.issues].sort(
     (left, right) => riskRank[right.riskLevel] - riskRank[left.riskLevel]
