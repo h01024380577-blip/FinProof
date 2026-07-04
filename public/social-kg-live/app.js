@@ -56,6 +56,13 @@ let pumping = false;
 let lastRun = [];
 const stepEls = new Map();
 
+// auto-follow: viewer tails whichever case is being analyzed (no manual pick needed)
+const ACTIVE_STATUSES = new Set(["parsing", "analysis_queued", "analysis_in_progress"]);
+const WATCH_MS = 2500;
+let followedId = null;
+let watchStarted = false;
+const statusMap = new Map();
+
 function api(method, path) {
   return fetch(path, { method, headers: ROLE_HEADERS, cache: "no-store" }).then((r) => {
     if (!r.ok) throw new Error(`${r.status}`);
@@ -234,7 +241,7 @@ function fitGraph() { const nodes = DATA.nodes.filter((node) => visibleSet.has(n
 
 /* ---------------- live analysis ---------------- */
 function setChip(stateName, text) { liveChip.dataset.state = stateName; liveChipText.textContent = text; }
-function resetLiveVisual() { state.live = { on: true, ref: new Set(), spot: new Set(), edges: new Set(), phaseColor: "#64748b", risk: null }; state.forceVisible = new Set(); stepEls.clear(); liveSteps.innerHTML = ""; }
+function resetLiveVisual() { state.live = { on: false, ref: new Set(), spot: new Set(), edges: new Set(), phaseColor: "#64748b", risk: null }; state.forceVisible = new Set(); stepEls.clear(); liveSteps.innerHTML = ""; }
 function resetLive() { resetLiveVisual(); lastRun = []; }
 
 function addStep(phase, cfg, meta) {
@@ -293,10 +300,12 @@ function pump() {
   paceTimer = setTimeout(() => { pumping = false; pump(); }, PHASE_MS);
 }
 function maybeFinish() {
-  if (pollStatus === "running" || pumping || queue.length) return;
-  analyzeBtn.disabled = false; replayBtn.disabled = lastRun.length === 0;
+  if (pollStatus === "running" || pollStatus === "queued" || pumping || queue.length) return;
+  replayBtn.disabled = lastRun.length === 0;
   if (pollStatus === "failed") setChip("error", "분석이 실패했어요");
-  else if (liveChip.dataset.state !== "done") setChip("done", "분석 완료");
+  else if (liveChip.dataset.state !== "done") setChip("done", lastRun.length ? "분석 완료 — 강조 유지" : "분석 완료 (사회맥락 없음)");
+  // stop tailing this run; the watcher keeps looking for the next analysis
+  followedId = null;
 }
 
 function reflectStage(ev) {
@@ -306,7 +315,8 @@ function reflectStage(ev) {
   else if (ev.stage === "cove" && ev.event === "start") setChip("running", "근거 교차 검증 중…");
 }
 
-async function loopPoll(id) {
+async function pollEvents(id) {
+  if (id !== followedId) return; // a newer analysis took over
   try {
     const q = lastSeq != null ? `?since=${lastSeq}` : "";
     const res = await api("GET", `/api/v1/review-cases/${encodeURIComponent(id)}/analysis/events${q}`);
@@ -318,24 +328,41 @@ async function loopPoll(id) {
     }
     pump();
   } catch { /* transient network/poll error — retry next tick */ }
-  if (pollStatus === "running" || queue.length || pumping) {
-    pollTimer = setTimeout(() => loopPoll(id), 1200);
+  if (id !== followedId) return;
+  if (pollStatus === "running" || pollStatus === "queued" || queue.length || pumping) {
+    pollTimer = setTimeout(() => pollEvents(id), 1200);
   } else {
     maybeFinish();
   }
 }
 
+// Attach the viewer to a case's analysis run and start following its trace events.
+function followCase(id, title, force = false) {
+  if (id === followedId && !force) return;
+  clearTimeout(pollTimer); clearTimeout(paceTimer);
+  followedId = id;
+  queue = []; pumping = false; lastSeq = null; pollStatus = "running"; lastRun = [];
+  resetLive();
+  replayBtn.disabled = true;
+  const label = title || id;
+  setChip("running", `분석 따라가는 중 — ${label}`);
+  if (caseSelect.querySelector(`option[value="${CSS.escape(id)}"]`)) caseSelect.value = id;
+  pollEvents(id);
+}
+
+// Manual trigger (secondary): start analysis on the selected case; if it is already
+// running/queued the server returns 409 and we simply attach to the existing run.
 async function startAnalysis() {
   const id = caseSelect.value;
   if (!id) return;
-  clearTimeout(pollTimer); clearTimeout(paceTimer);
-  queue = []; pumping = false; lastSeq = null; pollStatus = "running";
-  resetLive();
-  analyzeBtn.disabled = true; replayBtn.disabled = true;
+  const title = caseSelect.selectedOptions[0]?.dataset.title || id;
   setChip("running", "AI 분석 시작 중…");
   try { await api("POST", `/api/v1/review-cases/${encodeURIComponent(id)}/analysis/start`); }
-  catch (e) { setChip("error", `분석 시작 실패 (${e.message})`); analyzeBtn.disabled = false; return; }
-  loopPoll(id);
+  catch (e) {
+    if (String(e.message) !== "409") { setChip("error", `분석 시작 실패 (${e.message})`); return; }
+    // already running — just follow it
+  }
+  followCase(id, title, true);
 }
 
 function replayRun() {
@@ -343,23 +370,46 @@ function replayRun() {
   clearTimeout(paceTimer);
   queue = [...lastRun]; pumping = false; pollStatus = "completed";
   resetLiveVisual();
-  analyzeBtn.disabled = true; replayBtn.disabled = true;
+  replayBtn.disabled = true;
   setChip("running", "재생 중…");
   pump();
 }
 
-async function loadCases() {
+// Poll the case list; when a case transitions into an active analysis state, auto-follow it.
+async function watchActiveAnalysis() {
   try {
     const res = await api("GET", "/api/v1/review-cases?pageSize=50");
     const items = res.items || res.data || res.reviewCases || (Array.isArray(res) ? res : []);
-    if (!items.length) { caseSelect.innerHTML = '<option value="">케이스가 없습니다</option>'; return; }
-    caseSelect.innerHTML = items.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml((c.title || c.id))} · ${escapeHtml(c.status || "")}</option>`).join("");
-    analyzeBtn.disabled = false;
-    setChip("idle", "대기 중");
-  } catch (e) {
-    caseSelect.innerHTML = '<option value="">케이스 로드 실패</option>';
-    setChip("error", `케이스 로드 실패 (${e.message})`);
-  }
+    // keep the picker in sync (status badge)
+    if (items.length) {
+      const current = caseSelect.value;
+      caseSelect.innerHTML = items.map((c) => `<option value="${escapeHtml(c.id)}" data-title="${escapeHtml(c.title || c.id)}">${escapeHtml(c.title || c.id)} · ${escapeHtml(c.status || "")}</option>`).join("");
+      if (current) caseSelect.value = current;
+      analyzeBtn.disabled = false;
+    }
+    // detect a case that just entered an active state (newly started analysis)
+    let justStarted = null;
+    let anyActive = null;
+    for (const c of items) {
+      const active = ACTIVE_STATUSES.has(c.status);
+      if (active) { anyActive = anyActive || c; if (!ACTIVE_STATUSES.has(statusMap.get(c.id) || "")) justStarted = c; }
+      statusMap.set(c.id, c.status);
+    }
+    const target = justStarted || (!ACTIVE_STATUSES.has(statusMap.get(followedId) || "") ? anyActive : null);
+    if (target && (target.id !== followedId || justStarted)) {
+      followCase(target.id, target.title, target.id === followedId);
+    } else if (!followedId && !anyActive && liveChip.dataset.state === "idle") {
+      setChip("idle", "분석 대기 중 — 심의 화면에서 AI 분석을 시작하세요");
+    }
+  } catch { /* transient — retry next tick */ }
+  setTimeout(watchActiveAnalysis, WATCH_MS);
+}
+
+function startWatching() {
+  if (watchStarted) return;
+  watchStarted = true;
+  setChip("idle", "분석 대기 중 — 심의 화면에서 AI 분석을 시작하세요");
+  watchActiveAnalysis();
 }
 
 /* ---------------- events ---------------- */
@@ -395,6 +445,6 @@ async function boot() {
   renderInspector(null);
   fitGraph();
   draw();
-  loadCases();
+  startWatching();
 }
 boot();
