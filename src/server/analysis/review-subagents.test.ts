@@ -3,6 +3,7 @@ import type { ModelProvider } from "@/server/ai/model-provider";
 import type { AgentFinding } from "./review-subagents";
 import {
   createReviewSubAgentOrchestrator,
+  dedupeConsolidatedSocialContextFindings,
   finalOrchestratedFindings,
   sanitizeReviewerText
 } from "./review-subagents";
@@ -491,6 +492,78 @@ describe("finalOrchestratedFindings", () => {
       "finding-targeting",
       "finding-main-date"
     ]);
+  });
+});
+
+describe("dedupeConsolidatedSocialContextFindings", () => {
+  function finding(overrides: Partial<AgentFinding>): AgentFinding {
+    return {
+      id: "finding",
+      agent: "main",
+      issueType: "generic",
+      riskLevel: "caution",
+      title: "제목",
+      targetText: "문구",
+      description: "설명",
+      suggestedAction: "hold",
+      suggestedCopy: "권고",
+      evidenceCandidateIds: [],
+      confidence: 0.8,
+      ...overrides
+    };
+  }
+
+  it("drops the KG-engine social finding the pipeline re-injected after main consolidated it", () => {
+    // Reproduces rc-upload-002's second re-analysis: after the orchestrator dropped it,
+    // the pipeline re-added the KG social finding (#1, high) alongside the main agent's
+    // consolidated finding (#5, caution, issueType historical_sensitivity). The combined
+    // set must collapse to the single main finding.
+    const kg = finding({
+      id: "finding-kg",
+      agent: "social_context_risk",
+      issueType: "SOCIAL_CONTEXT_KG_DISASTER_DATE_FINANCIAL_METAPHOR",
+      riskLevel: "high",
+      targetText: "2026-04-16 / 침몰 / 금리"
+    });
+    const disclosure = finding({
+      id: "finding-disclosure",
+      agent: "main",
+      issueType: "disclosure_conflict",
+      riskLevel: "high",
+      targetText: "이 금융상품은 예금자보호법에 따라 보호되지 않습니다."
+    });
+    const mainSocial = finding({
+      id: "finding-main-social",
+      agent: "main",
+      issueType: "historical_sensitivity",
+      riskLevel: "caution",
+      targetText: "침몰하는 금리 시장, 유일한 해답 (게시예정일 2026-04-16)"
+    });
+
+    const result = dedupeConsolidatedSocialContextFindings([kg, disclosure, mainSocial]);
+
+    expect(result.map((f) => f.id)).toEqual(["finding-disclosure", "finding-main-social"]);
+  });
+
+  it("keeps the raw social finding when the main agent produced no social-context finding", () => {
+    const kg = finding({
+      id: "finding-kg",
+      agent: "social_context_risk",
+      issueType: "SOCIAL_CONTEXT_KG_DISASTER_DATE",
+      riskLevel: "high",
+      targetText: "2026-04-16 / 침몰 / 금리"
+    });
+    const rateOnly = finding({
+      id: "finding-rate",
+      agent: "main",
+      issueType: "rate_disclosure",
+      riskLevel: "caution",
+      targetText: "최고 연 4.50% (세전)"
+    });
+
+    const result = dedupeConsolidatedSocialContextFindings([kg, rateOnly]);
+
+    expect(result.map((f) => f.id)).toEqual(["finding-kg", "finding-rate"]);
   });
 });
 

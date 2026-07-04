@@ -43,6 +43,7 @@ import { expandComplianceQuery } from "./query-expansion";
 import { createReranker, type Reranker } from "./rerank-provider";
 import {
   createReviewSubAgentOrchestrator,
+  dedupeConsolidatedSocialContextFindings,
   type AgentFinding,
   type ReviewSubAgentOrchestrator
 } from "./review-subagents";
@@ -2099,7 +2100,13 @@ export function createReviewAnalysisPipeline({
         now,
         onEvent
       });
-      const verifiedAgentFindings = coveVerification.verifiedAgentFindings;
+      // Drop raw social-context findings (KG engine / sub-agent) the main agent already
+      // consolidated. Runs after CoVe so a raw finding is only removed when the main agent's
+      // social-context finding actually survived verification — never leaving the concern
+      // entirely unreported.
+      const verifiedAgentFindings = dedupeConsolidatedSocialContextFindings(
+        coveVerification.verifiedAgentFindings
+      );
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,

@@ -534,6 +534,33 @@ export function finalOrchestratedFindings(
   return [...preservedSocialContextFindings, ...mainFindings];
 }
 
+// Concern-level dedupe for the final combined finding set. finalOrchestratedFindings only
+// governs findings produced *inside* the orchestrator; the pipeline separately re-injects
+// prior findings (the KG-engine social-context finding among them) alongside the
+// orchestrator output as a loss-prevention safety net, which resurrects a raw social finding
+// the main agent already consolidated. Applied to the merged set, this removes raw
+// social_context_risk findings (KG engine or sub-agent) once the main agent has folded the
+// same concern into its own social-context finding. Fails safe: with no matching main
+// social-context finding, nothing is dropped.
+export function dedupeConsolidatedSocialContextFindings(
+  findings: AgentFinding[]
+): AgentFinding[] {
+  const mainSocialContextFindings = findings.filter(
+    (finding) => finding.agent === "main" && isSocialContextFinding(finding)
+  );
+  if (mainSocialContextFindings.length === 0) {
+    return findings;
+  }
+
+  return findings.filter(
+    (finding) =>
+      !(
+        finding.agent === "social_context_risk" &&
+        mainSocialContextFindings.some((mainFinding) => sharesConcern(mainFinding, finding))
+      )
+  );
+}
+
 function bestEvidenceScore(evidenceCandidates: RagEvidenceCandidate[]) {
   return Math.max(0, ...evidenceCandidates.map((candidate) => candidate.relevanceScore));
 }
