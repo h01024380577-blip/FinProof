@@ -110,6 +110,14 @@ export function describeAnalysisEvent(event: AnalysisEventRecord): ProgressLine 
         state: "done",
         text: `분석 완료 — 총 ${num(p.agentFindings) ?? 0}개 항목을 도출했어요`
       };
+    case "social_context_kg:done": {
+      const referenced = Array.isArray(p.matchedNodeIds) ? p.matchedNodeIds.length : 0;
+      return {
+        ...base,
+        state: "done",
+        text: `사회맥락 지식그래프에서 노드 ${referenced}개를 참조했어요`
+      };
+    }
     case "cove:start":
       return { ...base, state: "running", text: "검토 결과를 근거와 교차 검증하고 있어요…" };
     case "cove:done": {
@@ -163,6 +171,11 @@ export function buildProgressLines(events: AnalysisEventRecord[]): ProgressLine[
       }
     }
     if (event.stage === "cove" && event.event === "start" && coveFinished) {
+      continue;
+    }
+    // The social-context KG engine emits a granular per-phase trace for the live
+    // graph viewer; in the reviewer popup we collapse those to the single summary line.
+    if (event.stage === "social_context_kg" && event.event !== "done") {
       continue;
     }
     lines.push(describeAnalysisEvent(event));

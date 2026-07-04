@@ -145,6 +145,34 @@ export type SocialContextKgSeed = {
   derogatorySocialSlang: SocialContextDerogatorySlang[];
 };
 
+export type SocialContextTracePhase =
+  | "country"
+  | "date"
+  | "term"
+  | "symbol"
+  | "financial"
+  | "campaign"
+  | "slang"
+  | "safe_context"
+  | "event"
+  | "rule"
+  | "stakeholder";
+
+/**
+ * Step in the social-context KG activation pipeline, emitted in the real order the
+ * engine touches nodes. Consumed by the live viewer to zoom/highlight the exact
+ * nodes/edges the sub-agent references. `nodeIds` are canonical KG ids that map 1:1
+ * to `social-kg-edges.json` endpoints and to the graph exposed by the graph API.
+ */
+export type SocialContextTrace = {
+  phase: SocialContextTracePhase;
+  nodeIds: string[];
+  edges?: Array<{ from: string; relation: string; to: string }>;
+  countryIds?: string[];
+  riskLevel?: RiskLevel;
+  note?: string;
+};
+
 export type SocialContextDateMatch = {
   plannedDate: string;
   mmdd: string;
