@@ -36,6 +36,44 @@ function parseS3StorageKey(storageKey: string, bucket: string) {
   return storageKey.slice(prefix.length);
 }
 
+// Korean object keys can be stored under a different Unicode normalization (NFC vs NFD)
+// than the DB storage_key — e.g. an object PUT by one tool while the DB row was written by
+// another. S3 GetObject matches keys byte-for-byte, so a normalization mismatch surfaces as
+// NoSuchKey and silently strands the upload as metadata-only (the local adapter already
+// normalizes for the same reason). Try the exact key first, then the alternate forms.
+function keyNormalizationCandidates(key: string): string[] {
+  return [...new Set([key, key.normalize("NFC"), key.normalize("NFD")])];
+}
+
+async function getObjectBodyWithNormalizationFallback(
+  client: S3ObjectClient,
+  bucket: string,
+  key: string
+): Promise<Uint8Array | undefined> {
+  let lastNotFound: unknown;
+
+  for (const candidate of keyNormalizationCandidates(key)) {
+    try {
+      const response = (await client.send(
+        new GetObjectCommand({ Bucket: bucket, Key: candidate })
+      )) as { Body?: unknown };
+
+      return bodyToUint8Array(response.Body);
+    } catch (error) {
+      const name = (error as { name?: string }).name;
+
+      if (name === "NoSuchKey" || name === "NotFound") {
+        lastNotFound = error;
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw lastNotFound;
+}
+
 async function bodyToUint8Array(body: unknown): Promise<Uint8Array | undefined> {
   if (!body) {
     return undefined;
@@ -124,14 +162,7 @@ export function createS3MetadataStorageAdapter({
         return undefined;
       }
 
-      const response = (await client.send(
-        new GetObjectCommand({
-          Bucket: bucket,
-          Key: key
-        })
-      )) as { Body?: unknown };
-
-      return bodyToUint8Array(response.Body);
+      return getObjectBodyWithNormalizationFallback(client, bucket, key);
     },
 
     async getReviewFileBody(storageKey: string): Promise<Uint8Array | undefined> {
