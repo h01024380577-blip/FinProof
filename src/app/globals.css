@@ -10893,3 +10893,82 @@ body:has(.landing-page)::before {
   background: var(--surface-subtle);
   border-top: 1px solid var(--line);
 }
+
+/* Analysis progress popup — reviewer-facing agent timeline */
+.analysis-progress {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 5.5rem;
+  width: 360px;
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  z-index: 60;
+}
+.analysis-progress__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line, #e5e7eb);
+  font-weight: 600;
+}
+.analysis-progress__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  display: inline-flex;
+}
+.analysis-progress__list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+.analysis-progress__item {
+  display: flex;
+  gap: 8px;
+  padding: 6px 14px;
+  align-items: flex-start;
+  font-size: 0.875rem;
+}
+.analysis-progress__item[data-state="running"] {
+  color: #2563eb;
+}
+.analysis-progress__item[data-state="done"] {
+  color: #111827;
+}
+.analysis-progress__item[data-state="error"] {
+  color: #dc2626;
+}
+.analysis-progress__item[data-state="info"] {
+  color: #6b7280;
+}
+.analysis-progress__icon {
+  display: inline-flex;
+  padding-top: 1px;
+}
+.analysis-progress__spin {
+  animation: analysis-progress-spin 1s linear infinite;
+}
+.analysis-progress__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.analysis-progress__chip {
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  color: #374151;
+}
+@keyframes analysis-progress-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
