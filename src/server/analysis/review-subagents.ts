@@ -460,13 +460,70 @@ function materialStatus(review: ReviewCase) {
   };
 }
 
-function finalOrchestratedFindings(findings: AgentFinding[], mainFindings: AgentFinding[]) {
+// Social-context risk is surfaced under heterogeneous, model-chosen issueTypes (the KG
+// engine, the social_context_risk sub-agent, and the main agent's consolidated finding
+// all label it differently). Recognize it by the owning agent or by an issueType that
+// names a social-context signal, so we can tell when the main agent has itself addressed
+// the concern.
+const SOCIAL_CONTEXT_ISSUE_TYPE_PATTERN =
+  /social[\s_-]*context|disaster|symbolic|사회\s*맥락|참사|재난|기념일/i;
+
+function isSocialContextFinding(finding: AgentFinding): boolean {
+  return (
+    finding.agent === "social_context_risk" ||
+    SOCIAL_CONTEXT_ISSUE_TYPE_PATTERN.test(finding.issueType ?? "")
+  );
+}
+
+function concernTokens(value: string): Set<string> {
+  return new Set(
+    value
+      .normalize("NFC")
+      .toLowerCase()
+      .replace(/[^0-9a-z가-힣]+/gi, " ")
+      .split(/\s+/)
+      .filter((token) => token.length >= 2)
+  );
+}
+
+// Two findings describe the same concern when their targetText shares multiple meaningful
+// tokens (e.g. the sensitive phrase and the publish date). Used only to compare a raw
+// social-context finding against the main agent's social-context finding, so incidental
+// overlap with unrelated issue types cannot cause a false match.
+function sharesConcern(a: AgentFinding, b: AgentFinding): boolean {
+  const aTokens = concernTokens(a.targetText ?? "");
+  const bTokens = concernTokens(b.targetText ?? "");
+  let overlap = 0;
+  for (const token of aTokens) {
+    if (bTokens.has(token)) {
+      overlap += 1;
+    }
+  }
+  return overlap >= 2;
+}
+
+export function finalOrchestratedFindings(
+  findings: AgentFinding[],
+  mainFindings: AgentFinding[]
+) {
   if (mainFindings.length === 0) {
     return findings;
   }
 
+  const mainSocialContextFindings = mainFindings.filter(isSocialContextFinding);
+
+  // The main_compliance agent consolidates duplicate priorFindings — including social
+  // context — into one final finding per concern and assigns the proportionate riskLevel
+  // (see MAIN_COMPLIANCE_PROMPT). We still preserve raw social_context_risk findings as a
+  // safety net so a subtle social-context risk is never silently dropped, but ONLY when
+  // the main agent did not already surface the same concern. Re-injecting a raw finding
+  // the main agent already reconciled duplicated the issue for the reviewer and reverted
+  // the main agent's risk downgrade — e.g. rc-upload-002 surfaced one 침몰/게시일 concern
+  // three times (KG high + sub-agent high + main's consolidated caution).
   const preservedSocialContextFindings = findings.filter(
-    (finding) => finding.agent === "social_context_risk"
+    (finding) =>
+      finding.agent === "social_context_risk" &&
+      !mainSocialContextFindings.some((mainFinding) => sharesConcern(mainFinding, finding))
   );
 
   return [...preservedSocialContextFindings, ...mainFindings];
