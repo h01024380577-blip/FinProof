@@ -1,0 +1,207 @@
+[
+  {
+    "id": "safe-cambodia-history-education",
+    "countryId": "cambodia",
+    "text": "Khmer Rouge history education exhibition",
+    "expectedRisk": "info",
+    "reason": "역사교육·추모 목적이며 금융 혜택/할인과 결합하지 않음"
+  },
+  {
+    "id": "safe-cambodia-pchum-ben-remittance",
+    "countryId": "cambodia",
+    "text": "Pchum Ben 가족 송금 수수료 안내",
+    "expectedRisk": "info",
+    "reason": "명절 가족 송금 안내이며 조상·영혼 표현을 희화화하지 않음"
+  },
+  {
+    "id": "safe-vietnam-tet-cashback",
+    "countryId": "vietnam",
+    "text": "Tết remittance fee discount for family support",
+    "expectedRisk": "info",
+    "reason": "뗏 명절 송금 혜택은 정상 금융 프로모션 맥락"
+  },
+  {
+    "id": "safe-vietnam-agent-orange-donation",
+    "countryId": "vietnam",
+    "text": "Agent Orange victim support donation notice",
+    "expectedRisk": "info",
+    "reason": "피해자 지원/기부 맥락이며 상업적 은유가 아님"
+  },
+  {
+    "id": "safe-myanmar-thingyan-transfer",
+    "countryId": "myanmar",
+    "text": "Thingyan new year transfer fee event",
+    "expectedRisk": "info",
+    "reason": "명절 송금 프로모션이며 정치·종교 상징을 희화화하지 않음"
+  },
+  {
+    "id": "safe-myanmar-rohingya-aid",
+    "countryId": "myanmar",
+    "text": "Rohingya humanitarian aid donation account notice",
+    "expectedRisk": "info",
+    "reason": "인권·기부 안내 맥락"
+  },
+  {
+    "id": "safe-china-spring-festival-red-envelope",
+    "countryId": "china",
+    "text": "Spring Festival red envelope cashback",
+    "expectedRisk": "info",
+    "reason": "춘절 홍바오 문화와 금융 혜택의 일반적 결합"
+  },
+  {
+    "id": "safe-china-hk-branch-info",
+    "countryId": "china",
+    "text": "Hong Kong branch remittance guide",
+    "expectedRisk": "info",
+    "reason": "지역명으로서의 홍콩 지점 안내"
+  },
+  {
+    "id": "safe-thailand-songkran-transfer",
+    "countryId": "thailand",
+    "text": "Songkran family remittance guide",
+    "expectedRisk": "info",
+    "reason": "송끄란 가족 송금 안내"
+  },
+  {
+    "id": "safe-thailand-temple-travel-info",
+    "countryId": "thailand",
+    "text": "Thai temple cultural travel guide included in card travel content",
+    "expectedRisk": "caution",
+    "reason": "문화 안내 맥락이지만 불상/승려 이미지 사용 방식 검토 필요"
+  },
+  {
+    "id": "safe-hongeo-food-partnership",
+    "countryId": "south_korea",
+    "text": "전남 홍어삼합 맛집 제휴 할인",
+    "expectedRisk": "info",
+    "reason": "홍어가 지역 음식·특산물 맥락으로 사용됨",
+    "safeContext": [
+      "food",
+      "local_specialty",
+      "restaurant_partnership"
+    ]
+  },
+  {
+    "id": "safe-fish-tank",
+    "countryId": "south_korea",
+    "text": "Fish Tank 관리비 자동납부 이벤트",
+    "expectedRisk": "info",
+    "reason": "tank가 군사 상징이 아닌 수조 맥락",
+    "safeContext": [
+      "aquarium",
+      "storage_tank"
+    ]
+  },
+  {
+    "id": "safe-water-tank",
+    "countryId": "south_korea",
+    "text": "물탱크 교체 비용 대출 안내",
+    "expectedRisk": "info",
+    "reason": "tank가 시설물 의미",
+    "safeContext": [
+      "facility",
+      "water_tank"
+    ]
+  },
+  {
+    "id": "safe-tank-top",
+    "countryId": "south_korea",
+    "text": "Tank Top 쇼핑몰 카드 할인",
+    "expectedRisk": "info",
+    "reason": "tank top 의류 맥락",
+    "safeContext": [
+      "fashion",
+      "apparel"
+    ]
+  },
+  {
+    "id": "safe-sewol-commemoration",
+    "countryId": "south_korea",
+    "text": "4.16을 기억하며 피해자와 유가족을 추모합니다",
+    "expectedRisk": "info",
+    "reason": "상업 혜택이 아닌 추모 문맥",
+    "safeContext": [
+      "commemoration",
+      "noncommercial"
+    ]
+  },
+  {
+    "id": "safe-sewol-donation",
+    "countryId": "south_korea",
+    "text": "세월호 추모 기부 캠페인에 함께합니다",
+    "expectedRisk": "info",
+    "reason": "공익·기부 문맥",
+    "safeContext": [
+      "social_contribution",
+      "donation",
+      "commemoration"
+    ]
+  },
+  {
+    "id": "safe-market-collapse-report",
+    "countryId": "south_korea",
+    "text": "수익률 붕괴 방어 전략 리포트",
+    "expectedRisk": "caution",
+    "reason": "투자 리포트 맥락에서는 금융시장 리스크 설명으로 볼 수 있으나 표현 완화 권장",
+    "safeContext": [
+      "investment_report",
+      "market_risk_analysis"
+    ]
+  },
+  {
+    "id": "safe-fire-insurance",
+    "countryId": "south_korea",
+    "text": "화재보험 보장 안내",
+    "expectedRisk": "info",
+    "reason": "화재가 보험 보장 대상의 중립적 설명",
+    "safeContext": [
+      "insurance_product_description",
+      "neutral_product_term"
+    ]
+  },
+  {
+    "id": "safe-national-day-message",
+    "countryId": "south_korea",
+    "text": "광복절을 맞아 독립의 의미를 기억합니다",
+    "expectedRisk": "info",
+    "reason": "공식 기념 메시지",
+    "safeContext": [
+      "commemoration",
+      "official_message"
+    ]
+  },
+  {
+    "id": "safe-statue-donation",
+    "countryId": "south_korea",
+    "text": "평화의 소녀상 보존 기부 안내",
+    "expectedRisk": "info",
+    "reason": "기부·추모 목적",
+    "safeContext": [
+      "donation",
+      "human_rights",
+      "noncommercial"
+    ]
+  },
+  {
+    "id": "safe-dialect-no",
+    "countryId": "south_korea",
+    "text": "맞나? 이래 하는 거 맞노? 지역 방언 콘텐츠",
+    "expectedRisk": "info",
+    "reason": "고인 조롱 밈과 무관한 방언 맥락",
+    "safeContext": [
+      "dialect",
+      "local_culture"
+    ]
+  },
+  {
+    "id": "safe-yellow-ribbon-donation",
+    "countryId": "south_korea",
+    "text": "노란 리본 추모 기부 캠페인",
+    "expectedRisk": "info",
+    "reason": "상업 혜택이 아닌 추모 기부",
+    "safeContext": [
+      "donation",
+      "commemoration"
+    ]
+  }
+]

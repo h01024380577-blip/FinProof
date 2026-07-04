@@ -1,0 +1,200 @@
+[
+  {
+    "id": "promotion",
+    "labelKo": "상업 프로모션",
+    "aliases": [
+      "할인",
+      "특가",
+      "혜택",
+      "이벤트",
+      "쿠폰",
+      "오늘만",
+      "한정",
+      "증정",
+      "cashback",
+      "discount",
+      "promo",
+      "deal",
+      "ưu đãi",
+      "khuyến mãi",
+      "โปรโมชั่น",
+      "ส่วนลด",
+      "优惠",
+      "우대",
+      "캐시백",
+      "포인트",
+      "세일",
+      "상업 프로모션"
+    ],
+    "commercialityWeight": 1.0,
+    "keywords": [
+      "할인",
+      "특가",
+      "혜택",
+      "이벤트",
+      "쿠폰",
+      "오늘만",
+      "한정",
+      "증정",
+      "우대",
+      "캐시백",
+      "포인트",
+      "세일"
+    ]
+  },
+  {
+    "id": "financial_product_ad",
+    "labelKo": "금융상품 광고",
+    "aliases": [
+      "금리",
+      "대출",
+      "예금",
+      "적금",
+      "수익률",
+      "캐시백",
+      "수수료",
+      "한도",
+      "송금",
+      "loan",
+      "rate",
+      "deposit",
+      "remittance",
+      "카드",
+      "보험료",
+      "환급",
+      "금융상품 광고"
+    ],
+    "commercialityWeight": 0.9,
+    "keywords": [
+      "금리",
+      "대출",
+      "예금",
+      "적금",
+      "수익률",
+      "캐시백",
+      "수수료",
+      "한도",
+      "카드",
+      "보험료",
+      "환급"
+    ]
+  },
+  {
+    "id": "commemoration",
+    "labelKo": "추모·기억·교육",
+    "aliases": [
+      "추모",
+      "기억",
+      "헌정",
+      "묵념",
+      "교육",
+      "역사",
+      "memorial",
+      "remember",
+      "commemorate",
+      "education",
+      "잊지 않겠습니다",
+      "기림",
+      "애도",
+      "추모·기억"
+    ],
+    "commercialityWeight": 0.1,
+    "keywords": [
+      "추모",
+      "기억",
+      "잊지 않겠습니다",
+      "헌정",
+      "기림",
+      "묵념",
+      "애도"
+    ]
+  },
+  {
+    "id": "neutral_information",
+    "labelKo": "중립 정보 제공",
+    "aliases": [
+      "안내",
+      "공지",
+      "FAQ",
+      "설명",
+      "guide",
+      "notice",
+      "information"
+    ],
+    "commercialityWeight": 0.2
+  },
+  {
+    "id": "social_contribution",
+    "labelKo": "사회공헌·기부",
+    "aliases": [
+      "기부",
+      "후원",
+      "지원",
+      "사회공헌",
+      "공익",
+      "상생",
+      "사회공헌·기부"
+    ],
+    "keywords": [
+      "기부",
+      "후원",
+      "지원",
+      "사회공헌",
+      "공익",
+      "상생"
+    ],
+    "commercialityWeight": 0.25
+  },
+  {
+    "id": "education_or_notice",
+    "labelKo": "교육·안내",
+    "aliases": [
+      "안내",
+      "교육",
+      "예방",
+      "안전",
+      "주의",
+      "리포트",
+      "보고서",
+      "설명",
+      "교육·안내"
+    ],
+    "keywords": [
+      "안내",
+      "교육",
+      "예방",
+      "안전",
+      "주의",
+      "리포트",
+      "보고서",
+      "설명"
+    ],
+    "commercialityWeight": 0.15
+  },
+  {
+    "id": "meme_or_humor",
+    "labelKo": "밈·유머",
+    "aliases": [
+      "밈",
+      "드립",
+      "웃긴",
+      "짤",
+      "레전드",
+      "급",
+      "터짐",
+      "꿀잼",
+      "밈·유머"
+    ],
+    "keywords": [
+      "밈",
+      "드립",
+      "웃긴",
+      "짤",
+      "레전드",
+      "급",
+      "터짐",
+      "꿀잼"
+    ],
+    "commercialityWeight": 0.8
+  }
+]

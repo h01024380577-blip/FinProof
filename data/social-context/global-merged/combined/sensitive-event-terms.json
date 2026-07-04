@@ -1,0 +1,3041 @@
+[
+  {
+    "id": "khm-term-killing-fields",
+    "countryId": "cambodia",
+    "labelKo": "킬링필드",
+    "labelEn": "Killing Fields",
+    "labelLocal": "វាលពិឃាត",
+    "aliases": [
+      "킬링필드",
+      "Killing Fields",
+      "killing field"
+    ],
+    "termType": "genocide_memory",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "khm-khmer-rouge-genocide"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "할인",
+      "세일",
+      "금리",
+      "수익률",
+      "cashback",
+      "game"
+    ],
+    "safeContexts": [
+      "역사교육",
+      "추모",
+      "보도"
+    ],
+    "sourceRefs": [
+      "cambodia_genocide"
+    ]
+  },
+  {
+    "id": "khm-term-tuol-sleng",
+    "countryId": "cambodia",
+    "labelKo": "뚜얼슬랭·S-21",
+    "labelEn": "Tuol Sleng / S-21",
+    "labelLocal": "ទួលស្លែង",
+    "aliases": [
+      "뚜얼슬랭",
+      "Tuol Sleng",
+      "S-21",
+      "Security Prison 21"
+    ],
+    "termType": "genocide_site",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "khm-khmer-rouge-genocide"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "loan",
+      "rate",
+      "promo",
+      "discount"
+    ],
+    "safeContexts": [
+      "역사교육",
+      "박물관 안내",
+      "추모"
+    ],
+    "sourceRefs": [
+      "cambodia_memorial_sites_reuters"
+    ]
+  },
+  {
+    "id": "khm-term-year-zero",
+    "countryId": "cambodia",
+    "labelKo": "Year Zero",
+    "labelEn": "Year Zero",
+    "labelLocal": "ឆ្នាំសូន្យ",
+    "aliases": [
+      "Year Zero",
+      "제로부터 시작",
+      "0년"
+    ],
+    "termType": "regime_slogan",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "khm-khmer-rouge-genocide"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "zero_fee",
+      "zero_interest",
+      "new_start_promo"
+    ],
+    "safeContexts": [
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "cambodia_genocide"
+    ]
+  },
+  {
+    "id": "khm-term-pol-pot",
+    "countryId": "cambodia",
+    "labelKo": "폴 포트",
+    "labelEn": "Pol Pot",
+    "labelLocal": "ប៉ុល ពត",
+    "aliases": [
+      "Pol Pot",
+      "폴 포트"
+    ],
+    "termType": "dictator_reference",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "khm-khmer-rouge-genocide"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "joke",
+      "promo",
+      "nickname"
+    ],
+    "safeContexts": [
+      "역사교육",
+      "보도"
+    ],
+    "sourceRefs": [
+      "cambodia_genocide"
+    ]
+  },
+  {
+    "id": "khm-term-ancestor",
+    "countryId": "cambodia",
+    "labelKo": "조상·선조",
+    "labelEn": "Ancestor",
+    "labelLocal": "ដូនតា",
+    "aliases": [
+      "ancestor",
+      "조상",
+      "ដូនតា"
+    ],
+    "termType": "ancestor_memorial",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "khm-pchum-ben"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "discount",
+      "ghost_promo",
+      "dead_rate"
+    ],
+    "safeContexts": [
+      "추모",
+      "종교행사",
+      "가족 안내"
+    ],
+    "sourceRefs": [
+      "cambodia_pchum_ben"
+    ]
+  },
+  {
+    "id": "khm-term-ghost",
+    "countryId": "cambodia",
+    "labelKo": "영혼·귀신",
+    "labelEn": "spirit / ghost",
+    "labelLocal": "ខ្មោច",
+    "aliases": [
+      "ghost",
+      "spirit",
+      "영혼",
+      "귀신"
+    ],
+    "termType": "religious_afterlife",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "khm-pchum-ben"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "cashback",
+      "ghost discount",
+      "dead rate"
+    ],
+    "safeContexts": [
+      "종교 설명",
+      "민속 소개"
+    ],
+    "sourceRefs": [
+      "cambodia_pchum_ben"
+    ]
+  },
+  {
+    "id": "khm-term-offering",
+    "countryId": "cambodia",
+    "labelKo": "공양·제물",
+    "labelEn": "offering",
+    "labelLocal": "បាយបិណ្ឌ",
+    "aliases": [
+      "공양",
+      "제물",
+      "offering",
+      "rice balls"
+    ],
+    "termType": "religious_offering",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "khm-pchum-ben"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "금융혜택",
+      "쿠폰",
+      "이벤트"
+    ],
+    "safeContexts": [
+      "종교 설명",
+      "공식 행사"
+    ],
+    "sourceRefs": [
+      "cambodia_pchum_ben"
+    ]
+  },
+  {
+    "id": "khm-term-king",
+    "countryId": "cambodia",
+    "labelKo": "국왕·왕실",
+    "labelEn": "King / Royal family",
+    "labelLocal": "ព្រះមហាក្សត្រ",
+    "aliases": [
+      "King",
+      "Royal",
+      "국왕",
+      "왕실",
+      "ព្រះមហាក្សត្រ"
+    ],
+    "termType": "monarchy",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "khm-national-symbols"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "joke",
+      "discount",
+      "loan_name"
+    ],
+    "safeContexts": [
+      "공식 존중 표현",
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "cambodia_national_symbols"
+    ]
+  },
+  {
+    "id": "khm-term-buddhism",
+    "countryId": "cambodia",
+    "labelKo": "불교·스님",
+    "labelEn": "Buddhism / monk",
+    "labelLocal": "ព្រះពុទ្ធសាសនា",
+    "aliases": [
+      "불교",
+      "스님",
+      "Buddha",
+      "monk",
+      "ព្រះពុទ្ធសាសនា"
+    ],
+    "termType": "religion",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "khm-national-symbols",
+      "khm-pchum-ben"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "cashback",
+      "coupon",
+      "meme"
+    ],
+    "safeContexts": [
+      "종교 안내",
+      "문화 소개"
+    ],
+    "sourceRefs": [
+      "cambodia_national_symbols"
+    ]
+  },
+  {
+    "id": "vnm-term-april30",
+    "countryId": "vietnam",
+    "labelKo": "4월30일·해방일",
+    "labelEn": "April 30 / Liberation Day",
+    "labelLocal": "30/4",
+    "aliases": [
+      "30/4",
+      "April 30",
+      "Giải phóng",
+      "Liberation Day",
+      "Victory Day"
+    ],
+    "termType": "national_war_date",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "vnm-reunification-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "flash sale",
+      "political slogan",
+      "division joke"
+    ],
+    "safeContexts": [
+      "공식 기념",
+      "문화 안내"
+    ],
+    "sourceRefs": [
+      "vietnam_reunification_day"
+    ]
+  },
+  {
+    "id": "vnm-term-saigon-fall",
+    "countryId": "vietnam",
+    "labelKo": "사이공 함락",
+    "labelEn": "Fall of Saigon",
+    "labelLocal": "Sài Gòn thất thủ",
+    "aliases": [
+      "Fall of Saigon",
+      "Saigon falls",
+      "사이공 함락"
+    ],
+    "termType": "war_memory",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "vnm-reunification-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "loan crash",
+      "rate fall",
+      "promo"
+    ],
+    "safeContexts": [
+      "역사교육",
+      "보도"
+    ],
+    "sourceRefs": [
+      "vietnam_reunification_day"
+    ]
+  },
+  {
+    "id": "vnm-term-black-april",
+    "countryId": "vietnam",
+    "labelKo": "검은 4월",
+    "labelEn": "Black April",
+    "labelLocal": "Tháng Tư Đen",
+    "aliases": [
+      "Black April",
+      "검은 4월",
+      "Tháng Tư Đen"
+    ],
+    "termType": "diaspora_mourning",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "vnm-reunification-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "discount",
+      "event",
+      "joke"
+    ],
+    "safeContexts": [
+      "해외 베트남 커뮤니티 설명",
+      "역사 맥락"
+    ],
+    "sourceRefs": [
+      "vietnam_reunification_day"
+    ]
+  },
+  {
+    "id": "vnm-term-ho-chi-minh",
+    "countryId": "vietnam",
+    "labelKo": "호치민",
+    "labelEn": "Ho Chi Minh",
+    "labelLocal": "Hồ Chí Minh",
+    "aliases": [
+      "Ho Chi Minh",
+      "Hồ Chí Minh",
+      "호치민",
+      "Uncle Ho"
+    ],
+    "termType": "national_leader",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "vnm-national-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "joke",
+      "mascot",
+      "loan_name"
+    ],
+    "safeContexts": [
+      "공식 존중",
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "vietnam_national_day"
+    ]
+  },
+  {
+    "id": "vnm-term-national-day",
+    "countryId": "vietnam",
+    "labelKo": "국경일·독립",
+    "labelEn": "National Day / Independence",
+    "labelLocal": "Quốc khánh",
+    "aliases": [
+      "Quốc khánh",
+      "National Day",
+      "Independence Day",
+      "국경일"
+    ],
+    "termType": "national_day",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "vnm-national-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "cheap deal",
+      "mockery"
+    ],
+    "safeContexts": [
+      "축하",
+      "공식 안내"
+    ],
+    "sourceRefs": [
+      "vietnam_national_day"
+    ]
+  },
+  {
+    "id": "vnm-term-agent-orange",
+    "countryId": "vietnam",
+    "labelKo": "고엽제",
+    "labelEn": "Agent Orange",
+    "labelLocal": "Chất độc da cam",
+    "aliases": [
+      "Agent Orange",
+      "고엽제",
+      "Chất độc da cam",
+      "da cam"
+    ],
+    "termType": "chemical_war_victim_memory",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "vnm-agent-orange-war"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "cashback",
+      "orange discount",
+      "rate bomb"
+    ],
+    "safeContexts": [
+      "역사교육",
+      "피해자 지원"
+    ],
+    "sourceRefs": [
+      "vietnam_agent_orange"
+    ]
+  },
+  {
+    "id": "vnm-term-napalm",
+    "countryId": "vietnam",
+    "labelKo": "네이팜",
+    "labelEn": "Napalm",
+    "labelLocal": "napalm",
+    "aliases": [
+      "napalm",
+      "네이팜",
+      "폭격"
+    ],
+    "termType": "war_harm",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "vnm-agent-orange-war"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "혜택 폭격",
+      "loan bomb",
+      "discount fire"
+    ],
+    "safeContexts": [
+      "역사교육",
+      "보도"
+    ],
+    "sourceRefs": [
+      "vietnam_agent_orange"
+    ]
+  },
+  {
+    "id": "vnm-term-war",
+    "countryId": "vietnam",
+    "labelKo": "베트남전",
+    "labelEn": "Vietnam War",
+    "labelLocal": "Chiến tranh Việt Nam",
+    "aliases": [
+      "Vietnam War",
+      "베트남전",
+      "war"
+    ],
+    "termType": "war_memory",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "vnm-agent-orange-war",
+      "vnm-reunification-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "promo",
+      "joke"
+    ],
+    "safeContexts": [
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "vietnam_reunification_day"
+    ]
+  },
+  {
+    "id": "vnm-term-tet",
+    "countryId": "vietnam",
+    "labelKo": "뗏·설",
+    "labelEn": "Tết",
+    "labelLocal": "Tết",
+    "aliases": [
+      "Tết",
+      "Tet",
+      "설"
+    ],
+    "termType": "family_holiday",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "vnm-tet"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "gambling joke",
+      "debt joke"
+    ],
+    "safeContexts": [
+      "가족 혜택",
+      "명절 송금 안내"
+    ],
+    "sourceRefs": [
+      "vietnam_public_holidays"
+    ]
+  },
+  {
+    "id": "vnm-term-lucky-money",
+    "countryId": "vietnam",
+    "labelKo": "세뱃돈·리시",
+    "labelEn": "Lucky money",
+    "labelLocal": "lì xì",
+    "aliases": [
+      "lì xì",
+      "lucky money",
+      "세뱃돈"
+    ],
+    "termType": "holiday_money_custom",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "vnm-tet"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "loan trap",
+      "gambling"
+    ],
+    "safeContexts": [
+      "명절 송금/카드 혜택"
+    ],
+    "sourceRefs": [
+      "vietnam_public_holidays"
+    ]
+  },
+  {
+    "id": "vnm-term-hung-kings",
+    "countryId": "vietnam",
+    "labelKo": "흥왕",
+    "labelEn": "Hung Kings",
+    "labelLocal": "Hùng Vương",
+    "aliases": [
+      "Hùng Vương",
+      "Hung Kings",
+      "흥왕"
+    ],
+    "termType": "founding_ancestor",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "vnm-hung-kings"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "discount joke"
+    ],
+    "safeContexts": [
+      "공식 기념"
+    ],
+    "sourceRefs": [
+      "vietnam_public_holidays"
+    ]
+  },
+  {
+    "id": "vnm-term-ancestor",
+    "countryId": "vietnam",
+    "labelKo": "조상",
+    "labelEn": "Ancestor",
+    "labelLocal": "tổ tiên",
+    "aliases": [
+      "ancestor",
+      "조상",
+      "tổ tiên"
+    ],
+    "termType": "ancestor_respect",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "vnm-hung-kings",
+      "vnm-tet"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "promo joke"
+    ],
+    "safeContexts": [
+      "추모",
+      "가족"
+    ],
+    "sourceRefs": [
+      "vietnam_public_holidays"
+    ]
+  },
+  {
+    "id": "mmr-term-coup",
+    "countryId": "myanmar",
+    "labelKo": "쿠데타",
+    "labelEn": "Coup",
+    "labelLocal": "အာဏာသိမ်း",
+    "aliases": [
+      "coup",
+      "아웅산",
+      "အာဏာသိမ်း",
+      "군부 쿠데타"
+    ],
+    "termType": "military_coup",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "mmr-2021-coup"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "loan coup",
+      "rate seizure",
+      "discount revolution"
+    ],
+    "safeContexts": [
+      "보도",
+      "정치 설명"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_reuters"
+    ]
+  },
+  {
+    "id": "mmr-term-tatmadaw",
+    "countryId": "myanmar",
+    "labelKo": "미얀마 군부·탓마도",
+    "labelEn": "Tatmadaw",
+    "labelLocal": "တပ်မတော်",
+    "aliases": [
+      "Tatmadaw",
+      "တပ်မတော်",
+      "군부"
+    ],
+    "termType": "military_institution",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "mmr-2021-coup"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "promo",
+      "mascot",
+      "loan"
+    ],
+    "safeContexts": [
+      "보도",
+      "정치 분석"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_reuters"
+    ]
+  },
+  {
+    "id": "mmr-term-cdm",
+    "countryId": "myanmar",
+    "labelKo": "시민불복종운동",
+    "labelEn": "Civil Disobedience Movement",
+    "labelLocal": "CDM",
+    "aliases": [
+      "CDM",
+      "civil disobedience",
+      "시민불복종"
+    ],
+    "termType": "protest_symbol",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "mmr-2021-coup"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "cashback",
+      "discount"
+    ],
+    "safeContexts": [
+      "정치 설명",
+      "뉴스"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_reuters"
+    ]
+  },
+  {
+    "id": "mmr-term-aung-san-suu-kyi",
+    "countryId": "myanmar",
+    "labelKo": "아웅산 수치",
+    "labelEn": "Aung San Suu Kyi",
+    "labelLocal": "ဒေါ်အောင်ဆန်းစုကြည်",
+    "aliases": [
+      "Aung San Suu Kyi",
+      "Suu Kyi",
+      "아웅산 수치"
+    ],
+    "termType": "political_figure",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "mmr-2021-coup"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "joke",
+      "loan_name"
+    ],
+    "safeContexts": [
+      "뉴스",
+      "정치 분석"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_reuters"
+    ]
+  },
+  {
+    "id": "mmr-term-rohingya",
+    "countryId": "myanmar",
+    "labelKo": "로힝야",
+    "labelEn": "Rohingya",
+    "labelLocal": "ရိုဟင်ဂျာ",
+    "aliases": [
+      "Rohingya",
+      "로힝야",
+      "ရိုဟင်ဂျာ"
+    ],
+    "termType": "ethnic_group_sensitive",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "mmr-rohingya-rakhine"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "targeted_promo",
+      "joke",
+      "stereotype"
+    ],
+    "safeContexts": [
+      "인권 안내",
+      "지원 캠페인"
+    ],
+    "sourceRefs": [
+      "myanmar_rohingya"
+    ]
+  },
+  {
+    "id": "mmr-term-rakhine",
+    "countryId": "myanmar",
+    "labelKo": "라카인",
+    "labelEn": "Rakhine",
+    "labelLocal": "ရခိုင်",
+    "aliases": [
+      "Rakhine",
+      "라카인",
+      "ရခိုင်"
+    ],
+    "termType": "conflict_region",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "mmr-rohingya-rakhine"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "discount joke",
+      "ethnic stereotype"
+    ],
+    "safeContexts": [
+      "지역 정보",
+      "인권 설명"
+    ],
+    "sourceRefs": [
+      "myanmar_rohingya"
+    ]
+  },
+  {
+    "id": "mmr-term-refugee",
+    "countryId": "myanmar",
+    "labelKo": "난민",
+    "labelEn": "Refugee",
+    "labelLocal": "ဒုက္ခသည်",
+    "aliases": [
+      "refugee",
+      "난민",
+      "ဒုက္ခသည်"
+    ],
+    "termType": "displacement_victim",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "mmr-rohingya-rakhine"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "loan refugee",
+      "fee escape"
+    ],
+    "safeContexts": [
+      "지원 안내",
+      "인권 캠페인"
+    ],
+    "sourceRefs": [
+      "myanmar_rohingya"
+    ]
+  },
+  {
+    "id": "mmr-term-8888",
+    "countryId": "myanmar",
+    "labelKo": "8888",
+    "labelEn": "8888 Uprising",
+    "labelLocal": "၈၈၈၈",
+    "aliases": [
+      "8888",
+      "8-8-88",
+      "၈၈၈၈"
+    ],
+    "termType": "democracy_movement_date",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "mmr-8888-uprising"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "promo code",
+      "coupon",
+      "cashback"
+    ],
+    "safeContexts": [
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "mmr-term-crackdown",
+    "countryId": "myanmar",
+    "labelKo": "진압",
+    "labelEn": "Crackdown",
+    "labelLocal": "ဖြိုခွင်း",
+    "aliases": [
+      "crackdown",
+      "진압",
+      "ဖြိုခွင်း"
+    ],
+    "termType": "state_violence",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "mmr-8888-uprising",
+      "mmr-2021-coup"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "fee crackdown",
+      "rate crackdown"
+    ],
+    "safeContexts": [
+      "보도",
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_reuters"
+    ]
+  },
+  {
+    "id": "mmr-term-thingyan",
+    "countryId": "myanmar",
+    "labelKo": "띤잔",
+    "labelEn": "Thingyan",
+    "labelLocal": "သင်္ကြန်",
+    "aliases": [
+      "Thingyan",
+      "띤잔",
+      "သင်္ကြန်"
+    ],
+    "termType": "new_year_holiday",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "mmr-thingyan"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "political joke"
+    ],
+    "safeContexts": [
+      "명절 송금",
+      "신년 인사"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "mmr-term-water",
+    "countryId": "myanmar",
+    "labelKo": "물축제",
+    "labelEn": "Water festival",
+    "labelLocal": "ရေသဘင်",
+    "aliases": [
+      "water festival",
+      "물축제",
+      "ရေပက်"
+    ],
+    "termType": "holiday_symbol",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "mmr-thingyan"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "drowning joke"
+    ],
+    "safeContexts": [
+      "명절 축하"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "mmr-term-buddhism",
+    "countryId": "myanmar",
+    "labelKo": "불교",
+    "labelEn": "Buddhism",
+    "labelLocal": "ဗုဒ္ဓဘာသာ",
+    "aliases": [
+      "Buddhism",
+      "불교",
+      "ဗုဒ္ဓဘာသာ"
+    ],
+    "termType": "religion",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "mmr-buddhism-sacred"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "loan mascot",
+      "discount"
+    ],
+    "safeContexts": [
+      "문화 안내"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "mmr-term-monk",
+    "countryId": "myanmar",
+    "labelKo": "승려",
+    "labelEn": "Monk",
+    "labelLocal": "ဘုန်းကြီး",
+    "aliases": [
+      "monk",
+      "승려",
+      "ဘုန်းကြီး"
+    ],
+    "termType": "religious_person",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "mmr-buddhism-sacred"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "cashback character",
+      "joke"
+    ],
+    "safeContexts": [
+      "종교 행사"
+    ],
+    "sourceRefs": [
+      "myanmar_coup_overview"
+    ]
+  },
+  {
+    "id": "chn-term-national-day",
+    "countryId": "china",
+    "labelKo": "국경절",
+    "labelEn": "National Day",
+    "labelLocal": "国庆节",
+    "aliases": [
+      "国庆节",
+      "National Day",
+      "국경절",
+      "10/1"
+    ],
+    "termType": "national_day",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "chn-prc-national-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "political joke",
+      "map mistake"
+    ],
+    "safeContexts": [
+      "공식 축하",
+      "여행/휴일 안내"
+    ],
+    "sourceRefs": [
+      "china_national_day"
+    ]
+  },
+  {
+    "id": "chn-term-golden-week",
+    "countryId": "china",
+    "labelKo": "황금연휴",
+    "labelEn": "Golden Week",
+    "labelLocal": "黄金周",
+    "aliases": [
+      "Golden Week",
+      "黄金周",
+      "황금연휴"
+    ],
+    "termType": "holiday_travel",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "chn-prc-national-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "political mockery"
+    ],
+    "safeContexts": [
+      "여행/환전/송금 안내"
+    ],
+    "sourceRefs": [
+      "china_national_day"
+    ]
+  },
+  {
+    "id": "chn-term-taiwan",
+    "countryId": "china",
+    "labelKo": "대만",
+    "labelEn": "Taiwan",
+    "labelLocal": "台湾",
+    "aliases": [
+      "Taiwan",
+      "台湾",
+      "대만",
+      "ROC"
+    ],
+    "termType": "sovereignty_sensitive_entity",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "chn-taiwan-sovereignty"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "country_list_error",
+      "flag_error",
+      "independence slogan"
+    ],
+    "safeContexts": [
+      "정확한 프로토콜",
+      "지역 표기 검토"
+    ],
+    "sourceRefs": [
+      "china_taiwan_flag_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-chinese-taipei",
+    "countryId": "china",
+    "labelKo": "차이니즈 타이베이",
+    "labelEn": "Chinese Taipei",
+    "labelLocal": "中国台北",
+    "aliases": [
+      "Chinese Taipei",
+      "中国台北",
+      "차이니즈 타이베이"
+    ],
+    "termType": "protocol_name",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "chn-taiwan-sovereignty"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "wrong flag",
+      "country categorization"
+    ],
+    "safeContexts": [
+      "스포츠/프로토콜 설명"
+    ],
+    "sourceRefs": [
+      "china_taiwan_flag_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-double-ten",
+    "countryId": "china",
+    "labelKo": "쌍십절",
+    "labelEn": "Double Ten Day",
+    "labelLocal": "双十节",
+    "aliases": [
+      "Double Ten",
+      "双十节",
+      "10/10",
+      "쌍십절"
+    ],
+    "termType": "taiwan_national_day",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "chn-taiwan-sovereignty"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "PRC campaign",
+      "map/flag"
+    ],
+    "safeContexts": [
+      "대만 고객 안내에서 정확한 검토"
+    ],
+    "sourceRefs": [
+      "china_taiwan_flag_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-hong-kong",
+    "countryId": "china",
+    "labelKo": "홍콩",
+    "labelEn": "Hong Kong",
+    "labelLocal": "香港",
+    "aliases": [
+      "Hong Kong",
+      "香港",
+      "홍콩"
+    ],
+    "termType": "autonomy_political_sensitivity",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "chn-hk-tibet-xinjiang"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "independence slogan",
+      "protest image"
+    ],
+    "safeContexts": [
+      "금융센터 안내",
+      "지역명"
+    ],
+    "sourceRefs": [
+      "china_tibet_xinjiang_hk_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-tibet",
+    "countryId": "china",
+    "labelKo": "티베트",
+    "labelEn": "Tibet",
+    "labelLocal": "西藏",
+    "aliases": [
+      "Tibet",
+      "西藏",
+      "티베트"
+    ],
+    "termType": "ethnic_religious_political_sensitivity",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "chn-hk-tibet-xinjiang"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "independence slogan",
+      "flag"
+    ],
+    "safeContexts": [
+      "역사/문화 설명"
+    ],
+    "sourceRefs": [
+      "china_tibet_xinjiang_hk_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-xinjiang",
+    "countryId": "china",
+    "labelKo": "신장·위구르",
+    "labelEn": "Xinjiang / Uyghur",
+    "labelLocal": "新疆 / 维吾尔",
+    "aliases": [
+      "Xinjiang",
+      "新疆",
+      "Uyghur",
+      "위구르",
+      "신장"
+    ],
+    "termType": "ethnic_religious_political_sensitivity",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "chn-hk-tibet-xinjiang"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "stereotype",
+      "joke",
+      "forced labor"
+    ],
+    "safeContexts": [
+      "인권/지역 설명"
+    ],
+    "sourceRefs": [
+      "china_tibet_xinjiang_hk_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-tiananmen",
+    "countryId": "china",
+    "labelKo": "천안문",
+    "labelEn": "Tiananmen",
+    "labelLocal": "天安门",
+    "aliases": [
+      "Tiananmen",
+      "天安门",
+      "천안문"
+    ],
+    "termType": "political_memory_site",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "chn-tiananmen-june4",
+      "chn-prc-national-day"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "rate square",
+      "promo",
+      "tank"
+    ],
+    "safeContexts": [
+      "역사/관광 안내"
+    ],
+    "sourceRefs": [
+      "china_national_day"
+    ]
+  },
+  {
+    "id": "chn-term-june-fourth",
+    "countryId": "china",
+    "labelKo": "6·4",
+    "labelEn": "June Fourth",
+    "labelLocal": "六四",
+    "aliases": [
+      "June Fourth",
+      "六四",
+      "6/4",
+      "6·4"
+    ],
+    "termType": "political_memory_date",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "chn-tiananmen-june4"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "coupon code",
+      "promo"
+    ],
+    "safeContexts": [
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "china_tibet_xinjiang_hk_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-tank-man",
+    "countryId": "china",
+    "labelKo": "탱크맨",
+    "labelEn": "Tank Man",
+    "labelLocal": "坦克人",
+    "aliases": [
+      "Tank Man",
+      "탱크맨",
+      "坦克人"
+    ],
+    "termType": "political_memory_symbol",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "chn-tiananmen-june4"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "card benefit",
+      "loan tank"
+    ],
+    "safeContexts": [
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "china_tibet_xinjiang_hk_reuters"
+    ]
+  },
+  {
+    "id": "chn-term-spring-festival",
+    "countryId": "china",
+    "labelKo": "춘절",
+    "labelEn": "Spring Festival",
+    "labelLocal": "春节",
+    "aliases": [
+      "春节",
+      "Spring Festival",
+      "Chinese New Year",
+      "춘절"
+    ],
+    "termType": "family_holiday",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "chn-lunar-new-year"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "debt joke",
+      "gambling"
+    ],
+    "safeContexts": [
+      "명절 혜택",
+      "송금 안내"
+    ],
+    "sourceRefs": [
+      "china_national_day"
+    ]
+  },
+  {
+    "id": "chn-term-red-envelope",
+    "countryId": "china",
+    "labelKo": "홍바오",
+    "labelEn": "Red envelope",
+    "labelLocal": "红包",
+    "aliases": [
+      "红包",
+      "red envelope",
+      "홍바오"
+    ],
+    "termType": "holiday_money_symbol",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "chn-lunar-new-year"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "gambling",
+      "debt trap"
+    ],
+    "safeContexts": [
+      "명절 송금/캐시백"
+    ],
+    "sourceRefs": [
+      "china_national_day"
+    ]
+  },
+  {
+    "id": "tha-term-king",
+    "countryId": "thailand",
+    "labelKo": "국왕·왕실",
+    "labelEn": "King / Royal family",
+    "labelLocal": "พระมหากษัตริย์",
+    "aliases": [
+      "King",
+      "Royal",
+      "국왕",
+      "왕실",
+      "พระมหากษัตริย์"
+    ],
+    "termType": "monarchy",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "tha-monarchy-article112",
+      "tha-royal-days"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "loan king",
+      "royal cashback",
+      "joke",
+      "cartoon"
+    ],
+    "safeContexts": [
+      "공식 존중",
+      "공휴일 안내"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_reuters"
+    ]
+  },
+  {
+    "id": "tha-term-article112",
+    "countryId": "thailand",
+    "labelKo": "왕실모독법 112조",
+    "labelEn": "Article 112 / lèse-majesté",
+    "labelLocal": "มาตรา 112",
+    "aliases": [
+      "Article 112",
+      "มาตรา 112",
+      "lese majeste",
+      "왕실모독"
+    ],
+    "termType": "legal_political_sensitivity",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "tha-monarchy-article112"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "promo code 112",
+      "joke"
+    ],
+    "safeContexts": [
+      "법률 설명",
+      "뉴스"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_reuters"
+    ]
+  },
+  {
+    "id": "tha-term-royal",
+    "countryId": "thailand",
+    "labelKo": "로열·왕실 표현",
+    "labelEn": "Royal",
+    "labelLocal": "ราช",
+    "aliases": [
+      "Royal",
+      "ราช",
+      "로열",
+      "왕실"
+    ],
+    "termType": "monarchy_reference",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "tha-monarchy-article112"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "discount name",
+      "mascot"
+    ],
+    "safeContexts": [
+      "공식/고급 브랜드명 검토 필요"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-term-buddha",
+    "countryId": "thailand",
+    "labelKo": "부처·불상",
+    "labelEn": "Buddha",
+    "labelLocal": "พระพุทธเจ้า",
+    "aliases": [
+      "Buddha",
+      "불상",
+      "부처",
+      "พระพุทธเจ้า"
+    ],
+    "termType": "religious_sacred",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "tha-buddhism-sacred"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "cashback mascot",
+      "joke",
+      "loan"
+    ],
+    "safeContexts": [
+      "문화/종교 설명"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-term-monk",
+    "countryId": "thailand",
+    "labelKo": "승려",
+    "labelEn": "Monk",
+    "labelLocal": "พระสงฆ์",
+    "aliases": [
+      "monk",
+      "승려",
+      "พระสงฆ์"
+    ],
+    "termType": "religious_person",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "tha-buddhism-sacred"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "card mascot",
+      "discount"
+    ],
+    "safeContexts": [
+      "종교/문화 안내"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-term-temple",
+    "countryId": "thailand",
+    "labelKo": "사원",
+    "labelEn": "Temple / Wat",
+    "labelLocal": "วัด",
+    "aliases": [
+      "wat",
+      "temple",
+      "사원",
+      "วัด"
+    ],
+    "termType": "religious_place",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "tha-buddhism-sacred"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "promo set",
+      "coupon"
+    ],
+    "safeContexts": [
+      "관광/문화 안내"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-term-songkran",
+    "countryId": "thailand",
+    "labelKo": "송끄란",
+    "labelEn": "Songkran",
+    "labelLocal": "สงกรานต์",
+    "aliases": [
+      "Songkran",
+      "송끄란",
+      "สงกรานต์"
+    ],
+    "termType": "new_year_holiday",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "tha-songkran"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "drunk joke",
+      "accident metaphor"
+    ],
+    "safeContexts": [
+      "명절 송금/카드 안내"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-term-water",
+    "countryId": "thailand",
+    "labelKo": "물·물총",
+    "labelEn": "Water",
+    "labelLocal": "น้ำ",
+    "aliases": [
+      "water",
+      "water gun",
+      "물총",
+      "น้ำ"
+    ],
+    "termType": "holiday_water_symbol",
+    "sensitivityLevel": "info",
+    "associatedEventIds": [
+      "tha-songkran"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "drowning",
+      "disaster"
+    ],
+    "safeContexts": [
+      "송끄란 프로모션"
+    ],
+    "sourceRefs": [
+      "thailand_lese_majeste_guardian"
+    ]
+  },
+  {
+    "id": "tha-term-coup",
+    "countryId": "thailand",
+    "labelKo": "쿠데타",
+    "labelEn": "Coup",
+    "labelLocal": "รัฐประหาร",
+    "aliases": [
+      "coup",
+      "รัฐประหาร",
+      "쿠데타"
+    ],
+    "termType": "military_coup",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "tha-2014-coup-2020-protest"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "loan coup",
+      "rate coup"
+    ],
+    "safeContexts": [
+      "뉴스/역사 설명"
+    ],
+    "sourceRefs": [
+      "three_finger_salute"
+    ]
+  },
+  {
+    "id": "tha-term-three-finger",
+    "countryId": "thailand",
+    "labelKo": "세 손가락 경례",
+    "labelEn": "Three-finger salute",
+    "labelLocal": "ชูสามนิ้ว",
+    "aliases": [
+      "three-finger salute",
+      "ชูสามนิ้ว",
+      "세 손가락"
+    ],
+    "termType": "protest_symbol",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "tha-2014-coup-2020-protest"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "card pose",
+      "promo"
+    ],
+    "safeContexts": [
+      "정치 보도"
+    ],
+    "sourceRefs": [
+      "three_finger_salute"
+    ]
+  },
+  {
+    "id": "tha-term-red-yellow",
+    "countryId": "thailand",
+    "labelKo": "레드셔츠·옐로셔츠",
+    "labelEn": "Red/Yellow political colors",
+    "labelLocal": "เสื้อแดง/เสื้อเหลือง",
+    "aliases": [
+      "red shirts",
+      "yellow shirts",
+      "레드셔츠",
+      "옐로셔츠"
+    ],
+    "termType": "political_color_identity",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "tha-2014-coup-2020-protest"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "campaign targeting"
+    ],
+    "safeContexts": [
+      "정치 설명"
+    ],
+    "sourceRefs": [
+      "three_finger_salute"
+    ]
+  },
+  {
+    "id": "term-sink",
+    "countryId": "south_korea",
+    "labelKo": "침몰",
+    "labelEn": "sink",
+    "labelLocal": "침몰",
+    "aliases": [
+      "침몰",
+      "가라앉다",
+      "가라앉는",
+      "sink",
+      "sinking"
+    ],
+    "termType": "event_mechanism",
+    "riskDomain": [
+      "disaster",
+      "sinking"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "sewol-0416",
+      "cheonan-0326"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "금리",
+      "수익률",
+      "대출",
+      "예금",
+      "혜택",
+      "특가",
+      "이벤트"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도",
+      "선박보험 약관",
+      "안전 교육"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-yellow-ribbon",
+    "countryId": "south_korea",
+    "labelKo": "노란 리본",
+    "labelEn": "yellow ribbon",
+    "labelLocal": "노란 리본",
+    "aliases": [
+      "노란 리본",
+      "yellow ribbon"
+    ],
+    "termType": "memorial_symbol",
+    "riskDomain": [
+      "memorial"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "sewol-0416"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "쿠폰",
+      "할인",
+      "증정",
+      "포인트"
+    ],
+    "safeContexts": [
+      "추모",
+      "기부",
+      "공익 캠페인"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-rescue",
+    "countryId": "south_korea",
+    "labelKo": "구조",
+    "labelEn": "rescue",
+    "labelLocal": "구조",
+    "aliases": [
+      "구조",
+      "구명",
+      "구명조끼",
+      "rescue"
+    ],
+    "termType": "disaster_response",
+    "riskDomain": [
+      "disaster"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "sewol-0416"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "혜택 구조",
+      "금리 구조",
+      "구조 이벤트"
+    ],
+    "safeContexts": [
+      "보험 보장 구조",
+      "상품 구조 설명",
+      "재난 안전 교육"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-crowd-crush",
+    "countryId": "south_korea",
+    "labelKo": "압사",
+    "labelEn": "crowd crush",
+    "labelLocal": "압사",
+    "aliases": [
+      "압사",
+      "깔림",
+      "밀집",
+      "crowd crush",
+      "crush"
+    ],
+    "termType": "event_mechanism",
+    "riskDomain": [
+      "crowd_disaster"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "itaewon-1029"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "수수료",
+      "혜택",
+      "고객 몰림",
+      "이벤트"
+    ],
+    "safeContexts": [
+      "보도",
+      "재난 안전 교육"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-alley",
+    "countryId": "south_korea",
+    "labelKo": "골목",
+    "labelEn": "골목",
+    "labelLocal": "골목",
+    "aliases": [
+      "골목",
+      "좁은 골목",
+      "이태원 골목"
+    ],
+    "termType": "event_location_symbol",
+    "riskDomain": [
+      "crowd_disaster"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "itaewon-1029"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "할로윈 이벤트",
+      "고객 몰림"
+    ],
+    "safeContexts": [
+      "지역 안내",
+      "상권 소개"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-halloween",
+    "countryId": "south_korea",
+    "labelKo": "할로윈",
+    "labelEn": "Halloween",
+    "labelLocal": "할로윈",
+    "aliases": [
+      "할로윈",
+      "Halloween"
+    ],
+    "termType": "seasonal_context",
+    "riskDomain": [
+      "crowd_disaster"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "itaewon-1029"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "10-29",
+      "이태원",
+      "인파 몰림"
+    ],
+    "safeContexts": [
+      "일반 시즌 이벤트, 단 민감 날짜 회피"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-tank",
+    "countryId": "south_korea",
+    "labelKo": "탱크",
+    "labelEn": "tank",
+    "labelLocal": "탱크",
+    "aliases": [
+      "탱크",
+      "전차",
+      "장갑차",
+      "tank",
+      "armored vehicle"
+    ],
+    "termType": "military_violence_symbol",
+    "riskDomain": [
+      "state_violence",
+      "military"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "gwangju-518"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "카드",
+      "혜택",
+      "이벤트",
+      "5월 18일"
+    ],
+    "safeContexts": [
+      "수조",
+      "물탱크",
+      "저장탱크",
+      "tank top 의류"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-martial-law",
+    "countryId": "south_korea",
+    "labelKo": "계엄",
+    "labelEn": "martial law",
+    "labelLocal": "계엄",
+    "aliases": [
+      "계엄",
+      "계엄군",
+      "martial law"
+    ],
+    "termType": "state_violence_context",
+    "riskDomain": [
+      "state_violence"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "gwangju-518"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "마감 압박",
+      "이벤트",
+      "진압"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-suppression",
+    "countryId": "south_korea",
+    "labelKo": "진압",
+    "labelEn": "suppress",
+    "labelLocal": "진압",
+    "aliases": [
+      "진압",
+      "토벌",
+      "suppress",
+      "crackdown"
+    ],
+    "termType": "state_violence_expression",
+    "riskDomain": [
+      "state_violence"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "gwangju-518",
+      "jeju-43"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "금리 진압",
+      "수수료 진압",
+      "혜택 토벌"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-tak",
+    "countryId": "south_korea",
+    "labelKo": "탁",
+    "labelEn": "탁",
+    "labelLocal": "탁",
+    "aliases": [
+      "탁",
+      "탁 치니",
+      "탁 치면",
+      "억"
+    ],
+    "termType": "state_violence_meme_signal",
+    "riskDomain": [
+      "state_violence",
+      "torture"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "park-jongchul-0114",
+      "gwangju-518"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "혜택",
+      "금리",
+      "이벤트",
+      "소리"
+    ],
+    "safeContexts": [
+      "역사 교육",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-torture",
+    "countryId": "south_korea",
+    "labelKo": "고문",
+    "labelEn": "torture",
+    "labelLocal": "고문",
+    "aliases": [
+      "고문",
+      "물고문",
+      "torture"
+    ],
+    "termType": "state_violence_expression",
+    "riskDomain": [
+      "state_violence"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "park-jongchul-0114"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "금리 고문",
+      "수수료 고문"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-massacre",
+    "countryId": "south_korea",
+    "labelKo": "학살",
+    "labelEn": "massacre",
+    "labelLocal": "학살",
+    "aliases": [
+      "학살",
+      "massacre"
+    ],
+    "termType": "mass_violence_expression",
+    "riskDomain": [
+      "state_violence"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "jeju-43"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "수수료 학살",
+      "금리 학살"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-redbaiting",
+    "countryId": "south_korea",
+    "labelKo": "빨갱이",
+    "labelEn": "red commie",
+    "labelLocal": "빨갱이",
+    "aliases": [
+      "빨갱이",
+      "red commie"
+    ],
+    "termType": "ideological_slur",
+    "riskDomain": [
+      "political_derogation",
+      "regional_trauma"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "jeju-43"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "고객군 라벨링",
+      "지역 조롱"
+    ],
+    "safeContexts": [
+      "혐오표현 분석",
+      "역사 설명"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-collapse",
+    "countryId": "south_korea",
+    "labelKo": "붕괴",
+    "labelEn": "collapse",
+    "labelLocal": "붕괴",
+    "aliases": [
+      "붕괴",
+      "무너짐",
+      "collapse",
+      "crash"
+    ],
+    "termType": "disaster_mechanism",
+    "riskDomain": [
+      "collapse_disaster"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "sampoong-0629"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "수수료",
+      "금리",
+      "혜택",
+      "6월 29일"
+    ],
+    "safeContexts": [
+      "시장 리스크 리포트",
+      "건축 안전",
+      "금융시장 분석"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-fire",
+    "countryId": "south_korea",
+    "labelKo": "화재",
+    "labelEn": "fire",
+    "labelLocal": "화재",
+    "aliases": [
+      "화재",
+      "불",
+      "fire"
+    ],
+    "termType": "disaster_mechanism",
+    "riskDomain": [
+      "fire_disaster"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "daegu-subway-0218"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "불타는 혜택",
+      "수수료 소각",
+      "2월 18일"
+    ],
+    "safeContexts": [
+      "화재보험",
+      "안전 안내",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-burn",
+    "countryId": "south_korea",
+    "labelKo": "소각",
+    "labelEn": "burn",
+    "labelLocal": "소각",
+    "aliases": [
+      "소각",
+      "태우다",
+      "불태우다",
+      "burn"
+    ],
+    "termType": "fire_metaphor",
+    "riskDomain": [
+      "fire_disaster"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "daegu-subway-0218"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "수수료",
+      "이자",
+      "혜택"
+    ],
+    "safeContexts": [
+      "비용 절감 은유, 단 참사 날짜 회피"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-torpedo",
+    "countryId": "south_korea",
+    "labelKo": "어뢰",
+    "labelEn": "torpedo",
+    "labelLocal": "어뢰",
+    "aliases": [
+      "어뢰",
+      "torpedo"
+    ],
+    "termType": "military_attack_symbol",
+    "riskDomain": [
+      "military_sacrifice"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "cheonan-0326"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "금리 어뢰",
+      "혜택 어뢰",
+      "3월 26일"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-bombardment",
+    "countryId": "south_korea",
+    "labelKo": "폭격·폭침",
+    "labelEn": "bombardment",
+    "labelLocal": "폭격·폭침",
+    "aliases": [
+      "폭격",
+      "폭침",
+      "포격",
+      "bombardment",
+      "shelling"
+    ],
+    "termType": "military_attack_expression",
+    "riskDomain": [
+      "military_sacrifice"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "cheonan-0326",
+      "yeonpyeong-1123"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "혜택 폭격",
+      "수수료 폭침",
+      "포인트 포탄"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-shelling",
+    "countryId": "south_korea",
+    "labelKo": "포격",
+    "labelEn": "shelling",
+    "labelLocal": "포격",
+    "aliases": [
+      "포격",
+      "포탄",
+      "shelling"
+    ],
+    "termType": "military_attack_expression",
+    "riskDomain": [
+      "military_sacrifice"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "yeonpyeong-1123"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "혜택 포격",
+      "쿠폰 포탄"
+    ],
+    "safeContexts": [
+      "역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-military-sacrifice",
+    "countryId": "south_korea",
+    "labelKo": "군 희생",
+    "labelEn": "군 희생",
+    "labelLocal": "군 희생",
+    "aliases": [
+      "전사",
+      "순국",
+      "호국",
+      "46용사",
+      "참전용사"
+    ],
+    "termType": "military_memorial_expression",
+    "riskDomain": [
+      "military_sacrifice"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "cheonan-0326",
+      "yeonpyeong-1123",
+      "memorial-day-0606",
+      "korean-war-0625"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "특가",
+      "대출 이벤트",
+      "혜택"
+    ],
+    "safeContexts": [
+      "보훈",
+      "추모",
+      "기부",
+      "공식 공익 캠페인"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-war",
+    "countryId": "south_korea",
+    "labelKo": "전쟁",
+    "labelEn": "war",
+    "labelLocal": "전쟁",
+    "aliases": [
+      "전쟁",
+      "전투",
+      "총공세",
+      "war"
+    ],
+    "termType": "war_expression",
+    "riskDomain": [
+      "war",
+      "political_polarization"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "korean-war-0625"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "전쟁급 혜택",
+      "금리 전쟁",
+      "6월 25일"
+    ],
+    "safeContexts": [
+      "금융시장 경쟁 보도, 단 과격 표현 완화 권장"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-refuge",
+    "countryId": "south_korea",
+    "labelKo": "피난",
+    "labelEn": "refuge",
+    "labelLocal": "피난",
+    "aliases": [
+      "피난",
+      "피난처",
+      "refuge"
+    ],
+    "termType": "war_displacement_expression",
+    "riskDomain": [
+      "war"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "korean-war-0625"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "대출 피난처",
+      "금리 피난"
+    ],
+    "safeContexts": [
+      "재난 대비 금융 안내"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-independence",
+    "countryId": "south_korea",
+    "labelKo": "독립·만세",
+    "labelEn": "liberation",
+    "labelLocal": "독립·만세",
+    "aliases": [
+      "독립",
+      "만세",
+      "해방",
+      "광복",
+      "liberation",
+      "independence"
+    ],
+    "termType": "national_memorial_expression",
+    "riskDomain": [
+      "anti_colonial"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "march-first-0301",
+      "liberation-0815"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "빚 해방",
+      "독립 특가",
+      "만세 금리"
+    ],
+    "safeContexts": [
+      "공익 캠페인",
+      "역사 교육",
+      "공식 기념 메시지"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-rising-sun",
+    "countryId": "south_korea",
+    "labelKo": "욱일기",
+    "labelEn": "rising sun flag",
+    "labelLocal": "욱일기",
+    "aliases": [
+      "욱일기",
+      "rising sun flag",
+      "방사형 붉은 태양"
+    ],
+    "termType": "colonial_sensitive_symbol",
+    "riskDomain": [
+      "anti_colonial",
+      "imperialism"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "march-first-0301",
+      "liberation-0815"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "카드 디자인",
+      "앱 배너",
+      "이벤트 이미지"
+    ],
+    "safeContexts": [
+      "비판·역사 설명",
+      "보도"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-comfort-women",
+    "countryId": "south_korea",
+    "labelKo": "위안부 피해자",
+    "labelEn": "comfort women",
+    "labelLocal": "위안부 피해자",
+    "aliases": [
+      "위안부",
+      "일본군 위안부",
+      "피해자",
+      "comfort women"
+    ],
+    "termType": "human_rights_victim_context",
+    "riskDomain": [
+      "colonial_history",
+      "human_rights"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "comfort-women-0814",
+      "liberation-0815"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "카드 디자인",
+      "쿠폰",
+      "할인",
+      "이벤트"
+    ],
+    "safeContexts": [
+      "기부",
+      "추모",
+      "역사 교육",
+      "공식 안내"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-statue-of-peace",
+    "countryId": "south_korea",
+    "labelKo": "평화의 소녀상",
+    "labelEn": "Statue of Peace",
+    "labelLocal": "평화의 소녀상",
+    "aliases": [
+      "소녀상",
+      "평화의 소녀상",
+      "Statue of Peace"
+    ],
+    "termType": "human_rights_memorial_symbol",
+    "riskDomain": [
+      "colonial_history",
+      "human_rights"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "comfort-women-0814"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "프로모션 이미지",
+      "카드 굿즈",
+      "할인"
+    ],
+    "safeContexts": [
+      "기부",
+      "추모",
+      "역사 교육"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-national-flag",
+    "countryId": "south_korea",
+    "labelKo": "태극기",
+    "labelEn": "Korean flag",
+    "labelLocal": "태극기",
+    "aliases": [
+      "태극기",
+      "국기",
+      "Korean flag"
+    ],
+    "termType": "national_symbol",
+    "riskDomain": [
+      "national_identity"
+    ],
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [
+      "march-first-0301",
+      "liberation-0815"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "훼손",
+      "조롱",
+      "과도한 상업화"
+    ],
+    "safeContexts": [
+      "공식 기념",
+      "공익 메시지"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "term-disaster-victim-slang",
+    "countryId": "south_korea",
+    "labelKo": "참사 피해자 비하 은어",
+    "labelEn": "참사 피해자 비하 은어",
+    "labelLocal": "참사 피해자 비하 은어",
+    "aliases": [
+      "어묵"
+    ],
+    "termType": "victim_derogatory_slang",
+    "riskDomain": [
+      "disaster_victim_derogation"
+    ],
+    "sensitivityLevel": "high",
+    "associatedEventIds": [
+      "sewol-0416"
+    ],
+    "unsafeWhenUsedAsMetaphor": false,
+    "unsafeContexts": [
+      "금융 광고 전반"
+    ],
+    "safeContexts": [
+      "음식 메뉴 맥락, 단 세월호·4.16·추모 문맥과 결합 시 보류"
+    ],
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-hongeo",
+    "countryId": "south_korea",
+    "labelKo": "홍어",
+    "labelEn": "regional_derogation",
+    "labelLocal": "홍어",
+    "aliases": [
+      "홍어"
+    ],
+    "termType": "regional_derogation",
+    "category": "regional_derogation",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "Jeolla",
+      "Honam",
+      "Gwangju"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "used_with_financial_promo_terms",
+      "used_as_person_or_region_label",
+      "used_with_mocking_tone",
+      "used_outside_food_context"
+    ],
+    "safeContexts": [
+      "음식",
+      "홍어회",
+      "홍어삼합",
+      "식당",
+      "전남 특산물",
+      "로컬 맛집"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-jeolla-variant",
+    "countryId": "south_korea",
+    "labelKo": "전라디언",
+    "labelEn": "regional_derogation",
+    "labelLocal": "전라디언",
+    "aliases": [
+      "전라디언",
+      "라도"
+    ],
+    "termType": "regional_derogation",
+    "category": "regional_derogation",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "Jeolla",
+      "Honam"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "appears_in_marketing_copy",
+      "used_with_financial_promo_terms",
+      "used_with_mocking_tone"
+    ],
+    "safeContexts": [
+      "혐오표현 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "meme-unji",
+    "countryId": "south_korea",
+    "labelKo": "운지",
+    "labelEn": "deceased_public_figure_mockery",
+    "labelLocal": "운지",
+    "aliases": [
+      "운지"
+    ],
+    "termType": "deceased_public_figure_mockery",
+    "category": "deceased_public_figure_mockery",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "deceased_public_figure",
+      "political_group"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "used_with_financial_fall_metaphor",
+      "used_with_promo_terms",
+      "used_with_deceased_person_visual"
+    ],
+    "safeContexts": [
+      "비하 표현 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "meme-noala",
+    "countryId": "south_korea",
+    "labelKo": "노알라",
+    "labelEn": "deceased_public_figure_mockery",
+    "labelLocal": "노알라",
+    "aliases": [
+      "노알라",
+      "MC무현"
+    ],
+    "termType": "deceased_public_figure_mockery",
+    "category": "deceased_public_figure_mockery",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "deceased_public_figure",
+      "political_group"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "appears_in_marketing_copy",
+      "used_as_image_or_character",
+      "used_with_financial_promo_terms"
+    ],
+    "safeContexts": [
+      "비하 표현 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "meme-no-ending-ambiguous",
+    "countryId": "south_korea",
+    "labelKo": "~노",
+    "labelEn": "ambiguous_dialect_or_political_meme",
+    "labelLocal": "~노",
+    "aliases": [
+      "~노",
+      "노?"
+    ],
+    "termType": "ambiguous_dialect_or_political_meme",
+    "category": "ambiguous_dialect_or_political_meme",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "political_group"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "combined_with_known_deceased_public_figure_meme",
+      "combined_with_ilbe_style_terms",
+      "used_with_mocking_visuals"
+    ],
+    "safeContexts": [
+      "지역 방언",
+      "일반 대화체",
+      "고인·정치 밈과 무관"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-momchung",
+    "countryId": "south_korea",
+    "labelKo": "맘충",
+    "labelEn": "gender_parenting_derogation",
+    "labelLocal": "맘충",
+    "aliases": [
+      "맘충"
+    ],
+    "termType": "gender_parenting_derogation",
+    "category": "gender_parenting_derogation",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "mothers",
+      "parents"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "used_in_family_finance_ads",
+      "used_in_education_savings_ads",
+      "used_with_mocking_tone"
+    ],
+    "safeContexts": [
+      "혐오표현 분석"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-ttuldak",
+    "countryId": "south_korea",
+    "labelKo": "틀딱",
+    "labelEn": "age_derogation",
+    "labelLocal": "틀딱",
+    "aliases": [
+      "틀딱"
+    ],
+    "termType": "age_derogation",
+    "category": "age_derogation",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "elderly"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "used_in_senior_finance_ads",
+      "used_with_pension_or_retirement_terms",
+      "used_with_mocking_tone"
+    ],
+    "safeContexts": [
+      "혐오표현 분석"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-jammini",
+    "countryId": "south_korea",
+    "labelKo": "잼민이",
+    "labelEn": "youth_derogation",
+    "labelLocal": "잼민이",
+    "aliases": [
+      "잼민이",
+      "급식충"
+    ],
+    "termType": "youth_derogation",
+    "category": "youth_derogation",
+    "sensitivityLevel": "caution",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "children",
+      "teenagers",
+      "students"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "used_in_youth_card_ads",
+      "used_in_education_savings_ads",
+      "used_with_mocking_tone"
+    ],
+    "safeContexts": [
+      "SNS 문화 분석",
+      "내부 검수 데이터"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-ableism",
+    "countryId": "south_korea",
+    "labelKo": "정신병자",
+    "labelEn": "disability_or_mental_health_derogation",
+    "labelLocal": "정신병자",
+    "aliases": [
+      "정신병자",
+      "장애인 비하 표현"
+    ],
+    "termType": "disability_or_mental_health_derogation",
+    "category": "disability_or_mental_health_derogation",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "disabled_people",
+      "mental_health_conditions"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "appears_in_marketing_copy",
+      "used_with_insurance_or_loan_ads",
+      "used_as_metaphor_for_bad_choice"
+    ],
+    "safeContexts": [
+      "보건·보험 약관의 중립적 의학 표현",
+      "혐오표현 분석"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-nationality-cn",
+    "countryId": "south_korea",
+    "labelKo": "짱깨",
+    "labelEn": "nationality_ethnicity_derogation",
+    "labelLocal": "짱깨",
+    "aliases": [
+      "짱깨"
+    ],
+    "termType": "nationality_ethnicity_derogation",
+    "category": "nationality_ethnicity_derogation",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "Chinese_people"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "used_in_foreigner_banking_ads",
+      "used_with_remittance_terms",
+      "appears_in_marketing_copy"
+    ],
+    "safeContexts": [
+      "혐오표현 분석"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  },
+  {
+    "id": "slur-sea-migrant",
+    "countryId": "south_korea",
+    "labelKo": "똥남아",
+    "labelEn": "nationality_ethnicity_derogation",
+    "labelLocal": "똥남아",
+    "aliases": [
+      "똥남아"
+    ],
+    "termType": "nationality_ethnicity_derogation",
+    "category": "nationality_ethnicity_derogation",
+    "sensitivityLevel": "high",
+    "associatedEventIds": [],
+    "targetGroups": [
+      "Southeast_Asian_people",
+      "migrant_workers"
+    ],
+    "unsafeWhenUsedAsMetaphor": true,
+    "unsafeContexts": [
+      "used_in_foreigner_banking_ads",
+      "used_with_remittance_or_salary_account_terms"
+    ],
+    "safeContexts": [
+      "혐오표현 분석"
+    ],
+    "defaultAction": "hold",
+    "sourceRefs": [
+      "korea_social_context_seed"
+    ]
+  }
+]

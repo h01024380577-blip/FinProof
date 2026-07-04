@@ -2,6 +2,7 @@ import { getReviewCaseById } from "@/domain/reviews";
 import type { ReviewCase } from "@/domain/types";
 import type { AnalysisArtifacts } from "./review-analysis-pipeline";
 import { buildAnalysisIssues } from "./issue-generation";
+import { socialContextKgArtifacts } from "./social-context-kg-engine";
 
 describe("issue generation", () => {
   it("projects multilingual context from agent findings to review issues", () => {
@@ -890,6 +891,64 @@ describe("issue generation", () => {
       expect.arrayContaining([
         expect.objectContaining({
           issueType: "ocr_required"
+        })
+      ])
+    );
+  });
+
+  it("keeps social-context KG evidence attached to social_context_risk issues", () => {
+    const review: ReviewCase = {
+      id: "rc-social-kg-issue-001",
+      title: "4.16 단 하루 금리 침몰급 혜택",
+      affiliate: "광주은행",
+      productType: "deposit",
+      channelType: ["poster"],
+      plannedPublishDate: "2026-04-16",
+      status: "analysis_complete",
+      highestRiskLevel: "info",
+      requester: "업로드 요청자",
+      reviewer: "준법심의자",
+      promotionalCopy: "4.16 단 하루, 금리 침몰급 혜택!",
+      disclosure: "조건 충족 시 혜택 제공",
+      productDescription: "자유적금 우대금리 이벤트",
+      missingMaterials: [],
+      files: [],
+      issues: [],
+      expectedDraft: "",
+      currentVersion: 1
+    };
+    const extractedDocuments = [
+      {
+        fileId: "file-social-kg-001",
+        fileName: "poster.txt",
+        text: "4.16 단 하루, 금리 침몰급 혜택!",
+        confidence: 0.96,
+        provider: "fixture"
+      }
+    ];
+    const kg = socialContextKgArtifacts({ review, extractedDocuments });
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-06-02T00:00:00.000Z",
+      extractedDocuments,
+      evidenceCandidates: kg.evidenceCandidates,
+      agentFindings: kg.agentFindings,
+      socialContextKgMatches: kg.matches
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    const socialIssue = issues.find((issue) =>
+      issue.issueType.startsWith("SOCIAL_CONTEXT_KG_DISASTER_DATE_FINANCIAL_METAPHOR")
+    );
+
+    expect(socialIssue).toMatchObject({
+      riskLevel: "high",
+      sourceAgents: ["social_context_risk"]
+    });
+    expect(socialIssue?.evidence).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: expect.stringContaining("사회맥락 KG"),
+          quoteSummary: expect.stringContaining("세월호 참사")
         })
       ])
     );

@@ -1953,18 +1953,24 @@ describe("review analysis pipeline", () => {
 
     const artifacts = await pipeline.run({ review });
 
-    expect(artifacts.agentFindings).toEqual([
-      expect.objectContaining({
-        agent: "social_context_risk",
-        issueType: "social_context_wording",
-        title: "캠페인명의 사회맥락상 표현 점검 필요"
-      }),
-      expect.objectContaining({
-        agent: "main",
-        issueType: "wording",
-        title: "팀장 검토: 사회맥락 표현 완화 권고"
-      })
-    ]);
+    expect(artifacts.agentFindings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          agent: "social_context_risk",
+          issueType: "SOCIAL_CONTEXT_KG_AMBIGUOUS_TERM_REQUIRES_HUMAN_REVIEW"
+        }),
+        expect.objectContaining({
+          agent: "social_context_risk",
+          issueType: "social_context_wording",
+          title: "캠페인명의 사회맥락상 표현 점검 필요"
+        }),
+        expect.objectContaining({
+          agent: "main",
+          issueType: "wording",
+          title: "팀장 검토: 사회맥락 표현 완화 권고"
+        })
+      ])
+    );
     expect(artifacts.findings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

@@ -45,6 +45,8 @@ import {
   type AgentFinding,
   type ReviewSubAgentOrchestrator
 } from "./review-subagents";
+import type { SocialContextRuleMatch } from "@/domain/social-context-kg";
+import { socialContextKgArtifacts } from "./social-context-kg-engine";
 import { execFile } from "node:child_process";
 import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -103,6 +105,7 @@ export type AnalysisArtifacts = {
   localizedRiskFindings?: LocalizedRiskFinding[];
   koreanComplianceMappings?: KoreanComplianceMapping[];
   multilingualAgentErrors?: MultilingualAgentError[];
+  socialContextKgMatches?: SocialContextRuleMatch[];
 };
 
 type OcrExtractInput = {
@@ -2019,16 +2022,27 @@ export function createReviewAnalysisPipeline({
         topK: config.rerank.topK,
         knowledgeMinScore: KNOWLEDGE_SECONDARY_MIN_SCORE
       });
+      const socialContextKgResult = socialContextKgArtifacts({
+        review,
+        extractedDocuments: analysisDocuments
+      });
+      const evidenceCandidatesWithSocialContextKg = [
+        ...evidenceCandidates,
+        ...socialContextKgResult.evidenceCandidates
+      ];
       emit({
         stage: "evidence_select",
         event: "done",
         case: review.id,
-        selected: evidenceCandidates.length,
-        bySourceType: evidenceCandidates.reduce<Record<string, number>>((counts, candidate) => {
-          counts[candidate.sourceType] = (counts[candidate.sourceType] ?? 0) + 1;
-          return counts;
-        }, {}),
-        titles: evidenceCandidates.map((candidate) => candidate.title)
+        selected: evidenceCandidatesWithSocialContextKg.length,
+        bySourceType: evidenceCandidatesWithSocialContextKg.reduce<Record<string, number>>(
+          (counts, candidate) => {
+            counts[candidate.sourceType] = (counts[candidate.sourceType] ?? 0) + 1;
+            return counts;
+          },
+          {}
+        ),
+        titles: evidenceCandidatesWithSocialContextKg.map((candidate) => candidate.title)
       });
       const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =
@@ -2036,7 +2050,7 @@ export function createReviewAnalysisPipeline({
           ? await runMultilingualRiskTeam({
               review,
               segments: multilingualSegments,
-              evidenceCandidates,
+              evidenceCandidates: evidenceCandidatesWithSocialContextKg,
               provider: modelProvider,
               nliClient:
                 process.env.FINPROOF_NLI_ENABLED === "true" && process.env.FINPROOF_NLI_URL
@@ -2049,24 +2063,25 @@ export function createReviewAnalysisPipeline({
               agentFindings: [],
               errors: []
             };
+      const priorAgentFindings = combineAgentFindings(
+        multilingualResult.agentFindings,
+        socialContextKgResult.agentFindings
+      );
       emit({
         stage: "orchestrate",
         event: "start",
         case: review.id,
-        evidence: evidenceCandidates.length,
-        priorFindings: multilingualResult.agentFindings.length
+        evidence: evidenceCandidatesWithSocialContextKg.length,
+        priorFindings: priorAgentFindings.length
       });
       const orchestratedFindings = await subAgentOrchestrator.run({
         review,
         extractedDocuments: analysisDocuments,
-        evidenceCandidates,
-        priorFindings: multilingualResult.agentFindings,
+        evidenceCandidates: evidenceCandidatesWithSocialContextKg,
+        priorFindings: priorAgentFindings,
         onEvent
       });
-      const agentFindings = combineAgentFindings(
-        multilingualResult.agentFindings,
-        orchestratedFindings
-      );
+      const agentFindings = combineAgentFindings(priorAgentFindings, orchestratedFindings);
       emit({
         stage: "combine",
         event: "done",
@@ -2077,7 +2092,7 @@ export function createReviewAnalysisPipeline({
       const coveVerification = await runCoveEvidenceVerification({
         review,
         extractedDocuments: analysisDocuments,
-        evidenceCandidates,
+        evidenceCandidates: evidenceCandidatesWithSocialContextKg,
         agentFindings,
         modelProvider,
         now
@@ -2087,7 +2102,7 @@ export function createReviewAnalysisPipeline({
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,
         ...(extractionDiagnostics.length > 0 ? { extractionDiagnostics } : {}),
-        evidenceCandidates,
+        evidenceCandidates: evidenceCandidatesWithSocialContextKg,
         ...(verifiedAgentFindings.length > 0 ? { agentFindings: verifiedAgentFindings } : {}),
         ...(agentFindings.length > 0 ? { draftAgentFindings: agentFindings } : {}),
         coveVerification: coveVerification.artifacts,
@@ -2100,6 +2115,9 @@ export function createReviewAnalysisPipeline({
           : {}),
         ...(multilingualResult.errors.length > 0
           ? { multilingualAgentErrors: multilingualResult.errors }
+          : {}),
+        ...(socialContextKgResult.matches.length > 0
+          ? { socialContextKgMatches: socialContextKgResult.matches }
           : {})
       };
       const findings = buildAnalysisIssues(review, artifacts, {

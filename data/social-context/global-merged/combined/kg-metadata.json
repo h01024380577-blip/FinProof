@@ -1,0 +1,47 @@
+{
+  "datasetId": "finproof-global-social-context-kg-merged",
+  "title": "FinProof Global Social Context KG Seed Data - Korea + Multicountry Merged",
+  "version": "2026-07-04",
+  "createdAt": "2026-07-04T05:43:02Z",
+  "countries": [
+    "cambodia",
+    "vietnam",
+    "myanmar",
+    "china",
+    "thailand",
+    "south_korea"
+  ],
+  "sourcePackages": [
+    "finproof_korea_social_context_kg_seed_data.zip",
+    "finproof_multicountry_social_context_kg_seed_data.zip"
+  ],
+  "intendedUse": "금융 홍보물의 사회적 맥락 리스크를 사전 탐지하기 위한 내부 compliance/brand safety seed data. 고위험 결과는 자동 반려가 아니라 hold 및 Human-in-the-loop 검토로 연결해야 합니다.",
+  "notIntendedUse": "공개 금지어 사전, 혐오표현 확산, 자동 차별/거절 판단, 법률 자문 대체 용도.",
+  "counts": {
+    "countries": 6,
+    "sensitiveEvents": 37,
+    "sensitiveTerms": 97,
+    "visualSymbols": 51,
+    "financialPromoTerms": 20,
+    "kgEdges": 546,
+    "riskRules": 20,
+    "safeContexts": 22,
+    "priorCases": 10,
+    "testCases": 65
+  },
+  "riskLevels": [
+    "info",
+    "caution",
+    "high"
+  ],
+  "suggestedActions": [
+    "approve",
+    "change_request",
+    "hold"
+  ],
+  "operationPrinciples": [
+    "단일 키워드만으로 high를 만들지 않고, 날짜·상징·금융 홍보 표현·상업성·safe context를 함께 판단합니다.",
+    "high/caution은 기본적으로 hold로 보내고 최종 판단은 reviewer가 수행합니다.",
+    "safe context는 오탐 완화에 사용하되 명시적 고위험 조합을 무조건 무력화하지 않습니다."
+  ]
+}
