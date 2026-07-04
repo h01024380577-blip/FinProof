@@ -16,3 +16,10 @@ export function logAnalysisEvent(payload: Record<string, unknown>): void {
     // ignore logging/serialization failures — observability must not affect the run
   }
 }
+
+/**
+ * A sink that receives each analysis event payload. The default (console-only)
+ * behaviour is `logAnalysisEvent`; the worker/inline paths inject a sink that
+ * additionally persists events to the DB for the reviewer-facing progress popup.
+ */
+export type AnalysisEventSink = (payload: Record<string, unknown>) => void;
