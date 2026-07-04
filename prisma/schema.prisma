@@ -312,6 +312,7 @@ model ReviewCase {
   analysisJobs        AnalysisJob[]
   agentRuns           AgentRun[]
   agentFindings       AgentFinding[]
+  analysisEvents      AnalysisEvent[]
   chatSessions        ChatSession[]
   draftVersions       DraftVersion[]
   reports             ReviewReport[]
@@ -452,6 +453,7 @@ model AnalysisJob {
   reviewCase      ReviewCase        @relation(fields: [reviewCaseId], references: [id], onDelete: Cascade)
   startedBy       User?             @relation(fields: [startedByUserId], references: [id])
   agentRuns       AgentRun[]
+  analysisEvents  AnalysisEvent[]
 
   @@index([tenantId, status, queuedAt])
   @@index([reviewCaseId, queuedAt])
@@ -558,6 +560,23 @@ model AgentRun {
   @@index([reviewCaseId, agentType, status], map: "agent_runs_review_case_agent_type_status_idx")
   @@index([analysisJobId])
   @@map("agent_runs")
+}
+
+model AnalysisEvent {
+  id           String      @id
+  tenantId     String      @map("tenant_id")
+  reviewCaseId String      @map("review_case_id")
+  jobId        String      @map("job_id")
+  seq          Int
+  stage        String
+  event        String
+  payload      Json
+  createdAt    DateTime    @default(now()) @map("created_at")
+  reviewCase   ReviewCase  @relation(fields: [reviewCaseId], references: [id], onDelete: Cascade)
+  analysisJob  AnalysisJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([reviewCaseId, jobId, seq], map: "analysis_events_review_case_job_seq_idx")
+  @@map("analysis_events")
 }
 
 model AgentFinding {

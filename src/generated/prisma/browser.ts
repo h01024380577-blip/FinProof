@@ -83,6 +83,11 @@ export type EvidenceChunk = Prisma.EvidenceChunkModel
  */
 export type AgentRun = Prisma.AgentRunModel
 /**
+ * Model AnalysisEvent
+ * 
+ */
+export type AnalysisEvent = Prisma.AnalysisEventModel
+/**
  * Model AgentFinding
  * 
  */

@@ -64,6 +64,7 @@ export const ModelName = {
   KnowledgeDocument: 'KnowledgeDocument',
   EvidenceChunk: 'EvidenceChunk',
   AgentRun: 'AgentRun',
+  AnalysisEvent: 'AnalysisEvent',
   AgentFinding: 'AgentFinding',
   ChatSession: 'ChatSession',
   ChatMessage: 'ChatMessage',
@@ -356,6 +357,21 @@ export const AgentRunScalarFieldEnum = {
 } as const
 
 export type AgentRunScalarFieldEnum = (typeof AgentRunScalarFieldEnum)[keyof typeof AgentRunScalarFieldEnum]
+
+
+export const AnalysisEventScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  reviewCaseId: 'reviewCaseId',
+  jobId: 'jobId',
+  seq: 'seq',
+  stage: 'stage',
+  event: 'event',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type AnalysisEventScalarFieldEnum = (typeof AnalysisEventScalarFieldEnum)[keyof typeof AnalysisEventScalarFieldEnum]
 
 
 export const AgentFindingScalarFieldEnum = {
