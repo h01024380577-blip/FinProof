@@ -446,6 +446,9 @@ describe("ReviewDetailWorkspace", () => {
     );
     await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
+    // The generate button now opens the issue-selection modal; confirm with all
+    // issues selected by default to trigger the draft request.
+    await user.click(screen.getByRole("button", { name: "선택 이슈로 초안 생성" }));
 
     expect(await screen.findByDisplayValue(/채팅 반영/)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -478,7 +481,8 @@ describe("ReviewDetailWorkspace", () => {
               ],
               requiredMaterials: []
             }
-          ]
+          ],
+          selectedIssueIds: ["issue-deposit-rate", "issue-deposit-anyone", "issue-deposit-visual"]
         })
       })
     );
@@ -727,6 +731,7 @@ describe("ReviewDetailWorkspace", () => {
 
     await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
+    await user.click(screen.getByRole("button", { name: "선택 이슈로 초안 생성" }));
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-deposit-001/draft",
@@ -750,7 +755,8 @@ describe("ReviewDetailWorkspace", () => {
               ],
               requiredMaterials: []
             }
-          ]
+          ],
+          selectedIssueIds: ["issue-deposit-rate", "issue-deposit-anyone", "issue-deposit-visual"]
         })
       })
     );
@@ -803,12 +809,16 @@ describe("ReviewDetailWorkspace", () => {
 
     await openDraftTab(user);
     await user.click(screen.getByRole("button", { name: "초안 생성" }));
+    await user.click(screen.getByRole("button", { name: "선택 이슈로 초안 생성" }));
 
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/v1/review-cases/rc-demo-loan-001/draft",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ chatResponses: [] })
+        body: JSON.stringify({
+          chatResponses: [],
+          selectedIssueIds: ["issue-loan-anyone", "issue-loan-rate", "issue-loan-disclosure"]
+        })
       })
     );
   });

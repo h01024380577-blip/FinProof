@@ -37,6 +37,7 @@ import { IssueDetailTabs, type IssueDetailTabKey } from "./workbench/IssueDetail
 import { WorkbenchDrawer } from "./workbench/WorkbenchDrawer";
 import { CertificateEditor, type CertificateDraft } from "./workbench/CertificateEditor";
 import { ManualIssueForm, type ManualIssueInput } from "./workbench/ManualIssueForm";
+import { IssueSelectionModal } from "./workbench/IssueSelectionModal";
 import { VersionHistoryPanel } from "./workbench/VersionHistoryPanel";
 import styles from "./ReviewDetailWorkspace.module.css";
 
@@ -434,6 +435,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [pendingQuestion, setPendingQuestion] = useState<PendingQuestion | null>(null);
   const [chatProgress, setChatProgress] = useState<ChatProgressEvent | null>(null);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [isIssueSelectOpen, setIsIssueSelectOpen] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSavingDecision, setIsSavingDecision] = useState(false);
@@ -805,7 +807,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     void handleAskQuestion();
   }
 
-  async function generateDraft() {
+  async function generateDraft(selectedIssueIds: string[]) {
     if (!reviewerCanMutate) {
       return;
     }
@@ -819,7 +821,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       const apiResponse = await fetch(`/api/v1/review-cases/${review.id}/draft`, {
         method: "POST",
         headers: jsonHeaders,
-        body: JSON.stringify({ chatResponses: draftChatResponses })
+        body: JSON.stringify({ chatResponses: draftChatResponses, selectedIssueIds })
       });
 
       if (!apiResponse.ok) {
@@ -833,6 +835,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
       if (typeof body.version === "number") {
         setDraftVersion(body.version);
       }
+      setIsIssueSelectOpen(false);
     } catch (error) {
       setInteractionError(
         error instanceof Error ? error.message : "의견 초안 생성 요청을 처리하지 못했습니다."
@@ -1334,7 +1337,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             type="button"
             aria-label="초안 생성"
             disabled={!reviewerCanMutate || isGeneratingDraft}
-            onClick={generateDraft}
+            onClick={() => setIsIssueSelectOpen(true)}
           >
             {isGeneratingDraft ? (
               <LoaderCircle className="action-spinner" size={18} aria-hidden="true" />
@@ -1543,6 +1546,19 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
               }}
               isSubmitting={isSubmittingManualIssue}
               error={manualIssueError}
+            />
+          ) : null}
+
+          {isIssueSelectOpen ? (
+            <IssueSelectionModal
+              issues={allIssues}
+              onConfirm={generateDraft}
+              onClose={() => {
+                if (!isGeneratingDraft) {
+                  setIsIssueSelectOpen(false);
+                }
+              }}
+              isGenerating={isGeneratingDraft}
             />
           ) : null}
 
