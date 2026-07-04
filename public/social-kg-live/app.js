@@ -63,6 +63,8 @@ function api(method, path) {
   });
 }
 
+function hexToRgb(hex) { let h = hex.replace("#", ""); if (h.length === 3) h = h.split("").map((c) => c + c).join(""); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function mix(hex, target, t) { const a = hexToRgb(hex); const b = hexToRgb(target); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",")})`; }
 function hashCode(value) { let hash = 0; for (let i = 0; i < value.length; i += 1) hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0; return Math.abs(hash); }
 function labelFor(node) { return node.labelKo || node.labelLocal || node.labelEn || node.id; }
 function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
@@ -72,7 +74,8 @@ function worldToScreen(x, y) { return { x: x * state.zoom + state.offsetX, y: y 
 function screenToWorld(x, y) { return { x: (x - state.offsetX) / state.zoom, y: (y - state.offsetY) / state.zoom }; }
 
 function initPositions() {
-  for (const node of DATA.nodes) { node.radius = node.type === "Country" ? 17 : node.type === "SensitiveEvent" ? 12 : node.type === "FinancialPromoTerm" ? 10 : node.virtual ? 6 : 8; node.vx = 0; node.vy = 0; }
+  // Obsidian-style: node size scales with connection count (degree), not just type.
+  for (const node of DATA.nodes) { const deg = node.degree || 0; let r = 3 + Math.sqrt(deg) * 1.7; if (node.type === "Country") r = Math.max(r, 13); else if (node.type === "SensitiveEvent") r = Math.max(r, 8); node.radius = Math.min(r, 20); node.vx = 0; node.vy = 0; }
   const countries = countryOrder.filter((country) => DATA.nodes.some((node) => node.countryId === country));
   const ring = Math.max(270, Math.min(560, DATA.nodes.length * 1.35));
   const centers = new Map();
@@ -133,19 +136,14 @@ function draw() {
   applyCam();
   step();
   ctx.clearRect(0, 0, state.width, state.height);
-  drawBackground();
   const edges = visibleEdges();
   const nodes = DATA.nodes.filter((node) => visibleSet.has(node.id));
-  ctx.save(); ctx.globalCompositeOperation = "lighter";
   for (const edge of edges) drawEdge(edge);
-  ctx.restore();
   for (const node of nodes.sort((a, b) => a.radius - b.radius)) drawNode(node);
   for (const node of nodes) if (shouldLabel(node)) drawLabel(node);
   document.getElementById("visibleStats").textContent = `${nodes.length} visible nodes · ${edges.length} visible edges · zoom ${state.zoom.toFixed(2)}x`;
   requestAnimationFrame(draw);
 }
-function drawBackground() { const gradient = ctx.createRadialGradient(state.width * 0.5, state.height * 0.42, 0, state.width * 0.5, state.height * 0.5, Math.max(state.width, state.height)); gradient.addColorStop(0, "rgba(30,41,59,0.18)"); gradient.addColorStop(1, "rgba(2,6,23,0.08)"); ctx.fillStyle = gradient; ctx.fillRect(0, 0, state.width, state.height); }
-
 function edgeLiveState(edge) {
   if (!state.live.on) return "normal";
   if (state.live.edges.has(`${edge.from}|${edge.to}`)) return "spot";
@@ -157,16 +155,15 @@ function drawEdge(edge) {
   const p1 = worldToScreen(a.x, a.y); const p2 = worldToScreen(b.x, b.y);
   const selectedActive = state.selected && (edge.from === state.selected.id || edge.to === state.selected.id);
   const live = edgeLiveState(edge);
-  ctx.beginPath(); ctx.moveTo(p1.x, p1.y);
-  const mx = (p1.x + p2.x) / 2; const my = (p1.y + p2.y) / 2; const dx = p2.x - p1.x; const dy = p2.y - p1.y;
-  ctx.quadraticCurveTo(mx - dy * 0.018, my + dx * 0.018, p2.x, p2.y);
-  ctx.strokeStyle = live === "spot" ? state.live.phaseColor : relationColors[edge.relation] || "#64748b";
-  let alpha = 0.12 + edge.weight * 0.1; let width = 0.7 + edge.weight * 0.45;
-  if (live === "spot") { alpha = 0.9; width = 2.2; }
-  else if (live === "ref") { alpha = 0.4; width = 1.2; }
-  else if (live === "dim") { alpha = 0.04; }
-  else if (selectedActive) { alpha = 0.55; width = 1.8; }
-  ctx.globalAlpha = alpha; ctx.lineWidth = width; ctx.stroke(); ctx.globalAlpha = 1;
+  // Minimal: thin, calm grey lines by default; only the active subgraph brightens.
+  let color = "rgba(148,163,184,1)"; let alpha = 0.13; let width = 0.7;
+  if (live === "spot") { color = state.live.phaseColor; alpha = 0.85; width = 1.9; }
+  else if (live === "ref") { color = "rgba(199,210,254,1)"; alpha = 0.32; width = 1; }
+  else if (live === "dim") { alpha = 0.03; width = 0.6; }
+  else if (selectedActive) { color = "rgba(103,232,249,1)"; alpha = 0.6; width = 1.3; }
+  else if (state.live.on) { alpha = 0.05; }
+  ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+  ctx.strokeStyle = color; ctx.globalAlpha = alpha; ctx.lineWidth = width; ctx.stroke(); ctx.globalAlpha = 1;
 }
 function nodeLiveState(node) {
   if (!state.live.on) return "normal";
@@ -178,29 +175,44 @@ function drawNode(node) {
   const p = worldToScreen(node.x, node.y); const color = typeColors[node.type] || "#94a3b8";
   const selected = state.selected?.id === node.id; const hovered = state.hovered?.id === node.id;
   const live = nodeLiveState(node);
-  const riskBoost = node.sensitivityLevel === "high" ? 1.42 : node.sensitivityLevel === "caution" ? 1.16 : 1;
-  const r = Math.max(3, node.radius * state.zoom * riskBoost);
+  const r = Math.max(1.8, node.radius * state.zoom);
+
+  let fill; let alpha = 1; let ring = null; let ringW = 0;
   if (live === "spot") {
-    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 260);
-    ctx.beginPath(); ctx.arc(p.x, p.y, r + 12 + pulse * 6, 0, Math.PI * 2);
-    ctx.fillStyle = state.live.phaseColor; ctx.globalAlpha = 0.16 + pulse * 0.14; ctx.fill(); ctx.globalAlpha = 1;
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 300);
+    ctx.beginPath(); ctx.arc(p.x, p.y, r + 6 + pulse * 8, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.globalAlpha = 0.1 + pulse * 0.12; ctx.fill(); ctx.globalAlpha = 1;
+    fill = color; ring = state.live.phaseColor; ringW = 2;
+  } else if (live === "ref") {
+    fill = color; alpha = 0.95; ring = "rgba(226,232,240,0.4)"; ringW = 1;
+  } else if (live === "dim") {
+    fill = mix(color, "#0a0d13", 0.68); alpha = 0.5;
+  } else {
+    // idle base — flat, muted (color pushed toward slate) so activation reads as a clear pop.
+    fill = mix(color, "#4b5563", 0.42); alpha = node.virtual ? 0.62 : 0.92;
+    if (selected) { ring = "#c4b5fd"; ringW = 2; }
+    else if (hovered) { ring = "rgba(103,232,249,0.8)"; ringW = 1.5; }
+    else if (node.sensitivityLevel === "high") { ring = "rgba(251,113,133,0.5)"; ringW = 1; }
   }
-  ctx.beginPath(); ctx.arc(p.x, p.y, r + (selected ? 9 : hovered ? 6 : 0), 0, Math.PI * 2);
-  ctx.fillStyle = selected ? "rgba(139,92,246,0.23)" : hovered ? "rgba(34,211,238,0.17)" : "rgba(255,255,255,0.016)"; ctx.fill();
-  const grad = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.35, 0, p.x, p.y, r * 1.45);
-  grad.addColorStop(0, "#fff"); grad.addColorStop(0.2, color); grad.addColorStop(1, node.sensitivityLevel === "high" ? "#7f1d1d" : "#0f172a");
-  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fillStyle = grad;
-  ctx.globalAlpha = live === "dim" ? 0.12 : node.virtual ? 0.78 : 0.98; ctx.fill(); ctx.globalAlpha = 1;
-  ctx.strokeStyle = live === "spot" ? state.live.phaseColor : node.sensitivityLevel === "high" ? "#fb7185" : node.sensitivityLevel === "caution" ? "#fbbf24" : selected ? "#c4b5fd" : "rgba(226,232,240,0.34)";
-  ctx.lineWidth = live === "spot" ? 2.6 : selected ? 2.4 : node.sensitivityLevel === "high" ? 1.7 : 0.8;
-  ctx.globalAlpha = live === "dim" ? 0.25 : 1; ctx.stroke(); ctx.globalAlpha = 1;
+
+  if (selected || hovered) { ctx.beginPath(); ctx.arc(p.x, p.y, r + (selected ? 7 : 5), 0, Math.PI * 2); ctx.fillStyle = selected ? "rgba(139,92,246,0.16)" : "rgba(34,211,238,0.12)"; ctx.fill(); }
+  ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1;
+  if (ring) { ctx.strokeStyle = ring; ctx.lineWidth = ringW; ctx.stroke(); }
 }
 function shouldLabel(node) {
   if (state.live.on) return state.live.spot.has(node.id) || (state.live.ref.has(node.id) && state.zoom > 0.9) || node.type === "Country";
   return state.zoom > 0.68 && (node.type === "Country" || node.sensitivityLevel === "high" || node.degree > 8 || state.selected?.id === node.id || state.hovered?.id === node.id);
 }
-function drawLabel(node) { const p = worldToScreen(node.x, node.y); const text = labelFor(node); ctx.font = node.type === "Country" ? "700 13px Inter, sans-serif" : "600 11px Inter, sans-serif"; const width = ctx.measureText(text).width; const x = p.x - width / 2; const y = p.y + node.radius * state.zoom + 15; ctx.fillStyle = "rgba(2,6,23,0.72)"; roundRect(x - 6, y - 13, width + 12, 18, 6); ctx.fill(); ctx.fillStyle = node.sensitivityLevel === "high" ? "#ffe4e6" : "#e5e7eb"; ctx.fillText(text, x, y); }
-function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function drawLabel(node) {
+  const p = worldToScreen(node.x, node.y); const text = labelFor(node);
+  const spot = state.live.on && state.live.spot.has(node.id);
+  ctx.font = node.type === "Country" ? "600 12px Inter, sans-serif" : "500 10.5px Inter, sans-serif";
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(4,7,13,0.9)"; ctx.shadowBlur = 4;
+  ctx.fillStyle = spot ? "#f8fafc" : node.type === "Country" ? "rgba(226,232,240,0.92)" : "rgba(180,190,205,0.8)";
+  ctx.fillText(text, p.x, p.y + node.radius * state.zoom + 12);
+  ctx.shadowBlur = 0; ctx.textAlign = "left";
+}
 function nodeAt(x, y) { if (!DATA) return null; const world = screenToWorld(x, y); let best = null; let bestD = Infinity; for (const node of DATA.nodes) { if (!visibleSet.has(node.id)) continue; const dx = node.x - world.x; const dy = node.y - world.y; const d = Math.sqrt(dx * dx + dy * dy); const hit = Math.max(10 / state.zoom, node.radius + 5); if (d < hit && d < bestD) { best = node; bestD = d; } } return best; }
 
 function renderControls() {
