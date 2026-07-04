@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  assertReviewSourcesServable,
   assessUploadStorageConsistency,
   classifyUnservableFile,
+  describeUnservableFile,
   warnCrossEnvUpload
 } from "./upload-consistency";
 
@@ -100,5 +102,76 @@ describe("classifyUnservableFile", () => {
     expect(classifyUnservableFile({ FINPROOF_STORAGE_ADAPTER: "local-metadata" }, "local")).toBe(
       "bytes_missing"
     );
+  });
+});
+
+describe("assertReviewSourcesServable", () => {
+  const s3Env = { FINPROOF_STORAGE_ADAPTER: "s3" };
+
+  it("throws an accurate provider-mismatch error when every review source is a local file under the s3 adapter", () => {
+    // The rc-upload-003 orphan incident: all sources seeded via the local adapter,
+    // served/analyzed by a prod s3 adapter. Fail fast with the real cause instead of
+    // running OCR and aborting later with a misleading "OCR 설정 확인" message.
+    let thrown: Error | undefined;
+    try {
+      assertReviewSourcesServable(s3Env, [
+        { storageProvider: "local", name: "01_홍보물_시안.png" },
+        { storageProvider: "local", name: "02_원문_카피.txt" }
+      ]);
+    } catch (error) {
+      thrown = error as Error;
+    }
+
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown?.message).toContain("local");
+    expect(thrown?.message).toContain("s3");
+    expect(thrown?.message).toContain("다시 업로드");
+    expect(thrown?.message).toContain("01_홍보물_시안.png");
+  });
+
+  it("does not throw when at least one review source is servable by the active adapter", () => {
+    expect(() =>
+      assertReviewSourcesServable(s3Env, [
+        { storageProvider: "local", name: "orphan.png" },
+        { storageProvider: "s3", name: "poster.png" }
+      ])
+    ).not.toThrow();
+  });
+
+  it("does not throw when every source matches the active adapter", () => {
+    expect(() =>
+      assertReviewSourcesServable(s3Env, [{ storageProvider: "s3", name: "poster.png" }])
+    ).not.toThrow();
+  });
+
+  it("does not throw when there are no review sources to serve", () => {
+    expect(() => assertReviewSourcesServable(s3Env, [])).not.toThrow();
+  });
+
+  it("does not hard-fail under a local-metadata adapter (dev/cross-env is a warning, not an orphan)", () => {
+    // Only the durable shared adapter (s3) produces the unrecoverable orphan. A
+    // local-metadata adapter reading s3-provider fixtures is the dev/test shape
+    // surfaced by assessUploadStorageConsistency — extraction, not this guard, decides.
+    expect(() =>
+      assertReviewSourcesServable({ FINPROOF_STORAGE_ADAPTER: "local-metadata" }, [
+        { storageProvider: "s3", name: "poster.png" }
+      ])
+    ).not.toThrow();
+  });
+});
+
+describe("describeUnservableFile", () => {
+  it("names the provider mismatch and its remedy so the viewer sees the real cause instead of a bare 404", () => {
+    const result = describeUnservableFile("provider_mismatch");
+
+    expect(result.code).toBe("STORAGE_PROVIDER_MISMATCH");
+    expect(result.message).toContain("다시 업로드");
+  });
+
+  it("distinguishes genuinely missing bytes from a provider mismatch", () => {
+    const result = describeUnservableFile("bytes_missing");
+
+    expect(result.code).toBe("STORAGE_BYTES_MISSING");
+    expect(result.message).not.toBe(describeUnservableFile("provider_mismatch").message);
   });
 });
