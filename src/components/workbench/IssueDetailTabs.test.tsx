@@ -217,7 +217,7 @@ describe("IssueDetailTabs", () => {
     expect(screen.queryByText("사회맥락 리스크")).not.toBeInTheDocument();
   });
 
-  it("labels other agent sources in the checklist summary", () => {
+  it("does not label non-social agent sources in the checklist summary", () => {
     render(
       <IssueDetailTabs
         issue={{
@@ -237,8 +237,9 @@ describe("IssueDetailTabs", () => {
       />
     );
 
-    expect(screen.getByText("상품조건")).toHaveClass("issue-agent-badge");
-    expect(screen.getByText("법령")).toHaveClass("issue-agent-badge");
+    // 사회맥락 리스크만 태깅한다. 그 외 에이전트 출처는 배지로 표시하지 않는다.
+    expect(screen.queryByText("상품조건")).not.toBeInTheDocument();
+    expect(screen.queryByText("법령")).not.toBeInTheDocument();
   });
 
   it("labels social-context evidence as social-context criteria", () => {

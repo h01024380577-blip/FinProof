@@ -164,7 +164,7 @@ describe("IssueList", () => {
     expect(within(card).queryByText("사회맥락")).not.toBeInTheDocument();
   });
 
-  it("labels non-social agent sources on issue cards", () => {
+  it("does not badge non-social agent sources on issue cards", () => {
     render(
       <IssueList
         issues={[
@@ -179,9 +179,10 @@ describe("IssueList", () => {
       />
     );
 
+    // 사회맥락 리스크만 태깅한다. 그 외 에이전트 출처는 배지로 표시하지 않는다.
     const card = screen.getByRole("button", { name: /상품 조건과 법령/ });
-    expect(within(card).getByText("상품")).toHaveClass("issue-card__agent-badge");
-    expect(within(card).getByText("법령")).toHaveClass("issue-card__agent-badge");
+    expect(within(card).queryByText("상품")).not.toBeInTheDocument();
+    expect(within(card).queryByText("법령")).not.toBeInTheDocument();
   });
 
   it("does not show the manual issue button by default", () => {
