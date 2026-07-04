@@ -507,12 +507,55 @@ function sharesConcern(a: AgentFinding, b: AgentFinding): boolean {
   return overlap >= 2;
 }
 
+// Authority ranking for choosing a representative among cross-agent duplicates: findings
+// bound to law/policy/product evidence outrank inference-heavy ones. Only used in the
+// no-consolidation fallback below.
+const CROSS_AGENT_AUTHORITY: Partial<Record<ReviewSubAgentId, number>> = {
+  regulation: 5,
+  internal_policy: 4,
+  product_terms: 3,
+  social_context_risk: 2,
+  creative_review: 1
+};
+
+function crossAgentPriority(finding: AgentFinding): number {
+  const authority = CROSS_AGENT_AUTHORITY[finding.agent] ?? 0;
+  // riskRank (0-2) dominates, then agent authority (0-5), then confidence (0-1).
+  return riskRank[finding.riskLevel] * 100 + authority * 10 + finding.confidence;
+}
+
+// When the main_compliance agent produces no consolidated output, collapse cross-agent
+// duplicates so each distinct concern surfaces once, keeping the highest-priority
+// representative. Never invents findings and never merges findings with unrelated
+// targetText (sharesConcern requires multi-token overlap), so it degrades safely.
+export function dedupeCrossAgentFindings(findings: AgentFinding[]): AgentFinding[] {
+  const kept: AgentFinding[] = [];
+  for (const finding of findings) {
+    const dupeIndex = kept.findIndex((existing) => sharesConcern(existing, finding));
+    if (dupeIndex === -1) {
+      kept.push(finding);
+      continue;
+    }
+    if (crossAgentPriority(finding) > crossAgentPriority(kept[dupeIndex])) {
+      kept[dupeIndex] = finding;
+    }
+  }
+  return kept;
+}
+
 export function finalOrchestratedFindings(
   findings: AgentFinding[],
   mainFindings: AgentFinding[]
 ) {
   if (mainFindings.length === 0) {
-    return findings;
+    // The main agent is the consolidation step: it clusters every domain/prior finding into
+    // one final finding per concern. When it returns nothing — a model failure, unparseable
+    // output (runAgent falls back to "[]"), or a genuinely empty judgment — consolidation
+    // never ran, and returning the raw findings surfaces the SAME concern once per agent
+    // (rc-upload-001 exploded to 27 issues: ~6 concerns each flagged by 2-3 agents).
+    // Degrade gracefully by collapsing cross-agent duplicates instead of dropping or
+    // dumping everything.
+    return dedupeCrossAgentFindings(findings);
   }
 
   const mainSocialContextFindings = mainFindings.filter(isSocialContextFinding);
