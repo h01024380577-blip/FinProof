@@ -135,17 +135,22 @@ export function describeAnalysisEvent(event: AnalysisEventRecord): ProgressLine 
 }
 
 /**
- * Turn the raw event stream into display lines. Sub-agents emit a `start`
- * (spinner) and a `done` (check); once an agent's `done` has arrived we drop
- * its `start` line so a finished agent never keeps spinning. Agents that have
- * started but not finished still show their spinner.
+ * Turn the raw event stream into display lines. Stages that emit a `start`
+ * (spinner) and a later `done` (check) — sub-agents and cross-verification —
+ * drop their `start` line once the matching `done` has arrived, so a finished
+ * step never keeps spinning. Steps that have started but not finished still
+ * show their spinner.
  */
 export function buildProgressLines(events: AnalysisEventRecord[]): ProgressLine[] {
   const finishedAgents = new Set<string>();
+  let coveFinished = false;
   for (const event of events) {
     if (event.stage === "subagent" && event.event === "done") {
       const agent = String((event.payload as Record<string, unknown>).agent ?? "");
       if (agent) finishedAgents.add(agent);
+    }
+    if (event.stage === "cove" && event.event === "done") {
+      coveFinished = true;
     }
   }
 
@@ -156,6 +161,9 @@ export function buildProgressLines(events: AnalysisEventRecord[]): ProgressLine[
       if (agent && finishedAgents.has(agent)) {
         continue;
       }
+    }
+    if (event.stage === "cove" && event.event === "start" && coveFinished) {
+      continue;
     }
     lines.push(describeAnalysisEvent(event));
   }

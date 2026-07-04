@@ -12,6 +12,17 @@ function subagentEvent(seq: number, event: "start" | "done", agent: string, find
   };
 }
 
+function coveEvent(seq: number, event: "start" | "done", payload: Record<string, unknown> = {}) {
+  return {
+    id: `e${seq}`,
+    seq,
+    stage: "cove",
+    event,
+    payload,
+    createdAt: "2026-07-04T00:00:00.000Z"
+  };
+}
+
 describe("buildProgressLines", () => {
   it("hides a sub-agent's spinner once its done event has arrived", () => {
     const lines = buildProgressLines([
@@ -25,6 +36,26 @@ describe("buildProgressLines", () => {
     expect(running[0].text).toContain("내부 지침");
     expect(lines.some((line) => line.state === "done" && line.text.includes("규정"))).toBe(true);
     expect(lines.some((line) => line.state === "running" && line.text.includes("규정"))).toBe(false);
+  });
+
+  it("hides the cross-verification spinner once its done event has arrived", () => {
+    const lines = buildProgressLines([
+      subagentEvent(1, "done", "regulation", 3),
+      coveEvent(2, "start", { verifying: 3 }),
+      coveEvent(3, "done", { verified: 3, suppressed: 0 })
+    ]);
+    // cove finished -> no lingering spinner, only the done summary remains.
+    expect(lines.some((line) => line.state === "running")).toBe(false);
+    expect(lines.some((line) => line.state === "done" && line.text.includes("교차 검증 완료"))).toBe(
+      true
+    );
+  });
+
+  it("keeps the cross-verification spinner while it is still in progress", () => {
+    const lines = buildProgressLines([coveEvent(1, "start", { verifying: 2 })]);
+    const running = lines.filter((line) => line.state === "running");
+    expect(running).toHaveLength(1);
+    expect(running[0].text).toContain("교차 검증");
   });
 });
 
