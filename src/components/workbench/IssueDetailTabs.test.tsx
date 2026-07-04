@@ -157,7 +157,16 @@ describe("IssueDetailTabs", () => {
         issue={{
           ...issue,
           issueType: "SOCIAL_CONTEXT_SENSITIVE_DATE",
-          sourceAgents: ["social_context_risk"]
+          sourceAgents: ["social_context_risk"],
+          evidence: [
+            {
+              id: "ev-social-date",
+              sourceType: "internal_policy",
+              title: "01_민감_날짜_기념일_체크리스트.md",
+              quoteSummary: "민감 날짜와 기념일 인접 집행 여부를 확인한다.",
+              relevanceScore: 0.83
+            }
+          ]
         }}
         activeTab="checklist"
         onTabChange={() => undefined}
@@ -173,6 +182,127 @@ describe("IssueDetailTabs", () => {
     );
 
     expect(screen.getByText("사회맥락 리스크")).toHaveClass("issue-agent-badge");
+  });
+
+  it("does not show the social-context badge without approved social-context evidence", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          issueType: "SOCIAL_CONTEXT_CONSUMER_SENTIMENT",
+          sourceAgents: ["social_context_risk"],
+          evidence: [
+            {
+              id: "ev-generic-common-checklist",
+              sourceType: "internal_policy",
+              title: "금융상품 광고 준법심의 공통 체크리스트",
+              quoteSummary: "소비자 정서와 사회적 논란 가능성을 고려해 오인 표현을 점검해야 한다.",
+              relevanceScore: 0.81
+            }
+          ]
+        }}
+        activeTab="checklist"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.queryByText("사회맥락 리스크")).not.toBeInTheDocument();
+  });
+
+  it("labels other agent sources in the checklist summary", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          sourceAgents: ["product_terms", "regulation"]
+        }}
+        activeTab="checklist"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("상품조건")).toHaveClass("issue-agent-badge");
+    expect(screen.getByText("법령")).toHaveClass("issue-agent-badge");
+  });
+
+  it("labels social-context evidence as social-context criteria", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          evidence: [
+            {
+              id: "ev-social-campaign-name",
+              sourceType: "internal_policy",
+              title: "03_문구_캠페인명_체크리스트.md",
+              quoteSummary: "군사적, 공격적 표현은 캠페인명과 문구의 사회맥락을 확인한다.",
+              relevanceScore: 0.2
+            }
+          ]
+        }}
+        activeTab="evidence"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("사회맥락 기준")).toBeInTheDocument();
+    expect(screen.getByText("03_문구_캠페인명_체크리스트.md")).toBeInTheDocument();
+  });
+
+  it("keeps generic compliance evidence under the normal internal criteria label", () => {
+    render(
+      <IssueDetailTabs
+        issue={{
+          ...issue,
+          evidence: [
+            {
+              id: "ev-generic-common-checklist",
+              sourceType: "internal_policy",
+              title: "금융상품 광고 준법심의 공통 체크리스트",
+              quoteSummary: "소비자 정서와 사회적 논란 가능성을 고려해 오인 표현을 점검해야 한다.",
+              relevanceScore: 0.81
+            }
+          ]
+        }}
+        activeTab="evidence"
+        onTabChange={() => undefined}
+        reviewerRiskLevel="high"
+        reviewerComment=""
+        savedDecision={null}
+        canMutate
+        isSavingDecision={false}
+        onChangeRiskLevel={() => undefined}
+        onChangeReviewerComment={() => undefined}
+        onSaveReviewerDecision={() => undefined}
+      />
+    );
+
+    expect(screen.getByText("내부 기준")).toBeInTheDocument();
+    expect(screen.queryByText("사회맥락 기준")).not.toBeInTheDocument();
   });
 
   it("formats evidence metadata in Korean and hides missing location fields", () => {

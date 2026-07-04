@@ -304,6 +304,119 @@ describe("issue generation", () => {
     );
   });
 
+  it("keeps social-context findings grounded in social-context evidence instead of generic policy", () => {
+    const review = { ...getReviewCaseById("rc-demo-deposit-001")!, missingMaterials: [] };
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-07-03T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "tank-day-poster.txt",
+          text: "탱크데이 혜택 폭격 이벤트",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "ev-uploaded-poster",
+          sourceType: "product_doc",
+          title: "tank-day-poster.txt",
+          quoteSummary: "탱크데이 혜택 폭격 이벤트",
+          relevanceScore: 0.95,
+          sourceFileId: "file-upload-001"
+        },
+        {
+          id: "ev-generic-card-policy",
+          sourceType: "internal_policy",
+          title: "금융위·금감원 금융상품 광고 규제 가이드",
+          quoteSummary: "금융상품 광고는 소비자가 조건을 오인하지 않도록 표시해야 한다.",
+          relevanceScore: 0.94
+        },
+        {
+          id: "ev-social-campaign-name",
+          sourceType: "internal_policy",
+          title: "03_문구_캠페인명_체크리스트.md",
+          quoteSummary: "군사적, 공격적 표현은 캠페인명과 문구의 사회맥락을 확인하고 완화한다.",
+          relevanceScore: 0.2
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-social-context-002",
+          agent: "social_context_risk",
+          title: "군사·폭력 은유 표현의 사회적 논란 가능성",
+          issueType: "SOCIAL_CONTEXT_CAMPAIGN_COPY",
+          riskLevel: "caution",
+          targetText: "탱크데이 혜택 폭격",
+          description: "캠페인명과 홍보 문구가 군사적·공격적 표현으로 해석될 수 있습니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "캠페인명과 혜택 문구를 중립적 표현으로 조정해 주세요.",
+          evidenceCandidateIds: ["ev-generic-card-policy"],
+          confidence: 0.82
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues).toHaveLength(1);
+    expect(issues[0].evidence).toEqual([
+      expect.objectContaining({ sourceType: "product_doc", title: "tank-day-poster.txt" }),
+      expect.objectContaining({ title: "03_문구_캠페인명_체크리스트.md" })
+    ]);
+    expect(issues[0].evidence).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "금융위·금감원 금융상품 광고 규제 가이드" })
+      ])
+    );
+  });
+
+  it("drops social-context findings when no social-context evidence is available", () => {
+    const review = { ...getReviewCaseById("rc-demo-deposit-001")!, missingMaterials: [] };
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-07-03T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-upload-001",
+          fileName: "deposit-poster.txt",
+          text: "매일더함 자유적금 안내",
+          confidence: 0.95,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "ev-generic-deposit-policy",
+          sourceType: "internal_policy",
+          title: "예금·적금 광고 심의 체크리스트",
+          quoteSummary:
+            "최고 금리 표기 시 우대조건과 기본금리를 병기해 소비자 정서와 사회적 논란 가능성을 줄여야 한다.",
+          relevanceScore: 0.92
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-social-context-003",
+          agent: "social_context_risk",
+          title: "게시 예정일의 사회적 민감성 추가 확인 필요",
+          issueType: "SOCIAL_CONTEXT_SENSITIVE_DATE",
+          riskLevel: "caution",
+          targetText: "게시 예정일: 2026-04-16",
+          description: "민감일 근접 여부를 확인해야 합니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "게시일을 민감일과 겹치지 않도록 점검해 주세요.",
+          evidenceCandidateIds: ["ev-generic-deposit-policy"],
+          confidence: 0.75
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues).toEqual([]);
+  });
+
   it("attaches the most issue-relevant regulation to each issue, not the globally top one", () => {
     const review = getReviewCaseById("rc-demo-deposit-001")!;
     const rateRule = {

@@ -1,4 +1,5 @@
 import type { RiskLevel, ReviewCase, ReviewIssue } from "@/domain/types";
+import { isSocialContextEvidence } from "@/domain/social-context";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
 import type { ModelRouteContext, ModelRouteTask } from "@/server/ai/model-router";
 import {
@@ -232,6 +233,14 @@ function knownEvidenceIds(candidates: RagEvidenceCandidate[]) {
   return new Set(candidates.map((candidate) => candidate.id));
 }
 
+function evidenceCandidateMap(candidates: RagEvidenceCandidate[]) {
+  return new Map(candidates.map((candidate) => [candidate.id, candidate]));
+}
+
+function uniqueValues(values: string[]) {
+  return [...new Set(values)];
+}
+
 function normalizeEvidenceIds(value: unknown, candidates: RagEvidenceCandidate[]) {
   const allowedIds = knownEvidenceIds(candidates);
   const candidateIds = Array.isArray(value)
@@ -243,6 +252,62 @@ function normalizeEvidenceIds(value: unknown, candidates: RagEvidenceCandidate[]
   }
 
   return candidates[0]?.id ? [candidates[0].id] : [];
+}
+
+function normalizeSocialContextEvidenceIds(value: unknown, candidates: RagEvidenceCandidate[]) {
+  const byId = evidenceCandidateMap(candidates);
+  const allowedIds = knownEvidenceIds(candidates);
+  const modelSelectedIds = Array.isArray(value)
+    ? value.filter((id): id is string => typeof id === "string" && allowedIds.has(id))
+    : [];
+  const modelSelectedCandidates = modelSelectedIds
+    .map((id) => byId.get(id))
+    .filter((candidate): candidate is RagEvidenceCandidate => Boolean(candidate));
+  const productDocIds = modelSelectedCandidates
+    .filter((candidate) => candidate.sourceType === "product_doc")
+    .map((candidate) => candidate.id);
+  const socialContextIds = modelSelectedCandidates
+    .filter(isSocialContextEvidence)
+    .map((candidate) => candidate.id);
+  const fallbackProductDocId =
+    productDocIds.length > 0
+      ? undefined
+      : candidates.find((candidate) => candidate.sourceType === "product_doc")?.id;
+  const fallbackSocialContextId =
+    socialContextIds.length > 0 ? undefined : candidates.find(isSocialContextEvidence)?.id;
+
+  if (socialContextIds.length === 0 && !fallbackSocialContextId) {
+    return [];
+  }
+
+  return uniqueValues([
+    ...productDocIds,
+    ...(fallbackProductDocId ? [fallbackProductDocId] : []),
+    ...socialContextIds,
+    ...(fallbackSocialContextId ? [fallbackSocialContextId] : [])
+  ]);
+}
+
+function orderEvidenceCandidatesForAgent(
+  agent: ReviewSubAgentId,
+  candidates: RagEvidenceCandidate[]
+) {
+  if (agent !== "social_context_risk") {
+    return candidates;
+  }
+
+  return [...candidates].sort((left, right) => {
+    const leftGroup = isSocialContextEvidence(left) ? 0 : left.sourceType === "product_doc" ? 1 : 2;
+    const rightGroup = isSocialContextEvidence(right)
+      ? 0
+      : right.sourceType === "product_doc"
+        ? 1
+        : 2;
+
+    return leftGroup === rightGroup
+      ? right.relevanceScore - left.relevanceScore
+      : leftGroup - rightGroup;
+  });
 }
 
 function normalizeFinding(
@@ -263,6 +328,15 @@ function normalizeFinding(
     return undefined;
   }
 
+  const evidenceCandidateIds =
+    agent === "social_context_risk"
+      ? normalizeSocialContextEvidenceIds(fields.evidenceCandidateIds, evidenceCandidates)
+      : normalizeEvidenceIds(fields.evidenceCandidateIds, evidenceCandidates);
+
+  if (agent === "social_context_risk" && evidenceCandidateIds.length === 0) {
+    return undefined;
+  }
+
   return {
     id: `finding-${agent}-${String(index + 1).padStart(3, "0")}`,
     agent,
@@ -277,7 +351,7 @@ function normalizeFinding(
     suggestedCopy: sanitizeReviewerText(
       stringField(fields.suggestedCopy, "조건, 제한 사항, 적용 기준을 인접 영역에 명시해 주세요.")
     ),
-    evidenceCandidateIds: normalizeEvidenceIds(fields.evidenceCandidateIds, evidenceCandidates),
+    evidenceCandidateIds,
     confidence: clampConfidence(fields.confidence),
     rawModelOutput
   };
@@ -475,13 +549,19 @@ async function runAgent({
       ...routeContext
     },
     instructions: agent.instructions,
-    input: agentInput({ ...input, priorFindings }),
+    input: agentInput({
+      ...input,
+      evidenceCandidates: orderEvidenceCandidatesForAgent(agent.id, input.evidenceCandidates),
+      priorFindings
+    }),
     fallback: "[]"
   });
 
+  const evidenceCandidates = orderEvidenceCandidatesForAgent(agent.id, input.evidenceCandidates);
+
   return rawFindings(extractJson(result.text))
     .map((finding, index) =>
-      normalizeFinding(agent.id, finding, index, input.evidenceCandidates, result.text)
+      normalizeFinding(agent.id, finding, index, evidenceCandidates, result.text)
     )
     .filter((finding): finding is AgentFinding => Boolean(finding));
 }

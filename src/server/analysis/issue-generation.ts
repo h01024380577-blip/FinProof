@@ -1,5 +1,6 @@
 import type { Evidence, ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import { KNOWLEDGE_MATCHED_EVIDENCE_SCORE, MIN_MATCHED_EVIDENCE_SCORE } from "@/domain/evidence";
+import { isSocialContextEvidence } from "@/domain/social-context";
 import type { AnalysisArtifacts, RagEvidenceCandidate } from "./review-analysis-pipeline";
 import { normalizeAiSuggestedAction, normalizeAnalysisRiskLevel, riskRank } from "./risk-policy";
 
@@ -137,6 +138,19 @@ function bestByIssueRelevance(
   })[0];
 }
 
+function uniqueCandidates(candidates: RagEvidenceCandidate[]) {
+  const seen = new Set<string>();
+
+  return candidates.filter((candidate) => {
+    if (seen.has(candidate.id)) {
+      return false;
+    }
+
+    seen.add(candidate.id);
+    return true;
+  });
+}
+
 function preferredEvidenceCandidate(
   artifacts: AnalysisArtifacts,
   candidates: RagEvidenceCandidate[],
@@ -167,6 +181,44 @@ function preferredEvidenceCandidate(
     bestByIssueRelevance(issueText, reliableCandidates) ??
     bestByIssueRelevance(issueText, reliableArtifactCandidates)
   );
+}
+
+function isSocialContextFinding(finding: NonNullable<AnalysisArtifacts["agentFindings"]>[number]) {
+  return (
+    finding.agent === "social_context_risk" ||
+    finding.issueType.toUpperCase().startsWith("SOCIAL_CONTEXT_")
+  );
+}
+
+function preferredSocialContextEvidenceCandidates(
+  artifacts: AnalysisArtifacts,
+  candidates: RagEvidenceCandidate[],
+  minEvidenceScore: number,
+  issueText: string
+): RagEvidenceCandidate[] {
+  const reliableCandidates = candidates.filter((candidate) =>
+    isReliableEvidenceCandidate(candidate, minEvidenceScore)
+  );
+  const reliableArtifactCandidates = artifacts.evidenceCandidates.filter((candidate) =>
+    isReliableEvidenceCandidate(candidate, minEvidenceScore)
+  );
+  const candidatePool = uniqueCandidates([...reliableCandidates, ...reliableArtifactCandidates]);
+  const productDoc = bestByIssueRelevance(
+    issueText,
+    candidatePool.filter((candidate) => candidate.sourceType === "product_doc")
+  );
+  const socialContextEvidence = bestByIssueRelevance(
+    issueText,
+    candidatePool
+      .filter(isSocialContextEvidence)
+      .filter((candidate) => !isTableOfContentsEvidence(candidate))
+  );
+
+  if (!socialContextEvidence) {
+    return [];
+  }
+
+  return uniqueCandidates([...(productDoc ? [productDoc] : []), socialContextEvidence]);
 }
 
 function candidateToEvidence(
@@ -301,7 +353,7 @@ function issuesFromAgentFindings(
   artifacts: AnalysisArtifacts,
   minEvidenceScore: number
 ): ReviewIssue[] {
-  return (artifacts.agentFindings ?? []).map((finding) => {
+  return (artifacts.agentFindings ?? []).flatMap((finding) => {
     const issueId = `issue-${review.id}-${finding.id}`;
     const riskLevel = normalizeAnalysisRiskLevel(finding.riskLevel);
     const matchedEvidence = finding.evidenceCandidateIds
@@ -310,39 +362,51 @@ function issuesFromAgentFindings(
         (candidate): candidate is RagEvidenceCandidate =>
           Boolean(candidate) && isReliableEvidenceCandidate(candidate, minEvidenceScore)
       );
-    const preferredEvidence = preferredEvidenceCandidate(
-      artifacts,
-      matchedEvidence,
-      minEvidenceScore,
-      `${finding.title} ${finding.targetText} ${finding.description}`
-    );
-    const issueEvidence = preferredEvidence
-      ? [candidateToEvidence(preferredEvidence, issueId, 0)]
-      : [];
+    const issueText = `${finding.title} ${finding.targetText} ${finding.description}`;
+    const preferredCandidates = isSocialContextFinding(finding)
+      ? preferredSocialContextEvidenceCandidates(
+          artifacts,
+          matchedEvidence,
+          minEvidenceScore,
+          issueText
+        )
+      : [
+          preferredEvidenceCandidate(artifacts, matchedEvidence, minEvidenceScore, issueText)
+        ].filter((candidate): candidate is RagEvidenceCandidate => Boolean(candidate));
 
-    return {
-      id: issueId,
-      issueType: finding.issueType,
-      riskLevel,
-      title: finding.title,
-      targetText: finding.targetText,
-      targetBbox: [0, 0, 0, 0] as [number, number, number, number],
-      sourceAgents: [finding.agent],
-      suggestedAction: normalizeAiSuggestedAction(finding.suggestedAction),
-      status: "open",
-      description: finding.description,
-      suggestedCopy: finding.suggestedCopy,
-      multilingualContext: multilingualContextFromFinding(finding),
-      evidence:
-        issueEvidence.length > 0
-          ? issueEvidence
-          : [
-              {
-                ...fallbackEvidence(review, artifacts),
-                id: `${issueId}-evidence-001`
-              }
-            ]
-    };
+    if (isSocialContextFinding(finding) && preferredCandidates.length === 0) {
+      return [];
+    }
+
+    const issueEvidence = preferredCandidates.map((candidate, index) =>
+      candidateToEvidence(candidate, issueId, index)
+    );
+
+    return [
+      {
+        id: issueId,
+        issueType: finding.issueType,
+        riskLevel,
+        title: finding.title,
+        targetText: finding.targetText,
+        targetBbox: [0, 0, 0, 0] as [number, number, number, number],
+        sourceAgents: [finding.agent],
+        suggestedAction: normalizeAiSuggestedAction(finding.suggestedAction),
+        status: "open",
+        description: finding.description,
+        suggestedCopy: finding.suggestedCopy,
+        multilingualContext: multilingualContextFromFinding(finding),
+        evidence:
+          issueEvidence.length > 0
+            ? issueEvidence
+            : [
+                {
+                  ...fallbackEvidence(review, artifacts),
+                  id: `${issueId}-evidence-001`
+                }
+              ]
+      }
+    ];
   });
 }
 
