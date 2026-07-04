@@ -32,6 +32,14 @@ import type { Evidence } from "@/domain/types";
 
 type EvidenceLike = Evidence & { sourceFileId?: string };
 
+/** Subset of pipeline artifacts this harness reads (before/after CoVe). */
+type EvalArtifacts = {
+  draftAgentFindings?: AgentFinding[];
+  agentFindings?: AgentFinding[];
+  coveVerification?: { verdicts?: CoveFindingVerdict[] };
+  evidenceCandidates?: EvidenceLike[];
+};
+
 function parseArgs(argv: string[]) {
   const out: { limit: number; cases?: string[]; outPath: string } = {
     limit: 3,
@@ -84,7 +92,7 @@ async function evalCase(
   if (!review) return blankResult(caseId, "케이스를 찾을 수 없음");
   if (review.files.length === 0) return blankResult(caseId, "첨부 파일 없음(분석 불가)");
 
-  const artifacts: any = await pipeline.run({ review, scope });
+  const artifacts = (await pipeline.run({ review, scope })) as EvalArtifacts;
   const draft: AgentFinding[] = artifacts.draftAgentFindings ?? artifacts.agentFindings ?? [];
   const verified: AgentFinding[] = artifacts.agentFindings ?? [];
   const verdicts: CoveFindingVerdict[] = artifacts.coveVerification?.verdicts ?? [];
@@ -150,7 +158,7 @@ async function main() {
     const page = await store.listReviewSummaries(scope, { page: 1, pageSize: 50 });
     // ReviewSummary에는 파일 수가 없어 여기서 걸러내지 못한다.
     // 후보를 넉넉히 뽑고, evalCase에서 파일 없는 케이스는 스킵한 뒤 limit 만큼만 채운다.
-    caseIds = (page.reviewCases ?? page.items ?? []).map((s: any) => s.id);
+    caseIds = (page.reviewCases ?? page.items ?? []).map((s: { id: string }) => s.id);
   }
   if (!caseIds || caseIds.length === 0) {
     console.error("평가할 케이스가 없습니다. --cases 로 지정하세요.");
@@ -178,9 +186,10 @@ async function main() {
           ? `ERROR: ${r.error}`
           : `draft ${r.draftCount} → verified ${r.verifiedCount} (drop ${r.verdictCounts.drop}, downgrade ${r.verdictCounts.downgrade})`
       );
-    } catch (e: any) {
-      results.push(blankResult(id, e?.message ?? String(e)));
-      console.log(`EXCEPTION: ${e?.message ?? e}`);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      results.push(blankResult(id, message));
+      console.log(`EXCEPTION: ${message}`);
     }
   }
 
