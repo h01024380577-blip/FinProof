@@ -10972,3 +10972,22 @@ body:has(.landing-page)::before {
     transform: rotate(360deg);
   }
 }
+
+/* Floating launcher for the analysis progress popup (sits above the chat launcher) */
+.progress-launcher {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 9rem;
+  z-index: 60;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line, #e5e7eb);
+  background: var(--surface, #fff);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.progress-launcher:hover {
+  background: var(--surface-subtle, #f9fafb);
+}

@@ -28,6 +28,7 @@ import { productLabels, statusLabels } from "@/domain/reviews";
 import type { ReviewCase, ReviewIssue, ReviewVersion, RiskLevel, RoleId } from "@/domain/types";
 import type { RevisionDiff } from "@/domain/revision-diff";
 import { useRoleContext } from "./RoleContext";
+import { AnalysisProgressPopup } from "@/components/analysis/AnalysisProgressPopup";
 import { WorkbenchHeader } from "./workbench/WorkbenchHeader";
 import type { FinalDecisionAction } from "./workbench/WorkbenchHeader";
 import { IssueList } from "./workbench/IssueList";
@@ -413,6 +414,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
   const [draftVersion, setDraftVersion] = useState(0);
   const [question, setQuestion] = useState("");
   const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
+  const [isProgressOpen, setIsProgressOpen] = useState(false);
   const [hasUnreadChatResponse, setHasUnreadChatResponse] = useState(false);
   const [chatResponsesByReviewId, setChatResponsesByReviewId] = useState<ChatResponsesByReviewId>(
     () => loadCachedChatResponsesByReviewId()
@@ -1567,6 +1569,22 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
             </div>
             <div className="chat-widget__body">{chatPanel}</div>
           </section>
+        ) : null}
+        <button
+          className="progress-launcher"
+          type="button"
+          aria-label={isProgressOpen ? "분석 진행상황 닫기" : "분석 진행상황 열기"}
+          title={isProgressOpen ? "분석 진행상황 닫기" : "분석 진행상황 열기"}
+          onClick={() => setIsProgressOpen((current) => !current)}
+        >
+          분석 진행상황
+        </button>
+        {isProgressOpen ? (
+          <AnalysisProgressPopup
+            key={review.id}
+            reviewCaseId={review.id}
+            onClose={() => setIsProgressOpen(false)}
+          />
         ) : null}
         <button
           className="chat-launcher"

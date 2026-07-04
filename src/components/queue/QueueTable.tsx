@@ -99,6 +99,7 @@ export type QueueTableProps = {
   onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
   onDeleteReviewHistory?: (review: ReviewSummary) => void;
   onStartAnalysis: (review: ReviewSummary) => void;
+  onOpenProgress?: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
 
@@ -269,6 +270,7 @@ export function QueueTable({
   onSaveReviewer,
   onDeleteReviewHistory,
   onStartAnalysis,
+  onOpenProgress,
   onOpenReview
 }: QueueTableProps): JSX.Element {
   const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null);
@@ -488,6 +490,15 @@ export function QueueTable({
                       {isReReviewPending ? "AI 재검토 시작" : "AI 분석 시작"}
                     </>
                   )}
+                </button>
+              ) : null}
+              {activelyAnalyzing && onOpenProgress ? (
+                <button
+                  className="button button--small button--ghost queue-row-action-button"
+                  type="button"
+                  onClick={() => onOpenProgress(review)}
+                >
+                  진행상황
                 </button>
               ) : null}
               {analysisFailed && analysisFailureText ? (
