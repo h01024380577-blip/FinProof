@@ -10897,7 +10897,7 @@ body:has(.landing-page)::before {
 /* Analysis progress popup — reviewer-facing agent timeline */
 .analysis-progress {
   position: fixed;
-  right: 1.5rem;
+  left: 1.5rem;
   bottom: 5.5rem;
   width: 360px;
   max-width: calc(100vw - 3rem);
@@ -10989,8 +10989,8 @@ body:has(.landing-page)::before {
 /* Floating launcher for the analysis progress popup (sits above the chat launcher) */
 .progress-launcher {
   position: fixed;
-  right: 1.5rem;
-  bottom: 9rem;
+  left: 1.5rem;
+  bottom: 1.5rem;
   z-index: 60;
   padding: 8px 14px;
   border-radius: 999px;
