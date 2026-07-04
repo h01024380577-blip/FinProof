@@ -173,4 +173,38 @@ describe("social context KG engine", () => {
       evidenceCandidateIds: [artifacts.evidenceCandidates[0].id]
     });
   });
+
+  it("emits an ordered activation trace whose node ids match the rule result", () => {
+    const traces: import("@/domain/social-context-kg").SocialContextTrace[] = [];
+    const matches = analyzeSocialContextKg({
+      review: review({
+        title: "4.16 단 하루 금리 침몰급 혜택",
+        plannedPublishDate: "2026-04-16",
+        promotionalCopy: "4.16 단 하루, 금리 침몰급 혜택!",
+        productDescription: "자유적금 우대금리 이벤트"
+      }),
+      extractedDocuments: [],
+      onTrace: (trace) => traces.push(trace)
+    });
+
+    const phaseOrder = traces.map((trace) => trace.phase);
+    // country is always first; rule is emitted last after matching completes.
+    expect(phaseOrder[0]).toBe("country");
+    expect(phaseOrder.at(-1)).toBe("rule");
+    expect(phaseOrder.indexOf("event")).toBeLessThan(phaseOrder.indexOf("rule"));
+
+    const countryTrace = traces.find((trace) => trace.phase === "country");
+    expect(countryTrace?.nodeIds).toContain("south_korea");
+
+    const eventTrace = traces.find((trace) => trace.phase === "event");
+    expect(eventTrace?.nodeIds).toContain("sewol-0416");
+    // the trace's activated event ids are exactly what the rule result reports
+    expect(matches[0].matchedEvents.map((event) => event.id)).toEqual(
+      expect.arrayContaining(eventTrace?.nodeIds ?? [])
+    );
+
+    const ruleTrace = traces.find((trace) => trace.phase === "rule");
+    expect(ruleTrace?.nodeIds).toContain("disaster_date_financial_metaphor");
+    expect(ruleTrace?.riskLevel).toBe("high");
+  });
 });
