@@ -86,6 +86,49 @@ describe("describeAnalysisEvent", () => {
     expect(line.evidence).toEqual(["poster_daily_savings", "예금 적금 광고 심의 체크리스트"]);
   });
 
+  it("shows a running line while cross-verification is in progress", () => {
+    const line = describeAnalysisEvent({
+      id: "e6",
+      seq: 6,
+      stage: "cove",
+      event: "start",
+      payload: { verifying: 2 },
+      createdAt: "2026-07-04T00:00:00.000Z"
+    });
+    expect(line.state).toBe("running");
+    expect(line.text).toContain("교차 검증");
+    // never leaks the internal "CoVe" identifier to reviewers
+    expect(line.text.toLowerCase()).not.toContain("cove");
+  });
+
+  it("summarizes cross-verification with re-confirmed and suppressed counts", () => {
+    const line = describeAnalysisEvent({
+      id: "e7",
+      seq: 7,
+      stage: "cove",
+      event: "done",
+      payload: { verified: 3, suppressed: 1, ms: 1200 },
+      createdAt: "2026-07-04T00:00:00.000Z"
+    });
+    expect(line.state).toBe("done");
+    expect(line.text).toContain("교차 검증 완료");
+    expect(line.text).toContain("3건 재확인");
+    expect(line.text).toContain("1건");
+  });
+
+  it("omits the suppressed clause when nothing was suppressed", () => {
+    const line = describeAnalysisEvent({
+      id: "e8",
+      seq: 8,
+      stage: "cove",
+      event: "done",
+      payload: { verified: 2, suppressed: 0, ms: 800 },
+      createdAt: "2026-07-04T00:00:00.000Z"
+    });
+    expect(line.text).toContain("2건 재확인");
+    expect(line.text).not.toContain("보류");
+  });
+
   it("falls back safely for unknown stages", () => {
     const line = describeAnalysisEvent({
       id: "e4",

@@ -2096,7 +2096,8 @@ export function createReviewAnalysisPipeline({
         evidenceCandidates: evidenceCandidatesWithSocialContextKg,
         agentFindings,
         modelProvider,
-        now
+        now,
+        onEvent
       });
       const verifiedAgentFindings = coveVerification.verifiedAgentFindings;
       const artifacts = {
