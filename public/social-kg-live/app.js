@@ -217,9 +217,9 @@ function nodeAt(x, y) { if (!DATA) return null; const world = screenToWorld(x, y
 
 function renderControls() {
   document.getElementById("metrics").innerHTML = [[DATA.stats.totalNodes, "nodes"], [DATA.stats.totalEdges, "edges"], [DATA.metadata.counts.sensitiveEvents, "events"], [DATA.stats.highRiskEvents, "high-risk"], [DATA.metadata.countries.length, "countries"]].map(([v, l]) => `<div class="metric"><b>${v}</b><span>${l}</span></div>`).join("");
-  renderChecks("typeFilters", typeOrder.filter((x) => DATA.stats.typeCounts[x]), state.types, DATA.stats.typeCounts, typeColors, (value, checked) => { checked ? state.types.add(value) : state.types.delete(value); updateFilters(); });
-  renderChecks("countryFilters", countryOrder.filter((x) => DATA.stats.countryCounts[x]), state.countries, DATA.stats.countryCounts, {}, (value, checked) => { checked ? state.countries.add(value) : state.countries.delete(value); updateFilters(); }, countryLabels);
-  renderChecks("riskFilters", riskOrder, state.risks, DATA.stats.riskCounts, { high: "#fb7185", caution: "#fbbf24", info: "#34d399", none: "#94a3b8" }, (value, checked) => { checked ? state.risks.add(value) : state.risks.delete(value); updateFilters(); }, riskLabels);
+  renderChecks("typeFilters", typeOrder.filter((x) => DATA.stats.typeCounts[x]), state.types, DATA.stats.typeCounts, typeColors, (value, checked) => { if (checked) state.types.add(value); else state.types.delete(value); updateFilters(); });
+  renderChecks("countryFilters", countryOrder.filter((x) => DATA.stats.countryCounts[x]), state.countries, DATA.stats.countryCounts, {}, (value, checked) => { if (checked) state.countries.add(value); else state.countries.delete(value); updateFilters(); }, countryLabels);
+  renderChecks("riskFilters", riskOrder, state.risks, DATA.stats.riskCounts, { high: "#fb7185", caution: "#fbbf24", info: "#34d399", none: "#94a3b8" }, (value, checked) => { if (checked) state.risks.add(value); else state.risks.delete(value); updateFilters(); }, riskLabels);
   document.getElementById("relationList").innerHTML = Object.entries(DATA.stats.relationCounts).sort((a, b) => b[1] - a[1]).map(([rel, count]) => `<div class="legend-row"><span class="legend-left"><span class="dot" style="color:${relationColors[rel] || "#94a3b8"};background:currentColor"></span>${escapeHtml(rel)}</span><span class="count">${count}</span></div>`).join("");
   document.getElementById("profile").innerHTML = [["Authored nodes", DATA.stats.authoredNodes], ["Inferred nodes", DATA.stats.inferredNodes], ["Risk rules", DATA.metadata.counts.riskRules], ["Safe contexts", DATA.metadata.counts.safeContexts]].map(([label, value]) => `<div class="mini-card"><b>${value}</b><span>${label}</span></div>`).join("");
   document.getElementById("principles").innerHTML = (DATA.metadata.operationPrinciples || []).map((x) => `<div class="edge-item">${escapeHtml(x)}</div>`).join("");
@@ -317,7 +317,7 @@ async function loopPoll(id) {
       else reflectStage(ev);
     }
     pump();
-  } catch (e) { /* transient network/poll error — retry next tick */ }
+  } catch { /* transient network/poll error — retry next tick */ }
   if (pollStatus === "running" || queue.length || pumping) {
     pollTimer = setTimeout(() => loopPoll(id), 1200);
   } else {
