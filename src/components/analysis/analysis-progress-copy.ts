@@ -1,0 +1,97 @@
+import type { AnalysisEventRecord } from "@/server/reviews/review-store";
+
+export type ProgressLine = {
+  id: string;
+  seq: number;
+  state: "running" | "done" | "info" | "error";
+  text: string;
+  evidence?: string[];
+};
+
+const AGENT_LABELS: Record<string, string> = {
+  creative_review: "광고 표현 심의",
+  product_terms: "상품 조건 확인",
+  regulation: "규정 위반 검토",
+  internal_policy: "내부 지침 검토",
+  social_context_risk: "사회적 맥락 리스크 검토",
+  evidence_verification: "근거 검증",
+  case_search: "유사 사례 탐색",
+  main: "최종 종합 판단"
+};
+
+function num(value: unknown): number | undefined {
+  return typeof value === "number" ? value : undefined;
+}
+
+function titlesFrom(topDocs: unknown): string[] {
+  if (!Array.isArray(topDocs)) return [];
+  return topDocs
+    .map((doc) => (doc && typeof doc === "object" ? (doc as { title?: unknown }).title : undefined))
+    .filter((title): title is string => typeof title === "string");
+}
+
+function stringList(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const titles = value.filter((item): item is string => typeof item === "string");
+  return titles.length > 0 ? titles : undefined;
+}
+
+/**
+ * Pure mapping from a persisted analysis event to a reviewer-facing line.
+ * Any unknown stage/agent falls back to a safe generic line (never throws).
+ */
+export function describeAnalysisEvent(event: AnalysisEventRecord): ProgressLine {
+  const base = { id: event.id, seq: event.seq };
+  const p = event.payload as Record<string, unknown>;
+  const key = `${event.stage}:${event.event}`;
+
+  switch (key) {
+    case "pipeline:start":
+      return { ...base, state: "info", text: "심의를 시작합니다" };
+    case "ocr:done":
+      return { ...base, state: "done", text: `첨부 ${num(p.docs) ?? 0}건에서 내용을 읽었어요` };
+    case "query_expansion:done":
+      return { ...base, state: "done", text: "핵심 개념을 뽑아 관련 규정을 찾을 준비를 했어요" };
+    case "rag_retrieve:done":
+      return {
+        ...base,
+        state: "done",
+        text: `관련 규정·사례 후보 ${num(p.candidates) ?? 0}건을 찾았어요`
+      };
+    case "rerank:done":
+      return {
+        ...base,
+        state: "done",
+        text: "가장 관련 높은 근거를 선별했어요",
+        evidence: titlesFrom(p.topDocs)
+      };
+    case "evidence_select:done":
+      return {
+        ...base,
+        state: "done",
+        text: `심사 근거 ${num(p.selected) ?? 0}건을 확정했어요`,
+        evidence: stringList(p.titles)
+      };
+    case "orchestrate:start":
+      return { ...base, state: "info", text: "전문 에이전트들이 검토를 시작해요" };
+    case "combine:done":
+      return {
+        ...base,
+        state: "done",
+        text: `분석 완료 — 총 ${num(p.agentFindings) ?? 0}개 항목을 도출했어요`
+      };
+    default:
+      break;
+  }
+
+  if (event.stage === "subagent") {
+    const label = AGENT_LABELS[String(p.agent ?? "")] ?? "에이전트 검토";
+    if (event.event === "start") {
+      return { ...base, state: "running", text: `${label} 중이에요…` };
+    }
+    const findings = num(p.findings) ?? 0;
+    return { ...base, state: "done", text: `${label} 완료 — ${findings}건 확인` };
+  }
+
+  return { ...base, state: "info", text: "분석을 진행하고 있어요" };
+}
