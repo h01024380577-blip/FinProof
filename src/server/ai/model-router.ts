@@ -69,11 +69,18 @@ export type ModelRoutingConfig = {
   highestPrecisionTextModel: string;
   embeddingModel: string;
   embeddingEscalationModel: string;
+  /**
+   * Optional per-agent pin for the internal_policy agent. When set (to an
+   * `HCX-*` HyperCLOVA X model), internal_policy is served by this model
+   * regardless of tier; unset restores the default Claude tier behavior, so
+   * rollback is a pure env change.
+   */
+  internalPolicyModel?: string;
 };
 
 export type ModelRoute = {
   task: ModelRouteTask;
-  provider: "anthropic" | "openai" | "gemini";
+  provider: "anthropic" | "openai" | "gemini" | "hyperclova";
   model: string;
   modelTier: ModelTier;
   escalationReason?: string;
@@ -82,10 +89,21 @@ export type ModelRoute = {
 /**
  * Infers the serving provider from the configured model name so that switching
  * providers is a pure env change (e.g. reverting a Claude ID back to a `gpt-*`
- * name automatically routes to OpenAI again). Text tiers default to Claude.
+ * name automatically routes to OpenAI again). `claude-*` → Anthropic, `HCX-*`
+ * → HyperCLOVA X (Naver CLOVA Studio), everything else → OpenAI.
  */
-export function providerForModel(model: string): "anthropic" | "openai" {
-  return /^claude[-\w.]*/i.test(model.trim()) ? "anthropic" : "openai";
+export function providerForModel(model: string): "anthropic" | "openai" | "hyperclova" {
+  const trimmed = model.trim();
+
+  if (/^claude[-\w.]*/i.test(trimmed)) {
+    return "anthropic";
+  }
+
+  if (/^hcx[-\w.]*/i.test(trimmed)) {
+    return "hyperclova";
+  }
+
+  return "openai";
 }
 
 function value(env: Env, key: string): string | undefined {
@@ -114,7 +132,8 @@ export function getModelRoutingConfig(env: Env = process.env): ModelRoutingConfi
       env,
       "FINPROOF_EMBEDDING_ESCALATION_MODEL",
       "text-embedding-3-large"
-    )
+    ),
+    internalPolicyModel: value(env, "FINPROOF_MODEL_INTERNAL_POLICY")
   };
 }
 
@@ -209,6 +228,22 @@ export function selectModelRoute(
       model: context.highRecallRequired ? config.embeddingEscalationModel : config.embeddingModel,
       modelTier: context.highRecallRequired ? "embedding_escalation" : "embedding",
       ...(context.highRecallRequired ? { escalationReason: "high_recall_required" } : {})
+    };
+  }
+
+  // internal_policy is pinned to a dedicated model (HyperCLOVA X HCX-007) when
+  // FINPROOF_MODEL_INTERNAL_POLICY is set. The model is fixed across tiers per
+  // the migration decision; escalationReason is still surfaced for observability.
+  // Unset env falls through to the shared Claude text tiers below (rollback).
+  if (task === "internal_policy_agent" && config.internalPolicyModel) {
+    const reason = escalationReason(context);
+
+    return {
+      task,
+      provider: providerForModel(config.internalPolicyModel),
+      model: config.internalPolicyModel,
+      modelTier: reason ? "escalation_text" : "default_text",
+      ...(reason ? { escalationReason: reason } : {})
     };
   }
 

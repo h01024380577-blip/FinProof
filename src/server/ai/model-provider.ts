@@ -18,7 +18,7 @@ type GenerateTextInput = {
 };
 
 type GenerateTextResult = {
-  provider: "deterministic" | "anthropic" | "openai" | "gemini";
+  provider: "deterministic" | "anthropic" | "openai" | "gemini" | "hyperclova";
   model: string;
   text: string;
   modelTier?: ModelTier;
@@ -86,6 +86,17 @@ function maxOutputTokensFor(model: string): number {
 
   if (normalized.startsWith("claude-sonnet")) {
     return 64_000;
+  }
+
+  // CLOVA Studio requires an explicit max_completion_tokens (default is only
+  // 512, which truncates findings JSON). HCX-007 caps at 32k output; the
+  // lightweight HCX-DASH tier caps at 4k.
+  if (normalized.startsWith("hcx-dash")) {
+    return 4096;
+  }
+
+  if (normalized.startsWith("hcx")) {
+    return 32_768;
   }
 
   return 8192;
@@ -191,6 +202,33 @@ export function extractGeminiText(body: unknown): string {
   return "";
 }
 
+export function extractHyperclovaText(body: unknown): string {
+  if (!body || typeof body !== "object" || !("choices" in body) || !Array.isArray(body.choices)) {
+    return "";
+  }
+
+  const first = body.choices[0];
+
+  if (first && typeof first === "object" && "message" in first) {
+    const { message } = first as { message?: unknown };
+
+    if (
+      message &&
+      typeof message === "object" &&
+      "content" in message &&
+      typeof (message as { content?: unknown }).content === "string"
+    ) {
+      return (message as { content: string }).content;
+    }
+  }
+
+  return "";
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function createModelProvider(
   env: Env = process.env,
   fetchImpl: FetchLike = fetch
@@ -261,10 +299,82 @@ export function createModelProvider(
 function createProviderForRoute(
   env: Env,
   fetchImpl: FetchLike,
-  provider: "anthropic" | "openai" | "gemini",
+  provider: "anthropic" | "openai" | "gemini" | "hyperclova",
   model: string,
   modelTimeoutMs: number
 ): ModelProvider {
+  if (provider === "hyperclova") {
+    return {
+      async generateText(input) {
+        const apiKey = envValue(env, "CLOVA_API_KEY");
+
+        if (!apiKey) {
+          throw new Error("CLOVA_API_KEY is required when routing to a HyperCLOVA X (HCX) model");
+        }
+
+        const maxTokens = positiveNumber(
+          env,
+          "FINPROOF_MODEL_MAX_TOKENS",
+          maxOutputTokensFor(model)
+        );
+        // CLOVA Studio enforces a TPM limit and returns 429 under bursts (e.g.
+        // bulk re-analysis); retry with exponential backoff before falling back.
+        const maxAttempts = 3;
+
+        try {
+          for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            const response = await fetchImpl(
+              "https://clovastudio.stream.ntruss.com/v1/openai/chat/completions",
+              {
+                method: "POST",
+                signal: AbortSignal.timeout(modelTimeoutMs),
+                headers: {
+                  authorization: `Bearer ${apiKey}`,
+                  "content-type": "application/json"
+                },
+                body: JSON.stringify({
+                  model,
+                  max_completion_tokens: maxTokens,
+                  messages: [
+                    { role: "system", content: input.instructions },
+                    { role: "user", content: input.input }
+                  ]
+                })
+              }
+            );
+
+            if (response.status === 429 && attempt < maxAttempts) {
+              await delay(1000 * 2 ** attempt);
+              continue;
+            }
+
+            if (!response.ok) {
+              throw new Error(
+                `CLOVA Studio chat completions request failed: ${response.status ?? "unknown"} ${
+                  response.statusText ?? ""
+                }`.trim()
+              );
+            }
+
+            const text = extractHyperclovaText(await response.json()).trim();
+
+            return {
+              provider,
+              model,
+              text: text || input.fallback
+            };
+          }
+
+          throw new Error(
+            `CLOVA Studio chat completions rate-limited after ${maxAttempts} attempts`
+          );
+        } catch (error) {
+          return unavailableFallback(provider, model, input, errorMessage(error));
+        }
+      }
+    };
+  }
+
   if (provider === "anthropic") {
     return {
       async generateText(input) {
