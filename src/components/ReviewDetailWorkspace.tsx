@@ -463,6 +463,11 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
     !uploadedCreativeObjectUrl &&
     failedUploadedCreativeFileId !== uploadedCreativeFile.id
   );
+  const uploadedCreativeFailed = Boolean(
+    uploadedCreativeFile &&
+    !uploadedCreativeObjectUrl &&
+    failedUploadedCreativeFileId === uploadedCreativeFile.id
+  );
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -1496,6 +1501,7 @@ export function ReviewDetailWorkspace({ review }: { review: ReviewCase }): JSX.E
                   : undefined
               }
               isCreativeImageLoading={Boolean(uploadedCreativeFile) && isUploadedCreativeLoading}
+              creativeImageError={uploadedCreativeFailed}
               issues={allIssues}
               selectedIssueId={selectedIssue?.id}
               onSelectIssue={selectIssue}

@@ -20,6 +20,8 @@ export type CreativeViewerProps = {
     alt: string;
   };
   isCreativeImageLoading?: boolean;
+  /** 업로드된 원본 이미지를 불러오지 못했을 때 true. 인테이크 플레이스홀더 대신 오류 상태를 노출한다. */
+  creativeImageError?: boolean;
   issues: ReviewIssue[];
   selectedIssueId?: string;
   onSelectIssue: (issueId: string) => void;
@@ -74,6 +76,7 @@ export function CreativeViewer({
   disclosure,
   creativeImage,
   isCreativeImageLoading = false,
+  creativeImageError = false,
   issues,
   selectedIssueId,
   onSelectIssue,
@@ -235,6 +238,14 @@ export function CreativeViewer({
                 selectedIssueId={selectedIssueId}
                 onSelectIssue={onSelectIssue}
               />
+            </div>
+          ) : creativeImageError ? (
+            <div className="poster poster--error" role="alert">
+              <strong className="poster__brand">원본 이미지를 불러오지 못했습니다</strong>
+              <p>
+                업로드된 심의 원본을 표시할 수 없습니다. 원본이 저장소에서 조회되지 않아
+                아래 요청 정보만 남아 있습니다. 원본 파일을 다시 업로드하거나 관리자에게 문의하세요.
+              </p>
             </div>
           ) : (
             <div className="poster">

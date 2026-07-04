@@ -18,6 +18,7 @@ import {
   stableRegulatorySourceId
 } from "@/server/regulatory/knowledge-document-source-mapping";
 import { expandArchiveUploads } from "@/server/storage/archive-extraction";
+import { warnCrossEnvUpload } from "@/server/storage/upload-consistency";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
 import type { KnowledgeDocument, ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
 import { buildRevisionDiff, type RevisionDiff } from "@/domain/revision-diff";
@@ -251,6 +252,10 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         files: Array<{ name: string; type: string; size: number; body: Uint8Array }>;
       }
     ) {
+      // Best-effort guard: warn (never block) when this environment would create an
+      // orphan — local file storage writing metadata to a remote DB served elsewhere.
+      warnCrossEnvUpload();
+
       const scope = scopeFromContext(context);
       let reviewCaseId = input.reviewCaseId;
 
