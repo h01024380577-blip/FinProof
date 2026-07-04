@@ -156,6 +156,8 @@ describe("createReviewSubAgentOrchestrator", () => {
       ([input]) => input.task === "main_compliance"
     )?.[0];
     const mainInput = JSON.parse(String(mainCall?.input));
+    // The domain agent keeps at most the three strongest material findings and
+    // hands all three to the lead agent as prior context.
     const selectedTitles = ["고위험 수정 요청 B", "고위험 수정 요청 A", "고위험 보류 의견"];
 
     expect(creativeInput.selectionPolicy).toEqual(
@@ -163,20 +165,24 @@ describe("createReviewSubAgentOrchestrator", () => {
     );
     expect(creativeInput.outputSchema.maxFindings).toBe(3);
     expect(
+      mainInput.priorFindings
+        .filter((candidate: { agent: string }) => candidate.agent === "creative_review")
+        .map((candidate: { title: string }) => candidate.title)
+    ).toEqual(selectedTitles);
+
+    // The lead agent returns no consolidation here, so the no-consolidation
+    // fallback collapses the two same-concern change_request findings
+    // ("고위험 수정 요청 A"/"B" share targetText) into the stronger representative
+    // (B, confidence 0.91), leaving two distinct concerns in the final output.
+    expect(
       result.filter((candidate) => candidate.agent === "creative_review").map((candidate) => ({
         id: candidate.id,
         title: candidate.title
       }))
     ).toEqual([
-      { id: "finding-creative_review-001", title: selectedTitles[0] },
-      { id: "finding-creative_review-002", title: selectedTitles[1] },
-      { id: "finding-creative_review-003", title: selectedTitles[2] }
+      { id: "finding-creative_review-001", title: "고위험 수정 요청 B" },
+      { id: "finding-creative_review-003", title: "고위험 보류 의견" }
     ]);
-    expect(
-      mainInput.priorFindings
-        .filter((candidate: { agent: string }) => candidate.agent === "creative_review")
-        .map((candidate: { title: string }) => candidate.title)
-    ).toEqual(selectedTitles);
   });
 
   it("limits evidence verification and lead-agent inputs while summarizing omitted findings", async () => {
