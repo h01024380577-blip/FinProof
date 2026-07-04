@@ -212,6 +212,43 @@ describe("runCoveEvidenceVerification", () => {
     expect(result.verifiedAgentFindings).toEqual([highRiskFinding]);
   });
 
+  it("emits cross-verification start/done progress events with counts", async () => {
+    const provider = answerProvider({ risk_action_support: "unsupported" });
+    const events: Array<Record<string, unknown>> = [];
+
+    const result = await runCoveEvidenceVerification({
+      review,
+      extractedDocuments,
+      evidenceCandidates: [policyEvidence],
+      agentFindings: [finding()],
+      modelProvider: provider,
+      onEvent: (payload) => events.push(payload)
+    });
+
+    const start = events.find((e) => e.stage === "cove" && e.event === "start");
+    const done = events.find((e) => e.stage === "cove" && e.event === "done");
+
+    expect(start).toMatchObject({ stage: "cove", event: "start", case: review.id, verifying: 1 });
+    // one high-risk change_request that CoVe could not verify -> downgraded (suppressed), 0 verified
+    expect(done).toMatchObject({ stage: "cove", event: "done", case: review.id, verified: 0, suppressed: 1 });
+    expect(typeof (done as Record<string, unknown>).ms).toBe("number");
+    // done is emitted after the verdicts are computed, mirroring the returned artifacts
+    expect(result.artifacts.verdicts[0]).toMatchObject({ status: "downgrade" });
+  });
+
+  it("does not require an onEvent sink", async () => {
+    const provider = answerProvider({});
+    await expect(
+      runCoveEvidenceVerification({
+        review,
+        extractedDocuments,
+        evidenceCandidates: [policyEvidence],
+        agentFindings: [finding()],
+        modelProvider: provider
+      })
+    ).resolves.toBeDefined();
+  });
+
   it("downgrades case-history-only high findings even if semantic verification is unavailable", async () => {
     const provider = answerProvider({});
     const caseEvidence = {

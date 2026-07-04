@@ -110,6 +110,14 @@ export function describeAnalysisEvent(event: AnalysisEventRecord): ProgressLine 
         state: "done",
         text: `분석 완료 — 총 ${num(p.agentFindings) ?? 0}개 항목을 도출했어요`
       };
+    case "cove:start":
+      return { ...base, state: "running", text: "검토 결과를 근거와 교차 검증하고 있어요…" };
+    case "cove:done": {
+      const verified = num(p.verified) ?? 0;
+      const suppressed = num(p.suppressed) ?? 0;
+      const suffix = suppressed > 0 ? `, ${suppressed}건 근거부족으로 보류·제외` : "";
+      return { ...base, state: "done", text: `교차 검증 완료 — ${verified}건 재확인${suffix}` };
+    }
     default:
       break;
   }

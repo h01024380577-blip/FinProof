@@ -1,6 +1,7 @@
 import type { Evidence, ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import { COVE_EVIDENCE_ANSWER_PROMPT } from "@/server/ai/prompt-registry";
 import type { ModelProvider } from "@/server/ai/model-provider";
+import { logAnalysisEvent, type AnalysisEventSink } from "./analysis-log";
 import type { AgentFinding } from "./review-subagents";
 import { riskRank } from "./risk-policy";
 
@@ -82,6 +83,7 @@ type RunCoveInput = {
   agentFindings: AgentFinding[];
   modelProvider: ModelProvider;
   now?: () => Date;
+  onEvent?: AnalysisEventSink;
 };
 
 type RunCoveResult = {
@@ -712,8 +714,18 @@ export async function runCoveEvidenceVerification({
   evidenceCandidates,
   agentFindings,
   modelProvider,
-  now = () => new Date()
+  now = () => new Date(),
+  onEvent
 }: RunCoveInput): Promise<RunCoveResult> {
+  // Cross-verification ("교차 검증") observability. Mirrors the pipeline's emit:
+  // log one JSON line for CloudWatch and forward to the reviewer-facing progress
+  // sink. Never let observability break the run.
+  const startedAt = now().getTime();
+  const emit = (payload: Record<string, unknown>) => {
+    logAnalysisEvent(payload);
+    onEvent?.(payload);
+  };
+
   const selection = agentFindings.map((finding) =>
     selectCoveMode({
       finding,
@@ -722,6 +734,12 @@ export async function runCoveEvidenceVerification({
       evidenceCandidates
     })
   );
+  emit({
+    stage: "cove",
+    event: "start",
+    case: review.id,
+    verifying: selection.filter((decision) => decision.mode === "llm").length
+  });
   const selectedModes = new Map(selection.map((decision) => [decision.findingId, decision.mode]));
   const questions = agentFindings.flatMap((finding) =>
     planQuestions(finding, selectedModes.get(finding.id) ?? "none")
@@ -762,6 +780,15 @@ export async function runCoveEvidenceVerification({
       })
     )
     .filter((verdict): verdict is CoveFindingVerdict => Boolean(verdict));
+
+  emit({
+    stage: "cove",
+    event: "done",
+    case: review.id,
+    verified: verdicts.filter((verdict) => verdict.status === "verified").length,
+    suppressed: verdicts.filter((verdict) => verdict.status !== "verified").length,
+    ms: now().getTime() - startedAt
+  });
 
   return {
     artifacts: {
