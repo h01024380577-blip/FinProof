@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2, CheckCircle2, CircleDot, X, AlertCircle } from "lucide-react";
 import { useRole } from "@/components/RoleContext";
 import type { AnalysisEventRecord } from "@/server/reviews/review-store";
-import { describeAnalysisEvent } from "./analysis-progress-copy";
+import { buildProgressLines } from "./analysis-progress-copy";
 
 type EventsResponse = {
   jobId: string | null;
@@ -94,7 +94,7 @@ export function AnalysisProgressPopup({
     };
   }, [reviewCaseId, apiHeaders]);
 
-  const lines = events.map(describeAnalysisEvent);
+  const lines = buildProgressLines(events);
 
   return (
     <section

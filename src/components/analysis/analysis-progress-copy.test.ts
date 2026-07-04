@@ -1,5 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { describeAnalysisEvent } from "./analysis-progress-copy";
+import { describeAnalysisEvent, buildProgressLines } from "./analysis-progress-copy";
+
+function subagentEvent(seq: number, event: "start" | "done", agent: string, findings = 0) {
+  return {
+    id: `e${seq}`,
+    seq,
+    stage: "subagent",
+    event,
+    payload: event === "done" ? { agent, findings } : { agent },
+    createdAt: "2026-07-04T00:00:00.000Z"
+  };
+}
+
+describe("buildProgressLines", () => {
+  it("hides a sub-agent's spinner once its done event has arrived", () => {
+    const lines = buildProgressLines([
+      subagentEvent(1, "start", "regulation"),
+      subagentEvent(2, "start", "internal_policy"),
+      subagentEvent(3, "done", "regulation", 3)
+    ]);
+    // regulation finished -> only its done line; internal_policy still running.
+    const running = lines.filter((line) => line.state === "running");
+    expect(running).toHaveLength(1);
+    expect(running[0].text).toContain("내부 지침");
+    expect(lines.some((line) => line.state === "done" && line.text.includes("규정"))).toBe(true);
+    expect(lines.some((line) => line.state === "running" && line.text.includes("규정"))).toBe(false);
+  });
+});
 
 describe("describeAnalysisEvent", () => {
   it("humanizes ocr done", () => {
