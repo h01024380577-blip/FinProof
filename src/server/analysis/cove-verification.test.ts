@@ -90,6 +90,8 @@ describe("runCoveEvidenceVerification", () => {
   it("skips low-risk findings that do not affect reviewer action", async () => {
     const provider = answerProvider({});
     const lowRiskFinding = finding({
+      id: "finding-creative_review-low-risk",
+      agent: "creative_review",
       riskLevel: "info",
       suggestedAction: "approve",
       confidence: 0.95
@@ -108,6 +110,140 @@ describe("runCoveEvidenceVerification", () => {
       expect.objectContaining({ findingId: lowRiskFinding.id, mode: "none" })
     ]);
     expect(result.verifiedAgentFindings).toEqual([lowRiskFinding]);
+  });
+
+  it("skips non-final caution hold findings even when confidence or evidence is weak", async () => {
+    const provider = answerProvider({});
+    const cautionFinding = finding({
+      agent: "creative_review",
+      riskLevel: "caution",
+      suggestedAction: "hold",
+      confidence: 0.62,
+      evidenceCandidateIds: ["missing-evidence"]
+    });
+
+    const result = await runCoveEvidenceVerification({
+      review,
+      extractedDocuments,
+      evidenceCandidates: [policyEvidence],
+      agentFindings: [cautionFinding],
+      modelProvider: provider
+    });
+
+    expect(provider.generateText).not.toHaveBeenCalled();
+    expect(result.artifacts.selection).toEqual([
+      expect.objectContaining({
+        findingId: cautionFinding.id,
+        mode: "none",
+        reasons: expect.arrayContaining([
+          "low_confidence",
+          "weak_or_missing_evidence",
+          "low_impact_not_cove_target"
+        ])
+      })
+    ]);
+    expect(result.artifacts.questions).toEqual([]);
+    expect(result.verifiedAgentFindings).toEqual([cautionFinding]);
+  });
+
+  it("verifies main-agent final exposure candidates even when they are caution hold", async () => {
+    const provider = answerProvider({});
+    const mainFinding = finding({
+      agent: "main",
+      riskLevel: "caution",
+      suggestedAction: "hold",
+      confidence: 0.91
+    });
+
+    const result = await runCoveEvidenceVerification({
+      review,
+      extractedDocuments,
+      evidenceCandidates: [policyEvidence],
+      agentFindings: [mainFinding],
+      modelProvider: provider
+    });
+
+    expect(provider.generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task: "cove_evidence_answering"
+      })
+    );
+    expect(result.artifacts.selection).toEqual([
+      expect.objectContaining({
+        findingId: mainFinding.id,
+        mode: "llm",
+        reasons: expect.arrayContaining(["final_exposure_candidate"])
+      })
+    ]);
+    expect(result.artifacts.verdicts).toEqual([
+      expect.objectContaining({
+        findingId: mainFinding.id,
+        status: "verified"
+      })
+    ]);
+  });
+
+  it("limits CoVe LLM verification to the highest-priority candidates", async () => {
+    const provider = answerProvider({});
+    const findings = [
+      finding({
+        id: "finding-main-final",
+        agent: "main",
+        riskLevel: "caution",
+        suggestedAction: "hold",
+        confidence: 0.9
+      }),
+      finding({
+        id: "finding-high-risk",
+        agent: "creative_review",
+        riskLevel: "high",
+        suggestedAction: "hold",
+        confidence: 0.86
+      }),
+      ...Array.from({ length: 6 }, (_, index) =>
+        finding({
+          id: `finding-change-${index + 1}`,
+          agent: "product_terms",
+          riskLevel: "caution",
+          suggestedAction: "change_request",
+          confidence: 0.8 + index / 100
+        })
+      )
+    ];
+
+    const result = await runCoveEvidenceVerification({
+      review,
+      extractedDocuments,
+      evidenceCandidates: [policyEvidence],
+      agentFindings: findings,
+      modelProvider: provider
+    });
+    const selected = result.artifacts.selection.filter((decision) => decision.mode === "llm");
+    const skipped = result.artifacts.selection.filter((decision) =>
+      decision.reasons.includes("cove_budget_limit")
+    );
+    const modelInput = JSON.parse(
+      String((provider.generateText as ReturnType<typeof vi.fn>).mock.calls[0]?.[0].input)
+    ) as { verificationQuestions: Array<{ findingId: string }> };
+    const modelFindingIds = [...new Set(modelInput.verificationQuestions.map((item) => item.findingId))];
+
+    expect(selected).toHaveLength(6);
+    expect(selected.map((decision) => decision.findingId)).toEqual(
+      expect.arrayContaining([
+        "finding-main-final",
+        "finding-high-risk",
+        "finding-change-6",
+        "finding-change-5",
+        "finding-change-4",
+        "finding-change-3"
+      ])
+    );
+    expect(skipped.map((decision) => decision.findingId)).toEqual([
+      "finding-change-1",
+      "finding-change-2"
+    ]);
+    expect(modelFindingIds).toHaveLength(6);
+    expect(modelFindingIds).toEqual(expect.arrayContaining(selected.map((item) => item.findingId)));
   });
 
   it("downgrades a high-risk change request when CoVe cannot verify the risk/action support", async () => {

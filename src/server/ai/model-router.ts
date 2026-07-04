@@ -79,6 +79,9 @@ export type ModelRoute = {
   escalationReason?: string;
 };
 
+const FAST_REVIEW_MODEL = "claude-sonnet-4-6";
+const FAST_DOMAIN_MODEL = "claude-haiku-4-5";
+
 /**
  * Infers the serving provider from the configured model name so that switching
  * providers is a pure env change (e.g. reverting a Claude ID back to a `gpt-*`
@@ -197,6 +200,36 @@ function textRoute(
   };
 }
 
+function fastReviewRoute(task: ModelRouteTask, reason: string): ModelRoute {
+  return {
+    task,
+    provider: providerForModel(FAST_REVIEW_MODEL),
+    model: FAST_REVIEW_MODEL,
+    modelTier: "escalation_text",
+    escalationReason: reason
+  };
+}
+
+function fastDomainRoute(task: ModelRouteTask, reason?: string): ModelRoute {
+  return {
+    task,
+    provider: providerForModel(FAST_DOMAIN_MODEL),
+    model: FAST_DOMAIN_MODEL,
+    modelTier: "default_text",
+    ...(reason ? { escalationReason: reason } : {})
+  };
+}
+
+function fastSonnetDomainRoute(task: ModelRouteTask, reason?: string): ModelRoute {
+  return {
+    task,
+    provider: providerForModel(FAST_REVIEW_MODEL),
+    model: FAST_REVIEW_MODEL,
+    modelTier: "default_text",
+    ...(reason ? { escalationReason: reason } : {})
+  };
+}
+
 export function selectModelRoute(
   task: ModelRouteTask,
   context: ModelRouteContext = {},
@@ -222,9 +255,12 @@ export function selectModelRoute(
     return textRoute(task, reason ? "escalation_text" : "default_text", config, reason);
   }
 
-  if (task === "creative_review" && (context.visualUnderstanding || context.complexVisual)) {
-    const reason = context.complexVisual ? "complex_visual" : undefined;
-    return textRoute(task, reason ? "escalation_text" : "default_text", config, reason);
+  if (task === "creative_review" || task === "product_terms" || task === "social_context_risk") {
+    return fastDomainRoute(task, escalationReason(context));
+  }
+
+  if (task === "regulation_agent" || task === "internal_policy_agent") {
+    return fastSonnetDomainRoute(task, escalationReason(context));
   }
 
   if (
@@ -239,8 +275,8 @@ export function selectModelRoute(
 
   if (task === "main_compliance") {
     return context.sensitiveOutput
-      ? textRoute(task, "highest_precision_text", config, "sensitive_output")
-      : textRoute(task, "escalation_text", config, "lead_agent_final_judgment");
+      ? fastReviewRoute(task, "sensitive_output")
+      : fastReviewRoute(task, "lead_agent_final_judgment");
   }
 
   if (task === "korean_compliance_mapping") {
@@ -249,8 +285,12 @@ export function selectModelRoute(
 
   if (task === "cove_evidence_answering") {
     return context.sensitiveOutput
-      ? textRoute(task, "highest_precision_text", config, "sensitive_cove_verification")
-      : textRoute(task, "escalation_text", config, escalationReason(context) ?? "cove_verification");
+      ? fastReviewRoute(task, "sensitive_cove_verification")
+      : fastReviewRoute(task, escalationReason(context) ?? "cove_verification");
+  }
+
+  if (task === "evidence_verification") {
+    return fastReviewRoute(task, escalationReason(context) ?? "evidence_verification");
   }
 
   if (task === "draft_quality_review") {

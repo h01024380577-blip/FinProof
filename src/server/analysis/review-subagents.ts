@@ -99,6 +99,13 @@ const domainSubAgents: ReviewSubAgentDefinition[] = [
   }
 ];
 
+const DOMAIN_AGENT_MAX_FINDINGS = 3;
+const EVIDENCE_VERIFICATION_MAX_PRIOR_FINDINGS = 8;
+const MAIN_COMPLIANCE_MAX_PRIOR_FINDINGS = 10;
+const domainSubAgentIds = new Set<ReviewSubAgentId>(
+  domainSubAgents.map((agent) => agent.id)
+);
+
 const evidenceVerificationAgent: ReviewSubAgentDefinition = {
   id: "evidence_verification",
   task: "evidence_verification",
@@ -360,6 +367,54 @@ function normalizeFinding(
   };
 }
 
+function maxFindingsForAgent(agent: ReviewSubAgentId) {
+  return domainSubAgentIds.has(agent) ? DOMAIN_AGENT_MAX_FINDINGS : undefined;
+}
+
+function actionRank(action: ReviewIssue["suggestedAction"]) {
+  if (action === "change_request") {
+    return 2;
+  }
+
+  if (action === "hold") {
+    return 1;
+  }
+
+  return 0;
+}
+
+function findingPriority(finding: AgentFinding) {
+  return (
+    riskRank[finding.riskLevel] * 100 +
+    actionRank(finding.suggestedAction) * 10 +
+    finding.confidence
+  );
+}
+
+function findingId(agent: ReviewSubAgentId, index: number) {
+  return `finding-${agent}-${String(index + 1).padStart(3, "0")}`;
+}
+
+function limitFindingsForAgent(agent: ReviewSubAgentId, findings: AgentFinding[]) {
+  const maxFindings = maxFindingsForAgent(agent);
+
+  if (!maxFindings || findings.length <= maxFindings) {
+    return findings;
+  }
+
+  return findings
+    .map((finding, originalIndex) => ({ finding, originalIndex }))
+    .sort((left, right) => {
+      const priorityDelta = findingPriority(right.finding) - findingPriority(left.finding);
+      return priorityDelta === 0 ? left.originalIndex - right.originalIndex : priorityDelta;
+    })
+    .slice(0, maxFindings)
+    .map(({ finding }, index) => ({
+      ...finding,
+      id: findingId(agent, index)
+    }));
+}
+
 function highestFindingRisk(findings: AgentFinding[]): RiskLevel {
   return findings.reduce(
     (highest, finding) =>
@@ -385,6 +440,111 @@ function findingHasWeakEvidence(finding: AgentFinding, evidenceCandidates: RagEv
   const scores = evidenceScoresForFinding(finding, evidenceCandidates);
 
   return scores.length === 0 || scores.some((score) => score < 0.72);
+}
+
+function evidenceVerificationPriority(
+  finding: AgentFinding,
+  evidenceCandidates: RagEvidenceCandidate[]
+) {
+  return (
+    riskRank[finding.riskLevel] * 100 +
+    actionRank(finding.suggestedAction) * 40 +
+    (findingHasWeakEvidence(finding, evidenceCandidates) ? 30 : 0) +
+    (finding.confidence < 0.78 ? 20 : 0) +
+    finding.confidence
+  );
+}
+
+function selectEvidenceVerificationFindings(
+  findings: AgentFinding[],
+  evidenceCandidates: RagEvidenceCandidate[]
+) {
+  if (findings.length <= EVIDENCE_VERIFICATION_MAX_PRIOR_FINDINGS) {
+    return findings;
+  }
+
+  return findings
+    .map((finding, originalIndex) => ({
+      finding,
+      originalIndex,
+      priority: evidenceVerificationPriority(finding, evidenceCandidates)
+    }))
+    .sort((left, right) => {
+      const priorityDelta = right.priority - left.priority;
+      return priorityDelta === 0 ? left.originalIndex - right.originalIndex : priorityDelta;
+    })
+    .slice(0, EVIDENCE_VERIFICATION_MAX_PRIOR_FINDINGS)
+    .map(({ finding }) => finding);
+}
+
+function mainCompliancePriority(
+  finding: AgentFinding,
+  evidenceCandidates: RagEvidenceCandidate[]
+) {
+  return (
+    evidenceVerificationPriority(finding, evidenceCandidates) +
+    (finding.agent === "social_context_risk" ? 25 : 0) +
+    (finding.agent === "evidence_verification" ? 15 : 0) +
+    (finding.agent === "case_search" ? 10 : 0)
+  );
+}
+
+function selectMainComplianceFindings(
+  findings: AgentFinding[],
+  evidenceCandidates: RagEvidenceCandidate[]
+) {
+  if (findings.length <= MAIN_COMPLIANCE_MAX_PRIOR_FINDINGS) {
+    return findings;
+  }
+
+  return findings
+    .map((finding, originalIndex) => ({
+      finding,
+      originalIndex,
+      priority: mainCompliancePriority(finding, evidenceCandidates)
+    }))
+    .sort((left, right) => {
+      const priorityDelta = right.priority - left.priority;
+      return priorityDelta === 0 ? left.originalIndex - right.originalIndex : priorityDelta;
+    })
+    .slice(0, MAIN_COMPLIANCE_MAX_PRIOR_FINDINGS)
+    .map(({ finding }) => finding);
+}
+
+function countBy<T extends string>(values: T[]) {
+  return values.reduce<Record<T, number>>(
+    (counts, value) => ({
+      ...counts,
+      [value]: (counts[value] ?? 0) + 1
+    }),
+    {} as Record<T, number>
+  );
+}
+
+function summarizeOmittedFindings(selectedFindings: AgentFinding[], allFindings: AgentFinding[]) {
+  const selectedIds = new Set(selectedFindings.map((finding) => finding.id));
+  const omittedFindings = allFindings.filter((finding) => !selectedIds.has(finding.id));
+
+  if (omittedFindings.length === 0) {
+    return undefined;
+  }
+
+  return {
+    totalOriginalFindings: allFindings.length,
+    includedDetailedFindings: selectedFindings.length,
+    omittedFindings: omittedFindings.length,
+    omittedByAgent: countBy(omittedFindings.map((finding) => finding.agent)),
+    omittedByRiskLevel: countBy(omittedFindings.map((finding) => finding.riskLevel)),
+    omittedBySuggestedAction: countBy(omittedFindings.map((finding) => finding.suggestedAction)),
+    representativeOmittedFindings: omittedFindings.slice(0, 8).map((finding) => ({
+      id: finding.id,
+      agent: finding.agent,
+      riskLevel: finding.riskLevel,
+      suggestedAction: finding.suggestedAction,
+      title: finding.title,
+      targetText: finding.targetText
+    }))
+  };
 }
 
 function needsEvidenceVerification(
@@ -562,12 +722,16 @@ function agentInput({
   review,
   extractedDocuments,
   evidenceCandidates,
-  priorFindings = []
+  priorFindings = [],
+  priorFindingSummary,
+  maxFindings
 }: {
   review: ReviewCase;
   extractedDocuments: ExtractedDocument[];
   evidenceCandidates: RagEvidenceCandidate[];
   priorFindings?: AgentFinding[];
+  priorFindingSummary?: Record<string, unknown>;
+  maxFindings?: number;
 }) {
   const materials = materialStatus(review);
 
@@ -599,11 +763,22 @@ function agentInput({
       sourceFileId: candidate.sourceFileId
     })),
     ...(priorFindings.length > 0 ? { priorFindings: compactPriorFindings(priorFindings) } : {}),
+    ...(priorFindingSummary ? { priorFindingSummary } : {}),
+    ...(maxFindings
+      ? {
+          selectionPolicy: {
+            maxFindings,
+            instruction:
+              "Return only the strongest material, evidence-backed, non-duplicate findings for this agent. Prefer high-risk or change_request findings, then stronger confidence."
+          }
+        }
+      : {}),
     outputSchema: {
       findings:
         "array of { title, issueType, riskLevel, targetText, description, suggestedAction, suggestedCopy, evidenceCandidateIds, confidence }",
       allowedRiskLevels: analysisRiskLevels,
-      allowedSuggestedActions: ["approve", "change_request", "hold"]
+      allowedSuggestedActions: ["approve", "change_request", "hold"],
+      ...(maxFindings ? { maxFindings } : {})
     }
   });
 }
@@ -613,6 +788,7 @@ async function runAgent({
   agent,
   input,
   priorFindings = [],
+  priorFindingSummary,
   routeContext = {},
   onEvent
 }: {
@@ -624,6 +800,7 @@ async function runAgent({
     evidenceCandidates: RagEvidenceCandidate[];
   };
   priorFindings?: AgentFinding[];
+  priorFindingSummary?: Record<string, unknown>;
   routeContext?: ModelRouteContext;
   onEvent?: (payload: Record<string, unknown>) => void;
 }) {
@@ -640,6 +817,7 @@ async function runAgent({
     evidence: input.evidenceCandidates.length,
     priorFindings: priorFindings.length
   });
+  const maxFindings = maxFindingsForAgent(agent.id);
   const result = await provider.generateText({
     task: agent.task,
     routeContext: {
@@ -650,18 +828,23 @@ async function runAgent({
     input: agentInput({
       ...input,
       evidenceCandidates: orderEvidenceCandidatesForAgent(agent.id, input.evidenceCandidates),
-      priorFindings
+      priorFindings,
+      priorFindingSummary,
+      maxFindings
     }),
     fallback: "[]"
   });
 
   const evidenceCandidates = orderEvidenceCandidatesForAgent(agent.id, input.evidenceCandidates);
 
-  const findings = rawFindings(extractJson(result.text))
-    .map((finding, index) =>
-      normalizeFinding(agent.id, finding, index, evidenceCandidates, result.text)
-    )
-    .filter((finding): finding is AgentFinding => Boolean(finding));
+  const findings = limitFindingsForAgent(
+    agent.id,
+    rawFindings(extractJson(result.text))
+      .map((finding, index) =>
+        normalizeFinding(agent.id, finding, index, evidenceCandidates, result.text)
+      )
+      .filter((finding): finding is AgentFinding => Boolean(finding))
+  );
 
   emit({
     stage: "subagent",
@@ -701,16 +884,20 @@ export function createReviewSubAgentOrchestrator(
       }
 
       if (needsEvidenceVerification(findings, input.evidenceCandidates)) {
+        const evidenceVerificationFindings = selectEvidenceVerificationFindings(
+          findings,
+          input.evidenceCandidates
+        );
         findings.push(
           ...(await runAgent({
             provider,
             agent: evidenceVerificationAgent,
             input,
-            priorFindings: findings,
+            priorFindings: evidenceVerificationFindings,
             onEvent,
             routeContext: {
-              riskLevel: highestFindingRisk(findings),
-              evidenceContradiction: findings.some((finding) =>
+              riskLevel: highestFindingRisk(evidenceVerificationFindings),
+              evidenceContradiction: evidenceVerificationFindings.some((finding) =>
                 findingHasWeakEvidence(finding, input.evidenceCandidates)
               )
             }
@@ -736,11 +923,17 @@ export function createReviewSubAgentOrchestrator(
         );
       }
 
+      const mainComplianceFindings = selectMainComplianceFindings(
+        findings,
+        input.evidenceCandidates
+      );
+      const mainFindingSummary = summarizeOmittedFindings(mainComplianceFindings, findings);
       const mainFindings = await runAgent({
         provider,
         agent: mainComplianceAgent,
         input,
-        priorFindings: findings,
+        priorFindings: mainComplianceFindings,
+        priorFindingSummary: mainFindingSummary,
         onEvent,
         routeContext: {
           riskLevel: highestFindingRisk(findings),

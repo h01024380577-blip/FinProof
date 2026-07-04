@@ -83,6 +83,7 @@ const defaultFilterState: QueueFilterState = {
   product: "all"
 };
 const queuePageSize = 10;
+const analysisPollIntervalMs = 2000;
 
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 
@@ -292,17 +293,7 @@ export function ReviewQueue(): JSX.Element {
     return true;
   }
 
-  async function pollForCompletion(reviewId: string, attempt = 0): Promise<void> {
-    const MAX_ATTEMPTS = 90; // ~3 minutes at 2s intervals
-    if (attempt >= MAX_ATTEMPTS) {
-      setAnalysisState(reviewId, {
-        status: "failed",
-        errorMessage: "분석 상태 확인 시간이 초과되었습니다."
-      });
-      clearPollingTimer(reviewId);
-      return;
-    }
-
+  async function pollForCompletion(reviewId: string): Promise<void> {
     try {
       const response = await fetch(`/api/v1/review-cases/${reviewId}/analysis/status`, {
         headers: apiHeaders()
@@ -373,7 +364,7 @@ export function ReviewQueue(): JSX.Element {
     }
 
     clearPollingTimer(reviewId);
-    const timer = setTimeout(() => void pollForCompletion(reviewId, attempt + 1), 2000);
+    const timer = setTimeout(() => void pollForCompletion(reviewId), analysisPollIntervalMs);
     pollingTimers.current.set(reviewId, timer);
   }
 

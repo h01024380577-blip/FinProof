@@ -25,6 +25,7 @@ describe("model router", () => {
 
   it("infers the provider from the configured model name", () => {
     expect(providerForModel("claude-sonnet-4-6")).toBe("anthropic");
+    expect(providerForModel("claude-haiku-4-5")).toBe("anthropic");
     expect(providerForModel("claude-opus-4-8")).toBe("anthropic");
     expect(providerForModel("gpt-5-mini")).toBe("openai");
     expect(providerForModel("text-embedding-3-small")).toBe("openai");
@@ -53,15 +54,15 @@ describe("model router", () => {
     expect(selectModelRoute("main_compliance", {})).toEqual({
       task: "main_compliance",
       provider: "anthropic",
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-4-6",
       modelTier: "escalation_text",
       escalationReason: "lead_agent_final_judgment"
     });
     expect(selectModelRoute("main_compliance", { sensitiveOutput: true })).toEqual({
       task: "main_compliance",
       provider: "anthropic",
-      model: "claude-opus-4-8",
-      modelTier: "highest_precision_text",
+      model: "claude-sonnet-4-6",
+      modelTier: "escalation_text",
       escalationReason: "sensitive_output"
     });
   });
@@ -141,36 +142,74 @@ describe("model router", () => {
     });
   });
 
-  it("routes social context risk like a normal domain agent unless risk is high", () => {
+  it("routes fast domain agents through Haiku", () => {
+    for (const task of ["creative_review", "product_terms", "social_context_risk"] as const) {
+      expect(selectModelRoute(task, {})).toEqual({
+        task,
+        provider: "anthropic",
+        model: "claude-haiku-4-5",
+        modelTier: "default_text"
+      });
+    }
+
     expect(selectModelRoute("social_context_risk", {})).toEqual({
       task: "social_context_risk",
       provider: "anthropic",
-      model: "claude-sonnet-5",
+      model: "claude-haiku-4-5",
       modelTier: "default_text"
     });
     expect(selectModelRoute("social_context_risk", { riskLevel: "high" })).toEqual({
       task: "social_context_risk",
       provider: "anthropic",
-      model: "claude-sonnet-5",
-      modelTier: "escalation_text",
+      model: "claude-haiku-4-5",
+      modelTier: "default_text",
       escalationReason: "risk_level_high"
     });
   });
 
-  it("routes CoVe evidence answering to high-precision models only for sensitive checks", () => {
+  it("keeps regulation and internal policy agents on Sonnet 4-6", () => {
+    for (const task of ["regulation_agent", "internal_policy_agent"] as const) {
+      expect(selectModelRoute(task, {})).toEqual({
+        task,
+        provider: "anthropic",
+        model: "claude-sonnet-4-6",
+        modelTier: "default_text"
+      });
+    }
+
+    expect(selectModelRoute("regulation_agent", { riskLevel: "high" })).toEqual({
+      task: "regulation_agent",
+      provider: "anthropic",
+      model: "claude-sonnet-4-6",
+      modelTier: "default_text",
+      escalationReason: "risk_level_high"
+    });
+  });
+
+  it("routes CoVe evidence answering through the fast Claude review model", () => {
     expect(selectModelRoute("cove_evidence_answering", {})).toEqual({
       task: "cove_evidence_answering",
       provider: "anthropic",
-      model: "claude-sonnet-5",
+      model: "claude-sonnet-4-6",
       modelTier: "escalation_text",
       escalationReason: "cove_verification"
     });
     expect(selectModelRoute("cove_evidence_answering", { sensitiveOutput: true })).toEqual({
       task: "cove_evidence_answering",
       provider: "anthropic",
-      model: "claude-opus-4-8",
-      modelTier: "highest_precision_text",
+      model: "claude-sonnet-4-6",
+      modelTier: "escalation_text",
       escalationReason: "sensitive_cove_verification"
+    });
+  });
+
+  it("routes evidence verification through the fast Claude review model", () => {
+    expect(selectModelRoute("evidence_verification", { riskLevel: "high" })).toEqual({
+      task: "evidence_verification",
+      provider: "anthropic",
+      model: "claude-sonnet-4-6",
+      modelTier: "escalation_text",
+      escalationReason: "risk_level_high"
     });
   });
 });

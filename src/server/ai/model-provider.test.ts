@@ -92,6 +92,31 @@ describe("model provider", () => {
     expect(body.max_tokens).toBe(128000);
   });
 
+  it("caps Claude output for compact analysis JSON tasks", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ content: [{ type: "text", text: "{\"findings\":[]}" }] })
+    });
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "anthropic",
+        ANTHROPIC_API_KEY: "sk-ant-test",
+        ANTHROPIC_MODEL: "claude-sonnet-4-6"
+      },
+      fetchMock
+    );
+
+    await provider.generateText({
+      task: "main_compliance",
+      instructions: "Find issues",
+      input: "review",
+      fallback: "[]"
+    });
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { max_tokens: number };
+    expect(body.max_tokens).toBe(8000);
+  });
+
   it("lets FINPROOF_MODEL_MAX_TOKENS override the model default", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -275,7 +300,7 @@ describe("model provider", () => {
       expect.objectContaining({
         body: JSON.stringify({
           model: "claude-sonnet-5",
-          max_tokens: 64000,
+          max_tokens: 8000,
           system: "Read image",
           messages: [{ role: "user", content: "image payload" }]
         })
