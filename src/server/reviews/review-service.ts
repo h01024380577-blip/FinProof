@@ -442,6 +442,21 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
       return store.getLatestAnalysisJob(scopeFromContext(context), reviewCaseId);
     },
 
+    async listAnalysisEvents(
+      context: RequestContext,
+      reviewCaseId: string,
+      options: { since?: number }
+    ) {
+      const scope = scopeFromContext(context);
+      const review = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!review) {
+        return undefined;
+      }
+
+      return store.listAnalysisEvents(scope, reviewCaseId, options);
+    },
+
     async getAnalysisStatus(
       context: RequestContext,
       reviewCaseId: string
