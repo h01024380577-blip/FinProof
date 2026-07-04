@@ -22,6 +22,7 @@ export type ModelRouteTask =
   | "korean_compliance_mapping"
   | "retrieval_query"
   | "evidence_verification"
+  | "cove_evidence_answering"
   | "rag_chat"
   | "opinion_draft"
   | "draft_quality_review"
@@ -100,7 +101,7 @@ function nonGeminiModel(env: Env, key: string, fallback: string): string {
 
 export function getModelRoutingConfig(env: Env = process.env): ModelRoutingConfig {
   return {
-    defaultTextModel: nonGeminiModel(env, "FINPROOF_MODEL_DEFAULT_TEXT", "claude-sonnet-4-6"),
+    defaultTextModel: nonGeminiModel(env, "FINPROOF_MODEL_DEFAULT_TEXT", "claude-sonnet-5"),
     escalationTextModel: nonGeminiModel(env, "FINPROOF_MODEL_ESCALATION_TEXT", "claude-sonnet-5"),
     highestPrecisionTextModel: nonGeminiModel(
       env,
@@ -243,6 +244,12 @@ export function selectModelRoute(
 
   if (task === "korean_compliance_mapping") {
     return textRoute(task, "escalation_text", config, "korean_compliance_mapping");
+  }
+
+  if (task === "cove_evidence_answering") {
+    return context.sensitiveOutput
+      ? textRoute(task, "highest_precision_text", config, "sensitive_cove_verification")
+      : textRoute(task, "escalation_text", config, escalationReason(context) ?? "cove_verification");
   }
 
   if (task === "draft_quality_review") {

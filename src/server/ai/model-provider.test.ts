@@ -224,6 +224,31 @@ describe("model provider", () => {
     });
   });
 
+  it("returns the supplied fallback when a routed Anthropic request is unavailable", async () => {
+    const fetchMock = vi.fn(async () => {
+      throw new Error("fetch failed");
+    });
+    const provider = createModelProvider(
+      {
+        FINPROOF_MODEL_PROVIDER: "router",
+        ANTHROPIC_API_KEY: "sk-ant-test"
+      },
+      fetchMock
+    );
+
+    const result = await provider.generateText({
+      task: "main_compliance",
+      instructions: "Find issues",
+      input: "review",
+      fallback: "[]"
+    });
+
+    expect(result).toMatchObject({
+      provider: "anthropic",
+      text: "[]"
+    });
+  });
+
   it("routes visual-understanding tasks through Claude escalation", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -326,7 +351,12 @@ describe("model provider fetch timeouts", () => {
     );
 
     const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
-    await provider.generateText({ task: "draft", instructions: "sys", input: "user", fallback: "" });
+    await provider.generateText({
+      task: "draft",
+      instructions: "sys",
+      input: "user",
+      fallback: ""
+    });
     expect(fetchImpl).toHaveBeenCalledOnce();
     expect(timeoutSpy).toHaveBeenCalledWith(5000);
     timeoutSpy.mockRestore();

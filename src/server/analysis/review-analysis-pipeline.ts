@@ -27,6 +27,7 @@ import {
 import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import { buildAnalysisIssues } from "./issue-generation";
+import { runCoveEvidenceVerification, type CoveVerificationArtifacts } from "./cove-verification";
 import {
   segmentMultilingualDocuments,
   type KoreanComplianceMapping,
@@ -95,6 +96,8 @@ export type AnalysisArtifacts = {
   extractionDiagnostics?: ExtractionDiagnostic[];
   evidenceCandidates: RagEvidenceCandidate[];
   agentFindings?: AgentFinding[];
+  draftAgentFindings?: AgentFinding[];
+  coveVerification?: CoveVerificationArtifacts;
   findings?: AgentFindingCandidate[];
   multilingualSegments?: MultilingualSegment[];
   localizedRiskFindings?: LocalizedRiskFinding[];
@@ -535,12 +538,62 @@ function isNonReviewUploadFile(file: ReviewFile | undefined) {
   );
 }
 
+function isUploadedReviewFile(file: ReviewFile) {
+  return file.storageProvider !== "sample" && !isNonReviewUploadFile(file);
+}
+
+function sourceFileNames(files: ReviewFile[]) {
+  const names = files.map((file) => file.name).slice(0, 4).join(", ");
+
+  return files.length > 4 ? `${names} 외 ${files.length - 4}개` : names;
+}
+
+function assertUploadSourceExtractionAvailable(
+  review: ReviewCase,
+  documents: ExtractedDocument[],
+  diagnostics: ExtractionDiagnostic[]
+) {
+  const uploadedFiles = review.files.filter((file) => file.storageProvider !== "sample");
+
+  if (uploadedFiles.length === 0) {
+    return;
+  }
+
+  const reviewSourceFiles = uploadedFiles.filter(isUploadedReviewFile);
+
+  if (reviewSourceFiles.length === 0) {
+    throw new Error(
+      "광고 원문 미제출로 분석을 진행할 수 없습니다. 업로드 패키지에서 실제 광고 이미지, PDF, 문구 파일이 확인되지 않았습니다."
+    );
+  }
+
+  if (documents.length > 0) {
+    return;
+  }
+
+  const diagnosticFileNames = diagnostics.map((diagnostic) => diagnostic.fileName).filter(Boolean);
+  const targetFiles =
+    diagnosticFileNames.length > 0 ? diagnosticFileNames.slice(0, 4).join(", ") : sourceFileNames(reviewSourceFiles);
+
+  throw new Error(
+    [
+      "광고 원문 추출 실패로 분석을 진행할 수 없습니다.",
+      "업로드 파일 본문을 읽지 못해 메타데이터만 확인되었습니다.",
+      "로컬 저장소 경로, 분석 실행 위치, OCR 제공자 설정을 확인한 뒤 다시 분석해 주세요.",
+      targetFiles ? `대상 파일: ${targetFiles}` : ""
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
 function documentsForAnalysis(documents: ExtractedDocument[], review?: ReviewCase) {
   const fileById = new Map(review?.files.map((file) => [file.id, file]) ?? []);
 
   return documents.filter(
     (document) =>
       document.provider !== "metadata-only" &&
+      document.provider !== "review-metadata" &&
       document.text.trim().length > 0 &&
       !isNonReviewUploadFile(fileById.get(document.fileId))
   );
@@ -680,6 +733,13 @@ function positiveInteger(env: Record<string, string | undefined>, key: string, f
   const parsed = raw ? Number(raw) : Number.NaN;
 
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+function configuredRagVectorDimension(env: Record<string, string | undefined>) {
+  const raw = env.FINPROOF_RAG_VECTOR_DIMENSION?.trim();
+  const parsed = raw ? Number(raw) : Number.NaN;
+
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1536;
 }
 
 function clampConfidence(value: unknown, fallback: number) {
@@ -1097,9 +1157,10 @@ export function createOpenAiOcrProvider(
       const options = resolveOpenAiOcrOptions(env);
 
       if (!options) {
-        throw new Error(
-          "ANTHROPIC_API_KEY (or OPENAI_API_KEY for a gpt-* model) is required when FINPROOF_OCR_PROVIDER=openai"
+        console.log(
+          "[OpenAIOCR] vision key missing; falling back to local text/metadata extraction"
         );
+        return createDeterministicOcrProvider(fileBodyReader).extract({ review, files });
       }
 
       return Promise.all(
@@ -1117,16 +1178,21 @@ export function createOpenAiOcrProvider(
             };
           }
 
-          const extracted = await extractFileViaOpenAi(
-            file,
-            review,
-            options,
-            env,
-            fileBodyReader,
-            fetchImpl
-          );
+          try {
+            const extracted = await extractFileViaOpenAi(
+              file,
+              review,
+              options,
+              env,
+              fileBodyReader,
+              fetchImpl
+            );
 
-          return extracted ?? sampleOrMetadataDocument(review, file);
+            return extracted ?? sampleOrMetadataDocument(review, file);
+          } catch (error) {
+            console.log(`[OpenAIOCR] falling back for ${file.name}: ${errorMessage(error)}`);
+            return sampleOrMetadataDocument(review, file);
+          }
         })
       );
     }
@@ -1294,28 +1360,56 @@ function createLexicalRagRetriever(
     scope: ReviewStoreScope | undefined,
     query: string
   ): Promise<RagEvidenceCandidate[]> {
-    const queryEmbedding =
-      reviewStore && scope ? (await embeddingProvider.embed([query]))[0] : undefined;
+    let queryEmbedding: number[] | undefined;
+    if (reviewStore && scope) {
+      try {
+        const candidateEmbedding = (await embeddingProvider.embed([query]))[0];
+        const expectedDimension = configuredRagVectorDimension(env);
+
+        if (candidateEmbedding && candidateEmbedding.length === expectedDimension) {
+          queryEmbedding = candidateEmbedding;
+        } else if (candidateEmbedding) {
+          console.log(
+            `[RAG] skipping vector search: query embedding dimension ${candidateEmbedding.length} does not match configured ${expectedDimension}`
+          );
+        }
+      } catch (error) {
+        console.log(
+          `[RAG] embedding unavailable; using lexical retrieval only: ${errorMessage(error)}`
+        );
+      }
+    }
+
     const [knowledgeCandidates, caseHistoryCandidates] = await Promise.all([
       reviewStore && scope
-        ? reviewStore.searchKnowledgeEvidence(scope, {
-            query,
-            productType: review.productType,
-            topK: config.rag.topK * 2,
-            minScore: config.rag.minScore,
-            knowledgeMinScore: config.rag.knowledgeMinScore,
-            queryEmbedding
-          })
+        ? reviewStore
+            .searchKnowledgeEvidence(scope, {
+              query,
+              productType: review.productType,
+              topK: config.rag.topK * 2,
+              minScore: config.rag.minScore,
+              knowledgeMinScore: config.rag.knowledgeMinScore,
+              queryEmbedding
+            })
+            .catch((error) => {
+              console.log(`[RAG] knowledge retrieval unavailable: ${errorMessage(error)}`);
+              return [];
+            })
         : Promise.resolve([]),
       reviewStore?.searchCaseHistoryEvidence && scope
-        ? reviewStore.searchCaseHistoryEvidence(scope, {
-            query,
-            productType: review.productType,
-            topK: config.rag.topK,
-            minScore: config.rag.minScore,
-            queryEmbedding,
-            excludeReviewCaseId: review.id
-          })
+        ? reviewStore
+            .searchCaseHistoryEvidence(scope, {
+              query,
+              productType: review.productType,
+              topK: config.rag.topK,
+              minScore: config.rag.minScore,
+              queryEmbedding,
+              excludeReviewCaseId: review.id
+            })
+            .catch((error) => {
+              console.log(`[RAG] case-history retrieval unavailable: ${errorMessage(error)}`);
+              return [];
+            })
         : Promise.resolve([])
     ]);
 
@@ -1860,10 +1954,7 @@ export function createReviewAnalysisPipeline({
       // segmentation, findings, or persistence. Mis-encoded uploads (e.g. UTF-16 Vietnamese
       // text decoded as UTF-8) otherwise carry NUL bytes that Postgres refuses to store.
       const extractedDocuments = rawExtractedDocuments.map(sanitizeExtractedDocument);
-      const analysisDocuments = documentsWithReviewContext(
-        documentsForAnalysis(extractedDocuments, review),
-        review
-      );
+      const extractedSourceDocuments = documentsForAnalysis(extractedDocuments, review);
       emit({
         stage: "ocr",
         event: "done",
@@ -1874,6 +1965,12 @@ export function createReviewAnalysisPipeline({
         ms: now().getTime() - ocrStartedAt
       });
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
+      assertUploadSourceExtractionAvailable(
+        review,
+        extractedSourceDocuments,
+        extractionDiagnostics
+      );
+      const analysisDocuments = documentsWithReviewContext(extractedSourceDocuments, review);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.
       const conceptTerms = await expandComplianceQuery(
@@ -1977,12 +2074,23 @@ export function createReviewAnalysisPipeline({
         agentFindings: agentFindings.length,
         totalMs: now().getTime() - runStartedAt
       });
+      const coveVerification = await runCoveEvidenceVerification({
+        review,
+        extractedDocuments: analysisDocuments,
+        evidenceCandidates,
+        agentFindings,
+        modelProvider,
+        now
+      });
+      const verifiedAgentFindings = coveVerification.verifiedAgentFindings;
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,
         ...(extractionDiagnostics.length > 0 ? { extractionDiagnostics } : {}),
         evidenceCandidates,
-        ...(agentFindings.length > 0 ? { agentFindings } : {}),
+        ...(verifiedAgentFindings.length > 0 ? { agentFindings: verifiedAgentFindings } : {}),
+        ...(agentFindings.length > 0 ? { draftAgentFindings: agentFindings } : {}),
+        coveVerification: coveVerification.artifacts,
         ...(multilingualSegments.length > 0 ? { multilingualSegments } : {}),
         ...(multilingualResult.localizedRiskFindings.length > 0
           ? { localizedRiskFindings: multilingualResult.localizedRiskFindings }
@@ -1996,12 +2104,12 @@ export function createReviewAnalysisPipeline({
       };
       const findings = buildAnalysisIssues(review, artifacts, {
         minEvidenceScore: config.rag.minScore
-      }).map((issue) => issueToFinding(issue, agentFindings, review.id));
+      }).map((issue) => issueToFinding(issue, verifiedAgentFindings, review.id));
 
       return {
         ...artifacts,
         findings,
-        ...(agentFindings.length > 0 ? { agentFindings } : {})
+        ...(verifiedAgentFindings.length > 0 ? { agentFindings: verifiedAgentFindings } : {})
       };
     }
   };

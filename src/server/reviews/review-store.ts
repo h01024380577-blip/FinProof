@@ -390,6 +390,10 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     reviewCaseId: string
   ): Promise<AnalysisResult | undefined>;
+  beginInlineAnalysis(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<ClaimAnalysisJobResult | undefined>;
   claimNextAnalysisJob(
     tenantId: string,
     workerId: string

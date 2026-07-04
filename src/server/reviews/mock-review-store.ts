@@ -1004,6 +1004,49 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       };
     },
 
+    async beginInlineAnalysis(
+      scope: ReviewStoreScope,
+      reviewCaseId
+    ): Promise<ClaimAnalysisJobResult | undefined> {
+      const review = cases.get(reviewCaseId);
+
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      const activeJob = (analysisJobs.get(reviewCaseId) ?? []).find(
+        (job) => job.status === "queued" || job.status === "running"
+      );
+
+      if (activeJob) {
+        return undefined;
+      }
+
+      const now = nowIso();
+      const job: AnalysisJob = {
+        id: nextJobId(reviewCaseId),
+        reviewCaseId,
+        status: "running",
+        progress: 20,
+        currentStep: "inline_running",
+        startedByUserId: scope.actorUserId,
+        queuedAt: now,
+        startedAt: now
+      };
+      const updatedReview: ReviewCase = {
+        ...review,
+        status: "analysis_in_progress"
+      };
+
+      analysisJobs.set(reviewCaseId, [...(analysisJobs.get(reviewCaseId) ?? []), job]);
+      cases.set(reviewCaseId, updatedReview);
+
+      return {
+        ...job,
+        reviewCase: clone(updatedReview)
+      };
+    },
+
     async claimNextAnalysisJob(
       tenantId: string,
       _workerId: string

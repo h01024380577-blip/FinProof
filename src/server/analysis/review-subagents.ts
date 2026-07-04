@@ -1,4 +1,5 @@
 import type { RiskLevel, ReviewCase, ReviewIssue } from "@/domain/types";
+import { getRequiredMaterialRows } from "@/domain/intake";
 import { isSocialContextEvidence } from "@/domain/social-context";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
 import type { ModelRouteContext, ModelRouteTask } from "@/server/ai/model-router";
@@ -439,6 +440,26 @@ function compactPriorFindings(findings: AgentFinding[]) {
   }));
 }
 
+function materialStatus(review: ReviewCase) {
+  const requiredMaterials = getRequiredMaterialRows(review);
+
+  return {
+    requiredMaterials,
+    missingRequiredMaterials: requiredMaterials
+      .filter((material) => material.status === "missing")
+      .map((material) => material.label),
+    submittedFiles: review.files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      fileType: file.fileType,
+      classificationConfidence: file.classificationConfidence,
+      parseStatus: file.parseStatus,
+      contentType: file.contentType,
+      sizeBytes: file.sizeBytes
+    }))
+  };
+}
+
 function finalOrchestratedFindings(findings: AgentFinding[], mainFindings: AgentFinding[]) {
   if (mainFindings.length === 0) {
     return findings;
@@ -491,6 +512,8 @@ function agentInput({
   evidenceCandidates: RagEvidenceCandidate[];
   priorFindings?: AgentFinding[];
 }) {
+  const materials = materialStatus(review);
+
   return JSON.stringify({
     review: {
       id: review.id,
@@ -499,7 +522,8 @@ function agentInput({
       productType: review.productType,
       channelType: review.channelType,
       plannedPublishDate: review.plannedPublishDate,
-      missingMaterials: review.missingMaterials
+      missingMaterials: materials.missingRequiredMaterials,
+      materialStatus: materials
     },
     documents: extractedDocuments.map((document) => ({
       fileId: document.fileId,

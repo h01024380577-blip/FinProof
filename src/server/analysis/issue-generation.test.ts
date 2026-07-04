@@ -894,4 +894,226 @@ describe("issue generation", () => {
       ])
     );
   });
+
+  it("suppresses missing-origin agent findings when all required upload materials are present", () => {
+    const review: ReviewCase = {
+      id: "rc-complete-upload-001",
+      title: "CoVe",
+      affiliate: "FinProof Bank",
+      productType: "deposit",
+      channelType: ["mobile_app", "website"],
+      plannedPublishDate: "2026-04-16",
+      status: "analysis_complete",
+      highestRiskLevel: "info",
+      requester: "마케팅",
+      reviewer: "준법감시",
+      promotionalCopy: "",
+      disclosure: "",
+      productDescription: "",
+      missingMaterials: ["copy_draft"],
+      files: [
+        {
+          id: "file-creative",
+          name: "finproof_bank_.zip/finproof_bank/poster_finproof_daily_savings.png",
+          fileType: "promotional_creative",
+          classificationConfidence: 0.87,
+          parseStatus: "parsed",
+          storageProvider: "local",
+          storageKey: "local/rc-complete-upload-001/file-creative/poster.png",
+          contentType: "image/png",
+          sizeBytes: 1_600_000
+        },
+        {
+          id: "file-copy",
+          name: "finproof_bank_.zip/finproof_bank/copy_draft_daily_savings.txt",
+          fileType: "copy_draft",
+          classificationConfidence: 0.85,
+          parseStatus: "parsed",
+          storageProvider: "local",
+          storageKey: "local/rc-complete-upload-001/file-copy/copy.txt",
+          contentType: "text/plain",
+          sizeBytes: 1024
+        },
+        {
+          id: "file-product",
+          name: "finproof_bank_.zip/finproof_bank/product_description_daily_savings.txt",
+          fileType: "product_description",
+          classificationConfidence: 0.85,
+          parseStatus: "parsed",
+          storageProvider: "local",
+          storageKey: "local/rc-complete-upload-001/file-product/product.txt",
+          contentType: "text/plain",
+          sizeBytes: 1024
+        },
+        {
+          id: "file-rate",
+          name: "finproof_bank_.zip/finproof_bank/rate_table_daily_savings.csv",
+          fileType: "rate_table",
+          classificationConfidence: 0.91,
+          parseStatus: "parsed",
+          storageProvider: "local",
+          storageKey: "local/rc-complete-upload-001/file-rate/rate.csv",
+          contentType: "text/csv",
+          sizeBytes: 1024
+        },
+        {
+          id: "file-checklist",
+          name: "finproof_bank_.zip/finproof_bank/internal_checklist_daily_savings.txt",
+          fileType: "checklist",
+          classificationConfidence: 0.91,
+          parseStatus: "parsed",
+          storageProvider: "local",
+          storageKey: "local/rc-complete-upload-001/file-checklist/checklist.txt",
+          contentType: "text/plain",
+          sizeBytes: 1024
+        }
+      ],
+      issues: [],
+      expectedDraft: "",
+      currentVersion: 1
+    };
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-07-04T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "file-copy",
+          fileName: "copy_draft_daily_savings.txt",
+          text: "매일더함 자유적금 최고 연 4.50%. 우대조건 충족 시 적용됩니다.",
+          confidence: 0.96,
+          provider: "local-text-extractor"
+        }
+      ],
+      evidenceCandidates: [
+        {
+          id: "ev-uploaded-copy",
+          sourceType: "product_doc",
+          title: "copy_draft_daily_savings.txt",
+          quoteSummary: "매일더함 자유적금 최고 연 4.50%. 우대조건 충족 시 적용됩니다.",
+          relevanceScore: 0.94,
+          sourceFileId: "file-copy"
+        }
+      ],
+      agentFindings: [
+        {
+          id: "finding-main-missing-origin",
+          agent: "main",
+          issueType: "missing_material",
+          riskLevel: "caution",
+          title: "광고 원문 미제출로 실질 심의 불가",
+          targetText: "심의 요청 제목: CoVe / 상품군: deposit / 게시 채널: mobile_app, website",
+          description:
+            "실제 광고 이미지, 배너, 영상, 문구 등 광고 소재 원문이 첨부되지 않았습니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "광고 소재 원문을 추가 제출해 주세요.",
+          evidenceCandidateIds: ["ev-uploaded-copy"],
+          confidence: 0.83
+        },
+        {
+          id: "finding-main-missing-creative",
+          agent: "main",
+          issueType: "missing_creative",
+          riskLevel: "caution",
+          title: "광고 소재 미첨부로 핵심 심의 항목 확인 불가",
+          targetText: "업로드 자료",
+          description: "광고 소재가 첨부되지 않아 핵심 심의 항목 확인이 어렵습니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "광고 소재를 추가 제출해 주세요.",
+          evidenceCandidateIds: ["ev-uploaded-copy"],
+          confidence: 0.83
+        },
+        {
+          id: "finding-main-missing-original",
+          agent: "main",
+          issueType: "missing_original",
+          riskLevel: "caution",
+          title: "광고 원본 미첨부로 실질 심의 불가",
+          targetText: "업로드 자료",
+          description: "광고 원본이 첨부되지 않아 심의가 어렵습니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "광고 원본을 추가 제출해 주세요.",
+          evidenceCandidateIds: ["ev-uploaded-copy"],
+          confidence: 0.83
+        },
+        {
+          id: "finding-main-missing-content",
+          agent: "main",
+          issueType: "missing_content",
+          riskLevel: "caution",
+          title: "광고 원문 미첨부로 실질적 심의 진행 불가",
+          targetText: "심의 요청 메타데이터",
+          description: "실제 포스터 광고 원문이 첨부되지 않았다고 판단했습니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "광고 원문을 추가 제출해 주세요.",
+          evidenceCandidateIds: ["ev-uploaded-copy"],
+          confidence: 0.83
+        },
+        {
+          id: "finding-main-premature-guide",
+          agent: "main",
+          issueType: "regulatory_notice",
+          riskLevel: "info",
+          title: "예금·적금 상품 광고 필수 심의 항목 사전 안내",
+          targetText: "광고 원문",
+          description: "광고 원문이 제출된 이후 우선적으로 점검해야 할 항목을 사전 안내합니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "광고 원문 제출 후 다시 점검해 주세요.",
+          evidenceCandidateIds: ["ev-uploaded-copy"],
+          confidence: 0.83
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+
+    expect(issues).toEqual([]);
+  });
+
+  it("keeps stored missing-material issues when required upload materials are still absent", () => {
+    const review: ReviewCase = {
+      id: "rc-incomplete-upload-001",
+      title: "원문 누락 테스트",
+      affiliate: "FinProof Bank",
+      productType: "deposit",
+      channelType: ["website"],
+      plannedPublishDate: "2026-04-16",
+      status: "analysis_complete",
+      highestRiskLevel: "info",
+      requester: "마케팅",
+      reviewer: "준법감시",
+      promotionalCopy: "",
+      disclosure: "",
+      productDescription: "",
+      missingMaterials: ["copy_draft"],
+      files: [
+        {
+          id: "file-creative",
+          name: "poster.png",
+          fileType: "promotional_creative",
+          classificationConfidence: 0.87,
+          parseStatus: "parsed",
+          storageProvider: "local",
+          storageKey: "local/rc-incomplete-upload-001/file-creative/poster.png",
+          contentType: "image/png",
+          sizeBytes: 1024
+        }
+      ],
+      issues: [],
+      expectedDraft: "",
+      currentVersion: 1
+    };
+
+    const issues = buildAnalysisIssues(review, {
+      generatedAt: "2026-07-04T00:00:00.000Z",
+      extractedDocuments: [],
+      evidenceCandidates: []
+    });
+
+    expect(issues).toEqual([
+      expect.objectContaining({
+        issueType: "missing_material",
+        title: "필수 심의 자료 누락",
+        targetText: "copy_draft"
+      })
+    ]);
+  });
 });
