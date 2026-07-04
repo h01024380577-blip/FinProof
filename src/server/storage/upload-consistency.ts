@@ -119,6 +119,81 @@ export function classifyUnservableFile(env: Env = process.env, storageProvider: 
   return servable && servable === storageProvider ? "bytes_missing" : "provider_mismatch";
 }
 
+export type ReviewSourceFile = {
+  storageProvider: string;
+  name: string;
+};
+
+/**
+ * Fails fast when *every* uploaded review source is unresolvable by the active
+ * adapter because of a `provider_mismatch` (e.g. all `local` files served by a prod
+ * `s3` adapter — the rc-upload-003 orphan incident). Without this guard the pipeline
+ * runs OCR, extracts nothing, and aborts with the misleading "광고 원문 추출 실패 …
+ * OCR 제공자 설정을 확인" message that sends debugging down the wrong path. When at
+ * least one source is servable, or there are no sources, this is a no-op — the normal
+ * extraction path (and {@link classifyUnservableFile}) handles the rest.
+ *
+ * Callers pass only real uploaded review sources (sample/non-review files excluded).
+ */
+export function assertReviewSourcesServable(env: Env, files: ReviewSourceFile[]): void {
+  if (files.length === 0) {
+    return;
+  }
+
+  const adapter = env.FINPROOF_STORAGE_ADAPTER?.trim() || "local-metadata";
+
+  // Only the durable shared adapter (s3) produces the unrecoverable orphan: bytes written
+  // to a machine's local disk can never be resolved from a different serving environment.
+  // A local-metadata adapter mismatch is a dev/cross-env concern surfaced by
+  // assessUploadStorageConsistency — extraction, not this guard, decides those.
+  if (adapter !== "s3") {
+    return;
+  }
+
+  const mismatched = files.filter(
+    (file) => classifyUnservableFile(env, file.storageProvider) === "provider_mismatch"
+  );
+
+  if (mismatched.length < files.length) {
+    return;
+  }
+
+  const providers = Array.from(new Set(mismatched.map((file) => file.storageProvider))).join(", ");
+  const fileNames = mismatched.map((file) => file.name).slice(0, 4).join(", ");
+
+  throw new Error(
+    [
+      `업로드 파일이 현재 서버 저장소(${adapter})와 다른 방식(${providers})으로 저장돼 본문을 읽을 수 없습니다.`,
+      "해당 파일들은 이 서버에서 서빙·분석할 수 없는 orphan 상태입니다 —",
+      `${adapter} 어댑터로 다시 업로드해 주세요.`,
+      fileNames ? `대상 파일: ${fileNames}` : ""
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
+/**
+ * Maps an {@link UnservableReason} to the error code + human message the content route
+ * returns. A `provider_mismatch` (the orphan incident) previously surfaced to the viewer
+ * as a bare 404 "확인할 수 없다" with no cause; this names the real reason and the remedy.
+ */
+export function describeUnservableFile(reason: UnservableReason): { code: string; message: string } {
+  if (reason === "provider_mismatch") {
+    return {
+      code: "STORAGE_PROVIDER_MISMATCH",
+      message:
+        "이 파일은 현재 서버 저장소와 다른 방식으로 업로드돼 본문을 읽을 수 없습니다. " +
+        "공유 저장소(s3) 어댑터로 다시 업로드해 주세요."
+    };
+  }
+
+  return {
+    code: "STORAGE_BYTES_MISSING",
+    message: "파일 메타데이터는 있으나 저장된 본문을 찾을 수 없습니다."
+  };
+}
+
 function defaultStorageLog(payload: Record<string, unknown>): void {
   try {
     console.warn(JSON.stringify({ ts: new Date().toISOString(), ...payload }));

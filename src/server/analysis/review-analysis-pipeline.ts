@@ -26,6 +26,7 @@ import {
 } from "@/server/knowledge/ocr-service-client";
 import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
+import { assertReviewSourcesServable } from "@/server/storage/upload-consistency";
 import { buildAnalysisIssues } from "./issue-generation";
 import { runCoveEvidenceVerification, type CoveVerificationArtifacts } from "./cove-verification";
 import { judgeAbsoluteClaims } from "./absolute-claim-judgment";
@@ -1948,6 +1949,16 @@ export function createReviewAnalysisPipeline({
         case: review.id,
         files: review.files.length
       });
+      // Fail fast when every uploaded review source is an orphan the active adapter cannot
+      // resolve (e.g. all `local` files under a prod `s3` adapter — the rc-upload-003
+      // incident). Otherwise OCR runs, extracts nothing, and aborts later with a misleading
+      // "OCR 제공자 설정을 확인" message that hides the real storage-provider mismatch.
+      assertReviewSourcesServable(
+        process.env,
+        review.files
+          .filter(isUploadedReviewFile)
+          .map((file) => ({ storageProvider: file.storageProvider, name: file.name }))
+      );
       // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
       // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
       const ocrStartedAt = now().getTime();

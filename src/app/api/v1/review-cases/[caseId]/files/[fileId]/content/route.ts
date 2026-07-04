@@ -1,7 +1,7 @@
 import { createReviewService } from "@/server/reviews/review-service";
 import { jsonError, requestContext, type RouteContext } from "@/server/reviews/route-utils";
 import { getReviewStorageAdapter } from "@/server/storage";
-import { classifyUnservableFile } from "@/server/storage/upload-consistency";
+import { classifyUnservableFile, describeUnservableFile } from "@/server/storage/upload-consistency";
 
 function contentDisposition(fileName: string) {
   return `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`;
@@ -48,7 +48,9 @@ export async function GET(
       // observability must not affect serving
     }
 
-    return jsonError("Review file content not found", 404);
+    const { code, message } = describeUnservableFile(reason);
+
+    return jsonError(message, 404, code);
   }
 
   const responseBody = body.buffer.slice(
