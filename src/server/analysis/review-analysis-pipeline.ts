@@ -14,6 +14,7 @@ import {
   type ModelProvider
 } from "@/server/ai/model-provider";
 import { providerForModel } from "@/server/ai/model-router";
+import { logAnalysisEvent } from "@/server/analysis/analysis-log";
 import {
   createEmbeddingProvider,
   type EmbeddingProvider
@@ -1761,8 +1762,16 @@ export function createReviewAnalysisPipeline({
     },
     async run({ review, scope }) {
       const config = getAnalysisProviderConfig();
+      const runStartedAt = now().getTime();
+      logAnalysisEvent({
+        stage: "pipeline",
+        event: "start",
+        case: review.id,
+        files: review.files.length
+      });
       // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
       // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
+      const ocrStartedAt = now().getTime();
       const [rawExtractedDocuments] = await Promise.all([
         ocrProvider.extract({ review, files: review.files }),
         ragRetriever.prefetch?.({ review, scope })
@@ -1775,6 +1784,15 @@ export function createReviewAnalysisPipeline({
         documentsForAnalysis(extractedDocuments, review),
         review
       );
+      logAnalysisEvent({
+        stage: "ocr",
+        event: "done",
+        case: review.id,
+        docs: extractedDocuments.length,
+        providers: Array.from(new Set(extractedDocuments.map((document) => document.provider))),
+        chars: extractedDocuments.reduce((sum, document) => sum + (document.text?.length ?? 0), 0),
+        ms: now().getTime() - ocrStartedAt
+      });
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.
@@ -1782,21 +1800,58 @@ export function createReviewAnalysisPipeline({
         analysisDocuments.map((document) => document.text).join(" "),
         modelProvider
       );
+      logAnalysisEvent({
+        stage: "query_expansion",
+        event: "done",
+        case: review.id,
+        concepts: conceptTerms.slice(0, 12)
+      });
+      const retrieveStartedAt = now().getTime();
       const retrievedCandidates = await ragRetriever.retrieve({
         review,
         extractedDocuments: analysisDocuments,
         scope,
         queryConcepts: conceptTerms
       });
+      logAnalysisEvent({
+        stage: "rag_retrieve",
+        event: "done",
+        case: review.id,
+        candidates: retrievedCandidates.length,
+        ms: now().getTime() - retrieveStartedAt
+      });
       // Rerank with the same expanded, OCR-enriched query used for retrieval.
+      const rerankStartedAt = now().getTime();
       const rerankedCandidates = await reranker.rerank({
         query: analysisRagQuery(review, analysisDocuments, conceptTerms),
         candidates: retrievedCandidates
+      });
+      logAnalysisEvent({
+        stage: "rerank",
+        event: "done",
+        case: review.id,
+        topDocs: rerankedCandidates.slice(0, 5).map((candidate) => ({
+          title: candidate.title,
+          score: Number(candidate.relevanceScore.toFixed(3)),
+          sourceType: candidate.sourceType
+        })),
+        ms: now().getTime() - rerankStartedAt
       });
       const evidenceCandidates = selectEvidenceCandidates(rerankedCandidates, {
         minScore: config.rag.minScore,
         topK: config.rerank.topK,
         knowledgeMinScore: KNOWLEDGE_SECONDARY_MIN_SCORE
+      });
+      logAnalysisEvent({
+        stage: "evidence_select",
+        event: "done",
+        case: review.id,
+        selected: evidenceCandidates.length,
+        bySourceType: evidenceCandidates.reduce<Record<string, number>>((counts, candidate) => {
+          counts[candidate.sourceType] = (counts[candidate.sourceType] ?? 0) + 1;
+          return counts;
+        }, {}),
+        titles: evidenceCandidates.map((candidate) => candidate.title)
       });
       const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =
@@ -1817,6 +1872,13 @@ export function createReviewAnalysisPipeline({
               agentFindings: [],
               errors: []
             };
+      logAnalysisEvent({
+        stage: "orchestrate",
+        event: "start",
+        case: review.id,
+        evidence: evidenceCandidates.length,
+        priorFindings: multilingualResult.agentFindings.length
+      });
       const orchestratedFindings = await subAgentOrchestrator.run({
         review,
         extractedDocuments: analysisDocuments,
@@ -1827,6 +1889,13 @@ export function createReviewAnalysisPipeline({
         multilingualResult.agentFindings,
         orchestratedFindings
       );
+      logAnalysisEvent({
+        stage: "combine",
+        event: "done",
+        case: review.id,
+        agentFindings: agentFindings.length,
+        totalMs: now().getTime() - runStartedAt
+      });
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,

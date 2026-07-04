@@ -2,6 +2,7 @@ import type { RiskLevel, ReviewCase, ReviewIssue } from "@/domain/types";
 import { isSocialContextEvidence } from "@/domain/social-context";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
 import type { ModelRouteContext, ModelRouteTask } from "@/server/ai/model-router";
+import { logAnalysisEvent } from "@/server/analysis/analysis-log";
 import {
   CASE_SEARCH_PROMPT,
   CREATIVE_REVIEW_PROMPT,
@@ -542,6 +543,15 @@ async function runAgent({
   priorFindings?: AgentFinding[];
   routeContext?: ModelRouteContext;
 }) {
+  const startedAt = Date.now();
+  logAnalysisEvent({
+    stage: "subagent",
+    event: "start",
+    case: input.review.id,
+    agent: agent.id,
+    evidence: input.evidenceCandidates.length,
+    priorFindings: priorFindings.length
+  });
   const result = await provider.generateText({
     task: agent.task,
     routeContext: {
@@ -559,11 +569,24 @@ async function runAgent({
 
   const evidenceCandidates = orderEvidenceCandidatesForAgent(agent.id, input.evidenceCandidates);
 
-  return rawFindings(extractJson(result.text))
+  const findings = rawFindings(extractJson(result.text))
     .map((finding, index) =>
       normalizeFinding(agent.id, finding, index, evidenceCandidates, result.text)
     )
     .filter((finding): finding is AgentFinding => Boolean(finding));
+
+  logAnalysisEvent({
+    stage: "subagent",
+    event: "done",
+    case: input.review.id,
+    agent: agent.id,
+    model: result.model,
+    modelTier: result.modelTier,
+    findings: findings.length,
+    ms: Date.now() - startedAt
+  });
+
+  return findings;
 }
 
 export function createReviewSubAgentOrchestrator(
