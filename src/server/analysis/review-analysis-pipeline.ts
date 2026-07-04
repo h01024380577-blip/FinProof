@@ -2023,9 +2023,32 @@ export function createReviewAnalysisPipeline({
         topK: config.rerank.topK,
         knowledgeMinScore: KNOWLEDGE_SECONDARY_MIN_SCORE
       });
+      const socialContextKgTraceNodeIds = new Set<string>();
       const socialContextKgResult = socialContextKgArtifacts({
         review,
-        extractedDocuments: analysisDocuments
+        extractedDocuments: analysisDocuments,
+        onTrace: (trace) => {
+          for (const nodeId of trace.nodeIds) {
+            socialContextKgTraceNodeIds.add(nodeId);
+          }
+          emit({
+            stage: "social_context_kg",
+            event: trace.phase,
+            case: review.id,
+            nodeIds: trace.nodeIds,
+            ...(trace.edges ? { edges: trace.edges } : {}),
+            ...(trace.countryIds ? { countryIds: trace.countryIds } : {}),
+            ...(trace.riskLevel ? { riskLevel: trace.riskLevel } : {}),
+            ...(trace.note ? { note: trace.note } : {})
+          });
+        }
+      });
+      emit({
+        stage: "social_context_kg",
+        event: "done",
+        case: review.id,
+        matches: socialContextKgResult.matches.length,
+        matchedNodeIds: [...socialContextKgTraceNodeIds]
       });
       const evidenceCandidatesWithSocialContextKg = [
         ...evidenceCandidates,

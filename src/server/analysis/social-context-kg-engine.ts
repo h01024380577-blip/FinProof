@@ -12,7 +12,8 @@ import type {
   SocialContextSafeContext,
   SocialContextSensitiveEvent,
   SocialContextSensitiveSymbol,
-  SocialContextSensitiveTerm
+  SocialContextSensitiveTerm,
+  SocialContextTrace
 } from "@/domain/social-context-kg";
 import type { AgentFinding } from "./review-subagents";
 import type { ExtractedDocument, RagEvidenceCandidate } from "./review-analysis-pipeline";
@@ -22,7 +23,15 @@ type SocialContextKgInput = {
   review: ReviewCase;
   extractedDocuments: ExtractedDocument[];
   seed?: SocialContextKgSeed;
+  /**
+   * Optional sink invoked per activation phase (country → date → term → symbol …)
+   * in the exact order the engine touches nodes. Used by the live viewer to drive
+   * real-time zoom/highlight. Never affects matching output.
+   */
+  onTrace?: (trace: SocialContextTrace) => void;
 };
+
+const STAKEHOLDER_RELATIONS = new Set(["affectsStakeholder", "targetsGroup"]);
 
 type MatchContext = {
   review: ReviewCase;
@@ -678,8 +687,14 @@ function campaignIntentsWithInferredFinancialAd(
 
 function matchContext(input: SocialContextKgInput): MatchContext {
   const seed = input.seed ?? loadSocialContextKgSeed();
+  const emitTrace = (trace: SocialContextTrace) => {
+    if (trace.nodeIds.length > 0 || (trace.edges?.length ?? 0) > 0) {
+      input.onTrace?.(trace);
+    }
+  };
   const text = reviewText(input.review, input.extractedDocuments);
   const countryIds = inferTargetCountryIds(text, seed.countries);
+  emitTrace({ phase: "country", nodeIds: countryIds, countryIds });
   const plannedMmdd = mmddFromDate(input.review.plannedPublishDate);
   const sensitiveEvents = countryScoped(seed.sensitiveEvents, countryIds);
   const sensitiveEventTerms = countryScoped(seed.sensitiveEventTerms, countryIds);
@@ -687,17 +702,46 @@ function matchContext(input: SocialContextKgInput): MatchContext {
   const safeContextSeeds = countryScoped(seed.safeContexts, countryIds);
   const derogatorySlangSeeds = countryIds.includes("south_korea") ? seed.derogatorySocialSlang : [];
   const dateMatches = dateMatchesFor(input.review.plannedPublishDate, plannedMmdd, sensitiveEvents);
+  emitTrace({
+    phase: "date",
+    nodeIds: dateMatches.map((match) => `date-${match.date}`),
+    edges: dateMatches.map((match) => ({
+      from: match.event.id,
+      relation: "hasSensitiveDate",
+      to: `date-${match.date}`
+    }))
+  });
   const terms = matchedTerms(text, sensitiveEventTerms);
+  emitTrace({ phase: "term", nodeIds: terms.map((term) => term.id) });
   const symbols = matchedSymbols(text, sensitiveSymbolsVisual);
+  emitTrace({ phase: "symbol", nodeIds: symbols.map((symbol) => symbol.id) });
   const financialTerms = matchedFinancialTerms(text, seed.financialPromoTerms);
+  emitTrace({ phase: "financial", nodeIds: financialTerms.map((term) => term.id) });
   const campaignIntents = campaignIntentsWithInferredFinancialAd(
     matchedCampaignIntents(text, seed.campaignIntents),
     financialTerms,
     seed
   );
+  emitTrace({ phase: "campaign", nodeIds: campaignIntents.map((intent) => intent.id) });
   const derogatorySlang = matchedDerogatorySlang(text, derogatorySlangSeeds);
+  emitTrace({ phase: "slang", nodeIds: derogatorySlang.map((slang) => slang.id) });
   const safeContexts = matchedSafeContexts(text, safeContextSeeds, terms, derogatorySlang);
+  emitTrace({ phase: "safe_context", nodeIds: safeContexts.map((safeContext) => safeContext.id) });
   const events = matchedEvents(text, sensitiveEvents, dateMatches, terms, symbols);
+  emitTrace({ phase: "event", nodeIds: events.map((event) => event.id) });
+  const eventIds = new Set(events.map((event) => event.id));
+  const stakeholderEdges = seed.socialKgEdges.filter(
+    (edge) => STAKEHOLDER_RELATIONS.has(edge.relation) && eventIds.has(edge.from)
+  );
+  emitTrace({
+    phase: "stakeholder",
+    nodeIds: [...new Set(stakeholderEdges.map((edge) => edge.to))],
+    edges: stakeholderEdges.map((edge) => ({
+      from: edge.from,
+      relation: edge.relation,
+      to: edge.to
+    }))
+  });
 
   return {
     review: input.review,
@@ -742,11 +786,22 @@ export function analyzeSocialContextKg(input: SocialContextKgInput): SocialConte
   const seed = input.seed ?? loadSocialContextKgSeed();
   const context = matchContext({ ...input, seed });
 
-  return dedupeRuleMatches(
+  const matches = dedupeRuleMatches(
     seed.socialRiskRules
       .filter((rule) => conditionMatches(rule, context))
       .map((rule) => ruleMatch(rule, context))
   );
+
+  if (matches.length > 0) {
+    input.onTrace?.({
+      phase: "rule",
+      nodeIds: [...new Set(matches.map((match) => match.rule.id))],
+      riskLevel: matches[0].riskLevel,
+      note: matches[0].rule.nameKo
+    });
+  }
+
+  return matches;
 }
 
 export function socialContextKgEvidenceCandidate(
