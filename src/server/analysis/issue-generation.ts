@@ -298,12 +298,17 @@ function preferredEvidenceCandidate(
   minEvidenceScore: number,
   issueText: string
 ): RagEvidenceCandidate | undefined {
-  const reliableCandidates = candidates.filter((candidate) =>
-    isReliableEvidenceCandidate(candidate, minEvidenceScore)
-  );
-  const reliableArtifactCandidates = artifacts.evidenceCandidates.filter((candidate) =>
-    isReliableEvidenceCandidate(candidate, minEvidenceScore)
-  );
+  // Social-context KG evidence (e.g. the disaster/date/metaphor node) is reserved for
+  // social-context findings, which have their own dedicated path. It carries a high
+  // score, an article-boosting section, and a long quoteSummary packed with generic
+  // financial vocabulary, so left in the general pool it out-ranks the actual regulation
+  // and gets spuriously attached to unrelated issues. Exclude it here.
+  const reliableCandidates = candidates
+    .filter((candidate) => isReliableEvidenceCandidate(candidate, minEvidenceScore))
+    .filter((candidate) => !isSocialContextEvidence(candidate));
+  const reliableArtifactCandidates = artifacts.evidenceCandidates
+    .filter((candidate) => isReliableEvidenceCandidate(candidate, minEvidenceScore))
+    .filter((candidate) => !isSocialContextEvidence(candidate));
   // All registered (law/internal_policy) candidates, excluding table-of-contents
   // chunks. Article and non-article candidates compete in ONE pool ranked by
   // per-issue relevance (article citation is only a small tie-break boost).

@@ -487,6 +487,62 @@ describe("issue generation", () => {
     expect(disclosureIssue.evidence[0].title).toBe("필수 고지 가독성 규정");
   });
 
+  it("does not attach social-context KG evidence to non-social-context issues", () => {
+    const review = getReviewCaseById("rc-demo-deposit-001")!;
+    // Reproduces production rc-upload-002 issue 013: the maturity-amount issue's own
+    // regulation was never retrieved, so the only registered candidate in the pool is the
+    // social-context KG node (inflated 0.96 score, article-boosting section). Left in the
+    // general pool it wins by default and gets attached to a wholly unrelated issue.
+    const socialKg = {
+      id: "ev-social-kg",
+      sourceType: "internal_policy" as const,
+      title: "사회맥락 KG: 세월호 참사, 천안함 피격 사건",
+      section: "disaster_date_financial_metaphor",
+      quoteSummary:
+        "게시 예정일이 민감 참사일과 일치하고, 침몰 → 금리 → 예금/적금 → 금융상품 광고 → " +
+        "상업 프로모션 → 캠페인 의도로 이어지는 금융 홍보 표현이 결합되었습니다.",
+      relevanceScore: 0.96
+    };
+    const artifacts: AnalysisArtifacts = {
+      generatedAt: "2026-07-04T00:00:00.000Z",
+      extractedDocuments: [
+        {
+          fileId: "f",
+          fileName: "포스터.txt",
+          text: "나의 예상 만기금액 12,345,000원",
+          confidence: 0.9,
+          provider: "fixture"
+        }
+      ],
+      evidenceCandidates: [socialKg],
+      agentFindings: [
+        {
+          id: "maturity",
+          agent: "creative_review",
+          issueType: "misleading_or_unfair_advertising",
+          riskLevel: "caution",
+          title: "예시 만기금액의 산출 기준 미표시",
+          targetText: "나의 예상 만기금액 12,345,000원",
+          description: "예상 만기금액의 계산 전제가 표시되지 않았습니다.",
+          suggestedAction: "hold",
+          suggestedCopy: "예상 만기금액의 산출 근거를 함께 표시해 주세요.",
+          evidenceCandidateIds: ["ev-social-kg"],
+          confidence: 0.8
+        }
+      ]
+    };
+
+    const issues = buildAnalysisIssues(review, artifacts);
+    const maturityIssue = issues.find((issue) => issue.id === `issue-${review.id}-maturity`)!;
+
+    // The KG node must never be attached to this issue. With it excluded and no regulation
+    // available, the issue falls back to the uploaded material rather than a spurious basis.
+    expect(maturityIssue.evidence.map((e) => e.title)).not.toContain(
+      "사회맥락 KG: 세월호 참사, 천안함 피격 사건"
+    );
+    expect(maturityIssue.evidence[0].sourceType).toBe("product_doc");
+  });
+
   it("does not attach model-selected evidence below the matching threshold", () => {
     const review = getReviewCaseById("rc-demo-loan-001")!;
     const artifacts: AnalysisArtifacts = {
