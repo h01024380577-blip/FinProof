@@ -1,6 +1,7 @@
 import { createReviewService } from "@/server/reviews/review-service";
 import { jsonError, requestContext, type RouteContext } from "@/server/reviews/route-utils";
 import { getReviewStorageAdapter } from "@/server/storage";
+import { classifyUnservableFile } from "@/server/storage/upload-consistency";
 
 function contentDisposition(fileName: string) {
   return `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`;
@@ -26,6 +27,27 @@ export async function GET(
   const body = await getReviewStorageAdapter().getReviewFileBody(file.storageKey);
 
   if (!body) {
+    // A silent 404 here previously hid orphaned files (metadata present, bytes
+    // unreachable by the serving adapter). Emit one structured line so CloudWatch
+    // Logs Insights surfaces the reason and the offending case/file.
+    const reason = classifyUnservableFile(process.env, file.storageProvider);
+    try {
+      console.warn(
+        JSON.stringify({
+          evt: "storage",
+          level: "warn",
+          ts: new Date().toISOString(),
+          reason,
+          case: caseId,
+          file: fileId,
+          storageProvider: file.storageProvider,
+          storageKey: file.storageKey
+        })
+      );
+    } catch {
+      // observability must not affect serving
+    }
+
     return jsonError("Review file content not found", 404);
   }
 

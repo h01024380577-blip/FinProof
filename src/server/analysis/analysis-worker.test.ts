@@ -166,4 +166,38 @@ describe("analysis worker", () => {
       })
     ]);
   });
+
+  it("records analysis events through the store during a run", async () => {
+    const store = createMockReviewStore();
+    await store.createReviewCaseFromSamplePackage(scope, {
+      samplePackageId: "rc-demo-deposit-001"
+    });
+    await store.enqueueAnalysis(scope, "rc-demo-deposit-001");
+
+    const recorded: Array<{ stage: string; seq: number }> = [];
+    const originalRecord = store.recordAnalysisEvent.bind(store);
+    store.recordAnalysisEvent = async (recordScope, input) => {
+      recorded.push({ stage: input.stage, seq: input.seq });
+      return originalRecord(recordScope, input);
+    };
+
+    const worker = createAnalysisWorker({
+      store,
+      pipeline: {
+        async run({ onEvent }) {
+          onEvent?.({ stage: "pipeline", event: "start" });
+          onEvent?.({ stage: "combine", event: "done" });
+          return artifacts;
+        }
+      }
+    });
+
+    await worker.runOnce({ tenantId: "tenant-demo", workerId: "worker-001" });
+
+    expect(recorded.map((entry) => entry.seq)).toEqual([0, 1]);
+    expect(recorded.map((entry) => entry.stage)).toEqual(["pipeline", "combine"]);
+
+    const listed = await store.listAnalysisEvents(scope, "rc-demo-deposit-001", {});
+    expect(listed.events.map((event) => event.stage)).toEqual(["pipeline", "combine"]);
+  });
 });

@@ -3,7 +3,7 @@ import { getModelRoutingConfig, providerForModel, selectModelRoute } from "./mod
 describe("model router", () => {
   it("uses Claude text defaults", () => {
     expect(getModelRoutingConfig({})).toEqual({
-      defaultTextModel: "claude-sonnet-4-6",
+      defaultTextModel: "claude-sonnet-5",
       escalationTextModel: "claude-sonnet-5",
       highestPrecisionTextModel: "claude-opus-4-8",
       embeddingModel: "text-embedding-3-small",
@@ -18,7 +18,7 @@ describe("model router", () => {
         FINPROOF_MODEL_ESCALATION_TEXT: "gemini-2.5-pro"
       })
     ).toMatchObject({
-      defaultTextModel: "claude-sonnet-4-6",
+      defaultTextModel: "claude-sonnet-5",
       escalationTextModel: "claude-sonnet-5"
     });
   });
@@ -34,7 +34,7 @@ describe("model router", () => {
     expect(selectModelRoute("rag_chat", {})).toEqual({
       task: "rag_chat",
       provider: "anthropic",
-      model: "claude-sonnet-4-6",
+      model: "claude-sonnet-5",
       modelTier: "default_text"
     });
   });
@@ -70,7 +70,7 @@ describe("model router", () => {
     expect(selectModelRoute("ocr_visual_understanding", {})).toEqual({
       task: "ocr_visual_understanding",
       provider: "anthropic",
-      model: "claude-sonnet-4-6",
+      model: "claude-sonnet-5",
       modelTier: "default_text"
     });
     expect(selectModelRoute("ocr_visual_understanding", { complexVisual: true })).toEqual({
@@ -117,7 +117,7 @@ describe("model router", () => {
       expect(selectModelRoute(task, {})).toEqual({
         task,
         provider: "anthropic",
-        model: "claude-sonnet-4-6",
+        model: "claude-sonnet-5",
         modelTier: "default_text"
       });
     }
@@ -145,7 +145,7 @@ describe("model router", () => {
     expect(selectModelRoute("social_context_risk", {})).toEqual({
       task: "social_context_risk",
       provider: "anthropic",
-      model: "claude-sonnet-4-6",
+      model: "claude-sonnet-5",
       modelTier: "default_text"
     });
     expect(selectModelRoute("social_context_risk", { riskLevel: "high" })).toEqual({
@@ -154,6 +154,23 @@ describe("model router", () => {
       model: "claude-sonnet-5",
       modelTier: "escalation_text",
       escalationReason: "risk_level_high"
+    });
+  });
+
+  it("routes CoVe evidence answering to high-precision models only for sensitive checks", () => {
+    expect(selectModelRoute("cove_evidence_answering", {})).toEqual({
+      task: "cove_evidence_answering",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+      modelTier: "escalation_text",
+      escalationReason: "cove_verification"
+    });
+    expect(selectModelRoute("cove_evidence_answering", { sensitiveOutput: true })).toEqual({
+      task: "cove_evidence_answering",
+      provider: "anthropic",
+      model: "claude-opus-4-8",
+      modelTier: "highest_precision_text",
+      escalationReason: "sensitive_cove_verification"
     });
   });
 });

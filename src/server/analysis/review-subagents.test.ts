@@ -260,6 +260,88 @@ describe("createReviewSubAgentOrchestrator", () => {
       expect.arrayContaining([expect.objectContaining({ agent: "social_context_risk" })])
     );
   });
+
+  it("passes computed material status to sub-agents so stale missingMaterials do not imply a missing ad original", async () => {
+    const provider = providerReturning({});
+    const completeDepositReview: ReviewCase = {
+      ...review,
+      productType: "deposit",
+      missingMaterials: ["copy_draft"],
+      files: [
+        {
+          id: "file-creative",
+          name: "poster_finproof_daily_savings.png",
+          fileType: "promotional_creative",
+          classificationConfidence: 0.87,
+          parseStatus: "parsed",
+          contentType: "image/png",
+          sizeBytes: 1024
+        },
+        {
+          id: "file-copy",
+          name: "copy_draft_daily_savings.txt",
+          fileType: "copy_draft",
+          classificationConfidence: 0.85,
+          parseStatus: "parsed",
+          contentType: "text/plain",
+          sizeBytes: 1024
+        },
+        {
+          id: "file-product",
+          name: "product_description_daily_savings.txt",
+          fileType: "product_description",
+          classificationConfidence: 0.85,
+          parseStatus: "parsed",
+          contentType: "text/plain",
+          sizeBytes: 1024
+        },
+        {
+          id: "file-rate",
+          name: "rate_table_daily_savings.csv",
+          fileType: "rate_table",
+          classificationConfidence: 0.91,
+          parseStatus: "parsed",
+          contentType: "text/csv",
+          sizeBytes: 1024
+        },
+        {
+          id: "file-checklist",
+          name: "internal_checklist_daily_savings.txt",
+          fileType: "checklist",
+          classificationConfidence: 0.91,
+          parseStatus: "parsed",
+          contentType: "text/plain",
+          sizeBytes: 1024
+        }
+      ]
+    };
+
+    await createReviewSubAgentOrchestrator(provider).run({
+      review: completeDepositReview,
+      extractedDocuments,
+      evidenceCandidates
+    });
+
+    const creativeCall = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([input]) => input.task === "creative_review"
+    )?.[0];
+    const input = JSON.parse(String(creativeCall?.input));
+
+    expect(input.review.missingMaterials).toEqual([]);
+    expect(input.review.materialStatus.requiredMaterials).toEqual([
+      { label: "홍보물 시안", fileType: "promotional_creative", status: "present" },
+      { label: "원문 카피", fileType: "copy_draft", status: "present" },
+      { label: "상품 설명서", fileType: "product_description", status: "present" },
+      { label: "금리표", fileType: "rate_table", status: "present" },
+      { label: "내부 체크리스트", fileType: "checklist", status: "present" }
+    ]);
+    expect(input.review.materialStatus.submittedFiles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ fileType: "promotional_creative" }),
+        expect.objectContaining({ fileType: "copy_draft" })
+      ])
+    );
+  });
 });
 
 describe("sanitizeReviewerText", () => {

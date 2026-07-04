@@ -387,6 +387,17 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   let regulatorySnapshotSequence = 1;
   let regulatoryChangeSetSequence = 1;
   const analysisJobs = new Map<string, AnalysisJob[]>();
+  const analysisEvents: Array<{
+    id: string;
+    tenantId: string;
+    reviewCaseId: string;
+    jobId: string;
+    seq: number;
+    stage: string;
+    event: string;
+    payload: Record<string, unknown>;
+    createdAt: string;
+  }> = [];
   const auditEvents: AuditEvent[] = [];
   const knowledgeDocuments = new Map<string, KnowledgeDocument>();
   const evidenceChunks = new Map<string, EvidenceChunk>();
@@ -993,6 +1004,49 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       };
     },
 
+    async beginInlineAnalysis(
+      scope: ReviewStoreScope,
+      reviewCaseId
+    ): Promise<ClaimAnalysisJobResult | undefined> {
+      const review = cases.get(reviewCaseId);
+
+      if (!review || !canAccessCase(scope, reviewCaseId)) {
+        return undefined;
+      }
+
+      const activeJob = (analysisJobs.get(reviewCaseId) ?? []).find(
+        (job) => job.status === "queued" || job.status === "running"
+      );
+
+      if (activeJob) {
+        return undefined;
+      }
+
+      const now = nowIso();
+      const job: AnalysisJob = {
+        id: nextJobId(reviewCaseId),
+        reviewCaseId,
+        status: "running",
+        progress: 20,
+        currentStep: "inline_running",
+        startedByUserId: scope.actorUserId,
+        queuedAt: now,
+        startedAt: now
+      };
+      const updatedReview: ReviewCase = {
+        ...review,
+        status: "analysis_in_progress"
+      };
+
+      analysisJobs.set(reviewCaseId, [...(analysisJobs.get(reviewCaseId) ?? []), job]);
+      cases.set(reviewCaseId, updatedReview);
+
+      return {
+        ...job,
+        reviewCase: clone(updatedReview)
+      };
+    },
+
     async claimNextAnalysisJob(
       tenantId: string,
       _workerId: string
@@ -1368,6 +1422,53 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       const latestJob = jobs.at(-1);
 
       return latestJob ? clone(latestJob) : undefined;
+    },
+
+    async recordAnalysisEvent(scope: ReviewStoreScope, input) {
+      analysisEvents.push({
+        id: `evt-${analysisEvents.length + 1}`,
+        tenantId: scope.tenantId,
+        reviewCaseId: input.reviewCaseId,
+        jobId: input.jobId,
+        seq: input.seq,
+        stage: input.stage,
+        event: input.event,
+        payload: input.payload,
+        createdAt: new Date().toISOString()
+      });
+    },
+
+    async listAnalysisEvents(scope: ReviewStoreScope, reviewCaseId, options) {
+      if (!canAccessCase(scope, reviewCaseId)) {
+        return { jobId: null, status: null, events: [] };
+      }
+
+      const jobs = analysisJobs.get(reviewCaseId) ?? [];
+      const latestJob = jobs.at(-1);
+
+      if (!latestJob) {
+        return { jobId: null, status: null, events: [] };
+      }
+
+      const events = analysisEvents
+        .filter(
+          (entry) =>
+            entry.tenantId === scope.tenantId &&
+            entry.reviewCaseId === reviewCaseId &&
+            entry.jobId === latestJob.id &&
+            (typeof options.since === "number" ? entry.seq > options.since : true)
+        )
+        .sort((a, b) => a.seq - b.seq)
+        .map((entry) => ({
+          id: entry.id,
+          seq: entry.seq,
+          stage: entry.stage,
+          event: entry.event,
+          payload: entry.payload,
+          createdAt: entry.createdAt
+        }));
+
+      return { jobId: latestJob.id, status: latestJob.status, events };
     },
 
     async listIssues(scope: ReviewStoreScope, reviewCaseId, options: ListIssuesOptions = {}) {

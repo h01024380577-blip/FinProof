@@ -111,7 +111,7 @@ export function getBackendRuntimeConfig(env: Env = process.env): BackendRuntimeC
   const singleTextModel =
     value(env, "ANTHROPIC_MODEL") ??
     value(env, "OPENAI_MODEL") ??
-    (modelProviderValue === "openai" ? "gpt-5-mini" : "claude-sonnet-4-6");
+    (modelProviderValue === "openai" ? "gpt-5-mini" : "claude-sonnet-5");
   // Text generation now defaults to Claude; the required secret follows whichever
   // provider the configured text model name implies, so env-only rollback to a
   // `gpt-*` model automatically requires OPENAI_API_KEY again instead.

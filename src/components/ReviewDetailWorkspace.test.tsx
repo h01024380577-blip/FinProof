@@ -228,6 +228,45 @@ describe("ReviewDetailWorkspace", () => {
     expect(screen.queryByText("실제 업로드 자료 분석 대기")).not.toBeInTheDocument();
   });
 
+  it("surfaces a load-failure notice instead of the intake placeholder when the uploaded poster cannot be fetched", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      blob: () => Promise.resolve(new Blob([], { type: "text/plain" }))
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const uploadReview = {
+      ...getReviewCaseById("rc-demo-deposit-001")!,
+      id: "rc-upload-003",
+      title: "CoVe",
+      status: "analysis_complete" as const,
+      highestRiskLevel: "info" as const,
+      issues: [],
+      promotionalCopy: "심의 요청 제목: CoVe\n게시 예정일: 2026-04-16",
+      disclosure: "실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다.",
+      files: [
+        {
+          id: "file-upload-002",
+          name: "poster_finproof_daily_savings.png",
+          fileType: "promotional_creative" as const,
+          classificationConfidence: 0.97,
+          parseStatus: "pending" as const,
+          storageProvider: "local" as const,
+          storageKey: "local/rc-upload-003/file-upload-002/poster_finproof_daily_savings.png",
+          contentType: "image/png",
+          sizeBytes: 6
+        }
+      ]
+    };
+
+    render(<ReviewDetailWorkspace review={uploadReview} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent("원본 이미지를 불러오지 못했습니다");
+    });
+    expect(screen.queryByText("FinProof Bank")).not.toBeInTheDocument();
+    expect(screen.queryByText(/심의 요청 제목: CoVe/)).not.toBeInTheDocument();
+  });
+
   it("starts chat with an empty input placeholder instead of a hardcoded example answer", async () => {
     const user = userEvent.setup();
     const { container } = render(

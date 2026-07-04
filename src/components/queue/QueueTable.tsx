@@ -99,6 +99,7 @@ export type QueueTableProps = {
   onSaveReviewer?: (review: ReviewSummary, reviewer: string) => void;
   onDeleteReviewHistory?: (review: ReviewSummary) => void;
   onStartAnalysis: (review: ReviewSummary) => void;
+  onOpenProgress?: (review: ReviewSummary) => void;
   onOpenReview: (reviewId: string) => void;
 };
 
@@ -269,6 +270,7 @@ export function QueueTable({
   onSaveReviewer,
   onDeleteReviewHistory,
   onStartAnalysis,
+  onOpenProgress,
   onOpenReview
 }: QueueTableProps): JSX.Element {
   const [pendingOpen, setPendingOpen] = useState<PendingOpen | null>(null);
@@ -388,22 +390,27 @@ export function QueueTable({
           activeAnalysisId === review.id ||
           analysisState?.status === "queued" ||
           analysisState?.status === "running" ||
-          review.status === "analysis_queued";
+          review.status === "analysis_queued" ||
+          review.status === "analysis_in_progress";
         const analysisFailed =
           !activelyAnalyzing && (failedStatus || analysisState?.status === "failed");
         const analysisFailureText = analysisState?.errorMessage
           ? `분석 실패: ${analysisState.errorMessage}`
           : "";
-        // analysis_failed surfaces all three actions (재시도 + 직접검토 + 상세보기); a still-waiting
+        // analysis_failed surfaces 재시도 + 직접검토 (상세보기는 직접검토와 기능이 겹쳐 제외); a still-waiting
         // row that the poller marked failed keeps only the retry affordance.
         // 재업로드 대기(re_review_pending)는 분석 전이므로 시작 버튼('AI 재검토')을 노출한다.
         const isReReviewPending = review.status === "re_review_pending";
         const isReUpload = (review.currentVersion ?? 1) > 1;
-        const showStartButton = waiting || failedStatus || isReReviewPending;
+        const showStartButton =
+          waiting || failedStatus || isReReviewPending || activelyAnalyzing;
         const showWorkbench =
           canOpen && (review.status === "analysis_complete" || failedStatus);
         const showAudit =
-          !waiting && canViewAudit && review.status !== "analysis_complete";
+          !waiting &&
+          !failedStatus &&
+          canViewAudit &&
+          review.status !== "analysis_complete";
         // 승인 완료 건은 심의필이 정식 발급되기 전까지 '심의필 발급하기'로 안내한다.
         const certificateNeedsIssue =
           review.status === "approved" && review.certificateStatus !== "issued";
@@ -466,29 +473,37 @@ export function QueueTable({
               onClick={(event) => event.stopPropagation()}
             >
               {showStartButton ? (
-                <button
-                  className="button button--small queue-row-action-button"
-                  type="button"
-                  disabled={!canStart || activelyAnalyzing}
-                  onClick={() => onStartAnalysis(review)}
-                >
-                  {analysisFailed ? (
-                    <>
-                      <PlayCircle size={15} aria-hidden="true" />
-                      AI 분석 재시도
-                    </>
-                  ) : activelyAnalyzing ? (
-                    <>
-                      <Loader2 className="action-spinner" size={15} aria-hidden="true" />
-                      {analysisState?.status === "queued" ? "대기중" : "분석중"}
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle size={15} aria-hidden="true" />
-                      {isReReviewPending ? "AI 재검토 시작" : "AI 분석 시작"}
-                    </>
-                  )}
-                </button>
+                activelyAnalyzing ? (
+                  <button
+                    className="button button--small queue-row-action-button"
+                    type="button"
+                    disabled={!onOpenProgress}
+                    title={onOpenProgress ? "분석 진행상황 보기" : undefined}
+                    onClick={() => onOpenProgress?.(review)}
+                  >
+                    <Loader2 className="action-spinner" size={15} aria-hidden="true" />
+                    {analysisState?.status === "queued" ? "대기중" : "분석중"}
+                  </button>
+                ) : (
+                  <button
+                    className="button button--small queue-row-action-button"
+                    type="button"
+                    disabled={!canStart}
+                    onClick={() => onStartAnalysis(review)}
+                  >
+                    {analysisFailed ? (
+                      <>
+                        <PlayCircle size={15} aria-hidden="true" />
+                        AI 분석 재시도
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle size={15} aria-hidden="true" />
+                        {isReReviewPending ? "AI 재검토 시작" : "AI 분석 시작"}
+                      </>
+                    )}
+                  </button>
+                )
               ) : null}
               {analysisFailed && analysisFailureText ? (
                 <span

@@ -981,3 +981,40 @@ describe("mock review store", () => {
     ]);
   });
 });
+
+describe("analysis events", () => {
+  it("records events and lists them for the latest job filtered by seq", async () => {
+    const store = createMockReviewStore();
+    const created = await store.createReviewCaseFromSamplePackage(scope, {
+      samplePackageId: "rc-demo-deposit-001"
+    });
+    const caseId = created!.reviewCase.id;
+    const queued = await store.enqueueAnalysis(scope, caseId);
+    const jobId = queued!.jobId;
+
+    await store.recordAnalysisEvent(scope, {
+      reviewCaseId: caseId,
+      jobId,
+      seq: 0,
+      stage: "pipeline",
+      event: "start",
+      payload: { stage: "pipeline", event: "start", case: caseId }
+    });
+    await store.recordAnalysisEvent(scope, {
+      reviewCaseId: caseId,
+      jobId,
+      seq: 1,
+      stage: "ocr",
+      event: "done",
+      payload: { stage: "ocr", event: "done", docs: 2 }
+    });
+
+    const all = await store.listAnalysisEvents(scope, caseId, {});
+    expect(all.jobId).toBe(jobId);
+    expect(all.events.map((entry) => entry.seq)).toEqual([0, 1]);
+    expect(all.events[1].payload).toMatchObject({ docs: 2 });
+
+    const afterFirst = await store.listAnalysisEvents(scope, caseId, { since: 0 });
+    expect(afterFirst.events.map((entry) => entry.seq)).toEqual([1]);
+  });
+});

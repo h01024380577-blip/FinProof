@@ -159,19 +159,14 @@ const AGENT_BADGES: Record<string, IssueAgentBadge> = {
 };
 
 export function issueAgentBadges(issue: ReviewIssue): IssueAgentBadge[] {
-  const keys = new Set(issue.sourceAgents);
+  // 사회맥락 리스크만 태깅한다. 그 외 에이전트 출처는 배지로 표시하지 않는다.
   const hasSocialContextEvidence = issue.evidence.some(isSocialContextEvidence);
+  const isSocialContextIssue = issue.issueType.toUpperCase().startsWith("SOCIAL_CONTEXT_");
+  const fromSocialContextAgent = issue.sourceAgents.includes("social_context_risk");
 
-  if (issue.issueType.toUpperCase().startsWith("SOCIAL_CONTEXT_") && hasSocialContextEvidence) {
-    keys.add("social_context_risk");
+  if (hasSocialContextEvidence && (isSocialContextIssue || fromSocialContextAgent)) {
+    return [AGENT_BADGES.social_context_risk];
   }
 
-  if (!hasSocialContextEvidence) {
-    keys.delete("social_context_risk");
-  }
-
-  return [...keys]
-    .map((key) => AGENT_BADGES[key])
-    .filter((badge): badge is IssueAgentBadge => Boolean(badge))
-    .sort((left, right) => left.priority - right.priority);
+  return [];
 }

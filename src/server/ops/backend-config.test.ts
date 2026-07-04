@@ -310,7 +310,7 @@ describe("backend runtime config", () => {
 
     expect(config.model.provider).toBe("router");
     expect(config.model).toMatchObject({
-      defaultTextModel: "claude-sonnet-4-6",
+      defaultTextModel: "claude-sonnet-5",
       escalationTextModel: "claude-sonnet-5",
       highestPrecisionTextModel: "claude-opus-4-8"
     });

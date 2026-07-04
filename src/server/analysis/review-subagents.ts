@@ -1,7 +1,9 @@
 import type { RiskLevel, ReviewCase, ReviewIssue } from "@/domain/types";
+import { getRequiredMaterialRows } from "@/domain/intake";
 import { isSocialContextEvidence } from "@/domain/social-context";
 import { createModelProvider, type ModelProvider } from "@/server/ai/model-provider";
 import type { ModelRouteContext, ModelRouteTask } from "@/server/ai/model-router";
+import { logAnalysisEvent } from "@/server/analysis/analysis-log";
 import {
   CASE_SEARCH_PROMPT,
   CREATIVE_REVIEW_PROMPT,
@@ -65,6 +67,7 @@ export type ReviewSubAgentOrchestrator = {
     extractedDocuments: ExtractedDocument[];
     evidenceCandidates: RagEvidenceCandidate[];
     priorFindings?: AgentFinding[];
+    onEvent?: (payload: Record<string, unknown>) => void;
   }): Promise<AgentFinding[]>;
 };
 
@@ -437,6 +440,26 @@ function compactPriorFindings(findings: AgentFinding[]) {
   }));
 }
 
+function materialStatus(review: ReviewCase) {
+  const requiredMaterials = getRequiredMaterialRows(review);
+
+  return {
+    requiredMaterials,
+    missingRequiredMaterials: requiredMaterials
+      .filter((material) => material.status === "missing")
+      .map((material) => material.label),
+    submittedFiles: review.files.map((file) => ({
+      id: file.id,
+      name: file.name,
+      fileType: file.fileType,
+      classificationConfidence: file.classificationConfidence,
+      parseStatus: file.parseStatus,
+      contentType: file.contentType,
+      sizeBytes: file.sizeBytes
+    }))
+  };
+}
+
 function finalOrchestratedFindings(findings: AgentFinding[], mainFindings: AgentFinding[]) {
   if (mainFindings.length === 0) {
     return findings;
@@ -489,6 +512,8 @@ function agentInput({
   evidenceCandidates: RagEvidenceCandidate[];
   priorFindings?: AgentFinding[];
 }) {
+  const materials = materialStatus(review);
+
   return JSON.stringify({
     review: {
       id: review.id,
@@ -497,7 +522,8 @@ function agentInput({
       productType: review.productType,
       channelType: review.channelType,
       plannedPublishDate: review.plannedPublishDate,
-      missingMaterials: review.missingMaterials
+      missingMaterials: materials.missingRequiredMaterials,
+      materialStatus: materials
     },
     documents: extractedDocuments.map((document) => ({
       fileId: document.fileId,
@@ -530,7 +556,8 @@ async function runAgent({
   agent,
   input,
   priorFindings = [],
-  routeContext = {}
+  routeContext = {},
+  onEvent
 }: {
   provider: ModelProvider;
   agent: ReviewSubAgentDefinition;
@@ -541,7 +568,21 @@ async function runAgent({
   };
   priorFindings?: AgentFinding[];
   routeContext?: ModelRouteContext;
+  onEvent?: (payload: Record<string, unknown>) => void;
 }) {
+  const emit = (payload: Record<string, unknown>) => {
+    logAnalysisEvent(payload);
+    onEvent?.(payload);
+  };
+  const startedAt = Date.now();
+  emit({
+    stage: "subagent",
+    event: "start",
+    case: input.review.id,
+    agent: agent.id,
+    evidence: input.evidenceCandidates.length,
+    priorFindings: priorFindings.length
+  });
   const result = await provider.generateText({
     task: agent.task,
     routeContext: {
@@ -559,11 +600,24 @@ async function runAgent({
 
   const evidenceCandidates = orderEvidenceCandidatesForAgent(agent.id, input.evidenceCandidates);
 
-  return rawFindings(extractJson(result.text))
+  const findings = rawFindings(extractJson(result.text))
     .map((finding, index) =>
       normalizeFinding(agent.id, finding, index, evidenceCandidates, result.text)
     )
     .filter((finding): finding is AgentFinding => Boolean(finding));
+
+  emit({
+    stage: "subagent",
+    event: "done",
+    case: input.review.id,
+    agent: agent.id,
+    model: result.model,
+    modelTier: result.modelTier,
+    findings: findings.length,
+    ms: Date.now() - startedAt
+  });
+
+  return findings;
 }
 
 export function createReviewSubAgentOrchestrator(
@@ -571,13 +625,15 @@ export function createReviewSubAgentOrchestrator(
 ): ReviewSubAgentOrchestrator {
   return {
     async run(input) {
+      const onEvent = input.onEvent;
       const priorFindings = input.priorFindings ?? [];
       const domainFindings = await Promise.all(
         domainSubAgents.map((agent) =>
           runAgent({
             provider,
             agent,
-            input
+            input,
+            onEvent
           })
         )
       );
@@ -594,6 +650,7 @@ export function createReviewSubAgentOrchestrator(
             agent: evidenceVerificationAgent,
             input,
             priorFindings: findings,
+            onEvent,
             routeContext: {
               riskLevel: highestFindingRisk(findings),
               evidenceContradiction: findings.some((finding) =>
@@ -611,6 +668,7 @@ export function createReviewSubAgentOrchestrator(
             agent: caseSearchAgent,
             input,
             priorFindings: findings,
+            onEvent,
             routeContext: {
               riskLevel: highestFindingRisk(findings),
               caseStronglyInfluencesJudgment:
@@ -626,6 +684,7 @@ export function createReviewSubAgentOrchestrator(
         agent: mainComplianceAgent,
         input,
         priorFindings: findings,
+        onEvent,
         routeContext: {
           riskLevel: highestFindingRisk(findings),
           agentConflict: hasMaterialAgentConflict(findings)

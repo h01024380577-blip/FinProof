@@ -397,6 +397,7 @@ export const ModelName = {
   KnowledgeDocument: 'KnowledgeDocument',
   EvidenceChunk: 'EvidenceChunk',
   AgentRun: 'AgentRun',
+  AnalysisEvent: 'AnalysisEvent',
   AgentFinding: 'AgentFinding',
   ChatSession: 'ChatSession',
   ChatMessage: 'ChatMessage',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "tenant" | "affiliate" | "user" | "reviewCase" | "reviewVersion" | "reviewCertificate" | "reviewFile" | "reviewIssue" | "evidence" | "analysisJob" | "knowledgeDocument" | "evidenceChunk" | "agentRun" | "agentFinding" | "chatSession" | "chatMessage" | "draftVersion" | "reviewReport" | "regulatorySource" | "regulatorySnapshot" | "regulatoryChangeSet" | "qualityGateResult" | "auditLog"
+    modelProps: "tenant" | "affiliate" | "user" | "reviewCase" | "reviewVersion" | "reviewCertificate" | "reviewFile" | "reviewIssue" | "evidence" | "analysisJob" | "knowledgeDocument" | "evidenceChunk" | "agentRun" | "analysisEvent" | "agentFinding" | "chatSession" | "chatMessage" | "draftVersion" | "reviewReport" | "regulatorySource" | "regulatorySnapshot" | "regulatoryChangeSet" | "qualityGateResult" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1385,6 +1386,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.AgentRunCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.AgentRunCountAggregateOutputType> | number
+        }
+      }
+    }
+    AnalysisEvent: {
+      payload: Prisma.$AnalysisEventPayload<ExtArgs>
+      fields: Prisma.AnalysisEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AnalysisEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AnalysisEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>
+        }
+        findFirst: {
+          args: Prisma.AnalysisEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AnalysisEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>
+        }
+        findMany: {
+          args: Prisma.AnalysisEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>[]
+        }
+        create: {
+          args: Prisma.AnalysisEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>
+        }
+        createMany: {
+          args: Prisma.AnalysisEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AnalysisEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>[]
+        }
+        delete: {
+          args: Prisma.AnalysisEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>
+        }
+        update: {
+          args: Prisma.AnalysisEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.AnalysisEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AnalysisEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AnalysisEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.AnalysisEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalysisEventPayload>
+        }
+        aggregate: {
+          args: Prisma.AnalysisEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAnalysisEvent>
+        }
+        groupBy: {
+          args: Prisma.AnalysisEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnalysisEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AnalysisEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnalysisEventCountAggregateOutputType> | number
         }
       }
     }
@@ -2433,6 +2508,21 @@ export const AgentRunScalarFieldEnum = {
 export type AgentRunScalarFieldEnum = (typeof AgentRunScalarFieldEnum)[keyof typeof AgentRunScalarFieldEnum]
 
 
+export const AnalysisEventScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  reviewCaseId: 'reviewCaseId',
+  jobId: 'jobId',
+  seq: 'seq',
+  stage: 'stage',
+  event: 'event',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type AnalysisEventScalarFieldEnum = (typeof AnalysisEventScalarFieldEnum)[keyof typeof AnalysisEventScalarFieldEnum]
+
+
 export const AgentFindingScalarFieldEnum = {
   id: 'id',
   agentRunId: 'agentRunId',
@@ -3240,6 +3330,7 @@ export type GlobalOmitConfig = {
   knowledgeDocument?: Prisma.KnowledgeDocumentOmit
   evidenceChunk?: Prisma.EvidenceChunkOmit
   agentRun?: Prisma.AgentRunOmit
+  analysisEvent?: Prisma.AnalysisEventOmit
   agentFinding?: Prisma.AgentFindingOmit
   chatSession?: Prisma.ChatSessionOmit
   chatMessage?: Prisma.ChatMessageOmit

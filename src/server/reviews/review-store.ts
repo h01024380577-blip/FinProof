@@ -99,6 +99,30 @@ export type StartAnalysisOptions = {
   artifacts?: AnalysisArtifacts;
 };
 
+export type AnalysisEventInput = {
+  reviewCaseId: string;
+  jobId: string;
+  seq: number;
+  stage: string;
+  event: string;
+  payload: Record<string, unknown>;
+};
+
+export type AnalysisEventRecord = {
+  id: string;
+  seq: number;
+  stage: string;
+  event: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type AnalysisEventsResult = {
+  jobId: string | null;
+  status: "queued" | "running" | "completed" | "failed" | null;
+  events: AnalysisEventRecord[];
+};
+
 export type ClaimAnalysisJobResult = AnalysisJob & {
   reviewCase: ReviewCase;
 };
@@ -366,6 +390,10 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     reviewCaseId: string
   ): Promise<AnalysisResult | undefined>;
+  beginInlineAnalysis(
+    scope: ReviewStoreScope,
+    reviewCaseId: string
+  ): Promise<ClaimAnalysisJobResult | undefined>;
   claimNextAnalysisJob(
     tenantId: string,
     workerId: string
@@ -393,6 +421,12 @@ export interface ReviewStore {
     scope: ReviewStoreScope,
     reviewCaseId: string
   ): Promise<AnalysisJob | undefined>;
+  recordAnalysisEvent(scope: ReviewStoreScope, input: AnalysisEventInput): Promise<void>;
+  listAnalysisEvents(
+    scope: ReviewStoreScope,
+    reviewCaseId: string,
+    options: { since?: number }
+  ): Promise<AnalysisEventsResult>;
   listIssues(
     scope: ReviewStoreScope,
     reviewCaseId: string,

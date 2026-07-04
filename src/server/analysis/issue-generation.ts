@@ -1,5 +1,6 @@
 import type { Evidence, ReviewCase, ReviewIssue, RiskLevel } from "@/domain/types";
 import { KNOWLEDGE_MATCHED_EVIDENCE_SCORE, MIN_MATCHED_EVIDENCE_SCORE } from "@/domain/evidence";
+import { getRequiredMaterialRows } from "@/domain/intake";
 import { isSocialContextEvidence } from "@/domain/social-context";
 import type { AnalysisArtifacts, RagEvidenceCandidate } from "./review-analysis-pipeline";
 import { normalizeAiSuggestedAction, normalizeAnalysisRiskLevel, riskRank } from "./risk-policy";
@@ -73,6 +74,45 @@ function isVisualCreativeUpload(file: ReviewCase["files"][number]) {
 
 function isImageOnlyReview(review: ReviewCase) {
   return review.files.length > 0 && review.files.every(isVisualCreativeUpload);
+}
+
+function requiredMaterialRows(review: ReviewCase) {
+  return getRequiredMaterialRows(review);
+}
+
+function allRequiredMaterialsSubmitted(review: ReviewCase) {
+  const rows = requiredMaterialRows(review);
+
+  return rows.length > 0 && rows.every((row) => row.status === "present");
+}
+
+function unresolvedStoredMissingMaterials(review: ReviewCase) {
+  if (review.missingMaterials.length === 0 || allRequiredMaterialsSubmitted(review)) {
+    return [];
+  }
+
+  return review.missingMaterials;
+}
+
+function isMissingMaterialFinding(
+  finding: NonNullable<AnalysisArtifacts["agentFindings"]>[number]
+) {
+  const issueType = finding.issueType.toLowerCase();
+  if (
+    /missing[_-]?(material|document|creative|asset|original|copy|content)|document[_-]?gap/.test(
+      issueType
+    )
+  ) {
+    return true;
+  }
+
+  const text = normalizeText(
+    [finding.title, finding.targetText, finding.description, finding.suggestedCopy].join(" ")
+  );
+
+  return /광고\s*(?:원문|원본|소재)\s*(?:미제출|미첨부|누락|없|부재)|(?:원문|원본)\s*(?:미제출|미첨부|누락|없|부재)|소재\s*원문\s*(?:미제출|미첨부|누락|없|부재)|(?:광고\s*)?(?:원문|원본|소재).{0,24}(?:제출된\s*이후|제출\s*후|확보\s*후)|심의\s*자료\s*(?:미제출|미첨부|누락)|필수\s*(?:심의\s*)?자료\s*(?:미제출|미첨부|누락)|missing\s+(?:material|document|source|original|creative|asset|copy|content)|not\s+submitted|no\s+(?:ad|advertising|creative|asset|copy)\s+(?:original|source|material|content)/i.test(
+    text
+  );
 }
 
 function tokenize(value: string): string[] {
@@ -353,7 +393,13 @@ function issuesFromAgentFindings(
   artifacts: AnalysisArtifacts,
   minEvidenceScore: number
 ): ReviewIssue[] {
+  const suppressMissingMaterialFindings = allRequiredMaterialsSubmitted(review);
+
   return (artifacts.agentFindings ?? []).flatMap((finding) => {
+    if (suppressMissingMaterialFindings && isMissingMaterialFinding(finding)) {
+      return [];
+    }
+
     const issueId = `issue-${review.id}-${finding.id}`;
     const riskLevel = normalizeAnalysisRiskLevel(finding.riskLevel);
     const matchedEvidence = finding.evidenceCandidateIds
@@ -428,6 +474,7 @@ export function buildAnalysisIssues(
   const minEvidenceScore = options.minEvidenceScore ?? defaultMinEvidenceScore;
   const text = combinedArtifactText(artifacts);
   const issues: ReviewIssue[] = issuesFromAgentFindings(review, artifacts, minEvidenceScore);
+  const missingMaterials = unresolvedStoredMissingMaterials(review);
   const rateClaimPattern = /(최고|최대).{0,20}([0-9]+(?:\.[0-9]+)?\s*%|연\s*[0-9])/;
   const conditionPattern = /(조건|우대|기본|세전|한도|충족|적용|대상|기간|고시)/;
   const absoluteClaimPattern = /(누구나|무조건|전원|100%|반드시|확정|보장)/;
@@ -487,7 +534,7 @@ export function buildAnalysisIssues(
     );
   }
 
-  if (review.missingMaterials.length > 0) {
+  if (missingMaterials.length > 0) {
     issues.push(
       baseIssue({
         review,
@@ -496,8 +543,8 @@ export function buildAnalysisIssues(
         issueType: "missing_material",
         riskLevel: "caution",
         title: "필수 심의 자료 누락",
-        targetText: review.missingMaterials.join(", "),
-        description: `심의 필수 자료가 누락되었습니다: ${review.missingMaterials.join(", ")}`,
+        targetText: missingMaterials.join(", "),
+        description: `심의 필수 자료가 누락되었습니다: ${missingMaterials.join(", ")}`,
         suggestedCopy:
           "누락 자료를 보완 제출하거나 제한된 자료 기준의 조건부 검토로 진행해 주세요.",
         minEvidenceScore

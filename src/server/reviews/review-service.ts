@@ -5,6 +5,7 @@ import {
   createReviewAnalysisPipeline,
   type ReviewAnalysisPipeline
 } from "@/server/analysis/review-analysis-pipeline";
+import { createDbAnalysisEventSink } from "@/server/analysis/analysis-event-sink";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import {
   createKnowledgeDocumentChunks,
@@ -17,6 +18,7 @@ import {
   stableRegulatorySourceId
 } from "@/server/regulatory/knowledge-document-source-mapping";
 import { expandArchiveUploads } from "@/server/storage/archive-extraction";
+import { warnCrossEnvUpload } from "@/server/storage/upload-consistency";
 import { getUploadScanner, type UploadScanner } from "@/server/storage/upload-security";
 import type { KnowledgeDocument, ReviewAction, ReviewStatus, RoleId } from "@/domain/types";
 import { buildRevisionDiff, type RevisionDiff } from "@/domain/revision-diff";
@@ -250,6 +252,10 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         files: Array<{ name: string; type: string; size: number; body: Uint8Array }>;
       }
     ) {
+      // Best-effort guard: warn (never block) when this environment would create an
+      // orphan — local file storage writing metadata to a remote DB served elsewhere.
+      warnCrossEnvUpload();
+
       const scope = scopeFromContext(context);
       let reviewCaseId = input.reviewCaseId;
 
@@ -383,31 +389,41 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         return queued;
       }
 
-      const queued = await store.enqueueAnalysis(scope, reviewCaseId);
+      const claimed = await store.beginInlineAnalysis(scope, reviewCaseId);
 
-      if (queued) {
-        await recordAnalysisStart(queued);
+      if (claimed) {
+        await recordAnalysisStart({ status: "analysis_in_progress", jobId: claimed.id });
       }
 
-      if (queued && before) {
+      if (claimed && before) {
         let result;
 
         try {
-          const artifacts = await analysisPipeline.run({ review: before, scope });
+          const onEvent = createDbAnalysisEventSink({
+            store,
+            scope,
+            reviewCaseId,
+            jobId: claimed.id
+          });
+          const artifacts = await analysisPipeline.run({
+            review: claimed.reviewCase,
+            scope,
+            onEvent
+          });
           const persisted = await store.persistAnalysisOutputs(scope, {
             reviewCaseId,
-            jobId: queued.jobId,
+            jobId: claimed.id,
             artifacts
           });
 
           if (!persisted) {
-            throw new Error(`Analysis outputs were not persisted for job ${queued.jobId}`);
+            throw new Error(`Analysis outputs were not persisted for job ${claimed.id}`);
           }
 
-          const completed = await store.completeAnalysisJob(scope, queued.jobId, artifacts);
+          const completed = await store.completeAnalysisJob(scope, claimed.id, artifacts);
 
           if (!completed) {
-            throw new Error(`Analysis job ${queued.jobId} was not completed`);
+            throw new Error(`Analysis job ${claimed.id} was not completed`);
           }
 
           result = {
@@ -415,7 +431,7 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
             issueCount: persisted.issueCount
           };
         } catch (error) {
-          await store.failAnalysisJob(scope, queued.jobId, errorMessage(error));
+          await store.failAnalysisJob(scope, claimed.id, errorMessage(error));
           throw error;
         }
 
@@ -428,11 +444,26 @@ export function createReviewService(deps: ReviewServiceDeps = {}) {
         return result;
       }
 
-      return queued;
+      return undefined;
     },
 
     async getLatestAnalysisJob(context: RequestContext, reviewCaseId: string) {
       return store.getLatestAnalysisJob(scopeFromContext(context), reviewCaseId);
+    },
+
+    async listAnalysisEvents(
+      context: RequestContext,
+      reviewCaseId: string,
+      options: { since?: number }
+    ) {
+      const scope = scopeFromContext(context);
+      const review = await store.getReviewCase(scope, reviewCaseId);
+
+      if (!review) {
+        return undefined;
+      }
+
+      return store.listAnalysisEvents(scope, reviewCaseId, options);
     },
 
     async getAnalysisStatus(

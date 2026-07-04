@@ -80,6 +80,39 @@ describe("CreativeViewer", () => {
     expect(screen.queryByText("실제 업로드 자료 분석 대기")).not.toBeInTheDocument();
   });
 
+  it("shows an explicit load-failure notice instead of the mock poster when the uploaded creative image fails to load", () => {
+    render(
+      <CreativeViewer
+        copy="심의 요청 제목: CoVe"
+        disclosure="실제 업로드 건은 OCR/RAG 분석 전이므로 근거 부족 상태로 표시됩니다."
+        creativeImageError
+        issues={[]}
+        onSelectIssue={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("원본 이미지를 불러오지 못했습니다");
+    // The reviewer must not be shown the intake placeholder as if it were the real creative.
+    expect(screen.queryByText("FinProof Bank")).not.toBeInTheDocument();
+    expect(screen.queryByText("심의 요청 제목: CoVe")).not.toBeInTheDocument();
+  });
+
+  it("prefers the loaded creative image over the load-failure notice", () => {
+    render(
+      <CreativeViewer
+        copy="카피"
+        disclosure="공시"
+        creativeImage={{ src: "blob:http://localhost/poster", alt: "poster.png" }}
+        creativeImageError
+        issues={[]}
+        onSelectIssue={vi.fn()}
+      />
+    );
+
+    expect(screen.getByRole("img", { name: "poster.png 실제 심의자료 포스터" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("zooms the creative preview in and out from the toolbar", async () => {
     render(
       <CreativeViewer

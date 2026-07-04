@@ -14,6 +14,7 @@ import {
   type ModelProvider
 } from "@/server/ai/model-provider";
 import { providerForModel } from "@/server/ai/model-router";
+import { logAnalysisEvent } from "@/server/analysis/analysis-log";
 import {
   createEmbeddingProvider,
   type EmbeddingProvider
@@ -26,6 +27,7 @@ import {
 import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
 import { buildAnalysisIssues } from "./issue-generation";
+import { runCoveEvidenceVerification, type CoveVerificationArtifacts } from "./cove-verification";
 import {
   segmentMultilingualDocuments,
   type KoreanComplianceMapping,
@@ -96,6 +98,8 @@ export type AnalysisArtifacts = {
   extractionDiagnostics?: ExtractionDiagnostic[];
   evidenceCandidates: RagEvidenceCandidate[];
   agentFindings?: AgentFinding[];
+  draftAgentFindings?: AgentFinding[];
+  coveVerification?: CoveVerificationArtifacts;
   findings?: AgentFindingCandidate[];
   multilingualSegments?: MultilingualSegment[];
   localizedRiskFindings?: LocalizedRiskFinding[];
@@ -128,7 +132,11 @@ export type RagRetriever = {
 export type ReviewFileBodyReader = Pick<ReviewStorageAdapter, "getReviewFileBody">;
 
 export type ReviewAnalysisPipeline = {
-  run(input: { review: ReviewCase; scope?: ReviewStoreScope }): Promise<AnalysisArtifacts>;
+  run(input: {
+    review: ReviewCase;
+    scope?: ReviewStoreScope;
+    onEvent?: (payload: Record<string, unknown>) => void;
+  }): Promise<AnalysisArtifacts>;
   /**
    * OCR 추출만 수행하고 AI 이슈탐지(RAG·서브에이전트·이슈생성)는 건너뛴다.
    * 재업로드 재검토에서 버전 간 텍스트 비교(diff)용 추출 텍스트만 필요할 때 사용한다.
@@ -533,12 +541,62 @@ function isNonReviewUploadFile(file: ReviewFile | undefined) {
   );
 }
 
+function isUploadedReviewFile(file: ReviewFile) {
+  return file.storageProvider !== "sample" && !isNonReviewUploadFile(file);
+}
+
+function sourceFileNames(files: ReviewFile[]) {
+  const names = files.map((file) => file.name).slice(0, 4).join(", ");
+
+  return files.length > 4 ? `${names} 외 ${files.length - 4}개` : names;
+}
+
+function assertUploadSourceExtractionAvailable(
+  review: ReviewCase,
+  documents: ExtractedDocument[],
+  diagnostics: ExtractionDiagnostic[]
+) {
+  const uploadedFiles = review.files.filter((file) => file.storageProvider !== "sample");
+
+  if (uploadedFiles.length === 0) {
+    return;
+  }
+
+  const reviewSourceFiles = uploadedFiles.filter(isUploadedReviewFile);
+
+  if (reviewSourceFiles.length === 0) {
+    throw new Error(
+      "광고 원문 미제출로 분석을 진행할 수 없습니다. 업로드 패키지에서 실제 광고 이미지, PDF, 문구 파일이 확인되지 않았습니다."
+    );
+  }
+
+  if (documents.length > 0) {
+    return;
+  }
+
+  const diagnosticFileNames = diagnostics.map((diagnostic) => diagnostic.fileName).filter(Boolean);
+  const targetFiles =
+    diagnosticFileNames.length > 0 ? diagnosticFileNames.slice(0, 4).join(", ") : sourceFileNames(reviewSourceFiles);
+
+  throw new Error(
+    [
+      "광고 원문 추출 실패로 분석을 진행할 수 없습니다.",
+      "업로드 파일 본문을 읽지 못해 메타데이터만 확인되었습니다.",
+      "로컬 저장소 경로, 분석 실행 위치, OCR 제공자 설정을 확인한 뒤 다시 분석해 주세요.",
+      targetFiles ? `대상 파일: ${targetFiles}` : ""
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
 function documentsForAnalysis(documents: ExtractedDocument[], review?: ReviewCase) {
   const fileById = new Map(review?.files.map((file) => [file.id, file]) ?? []);
 
   return documents.filter(
     (document) =>
       document.provider !== "metadata-only" &&
+      document.provider !== "review-metadata" &&
       document.text.trim().length > 0 &&
       !isNonReviewUploadFile(fileById.get(document.fileId))
   );
@@ -680,6 +738,13 @@ function positiveInteger(env: Record<string, string | undefined>, key: string, f
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
+function configuredRagVectorDimension(env: Record<string, string | undefined>) {
+  const raw = env.FINPROOF_RAG_VECTOR_DIMENSION?.trim();
+  const parsed = raw ? Number(raw) : Number.NaN;
+
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1536;
+}
+
 function clampConfidence(value: unknown, fallback: number) {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return fallback;
@@ -688,10 +753,22 @@ function clampConfidence(value: unknown, fallback: number) {
   return Math.max(0.45, Math.min(0.99, value));
 }
 
+/**
+ * Strip a Markdown code fence from an LLM response. Claude wraps JSON output in
+ * a ```json … ``` block; when the response is truncated by max_tokens the closing
+ * ``` (and often the closing quote/brace) never arrives, so we strip the opening
+ * fence unconditionally and the closing fence only if present.
+ */
+function stripCodeFences(text: string): string {
+  return text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
 function parseJsonObject(text: string): Record<string, unknown> | undefined {
-  const trimmed = text.trim();
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
-  const candidate = fenced ? fenced[1].trim() : trimmed;
+  const candidate = stripCodeFences(text);
 
   try {
     const parsed = JSON.parse(candidate);
@@ -704,6 +781,49 @@ function parseJsonObject(text: string): Record<string, unknown> | undefined {
   }
 }
 
+/**
+ * Recover the `"text"` field value from a possibly-truncated JSON OCR response.
+ * A content-heavy image can push Claude's output past max_tokens, cutting off the
+ * closing quote/brace/fence so JSON.parse fails. Rather than store the raw
+ * `​```json {"text":"…` string as OCR output, we walk the string after `"text":"`,
+ * honouring escapes, and take everything up to the closing quote (or the end, if
+ * truncated). Returns undefined when there is no `"text"` field to salvage.
+ */
+function salvageOcrTextField(raw: string): string | undefined {
+  const stripped = stripCodeFences(raw);
+  const match = stripped.match(/"text"\s*:\s*"/);
+
+  if (!match || match.index === undefined) {
+    return undefined;
+  }
+
+  const start = match.index + match[0].length;
+  let out = "";
+
+  for (let i = start; i < stripped.length; i += 1) {
+    const ch = stripped[i];
+
+    if (ch === "\\") {
+      const next = stripped[i + 1];
+      const unescaped =
+        next === "n" ? "\n" : next === "t" ? "\t" : next === "r" ? "\r" : (next ?? "");
+      out += unescaped;
+      i += 1;
+      continue;
+    }
+
+    if (ch === '"') {
+      break; // closing quote of the text field
+    }
+
+    out += ch;
+  }
+
+  const cleaned = out.replace(/\s+/g, " ").trim();
+
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 function parseGeminiOcrText(rawText: string) {
   const parsed = parseJsonObject(rawText);
 
@@ -714,8 +834,16 @@ function parseGeminiOcrText(rawText: string) {
     };
   }
 
+  // JSON.parse failed (commonly a truncated ```json block) — salvage the text
+  // field so we never surface raw JSON/fence syntax as extracted OCR content.
+  const salvaged = salvageOcrTextField(rawText);
+
+  if (salvaged) {
+    return { text: salvaged, confidence: 0.78 };
+  }
+
   return {
-    text: rawText.replace(/\s+/g, " ").trim(),
+    text: stripCodeFences(rawText).replace(/\s+/g, " ").trim(),
     confidence: 0.78
   };
 }
@@ -890,7 +1018,15 @@ type OpenAiOcrOptions = {
   visionProvider: "anthropic" | "openai";
   maxInlineBytes: number;
   ocrTimeoutMs: number;
+  maxTokens: number;
 };
+
+// Vision OCR output budget. Content-heavy images (PDF contact sheets, multi-page
+// renders) previously overran the old 2000-token cap, truncating the JSON response
+// mid-string; the parser then fell back to storing the raw ```json fragment.
+// 8000 comfortably fits a full page/sheet of extracted text and stays well under
+// every Claude/OpenAI model's non-streaming ceiling.
+const DEFAULT_OCR_MAX_TOKENS = 8000;
 
 function resolveOpenAiOcrOptions(env: Record<string, string | undefined>): OpenAiOcrOptions | null {
   const model = openAiOcrModel(env);
@@ -908,7 +1044,8 @@ function resolveOpenAiOcrOptions(env: Record<string, string | undefined>): OpenA
     model,
     visionProvider,
     maxInlineBytes: positiveInteger(env, "FINPROOF_OCR_MAX_INLINE_BYTES", 20 * 1024 * 1024),
-    ocrTimeoutMs: positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000)
+    ocrTimeoutMs: positiveInteger(env, "FINPROOF_OCR_TIMEOUT_MS", 90_000),
+    maxTokens: positiveInteger(env, "FINPROOF_OCR_MAX_TOKENS", DEFAULT_OCR_MAX_TOKENS)
   };
 }
 
@@ -952,7 +1089,7 @@ async function extractFileViaOpenAi(
           },
           body: JSON.stringify({
             model: options.model,
-            max_tokens: 2000,
+            max_tokens: options.maxTokens,
             messages: [
               {
                 role: "user",
@@ -982,7 +1119,7 @@ async function extractFileViaOpenAi(
                 ]
               }
             ],
-            max_output_tokens: 2000
+            max_output_tokens: options.maxTokens
           })
         });
 
@@ -1023,9 +1160,10 @@ export function createOpenAiOcrProvider(
       const options = resolveOpenAiOcrOptions(env);
 
       if (!options) {
-        throw new Error(
-          "ANTHROPIC_API_KEY (or OPENAI_API_KEY for a gpt-* model) is required when FINPROOF_OCR_PROVIDER=openai"
+        console.log(
+          "[OpenAIOCR] vision key missing; falling back to local text/metadata extraction"
         );
+        return createDeterministicOcrProvider(fileBodyReader).extract({ review, files });
       }
 
       return Promise.all(
@@ -1043,16 +1181,21 @@ export function createOpenAiOcrProvider(
             };
           }
 
-          const extracted = await extractFileViaOpenAi(
-            file,
-            review,
-            options,
-            env,
-            fileBodyReader,
-            fetchImpl
-          );
+          try {
+            const extracted = await extractFileViaOpenAi(
+              file,
+              review,
+              options,
+              env,
+              fileBodyReader,
+              fetchImpl
+            );
 
-          return extracted ?? sampleOrMetadataDocument(review, file);
+            return extracted ?? sampleOrMetadataDocument(review, file);
+          } catch (error) {
+            console.log(`[OpenAIOCR] falling back for ${file.name}: ${errorMessage(error)}`);
+            return sampleOrMetadataDocument(review, file);
+          }
         })
       );
     }
@@ -1220,28 +1363,56 @@ function createLexicalRagRetriever(
     scope: ReviewStoreScope | undefined,
     query: string
   ): Promise<RagEvidenceCandidate[]> {
-    const queryEmbedding =
-      reviewStore && scope ? (await embeddingProvider.embed([query]))[0] : undefined;
+    let queryEmbedding: number[] | undefined;
+    if (reviewStore && scope) {
+      try {
+        const candidateEmbedding = (await embeddingProvider.embed([query]))[0];
+        const expectedDimension = configuredRagVectorDimension(env);
+
+        if (candidateEmbedding && candidateEmbedding.length === expectedDimension) {
+          queryEmbedding = candidateEmbedding;
+        } else if (candidateEmbedding) {
+          console.log(
+            `[RAG] skipping vector search: query embedding dimension ${candidateEmbedding.length} does not match configured ${expectedDimension}`
+          );
+        }
+      } catch (error) {
+        console.log(
+          `[RAG] embedding unavailable; using lexical retrieval only: ${errorMessage(error)}`
+        );
+      }
+    }
+
     const [knowledgeCandidates, caseHistoryCandidates] = await Promise.all([
       reviewStore && scope
-        ? reviewStore.searchKnowledgeEvidence(scope, {
-            query,
-            productType: review.productType,
-            topK: config.rag.topK * 2,
-            minScore: config.rag.minScore,
-            knowledgeMinScore: config.rag.knowledgeMinScore,
-            queryEmbedding
-          })
+        ? reviewStore
+            .searchKnowledgeEvidence(scope, {
+              query,
+              productType: review.productType,
+              topK: config.rag.topK * 2,
+              minScore: config.rag.minScore,
+              knowledgeMinScore: config.rag.knowledgeMinScore,
+              queryEmbedding
+            })
+            .catch((error) => {
+              console.log(`[RAG] knowledge retrieval unavailable: ${errorMessage(error)}`);
+              return [];
+            })
         : Promise.resolve([]),
       reviewStore?.searchCaseHistoryEvidence && scope
-        ? reviewStore.searchCaseHistoryEvidence(scope, {
-            query,
-            productType: review.productType,
-            topK: config.rag.topK,
-            minScore: config.rag.minScore,
-            queryEmbedding,
-            excludeReviewCaseId: review.id
-          })
+        ? reviewStore
+            .searchCaseHistoryEvidence(scope, {
+              query,
+              productType: review.productType,
+              topK: config.rag.topK,
+              minScore: config.rag.minScore,
+              queryEmbedding,
+              excludeReviewCaseId: review.id
+            })
+            .catch((error) => {
+              console.log(`[RAG] case-history retrieval unavailable: ${errorMessage(error)}`);
+              return [];
+            })
         : Promise.resolve([])
     ]);
 
@@ -1762,10 +1933,22 @@ export function createReviewAnalysisPipeline({
       const rawExtractedDocuments = await ocrProvider.extract({ review, files: review.files });
       return rawExtractedDocuments.map(sanitizeExtractedDocument);
     },
-    async run({ review, scope }) {
+    async run({ review, scope, onEvent }) {
       const config = getAnalysisProviderConfig();
+      const emit = (payload: Record<string, unknown>) => {
+        logAnalysisEvent(payload);
+        onEvent?.(payload);
+      };
+      const runStartedAt = now().getTime();
+      emit({
+        stage: "pipeline",
+        event: "start",
+        case: review.id,
+        files: review.files.length
+      });
       // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
       // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
+      const ocrStartedAt = now().getTime();
       const [rawExtractedDocuments] = await Promise.all([
         ocrProvider.extract({ review, files: review.files }),
         ragRetriever.prefetch?.({ review, scope })
@@ -1774,27 +1957,65 @@ export function createReviewAnalysisPipeline({
       // segmentation, findings, or persistence. Mis-encoded uploads (e.g. UTF-16 Vietnamese
       // text decoded as UTF-8) otherwise carry NUL bytes that Postgres refuses to store.
       const extractedDocuments = rawExtractedDocuments.map(sanitizeExtractedDocument);
-      const analysisDocuments = documentsWithReviewContext(
-        documentsForAnalysis(extractedDocuments, review),
-        review
-      );
+      const extractedSourceDocuments = documentsForAnalysis(extractedDocuments, review);
+      emit({
+        stage: "ocr",
+        event: "done",
+        case: review.id,
+        docs: extractedDocuments.length,
+        providers: Array.from(new Set(extractedDocuments.map((document) => document.provider))),
+        chars: extractedDocuments.reduce((sum, document) => sum + (document.text?.length ?? 0), 0),
+        ms: now().getTime() - ocrStartedAt
+      });
       const extractionDiagnostics = extractionDiagnosticsFrom(extractedDocuments);
+      assertUploadSourceExtractionAvailable(
+        review,
+        extractedSourceDocuments,
+        extractionDiagnostics
+      );
+      const analysisDocuments = documentsWithReviewContext(extractedSourceDocuments, review);
       // retrieve() uses the prefetched knowledge/case candidates and computes
       // product doc candidates from OCR results — no duplicate DB queries.
       const conceptTerms = await expandComplianceQuery(
         analysisDocuments.map((document) => document.text).join(" "),
         modelProvider
       );
+      emit({
+        stage: "query_expansion",
+        event: "done",
+        case: review.id,
+        concepts: conceptTerms.slice(0, 12)
+      });
+      const retrieveStartedAt = now().getTime();
       const retrievedCandidates = await ragRetriever.retrieve({
         review,
         extractedDocuments: analysisDocuments,
         scope,
         queryConcepts: conceptTerms
       });
+      emit({
+        stage: "rag_retrieve",
+        event: "done",
+        case: review.id,
+        candidates: retrievedCandidates.length,
+        ms: now().getTime() - retrieveStartedAt
+      });
       // Rerank with the same expanded, OCR-enriched query used for retrieval.
+      const rerankStartedAt = now().getTime();
       const rerankedCandidates = await reranker.rerank({
         query: analysisRagQuery(review, analysisDocuments, conceptTerms),
         candidates: retrievedCandidates
+      });
+      emit({
+        stage: "rerank",
+        event: "done",
+        case: review.id,
+        topDocs: rerankedCandidates.slice(0, 5).map((candidate) => ({
+          title: candidate.title,
+          score: Number(candidate.relevanceScore.toFixed(3)),
+          sourceType: candidate.sourceType
+        })),
+        ms: now().getTime() - rerankStartedAt
       });
       const evidenceCandidates = selectEvidenceCandidates(rerankedCandidates, {
         minScore: config.rag.minScore,
@@ -1809,6 +2030,20 @@ export function createReviewAnalysisPipeline({
         ...evidenceCandidates,
         ...socialContextKgResult.evidenceCandidates
       ];
+      emit({
+        stage: "evidence_select",
+        event: "done",
+        case: review.id,
+        selected: evidenceCandidatesWithSocialContextKg.length,
+        bySourceType: evidenceCandidatesWithSocialContextKg.reduce<Record<string, number>>(
+          (counts, candidate) => {
+            counts[candidate.sourceType] = (counts[candidate.sourceType] ?? 0) + 1;
+            return counts;
+          },
+          {}
+        ),
+        titles: evidenceCandidatesWithSocialContextKg.map((candidate) => candidate.title)
+      });
       const multilingualSegments = segmentMultilingualDocuments(analysisDocuments);
       const multilingualResult =
         multilingualSegments.length > 0
@@ -1832,19 +2067,45 @@ export function createReviewAnalysisPipeline({
         multilingualResult.agentFindings,
         socialContextKgResult.agentFindings
       );
+      emit({
+        stage: "orchestrate",
+        event: "start",
+        case: review.id,
+        evidence: evidenceCandidatesWithSocialContextKg.length,
+        priorFindings: priorAgentFindings.length
+      });
       const orchestratedFindings = await subAgentOrchestrator.run({
         review,
         extractedDocuments: analysisDocuments,
         evidenceCandidates: evidenceCandidatesWithSocialContextKg,
-        priorFindings: priorAgentFindings
+        priorFindings: priorAgentFindings,
+        onEvent
       });
       const agentFindings = combineAgentFindings(priorAgentFindings, orchestratedFindings);
+      emit({
+        stage: "combine",
+        event: "done",
+        case: review.id,
+        agentFindings: agentFindings.length,
+        totalMs: now().getTime() - runStartedAt
+      });
+      const coveVerification = await runCoveEvidenceVerification({
+        review,
+        extractedDocuments: analysisDocuments,
+        evidenceCandidates: evidenceCandidatesWithSocialContextKg,
+        agentFindings,
+        modelProvider,
+        now
+      });
+      const verifiedAgentFindings = coveVerification.verifiedAgentFindings;
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,
         ...(extractionDiagnostics.length > 0 ? { extractionDiagnostics } : {}),
         evidenceCandidates: evidenceCandidatesWithSocialContextKg,
-        ...(agentFindings.length > 0 ? { agentFindings } : {}),
+        ...(verifiedAgentFindings.length > 0 ? { agentFindings: verifiedAgentFindings } : {}),
+        ...(agentFindings.length > 0 ? { draftAgentFindings: agentFindings } : {}),
+        coveVerification: coveVerification.artifacts,
         ...(multilingualSegments.length > 0 ? { multilingualSegments } : {}),
         ...(multilingualResult.localizedRiskFindings.length > 0
           ? { localizedRiskFindings: multilingualResult.localizedRiskFindings }
@@ -1861,12 +2122,12 @@ export function createReviewAnalysisPipeline({
       };
       const findings = buildAnalysisIssues(review, artifacts, {
         minEvidenceScore: config.rag.minScore
-      }).map((issue) => issueToFinding(issue, agentFindings, review.id));
+      }).map((issue) => issueToFinding(issue, verifiedAgentFindings, review.id));
 
       return {
         ...artifacts,
         findings,
-        ...(agentFindings.length > 0 ? { agentFindings } : {})
+        ...(verifiedAgentFindings.length > 0 ? { agentFindings: verifiedAgentFindings } : {})
       };
     }
   };

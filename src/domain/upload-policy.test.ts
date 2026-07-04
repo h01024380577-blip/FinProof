@@ -119,6 +119,30 @@ describe("upload policy", () => {
     ).toEqual({ fileType: "product_description", confidence: 0.85 });
   });
 
+  it("classifies English review-package filenames from the bank ZIP seed package", () => {
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "finproof_bank_.zip/finproof_bank/poster_finproof_daily_savings.png",
+        type: "image/png",
+        size: 1024
+      })
+    ).toEqual({ fileType: "promotional_creative", confidence: 0.87 });
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "finproof_bank_.zip/finproof_bank/copy_draft_daily_savings.txt",
+        type: "text/plain",
+        size: 1024
+      })
+    ).toEqual({ fileType: "copy_draft", confidence: 0.85 });
+    expect(
+      classifyUploadFileWithConfidence({
+        name: "finproof_bank_.zip/finproof_bank/rate_table_daily_savings.csv",
+        type: "text/csv",
+        size: 1024
+      })
+    ).toEqual({ fileType: "rate_table", confidence: 0.91 });
+  });
+
   it("classifies advertisement PDFs as promotional creatives from Korean filename keywords", () => {
     expect(
       classifyUploadFileWithConfidence({

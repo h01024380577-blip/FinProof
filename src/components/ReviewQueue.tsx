@@ -8,6 +8,7 @@ import { QueueMetrics, type QueueMetricValues } from "./queue/QueueMetrics";
 import { QueueFilters, type QueueFilterState } from "./queue/QueueFilters";
 import { QueueTable, type QueueAnalysisState, type QueueAnalysisStates } from "./queue/QueueTable";
 import { useRole } from "./RoleContext";
+import { AnalysisProgressPopup } from "@/components/analysis/AnalysisProgressPopup";
 
 type ReviewCasesResponse = {
   items?: ReviewSummary[];
@@ -110,6 +111,7 @@ export function ReviewQueue(): JSX.Element {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [analysisStates, setAnalysisStates] = useState<QueueAnalysisStates>({});
+  const [progressCaseId, setProgressCaseId] = useState<string | null>(null);
   const pollingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const [deletingHistoryIds, setDeletingHistoryIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
@@ -594,8 +596,16 @@ export function ReviewQueue(): JSX.Element {
           onSaveReviewer={(review, reviewer) => void saveReviewer(review, reviewer)}
           onDeleteReviewHistory={(review) => void deleteReviewHistory(review)}
           onStartAnalysis={(review) => void startAnalysis(review)}
+          onOpenProgress={(review) => setProgressCaseId(review.id)}
           onOpenReview={(id) => router.push(`/reviews/${id}`)}
         />
+        {progressCaseId ? (
+          <AnalysisProgressPopup
+            key={progressCaseId}
+            reviewCaseId={progressCaseId}
+            onClose={() => setProgressCaseId(null)}
+          />
+        ) : null}
         {pagination.total > pagination.pageSize ? (
           <div className="queue-pagination" aria-label="심의 대기 목록 페이지네이션">
             <button

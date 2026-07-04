@@ -51,6 +51,25 @@ function positiveNumber(env: Env, key: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function unavailableFallback(
+  provider: GenerateTextResult["provider"],
+  model: string,
+  input: GenerateTextInput,
+  reason: string
+): GenerateTextResult {
+  console.log(`[ModelProvider] ${provider}/${model} unavailable; using fallback: ${reason}`);
+
+  return {
+    provider,
+    model,
+    text: input.fallback
+  };
+}
+
 /**
  * Anthropic's Messages API requires max_tokens, so it cannot be omitted. Default
  * it to each model's synchronous maximum output so answers/drafts are never
@@ -115,12 +134,7 @@ export function extractOpenAIText(body: unknown): string {
 }
 
 export function extractAnthropicText(body: unknown): string {
-  if (
-    !body ||
-    typeof body !== "object" ||
-    !("content" in body) ||
-    !Array.isArray(body.content)
-  ) {
+  if (!body || typeof body !== "object" || !("content" in body) || !Array.isArray(body.content)) {
     return "";
   }
 
@@ -185,7 +199,9 @@ export function createModelProvider(
   if (providerValue === "gemini") {
     return {
       async generateText() {
-        throw new Error("FINPROOF_MODEL_PROVIDER=gemini is disabled; Gemini is only allowed for OCR");
+        throw new Error(
+          "FINPROOF_MODEL_PROVIDER=gemini is disabled; Gemini is only allowed for OCR"
+        );
       }
     };
   }
@@ -197,7 +213,7 @@ export function createModelProvider(
   const model =
     envValue(env, "ANTHROPIC_MODEL") ??
     envValue(env, "OPENAI_MODEL") ??
-    (providerValue === "openai" ? "gpt-5-mini" : "claude-sonnet-4-6");
+    (providerValue === "openai" ? "gpt-5-mini" : "claude-sonnet-5");
 
   if (provider === "deterministic") {
     return {
@@ -258,40 +274,48 @@ function createProviderForRoute(
           throw new Error("ANTHROPIC_API_KEY is required when routing to a Claude model");
         }
 
-        const maxTokens = positiveNumber(env, "FINPROOF_MODEL_MAX_TOKENS", maxOutputTokensFor(model));
+        const maxTokens = positiveNumber(
+          env,
+          "FINPROOF_MODEL_MAX_TOKENS",
+          maxOutputTokensFor(model)
+        );
         const anthropicVersion = envValue(env, "ANTHROPIC_VERSION") ?? "2023-06-01";
 
-        const response = await fetchImpl("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          signal: AbortSignal.timeout(modelTimeoutMs),
-          headers: {
-            "x-api-key": apiKey,
-            "anthropic-version": anthropicVersion,
-            "content-type": "application/json"
-          },
-          body: JSON.stringify({
+        try {
+          const response = await fetchImpl("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            signal: AbortSignal.timeout(modelTimeoutMs),
+            headers: {
+              "x-api-key": apiKey,
+              "anthropic-version": anthropicVersion,
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({
+              model,
+              max_tokens: maxTokens,
+              system: input.instructions,
+              messages: [{ role: "user", content: input.input }]
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(
+              `Anthropic Messages API request failed: ${response.status ?? "unknown"} ${
+                response.statusText ?? ""
+              }`.trim()
+            );
+          }
+
+          const text = extractAnthropicText(await response.json()).trim();
+
+          return {
+            provider,
             model,
-            max_tokens: maxTokens,
-            system: input.instructions,
-            messages: [{ role: "user", content: input.input }]
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(
-            `Anthropic Messages API request failed: ${response.status ?? "unknown"} ${
-              response.statusText ?? ""
-            }`.trim()
-          );
+            text: text || input.fallback
+          };
+        } catch (error) {
+          return unavailableFallback(provider, model, input, errorMessage(error));
         }
-
-        const text = extractAnthropicText(await response.json()).trim();
-
-        return {
-          provider,
-          model,
-          text: text || input.fallback
-        };
       }
     };
   }
@@ -305,39 +329,43 @@ function createProviderForRoute(
           throw new Error("GEMINI_API_KEY is required when FINPROOF_MODEL_PROVIDER=gemini");
         }
 
-        const response = await fetchImpl(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-          {
-            method: "POST",
-            signal: AbortSignal.timeout(modelTimeoutMs),
-            headers: {
-              "content-type": "application/json",
-              "x-goog-api-key": apiKey
-            },
-            body: JSON.stringify({
-              systemInstruction: {
-                parts: [{ text: input.instructions }]
+        try {
+          const response = await fetchImpl(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+            {
+              method: "POST",
+              signal: AbortSignal.timeout(modelTimeoutMs),
+              headers: {
+                "content-type": "application/json",
+                "x-goog-api-key": apiKey
               },
-              contents: [{ parts: [{ text: input.input }] }]
-            })
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Gemini generateContent request failed: ${response.status ?? "unknown"} ${
-              response.statusText ?? ""
-            }`.trim()
+              body: JSON.stringify({
+                systemInstruction: {
+                  parts: [{ text: input.instructions }]
+                },
+                contents: [{ parts: [{ text: input.input }] }]
+              })
+            }
           );
+
+          if (!response.ok) {
+            throw new Error(
+              `Gemini generateContent request failed: ${response.status ?? "unknown"} ${
+                response.statusText ?? ""
+              }`.trim()
+            );
+          }
+
+          const text = extractGeminiText(await response.json()).trim();
+
+          return {
+            provider,
+            model,
+            text: text || input.fallback
+          };
+        } catch (error) {
+          return unavailableFallback(provider, model, input, errorMessage(error));
         }
-
-        const text = extractGeminiText(await response.json()).trim();
-
-        return {
-          provider,
-          model,
-          text: text || input.fallback
-        };
       }
     };
   }
@@ -350,35 +378,39 @@ function createProviderForRoute(
         throw new Error("OPENAI_API_KEY is required when FINPROOF_MODEL_PROVIDER=openai");
       }
 
-      const response = await fetchImpl("https://api.openai.com/v1/responses", {
-        method: "POST",
-        signal: AbortSignal.timeout(modelTimeoutMs),
-        headers: {
-          authorization: `Bearer ${apiKey}`,
-          "content-type": "application/json"
-        },
-        body: JSON.stringify({
+      try {
+        const response = await fetchImpl("https://api.openai.com/v1/responses", {
+          method: "POST",
+          signal: AbortSignal.timeout(modelTimeoutMs),
+          headers: {
+            authorization: `Bearer ${apiKey}`,
+            "content-type": "application/json"
+          },
+          body: JSON.stringify({
+            model,
+            instructions: input.instructions,
+            input: input.input
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `OpenAI Responses API request failed: ${response.status ?? "unknown"} ${
+              response.statusText ?? ""
+            }`.trim()
+          );
+        }
+
+        const text = extractOpenAIText(await response.json()).trim();
+
+        return {
+          provider,
           model,
-          instructions: input.instructions,
-          input: input.input
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `OpenAI Responses API request failed: ${response.status ?? "unknown"} ${
-            response.statusText ?? ""
-          }`.trim()
-        );
+          text: text || input.fallback
+        };
+      } catch (error) {
+        return unavailableFallback(provider, model, input, errorMessage(error));
       }
-
-      const text = extractOpenAIText(await response.json()).trim();
-
-      return {
-        provider,
-        model,
-        text: text || input.fallback
-      };
     }
   };
 }
