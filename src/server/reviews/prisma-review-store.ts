@@ -52,6 +52,8 @@ import {
 } from "./prisma-mappers";
 import type {
   AnalysisJob,
+  AnalysisEventRecord,
+  AnalysisEventsResult,
   AuditEvent,
   AuditEventInput,
   ActivateRegulatoryChangeSetInput,
@@ -170,6 +172,24 @@ function toAnalysisJob(row: {
     completedAt: row.completedAt?.toISOString(),
     errorMessage: row.errorMessage ?? undefined,
     artifacts: (row.artifacts as AnalysisArtifacts | null) ?? undefined
+  };
+}
+
+function toAnalysisEventRecord(row: {
+  id: string;
+  seq: number;
+  stage: string;
+  event: string;
+  payload: Prisma.JsonValue;
+  createdAt: Date;
+}): AnalysisEventRecord {
+  return {
+    id: row.id,
+    seq: row.seq,
+    stage: row.stage,
+    event: row.event,
+    payload: (row.payload as Record<string, unknown> | null) ?? {},
+    createdAt: row.createdAt.toISOString()
   };
 }
 
@@ -2822,6 +2842,48 @@ export function createPrismaReviewStore(): ReviewStore {
       });
 
       return row ? toAnalysisJob(row) : undefined;
+    },
+
+    async recordAnalysisEvent(scope, input) {
+      await prisma.analysisEvent.create({
+        data: {
+          id: `evt-${randomUUID()}`,
+          tenantId: scope.tenantId,
+          reviewCaseId: input.reviewCaseId,
+          jobId: input.jobId,
+          seq: input.seq,
+          stage: input.stage,
+          event: input.event,
+          payload: input.payload as Prisma.InputJsonValue
+        }
+      });
+    },
+
+    async listAnalysisEvents(scope, reviewCaseId, options) {
+      const job = await prisma.analysisJob.findFirst({
+        where: { tenantId: scope.tenantId, reviewCaseId },
+        orderBy: { queuedAt: "desc" }
+      });
+
+      if (!job) {
+        return { jobId: null, status: null, events: [] };
+      }
+
+      const rows = await prisma.analysisEvent.findMany({
+        where: {
+          tenantId: scope.tenantId,
+          reviewCaseId,
+          jobId: job.id,
+          ...(typeof options.since === "number" ? { seq: { gt: options.since } } : {})
+        },
+        orderBy: { seq: "asc" }
+      });
+
+      return {
+        jobId: job.id,
+        status: job.status as AnalysisEventsResult["status"],
+        events: rows.map(toAnalysisEventRecord)
+      };
     },
 
     async listIssues(scope, reviewCaseId, options: ListIssuesOptions = {}) {

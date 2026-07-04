@@ -387,6 +387,17 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
   let regulatorySnapshotSequence = 1;
   let regulatoryChangeSetSequence = 1;
   const analysisJobs = new Map<string, AnalysisJob[]>();
+  const analysisEvents: Array<{
+    id: string;
+    tenantId: string;
+    reviewCaseId: string;
+    jobId: string;
+    seq: number;
+    stage: string;
+    event: string;
+    payload: Record<string, unknown>;
+    createdAt: string;
+  }> = [];
   const auditEvents: AuditEvent[] = [];
   const knowledgeDocuments = new Map<string, KnowledgeDocument>();
   const evidenceChunks = new Map<string, EvidenceChunk>();
@@ -1368,6 +1379,53 @@ export function createMockReviewStore(seedCases: ReviewCase[] = reviewCases) {
       const latestJob = jobs.at(-1);
 
       return latestJob ? clone(latestJob) : undefined;
+    },
+
+    async recordAnalysisEvent(scope: ReviewStoreScope, input) {
+      analysisEvents.push({
+        id: `evt-${analysisEvents.length + 1}`,
+        tenantId: scope.tenantId,
+        reviewCaseId: input.reviewCaseId,
+        jobId: input.jobId,
+        seq: input.seq,
+        stage: input.stage,
+        event: input.event,
+        payload: input.payload,
+        createdAt: new Date().toISOString()
+      });
+    },
+
+    async listAnalysisEvents(scope: ReviewStoreScope, reviewCaseId, options) {
+      if (!canAccessCase(scope, reviewCaseId)) {
+        return { jobId: null, status: null, events: [] };
+      }
+
+      const jobs = analysisJobs.get(reviewCaseId) ?? [];
+      const latestJob = jobs.at(-1);
+
+      if (!latestJob) {
+        return { jobId: null, status: null, events: [] };
+      }
+
+      const events = analysisEvents
+        .filter(
+          (entry) =>
+            entry.tenantId === scope.tenantId &&
+            entry.reviewCaseId === reviewCaseId &&
+            entry.jobId === latestJob.id &&
+            (typeof options.since === "number" ? entry.seq > options.since : true)
+        )
+        .sort((a, b) => a.seq - b.seq)
+        .map((entry) => ({
+          id: entry.id,
+          seq: entry.seq,
+          stage: entry.stage,
+          event: entry.event,
+          payload: entry.payload,
+          createdAt: entry.createdAt
+        }));
+
+      return { jobId: latestJob.id, status: latestJob.status, events };
     },
 
     async listIssues(scope: ReviewStoreScope, reviewCaseId, options: ListIssuesOptions = {}) {
