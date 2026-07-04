@@ -460,13 +460,18 @@ function materialStatus(review: ReviewCase) {
   };
 }
 
-// Social-context risk is surfaced under heterogeneous, model-chosen issueTypes (the KG
-// engine, the social_context_risk sub-agent, and the main agent's consolidated finding
-// all label it differently). Recognize it by the owning agent or by an issueType that
-// names a social-context signal, so we can tell when the main agent has itself addressed
-// the concern.
+// Social-context risk is surfaced under heterogeneous, model-chosen issueTypes: the KG
+// engine, the social_context_risk sub-agent, and the main agent's consolidated finding all
+// label it differently, and the main agent's wording varies run to run (observed:
+// social_context_risk, sensitive_expression_context, disaster_sensitivity_and_symbolic_metaphor).
+// Recognize it by the owning agent or by an issueType carrying a strong social-context
+// signal. This list only needs the failure to be safe: an unmatched social issueType merely
+// leaves a duplicate for the reviewer, whereas the tokens here (deliberately excluding
+// generic compliance words like "claim"/"disclosure"/"rate") will not tag an unrelated
+// finding as social — and coverage additionally requires targetText overlap before any raw
+// finding is dropped.
 const SOCIAL_CONTEXT_ISSUE_TYPE_PATTERN =
-  /social[\s_-]*context|disaster|symbolic|사회\s*맥락|참사|재난|기념일/i;
+  /social|context|disaster|symbolic|metaphor|sensitiv|tragedy|memorial|anniversar|controvers|backlash|mourning|사회|맥락|참사|재난|민감|논란|기념일|추모/i;
 
 function isSocialContextFinding(finding: AgentFinding): boolean {
   return (
