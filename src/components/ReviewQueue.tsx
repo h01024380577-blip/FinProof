@@ -83,7 +83,6 @@ const defaultFilterState: QueueFilterState = {
   product: "all"
 };
 const queuePageSize = 10;
-const analysisPollIntervalMs = 2000;
 
 const finalizedStatuses = new Set<ReviewCase["status"]>(["approved", "rejected"]);
 
@@ -114,6 +113,10 @@ export function ReviewQueue(): JSX.Element {
   const [analysisStates, setAnalysisStates] = useState<QueueAnalysisStates>({});
   const [progressCaseId, setProgressCaseId] = useState<string | null>(null);
   const pollingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // Ids with a live polling chain. Tracked synchronously (a setTimeout handle
+  // only lands in `pollingTimers` after the first async fetch resolves) so we
+  // never start two competing pollers for the same row.
+  const activePolls = useRef<Set<string>>(new Set());
   const [deletingHistoryIds, setDeletingHistoryIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<QueueFilterState>(defaultFilterState);
   const [page, setPage] = useState(1);
@@ -232,11 +235,42 @@ export function ReviewQueue(): JSX.Element {
 
   useEffect(() => {
     const timers = pollingTimers.current;
+    const polls = activePolls.current;
     return () => {
       timers.forEach((timer) => clearTimeout(timer));
       timers.clear();
+      polls.clear();
     };
   }, []);
+
+  // Resume a completion poller for any row that is already mid-analysis when the
+  // list loads — e.g. the page was reloaded, or analysis was started in another
+  // tab/session. Without this the row's "분석중" spinner would never resolve on
+  // its own and only a manual refresh would surface the finished result.
+  const analyzingRowIds = useMemo(
+    () =>
+      scopedReviews
+        .filter(
+          (review) =>
+            review.status === "analysis_queued" || review.status === "analysis_in_progress"
+        )
+        .map((review) => review.id)
+        .sort()
+        .join(","),
+    [scopedReviews]
+  );
+
+  useEffect(() => {
+    if (!analyzingRowIds) {
+      return;
+    }
+    for (const reviewId of analyzingRowIds.split(",")) {
+      ensurePolling(reviewId);
+    }
+    // ensurePolling is a stable, self-deduplicating entry point; re-run only when
+    // the set of analyzing rows changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyzingRowIds]);
 
   function clearPollingTimer(reviewId: string): void {
     const timer = pollingTimers.current.get(reviewId);
@@ -245,6 +279,24 @@ export function ReviewQueue(): JSX.Element {
       clearTimeout(timer);
       pollingTimers.current.delete(reviewId);
     }
+  }
+
+  // Stop a polling chain for good: drop its pending timer and clear the active
+  // marker so a later `ensurePolling` can start a fresh chain if needed.
+  function stopPolling(reviewId: string): void {
+    clearPollingTimer(reviewId);
+    activePolls.current.delete(reviewId);
+  }
+
+  // Start a completion poller for a row unless one is already running. This is
+  // the single entry point so an in-session "start analysis" click and the
+  // resume-on-load effect can never race into two chains for the same row.
+  function ensurePolling(reviewId: string): void {
+    if (activePolls.current.has(reviewId)) {
+      return;
+    }
+    activePolls.current.add(reviewId);
+    void pollForCompletion(reviewId);
   }
 
   function setAnalysisState(reviewId: string, state: QueueAnalysisState | undefined): void {
@@ -293,7 +345,30 @@ export function ReviewQueue(): JSX.Element {
     return true;
   }
 
-  async function pollForCompletion(reviewId: string): Promise<void> {
+  async function pollForCompletion(reviewId: string, attempt = 0): Promise<void> {
+    // The server keeps an analysis job alive for up to ~10 minutes before it is
+    // marked stale/failed (analysis-worker DEFAULT_STALE_JOB_THRESHOLD_MS), and a
+    // heavy run (OCR + CoVe + KG + NLI) routinely takes several minutes. Poll a
+    // little past that ceiling so we observe the server's own terminal state
+    // instead of abandoning the row mid-run — abandoning left the spinner stuck
+    // until a manual refresh.
+    const MAX_ATTEMPTS = 330; // ~11 minutes at 2s intervals
+    if (attempt >= MAX_ATTEMPTS) {
+      // Backstop only: reconcile against the real row status so a slow-but-done
+      // job still resolves without a refresh, rather than falsely failing it.
+      const refreshed = await refreshReviewAfterAnalysis(reviewId);
+      if (!refreshed) {
+        setAnalysisState(reviewId, {
+          status: "failed",
+          errorMessage: "분석 상태 확인 시간이 초과되었습니다."
+        });
+      } else {
+        setAnalysisState(reviewId, undefined);
+      }
+      stopPolling(reviewId);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/v1/review-cases/${reviewId}/analysis/status`, {
         headers: apiHeaders()
@@ -322,7 +397,7 @@ export function ReviewQueue(): JSX.Element {
           }
 
           setAnalysisState(reviewId, undefined);
-          clearPollingTimer(reviewId);
+          stopPolling(reviewId);
           return;
         }
 
@@ -345,7 +420,7 @@ export function ReviewQueue(): JSX.Element {
             status: "failed",
             errorMessage: body.errorMessage
           });
-          clearPollingTimer(reviewId);
+          stopPolling(reviewId);
           return;
         }
 
@@ -355,7 +430,7 @@ export function ReviewQueue(): JSX.Element {
 
         if (body.status === "not_started") {
           setAnalysisState(reviewId, undefined);
-          clearPollingTimer(reviewId);
+          stopPolling(reviewId);
           return;
         }
       }
@@ -364,12 +439,12 @@ export function ReviewQueue(): JSX.Element {
     }
 
     clearPollingTimer(reviewId);
-    const timer = setTimeout(() => void pollForCompletion(reviewId), analysisPollIntervalMs);
+    const timer = setTimeout(() => void pollForCompletion(reviewId, attempt + 1), 2000);
     pollingTimers.current.set(reviewId, timer);
   }
 
   async function startAnalysis(review: ReviewSummary): Promise<void> {
-    clearPollingTimer(review.id);
+    stopPolling(review.id);
     setAnalysisState(review.id, { status: "queued" });
     setLoadError(null);
     try {
@@ -405,7 +480,7 @@ export function ReviewQueue(): JSX.Element {
         setAnalysisState(review.id, {
           status: body.status === "analysis_in_progress" ? "running" : "queued"
         });
-        void pollForCompletion(review.id);
+        ensurePolling(review.id);
       }
     } catch (error) {
       const message =

@@ -110,6 +110,14 @@ export function describeAnalysisEvent(event: AnalysisEventRecord): ProgressLine 
         state: "done",
         text: `분석 완료 — 총 ${num(p.agentFindings) ?? 0}개 항목을 도출했어요`
       };
+    case "social_context_kg:done": {
+      const referenced = Array.isArray(p.matchedNodeIds) ? p.matchedNodeIds.length : 0;
+      return {
+        ...base,
+        state: "done",
+        text: `사회맥락 지식그래프에서 노드 ${referenced}개를 참조했어요`
+      };
+    }
     case "cove:start":
       return { ...base, state: "running", text: "검토 결과를 근거와 교차 검증하고 있어요…" };
     case "cove:done": {
@@ -135,17 +143,22 @@ export function describeAnalysisEvent(event: AnalysisEventRecord): ProgressLine 
 }
 
 /**
- * Turn the raw event stream into display lines. Sub-agents emit a `start`
- * (spinner) and a `done` (check); once an agent's `done` has arrived we drop
- * its `start` line so a finished agent never keeps spinning. Agents that have
- * started but not finished still show their spinner.
+ * Turn the raw event stream into display lines. Stages that emit a `start`
+ * (spinner) and a later `done` (check) — sub-agents and cross-verification —
+ * drop their `start` line once the matching `done` has arrived, so a finished
+ * step never keeps spinning. Steps that have started but not finished still
+ * show their spinner.
  */
 export function buildProgressLines(events: AnalysisEventRecord[]): ProgressLine[] {
   const finishedAgents = new Set<string>();
+  let coveFinished = false;
   for (const event of events) {
     if (event.stage === "subagent" && event.event === "done") {
       const agent = String((event.payload as Record<string, unknown>).agent ?? "");
       if (agent) finishedAgents.add(agent);
+    }
+    if (event.stage === "cove" && event.event === "done") {
+      coveFinished = true;
     }
   }
 
@@ -156,6 +169,14 @@ export function buildProgressLines(events: AnalysisEventRecord[]): ProgressLine[
       if (agent && finishedAgents.has(agent)) {
         continue;
       }
+    }
+    if (event.stage === "cove" && event.event === "start" && coveFinished) {
+      continue;
+    }
+    // The social-context KG engine emits a granular per-phase trace for the live
+    // graph viewer; in the reviewer popup we collapse those to the single summary line.
+    if (event.stage === "social_context_kg" && event.event !== "done") {
+      continue;
     }
     lines.push(describeAnalysisEvent(event));
   }

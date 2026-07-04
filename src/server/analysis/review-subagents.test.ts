@@ -3,6 +3,7 @@ import type { ModelProvider } from "@/server/ai/model-provider";
 import type { AgentFinding } from "./review-subagents";
 import {
   createReviewSubAgentOrchestrator,
+  dedupeConsolidatedSocialContextFindings,
   finalOrchestratedFindings,
   sanitizeReviewerText
 } from "./review-subagents";
@@ -565,6 +566,48 @@ describe("finalOrchestratedFindings", () => {
     expect(socialContextConcerns[0]?.riskLevel).toBe("caution");
   });
 
+  it("dedupes when the main agent labels its social finding with a varying issueType", () => {
+    // Regression for the rc-upload-002 re-analysis: the main agent consolidated the concern
+    // under issueType "sensitive_expression_context" (not "social_context_risk"), and also
+    // raised a distinct overstatement finding on the same phrase. The raw social findings
+    // must collapse into the main social finding, while the overstatement finding survives.
+    const kgFinding = socialFinding({
+      id: "finding-kg",
+      issueType: "SOCIAL_CONTEXT_KG_DISASTER_DATE_FINANCIAL_METAPHOR",
+      targetText: "2026-04-16 / 침몰 / 금리"
+    });
+    const subAgentFinding = socialFinding({
+      id: "finding-subagent",
+      issueType: "disaster_sensitivity_and_symbolic_metaphor",
+      targetText: "침몰하는 금리 시장, 유일한 해답 (게시 예정일 2026-04-16)"
+    });
+    const mainSocial: AgentFinding = socialFinding({
+      id: "finding-main-social",
+      agent: "main",
+      issueType: "sensitive_expression_context",
+      riskLevel: "caution",
+      targetText: "침몰하는 금리 시장, 유일한 해답 (게시 예정일 2026-04-16)"
+    });
+    const mainOverstatement: AgentFinding = socialFinding({
+      id: "finding-main-overstated",
+      agent: "main",
+      issueType: "overstated_claim",
+      riskLevel: "caution",
+      title: "'유일한 해답' 단정적 과장 표현",
+      targetText: "침몰하는 금리 시장, 유일한 해답"
+    });
+
+    const result = finalOrchestratedFindings(
+      [kgFinding, subAgentFinding],
+      [mainSocial, mainOverstatement]
+    );
+
+    expect(result.map((finding) => finding.id)).toEqual([
+      "finding-main-social",
+      "finding-main-overstated"
+    ]);
+  });
+
   it("preserves social-context findings the main agent dropped entirely (safety net)", () => {
     const kgFinding = socialFinding({ id: "finding-kg" });
     const mainUnrelated: AgentFinding = socialFinding({
@@ -612,6 +655,132 @@ describe("finalOrchestratedFindings", () => {
       "finding-targeting",
       "finding-main-date"
     ]);
+  });
+
+  it("collapses cross-agent duplicates when the main agent returns nothing (no-consolidation fallback)", () => {
+    // Reproduces rc-upload-001: the main agent produced no findings (model failure /
+    // unparseable output / empty judgment), so consolidation never ran. Multiple domain
+    // agents independently flag the SAME targetTexts. Instead of surfacing every raw
+    // finding (27 issues, the same concern repeated 2-3×), collapse to one representative
+    // per concern — keeping the highest-risk / most-authoritative one.
+    const domainFinding = (overrides: Partial<AgentFinding>): AgentFinding => ({
+      id: "finding",
+      agent: "regulation",
+      issueType: "generic",
+      riskLevel: "caution",
+      title: "제목",
+      targetText: "문구",
+      description: "설명",
+      suggestedAction: "hold",
+      suggestedCopy: "권고",
+      evidenceCandidateIds: [],
+      confidence: 0.8,
+      ...overrides
+    });
+
+    const findings: AgentFinding[] = [
+      domainFinding({ id: "reg-deposit", agent: "regulation", riskLevel: "high", targetText: "이 금융상품은 예금자보호법에 따라 보호되지 않습니다." }),
+      domainFinding({ id: "policy-deposit", agent: "internal_policy", riskLevel: "caution", targetText: "이 금융상품은 예금자보호법에 따라 보호되지 않습니다." }),
+      domainFinding({ id: "reg-rate", agent: "regulation", riskLevel: "caution", targetText: "최고 연 4.50% (세전)" }),
+      domainFinding({ id: "policy-rate", agent: "internal_policy", riskLevel: "caution", targetText: "최고 연 4.50% (세전)" }),
+      domainFinding({ id: "policy-social", agent: "internal_policy", riskLevel: "caution", targetText: "침몰하는 금리 시장, 유일한 해답" }),
+      domainFinding({ id: "social-social", agent: "social_context_risk", riskLevel: "caution", targetText: "침몰하는 금리 시장, 유일한 해답" })
+    ];
+
+    const result = finalOrchestratedFindings(findings, []);
+
+    // Three distinct concerns remain (deposit-protection, rate, social), not six.
+    expect(result).toHaveLength(3);
+    // The deposit concern keeps the higher-risk regulation representative.
+    const deposit = result.find((f) => f.targetText.includes("예금자보호법"));
+    expect(deposit?.id).toBe("reg-deposit");
+    expect(deposit?.riskLevel).toBe("high");
+    // Every surviving finding is one of the originals (no invented findings).
+    expect(result.every((f) => findings.some((o) => o.id === f.id))).toBe(true);
+  });
+
+  it("returns domain findings unchanged when there are no cross-agent duplicates and main is empty", () => {
+    const a: AgentFinding = {
+      id: "a", agent: "regulation", issueType: "t", riskLevel: "high",
+      title: "A", targetText: "예금자보호 문구 오류", description: "", suggestedAction: "hold",
+      suggestedCopy: "", evidenceCandidateIds: [], confidence: 0.9
+    };
+    const b: AgentFinding = { ...a, id: "b", agent: "product_terms", targetText: "최고금리 강조 표시 조건 병기 미흡" };
+
+    const result = finalOrchestratedFindings([a, b], []);
+    expect(result.map((f) => f.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("dedupeConsolidatedSocialContextFindings", () => {
+  function finding(overrides: Partial<AgentFinding>): AgentFinding {
+    return {
+      id: "finding",
+      agent: "main",
+      issueType: "generic",
+      riskLevel: "caution",
+      title: "제목",
+      targetText: "문구",
+      description: "설명",
+      suggestedAction: "hold",
+      suggestedCopy: "권고",
+      evidenceCandidateIds: [],
+      confidence: 0.8,
+      ...overrides
+    };
+  }
+
+  it("drops the KG-engine social finding the pipeline re-injected after main consolidated it", () => {
+    // Reproduces rc-upload-002's second re-analysis: after the orchestrator dropped it,
+    // the pipeline re-added the KG social finding (#1, high) alongside the main agent's
+    // consolidated finding (#5, caution, issueType historical_sensitivity). The combined
+    // set must collapse to the single main finding.
+    const kg = finding({
+      id: "finding-kg",
+      agent: "social_context_risk",
+      issueType: "SOCIAL_CONTEXT_KG_DISASTER_DATE_FINANCIAL_METAPHOR",
+      riskLevel: "high",
+      targetText: "2026-04-16 / 침몰 / 금리"
+    });
+    const disclosure = finding({
+      id: "finding-disclosure",
+      agent: "main",
+      issueType: "disclosure_conflict",
+      riskLevel: "high",
+      targetText: "이 금융상품은 예금자보호법에 따라 보호되지 않습니다."
+    });
+    const mainSocial = finding({
+      id: "finding-main-social",
+      agent: "main",
+      issueType: "historical_sensitivity",
+      riskLevel: "caution",
+      targetText: "침몰하는 금리 시장, 유일한 해답 (게시예정일 2026-04-16)"
+    });
+
+    const result = dedupeConsolidatedSocialContextFindings([kg, disclosure, mainSocial]);
+
+    expect(result.map((f) => f.id)).toEqual(["finding-disclosure", "finding-main-social"]);
+  });
+
+  it("keeps the raw social finding when the main agent produced no social-context finding", () => {
+    const kg = finding({
+      id: "finding-kg",
+      agent: "social_context_risk",
+      issueType: "SOCIAL_CONTEXT_KG_DISASTER_DATE",
+      riskLevel: "high",
+      targetText: "2026-04-16 / 침몰 / 금리"
+    });
+    const rateOnly = finding({
+      id: "finding-rate",
+      agent: "main",
+      issueType: "rate_disclosure",
+      riskLevel: "caution",
+      targetText: "최고 연 4.50% (세전)"
+    });
+
+    const result = dedupeConsolidatedSocialContextFindings([kg, rateOnly]);
+
+    expect(result.map((f) => f.id)).toEqual(["finding-kg", "finding-rate"]);
   });
 });
 

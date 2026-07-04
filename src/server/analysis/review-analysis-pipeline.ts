@@ -26,6 +26,7 @@ import {
 } from "@/server/knowledge/ocr-service-client";
 import type { ReviewStore, ReviewStoreScope } from "@/server/reviews";
 import { getReviewStorageAdapter, type ReviewStorageAdapter } from "@/server/storage";
+import { assertReviewSourcesServable } from "@/server/storage/upload-consistency";
 import { buildAnalysisIssues } from "./issue-generation";
 import { runCoveEvidenceVerification, type CoveVerificationArtifacts } from "./cove-verification";
 import { judgeAbsoluteClaims } from "./absolute-claim-judgment";
@@ -43,6 +44,7 @@ import { expandComplianceQuery } from "./query-expansion";
 import { createReranker, type Reranker } from "./rerank-provider";
 import {
   createReviewSubAgentOrchestrator,
+  dedupeConsolidatedSocialContextFindings,
   type AgentFinding,
   type ReviewSubAgentOrchestrator
 } from "./review-subagents";
@@ -1947,6 +1949,16 @@ export function createReviewAnalysisPipeline({
         case: review.id,
         files: review.files.length
       });
+      // Fail fast when every uploaded review source is an orphan the active adapter cannot
+      // resolve (e.g. all `local` files under a prod `s3` adapter — the rc-upload-003
+      // incident). Otherwise OCR runs, extracts nothing, and aborts later with a misleading
+      // "OCR 제공자 설정을 확인" message that hides the real storage-provider mismatch.
+      assertReviewSourcesServable(
+        process.env,
+        review.files
+          .filter(isUploadedReviewFile)
+          .map((file) => ({ storageProvider: file.storageProvider, name: file.name }))
+      );
       // OCR and knowledge/case RAG prefetch run in parallel: images spend 5–90s in Gemini OCR
       // while knowledge/case DB queries (~1–3s) complete before OCR finishes.
       const ocrStartedAt = now().getTime();
@@ -2023,9 +2035,32 @@ export function createReviewAnalysisPipeline({
         topK: config.rerank.topK,
         knowledgeMinScore: KNOWLEDGE_SECONDARY_MIN_SCORE
       });
+      const socialContextKgTraceNodeIds = new Set<string>();
       const socialContextKgResult = socialContextKgArtifacts({
         review,
-        extractedDocuments: analysisDocuments
+        extractedDocuments: analysisDocuments,
+        onTrace: (trace) => {
+          for (const nodeId of trace.nodeIds) {
+            socialContextKgTraceNodeIds.add(nodeId);
+          }
+          emit({
+            stage: "social_context_kg",
+            event: trace.phase,
+            case: review.id,
+            nodeIds: trace.nodeIds,
+            ...(trace.edges ? { edges: trace.edges } : {}),
+            ...(trace.countryIds ? { countryIds: trace.countryIds } : {}),
+            ...(trace.riskLevel ? { riskLevel: trace.riskLevel } : {}),
+            ...(trace.note ? { note: trace.note } : {})
+          });
+        }
+      });
+      emit({
+        stage: "social_context_kg",
+        event: "done",
+        case: review.id,
+        matches: socialContextKgResult.matches.length,
+        matchedNodeIds: [...socialContextKgTraceNodeIds]
       });
       const evidenceCandidatesWithSocialContextKg = [
         ...evidenceCandidates,
@@ -2099,7 +2134,13 @@ export function createReviewAnalysisPipeline({
         now,
         onEvent
       });
-      const verifiedAgentFindings = coveVerification.verifiedAgentFindings;
+      // Drop raw social-context findings (KG engine / sub-agent) the main agent already
+      // consolidated. Runs after CoVe so a raw finding is only removed when the main agent's
+      // social-context finding actually survived verification — never leaving the concern
+      // entirely unreported.
+      const verifiedAgentFindings = dedupeConsolidatedSocialContextFindings(
+        coveVerification.verifiedAgentFindings
+      );
       const artifacts = {
         generatedAt: now().toISOString(),
         extractedDocuments: analysisDocuments,

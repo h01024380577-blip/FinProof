@@ -620,13 +620,18 @@ function materialStatus(review: ReviewCase) {
   };
 }
 
-// Social-context risk is surfaced under heterogeneous, model-chosen issueTypes (the KG
-// engine, the social_context_risk sub-agent, and the main agent's consolidated finding
-// all label it differently). Recognize it by the owning agent or by an issueType that
-// names a social-context signal, so we can tell when the main agent has itself addressed
-// the concern.
+// Social-context risk is surfaced under heterogeneous, model-chosen issueTypes: the KG
+// engine, the social_context_risk sub-agent, and the main agent's consolidated finding all
+// label it differently, and the main agent's wording varies run to run (observed:
+// social_context_risk, sensitive_expression_context, disaster_sensitivity_and_symbolic_metaphor).
+// Recognize it by the owning agent or by an issueType carrying a strong social-context
+// signal. This list only needs the failure to be safe: an unmatched social issueType merely
+// leaves a duplicate for the reviewer, whereas the tokens here (deliberately excluding
+// generic compliance words like "claim"/"disclosure"/"rate") will not tag an unrelated
+// finding as social — and coverage additionally requires targetText overlap before any raw
+// finding is dropped.
 const SOCIAL_CONTEXT_ISSUE_TYPE_PATTERN =
-  /social[\s_-]*context|disaster|symbolic|사회\s*맥락|참사|재난|기념일/i;
+  /social|context|disaster|symbolic|metaphor|sensitiv|tragedy|memorial|anniversar|controvers|backlash|mourning|사회|맥락|참사|재난|민감|논란|기념일|추모/i;
 
 function isSocialContextFinding(finding: AgentFinding): boolean {
   return (
@@ -662,12 +667,55 @@ function sharesConcern(a: AgentFinding, b: AgentFinding): boolean {
   return overlap >= 2;
 }
 
+// Authority ranking for choosing a representative among cross-agent duplicates: findings
+// bound to law/policy/product evidence outrank inference-heavy ones. Only used in the
+// no-consolidation fallback below.
+const CROSS_AGENT_AUTHORITY: Partial<Record<ReviewSubAgentId, number>> = {
+  regulation: 5,
+  internal_policy: 4,
+  product_terms: 3,
+  social_context_risk: 2,
+  creative_review: 1
+};
+
+function crossAgentPriority(finding: AgentFinding): number {
+  const authority = CROSS_AGENT_AUTHORITY[finding.agent] ?? 0;
+  // riskRank (0-2) dominates, then agent authority (0-5), then confidence (0-1).
+  return riskRank[finding.riskLevel] * 100 + authority * 10 + finding.confidence;
+}
+
+// When the main_compliance agent produces no consolidated output, collapse cross-agent
+// duplicates so each distinct concern surfaces once, keeping the highest-priority
+// representative. Never invents findings and never merges findings with unrelated
+// targetText (sharesConcern requires multi-token overlap), so it degrades safely.
+export function dedupeCrossAgentFindings(findings: AgentFinding[]): AgentFinding[] {
+  const kept: AgentFinding[] = [];
+  for (const finding of findings) {
+    const dupeIndex = kept.findIndex((existing) => sharesConcern(existing, finding));
+    if (dupeIndex === -1) {
+      kept.push(finding);
+      continue;
+    }
+    if (crossAgentPriority(finding) > crossAgentPriority(kept[dupeIndex])) {
+      kept[dupeIndex] = finding;
+    }
+  }
+  return kept;
+}
+
 export function finalOrchestratedFindings(
   findings: AgentFinding[],
   mainFindings: AgentFinding[]
 ) {
   if (mainFindings.length === 0) {
-    return findings;
+    // The main agent is the consolidation step: it clusters every domain/prior finding into
+    // one final finding per concern. When it returns nothing — a model failure, unparseable
+    // output (runAgent falls back to "[]"), or a genuinely empty judgment — consolidation
+    // never ran, and returning the raw findings surfaces the SAME concern once per agent
+    // (rc-upload-001 exploded to 27 issues: ~6 concerns each flagged by 2-3 agents).
+    // Degrade gracefully by collapsing cross-agent duplicates instead of dropping or
+    // dumping everything.
+    return dedupeCrossAgentFindings(findings);
   }
 
   const mainSocialContextFindings = mainFindings.filter(isSocialContextFinding);
@@ -687,6 +735,33 @@ export function finalOrchestratedFindings(
   );
 
   return [...preservedSocialContextFindings, ...mainFindings];
+}
+
+// Concern-level dedupe for the final combined finding set. finalOrchestratedFindings only
+// governs findings produced *inside* the orchestrator; the pipeline separately re-injects
+// prior findings (the KG-engine social-context finding among them) alongside the
+// orchestrator output as a loss-prevention safety net, which resurrects a raw social finding
+// the main agent already consolidated. Applied to the merged set, this removes raw
+// social_context_risk findings (KG engine or sub-agent) once the main agent has folded the
+// same concern into its own social-context finding. Fails safe: with no matching main
+// social-context finding, nothing is dropped.
+export function dedupeConsolidatedSocialContextFindings(
+  findings: AgentFinding[]
+): AgentFinding[] {
+  const mainSocialContextFindings = findings.filter(
+    (finding) => finding.agent === "main" && isSocialContextFinding(finding)
+  );
+  if (mainSocialContextFindings.length === 0) {
+    return findings;
+  }
+
+  return findings.filter(
+    (finding) =>
+      !(
+        finding.agent === "social_context_risk" &&
+        mainSocialContextFindings.some((mainFinding) => sharesConcern(mainFinding, finding))
+      )
+  );
 }
 
 function bestEvidenceScore(evidenceCandidates: RagEvidenceCandidate[]) {

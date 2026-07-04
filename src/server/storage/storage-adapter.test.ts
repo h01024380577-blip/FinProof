@@ -204,4 +204,51 @@ describe("storage adapter factory", () => {
       "s3://finproof-prod-artifacts/knowledge-documents/knowledge-001/nested_deposit-policy.txt"
     );
   });
+
+  it("reads an S3 review file whose object key uses a different Unicode normalization than the DB key", async () => {
+    // rc-upload-001 class failure: the S3 object was stored under an NFD-normalized Korean
+    // key while the DB storage_key is NFC (or vice versa). GetObject is byte-exact, so the
+    // exact key misses. The adapter must retry the alternate normalization.
+    const bucket = "finproof-s3-seoul";
+    const body = new Uint8Array([10, 20, 30]);
+    const relKey = "reviews/rc-upload-001/file-001/수정반영_terms.txt";
+    const objectKeyNFD = relKey.normalize("NFD");
+    const dbStorageKeyNFC = `s3://${bucket}/${relKey}`.normalize("NFC");
+
+    // Sanity: the two normalizations really differ (the test would be vacuous otherwise).
+    expect(objectKeyNFD).not.toBe(relKey.normalize("NFC"));
+
+    const send = vi.fn(async (command: { input: { Key: string } }) => {
+      if (command.input.Key === objectKeyNFD) {
+        return { Body: body };
+      }
+      const error = new Error("The specified key does not exist.");
+      (error as { name?: string }).name = "NoSuchKey";
+      throw error;
+    });
+    const adapter = createS3MetadataStorageAdapter({
+      bucket,
+      region: "ap-northeast-2",
+      client: { send }
+    });
+
+    await expect(adapter.getReviewFileBody(dbStorageKeyNFC)).resolves.toEqual(body);
+  });
+
+  it("throws NoSuchKey when the S3 object is genuinely absent under every normalization", async () => {
+    const send = vi.fn(async () => {
+      const error = new Error("The specified key does not exist.");
+      (error as { name?: string }).name = "NoSuchKey";
+      throw error;
+    });
+    const adapter = createS3MetadataStorageAdapter({
+      bucket: "finproof-s3-seoul",
+      region: "ap-northeast-2",
+      client: { send }
+    });
+
+    await expect(
+      adapter.getReviewFileBody("s3://finproof-s3-seoul/reviews/rc/file/수정반영.txt")
+    ).rejects.toThrow(/does not exist/);
+  });
 });

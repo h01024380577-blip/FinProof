@@ -29,6 +29,40 @@ describe("model router", () => {
     expect(providerForModel("claude-opus-4-8")).toBe("anthropic");
     expect(providerForModel("gpt-5-mini")).toBe("openai");
     expect(providerForModel("text-embedding-3-small")).toBe("openai");
+    expect(providerForModel("HCX-007")).toBe("hyperclova");
+    expect(providerForModel("HCX-DASH-002")).toBe("hyperclova");
+  });
+
+  it("pins internal_policy to the configured HyperCLOVA model when set", () => {
+    const config = getModelRoutingConfig({ FINPROOF_MODEL_INTERNAL_POLICY: "HCX-007" });
+
+    expect(selectModelRoute("internal_policy_agent", {}, config)).toEqual({
+      task: "internal_policy_agent",
+      provider: "hyperclova",
+      model: "HCX-007",
+      modelTier: "default_text"
+    });
+  });
+
+  it("keeps internal_policy on the pinned model under escalation but reports the reason", () => {
+    const config = getModelRoutingConfig({ FINPROOF_MODEL_INTERNAL_POLICY: "HCX-007" });
+
+    expect(selectModelRoute("internal_policy_agent", { riskLevel: "high" }, config)).toEqual({
+      task: "internal_policy_agent",
+      provider: "hyperclova",
+      model: "HCX-007",
+      modelTier: "escalation_text",
+      escalationReason: "risk_level_high"
+    });
+  });
+
+  it("falls back to the shared Claude text tiers for internal_policy when unpinned", () => {
+    expect(selectModelRoute("internal_policy_agent", {})).toEqual({
+      task: "internal_policy_agent",
+      provider: "anthropic",
+      model: "claude-sonnet-5",
+      modelTier: "default_text"
+    });
   });
 
   it("routes normal RAG chat to the default Claude text model", () => {
