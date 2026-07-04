@@ -93,6 +93,7 @@ type RunCoveResult = {
 
 const LOW_CONFIDENCE_THRESHOLD = 0.78;
 const WEAK_EVIDENCE_SCORE = 0.72;
+const MAX_COVE_LLM_FINDINGS = 6;
 
 function normalizeText(value: string | undefined) {
   return (value ?? "")
@@ -227,6 +228,11 @@ function selectCoveMode(input: {
     reasons.push("change_request");
   }
 
+  if (finding.agent === "main") {
+    score += 35;
+    reasons.push("final_exposure_candidate");
+  }
+
   if (finding.confidence < LOW_CONFIDENCE_THRESHOLD) {
     score += 20;
     reasons.push("low_confidence");
@@ -242,12 +248,72 @@ function selectCoveMode(input: {
     reasons.push("target_trace_weak");
   }
 
+  const shouldVerify =
+    finding.riskLevel === "high" ||
+    finding.suggestedAction === "change_request" ||
+    finding.agent === "main";
+
   return {
     findingId: finding.id,
-    mode: score >= 35 ? "llm" : "none",
+    mode: shouldVerify && score >= 35 ? "llm" : "none",
     score,
-    reasons
+    reasons: shouldVerify ? reasons : [...reasons, "low_impact_not_cove_target"]
   };
+}
+
+function coveSelectionPriority(
+  decision: CoveSelectionDecision,
+  finding: AgentFinding | undefined
+) {
+  if (!finding) {
+    return decision.score;
+  }
+
+  return (
+    decision.score +
+    (finding.agent === "main" ? 1000 : 0) +
+    (finding.riskLevel === "high" ? 500 : 0) +
+    (finding.suggestedAction === "change_request" ? 250 : 0) +
+    riskRank[finding.riskLevel] * 50 +
+    finding.confidence
+  );
+}
+
+function limitCoveLlmSelection(
+  selection: CoveSelectionDecision[],
+  agentFindings: AgentFinding[]
+) {
+  const llmCandidates = selection.filter((decision) => decision.mode === "llm");
+
+  if (llmCandidates.length <= MAX_COVE_LLM_FINDINGS) {
+    return selection;
+  }
+
+  const findingById = new Map(agentFindings.map((finding) => [finding.id, finding]));
+  const selectedIds = new Set(
+    llmCandidates
+      .map((decision) => ({
+        decision,
+        priority: coveSelectionPriority(decision, findingById.get(decision.findingId)),
+        originalIndex: selection.indexOf(decision)
+      }))
+      .sort((left, right) => {
+        const priorityDelta = right.priority - left.priority;
+        return priorityDelta === 0 ? left.originalIndex - right.originalIndex : priorityDelta;
+      })
+      .slice(0, MAX_COVE_LLM_FINDINGS)
+      .map(({ decision }) => decision.findingId)
+  );
+
+  return selection.map((decision) =>
+    decision.mode === "llm" && !selectedIds.has(decision.findingId)
+      ? {
+          ...decision,
+          mode: "none",
+          reasons: [...decision.reasons, "cove_budget_limit"]
+        }
+      : decision
+  );
 }
 
 function makeQuestionId(finding: AgentFinding, claimType: CoveClaimType) {
@@ -726,13 +792,16 @@ export async function runCoveEvidenceVerification({
     onEvent?.(payload);
   };
 
-  const selection = agentFindings.map((finding) =>
-    selectCoveMode({
-      finding,
-      review,
-      extractedDocuments,
-      evidenceCandidates
-    })
+  const selection = limitCoveLlmSelection(
+    agentFindings.map((finding) =>
+      selectCoveMode({
+        finding,
+        review,
+        extractedDocuments,
+        evidenceCandidates
+      })
+    ),
+    agentFindings
   );
   emit({
     stage: "cove",

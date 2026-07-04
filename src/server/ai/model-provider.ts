@@ -102,6 +102,33 @@ function maxOutputTokensFor(model: string): number {
   return 8192;
 }
 
+const ANALYSIS_TASK_MAX_TOKENS: Record<string, number> = {
+  retrieval_query: 256,
+  creative_review: 6000,
+  product_terms: 6000,
+  regulation_agent: 6000,
+  internal_policy_agent: 6000,
+  social_context_risk: 6000,
+  evidence_verification: 4000,
+  case_search: 4000,
+  main_compliance: 8000,
+  english_translator_risk: 5000,
+  vietnamese_translator_risk: 5000,
+  myanmar_translator_risk: 5000,
+  khmer_translator_risk: 5000,
+  korean_compliance_mapping: 5000,
+  cove_evidence_answering: 4000,
+  absolute_claim_judgment: 1500,
+  ocr_visual_understanding: 8000
+};
+
+function maxOutputTokensForTask(task: string, model: string): number {
+  const modelLimit = maxOutputTokensFor(model);
+  const taskLimit = ANALYSIS_TASK_MAX_TOKENS[task];
+
+  return taskLimit ? Math.min(taskLimit, modelLimit) : modelLimit;
+}
+
 export function extractOpenAIText(body: unknown): string {
   if (
     body &&
@@ -387,7 +414,7 @@ function createProviderForRoute(
         const maxTokens = positiveNumber(
           env,
           "FINPROOF_MODEL_MAX_TOKENS",
-          maxOutputTokensFor(model)
+          maxOutputTokensForTask(String(input.task), model)
         );
         const anthropicVersion = envValue(env, "ANTHROPIC_VERSION") ?? "2023-06-01";
 

@@ -113,6 +113,169 @@ describe("createReviewSubAgentOrchestrator", () => {
     );
   });
 
+  it("limits domain agents to their strongest material findings before the lead agent runs", async () => {
+    const finding = (
+      title: string,
+      riskLevel: "info" | "caution" | "high",
+      suggestedAction: "approve" | "change_request" | "hold",
+      confidence: number
+    ) => ({
+      title,
+      issueType: "rate_claim",
+      riskLevel,
+      targetText: title,
+      description: `${title} 설명`,
+      suggestedAction,
+      suggestedCopy: `${title} 권고`,
+      evidenceCandidateIds: ["evidence-rate-rule"],
+      confidence
+    });
+    const provider = providerReturning({
+      creative_review: JSON.stringify({
+        findings: [
+          finding("참고 수준 표현", "info", "hold", 0.99),
+          finding("고위험 수정 요청 A", "high", "change_request", 0.83),
+          finding("주의 보류 의견", "caution", "hold", 0.98),
+          finding("고위험 보류 의견", "high", "hold", 0.99),
+          finding("고위험 수정 요청 B", "high", "change_request", 0.91)
+        ]
+      }),
+      main_compliance: "[]"
+    });
+
+    const result = await createReviewSubAgentOrchestrator(provider).run({
+      review,
+      extractedDocuments,
+      evidenceCandidates
+    });
+    const creativeCall = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([input]) => input.task === "creative_review"
+    )?.[0];
+    const creativeInput = JSON.parse(String(creativeCall?.input));
+    const mainCall = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([input]) => input.task === "main_compliance"
+    )?.[0];
+    const mainInput = JSON.parse(String(mainCall?.input));
+    const selectedTitles = ["고위험 수정 요청 B", "고위험 수정 요청 A", "고위험 보류 의견"];
+
+    expect(creativeInput.selectionPolicy).toEqual(
+      expect.objectContaining({ maxFindings: 3 })
+    );
+    expect(creativeInput.outputSchema.maxFindings).toBe(3);
+    expect(
+      result.filter((candidate) => candidate.agent === "creative_review").map((candidate) => ({
+        id: candidate.id,
+        title: candidate.title
+      }))
+    ).toEqual([
+      { id: "finding-creative_review-001", title: selectedTitles[0] },
+      { id: "finding-creative_review-002", title: selectedTitles[1] },
+      { id: "finding-creative_review-003", title: selectedTitles[2] }
+    ]);
+    expect(
+      mainInput.priorFindings
+        .filter((candidate: { agent: string }) => candidate.agent === "creative_review")
+        .map((candidate: { title: string }) => candidate.title)
+    ).toEqual(selectedTitles);
+  });
+
+  it("limits evidence verification and lead-agent inputs while summarizing omitted findings", async () => {
+    const finding = (
+      title: string,
+      riskLevel: "info" | "caution" | "high",
+      suggestedAction: "approve" | "change_request" | "hold",
+      confidence: number
+    ) => ({
+      title,
+      issueType: "rate_claim",
+      riskLevel,
+      targetText: title,
+      description: `${title} 설명`,
+      suggestedAction,
+      suggestedCopy: `${title} 권고`,
+      evidenceCandidateIds: ["evidence-rate-rule"],
+      confidence
+    });
+    const provider = providerReturning({
+      creative_review: JSON.stringify({
+        findings: [
+          finding("고위험 수정 A", "high", "change_request", 0.91),
+          finding("고위험 수정 B", "high", "change_request", 0.88),
+          finding("고위험 보류 C", "high", "hold", 0.93)
+        ]
+      }),
+      product_terms: JSON.stringify({
+        findings: [
+          finding("상품조건 수정 A", "caution", "change_request", 0.9),
+          finding("상품조건 수정 B", "caution", "change_request", 0.86),
+          finding("상품조건 수정 C", "caution", "change_request", 0.82)
+        ]
+      }),
+      regulation_agent: JSON.stringify({
+        findings: [
+          finding("규정 보류 A", "caution", "hold", 0.7),
+          finding("규정 보류 B", "caution", "hold", 0.69),
+          finding("규정 보류 C", "caution", "hold", 0.68)
+        ]
+      }),
+      internal_policy_agent: JSON.stringify({
+        findings: [
+          finding("정보성 확인 A", "info", "approve", 0.99),
+          finding("정보성 확인 B", "info", "approve", 0.98),
+          finding("정보성 확인 C", "info", "approve", 0.97)
+        ]
+      }),
+      evidence_verification: "[]",
+      main_compliance: "[]"
+    });
+
+    await createReviewSubAgentOrchestrator(provider).run({
+      review,
+      extractedDocuments,
+      evidenceCandidates
+    });
+
+    const evidenceVerificationCall = (
+      provider.generateText as ReturnType<typeof vi.fn>
+    ).mock.calls.find(([input]) => input.task === "evidence_verification")?.[0];
+    const evidenceVerificationInput = JSON.parse(String(evidenceVerificationCall?.input));
+    const mainCall = (provider.generateText as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([input]) => input.task === "main_compliance"
+    )?.[0];
+    const mainInput = JSON.parse(String(mainCall?.input));
+    const evidenceVerificationTitles = evidenceVerificationInput.priorFindings.map(
+      (candidate: { title: string }) => candidate.title
+    );
+
+    expect(evidenceVerificationInput.priorFindings).toHaveLength(8);
+    expect(evidenceVerificationTitles).toEqual(
+      expect.arrayContaining([
+        "고위험 수정 A",
+        "고위험 수정 B",
+        "고위험 보류 C",
+        "상품조건 수정 A",
+        "상품조건 수정 B",
+        "상품조건 수정 C",
+        "규정 보류 A",
+        "규정 보류 B"
+      ])
+    );
+    expect(evidenceVerificationTitles).not.toContain("정보성 확인 A");
+    expect(mainInput.priorFindings).toHaveLength(10);
+    expect(mainInput.priorFindingSummary).toEqual(
+      expect.objectContaining({
+        totalOriginalFindings: 12,
+        includedDetailedFindings: 10,
+        omittedFindings: 2,
+        omittedByAgent: expect.objectContaining({ internal_policy: 2 }),
+        representativeOmittedFindings: expect.arrayContaining([
+          expect.objectContaining({ title: "정보성 확인 B" }),
+          expect.objectContaining({ title: "정보성 확인 C" })
+        ])
+      })
+    );
+  });
+
   it("strips internal orchestration jargon leaked into reviewer-facing fields", async () => {
     const provider = providerReturning({
       creative_review: JSON.stringify({
