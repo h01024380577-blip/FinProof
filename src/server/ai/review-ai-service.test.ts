@@ -295,6 +295,34 @@ describe("review AI service", () => {
     expect(call?.input).toContain(issue.suggestedCopy);
   });
 
+  it("scopes the draft to only the selected issues when selectedIssueIds is provided", async () => {
+    const provider = modelProvider("선택 이슈 기반 초안");
+    const selected = review.issues[1];
+    const excludedA = review.issues[0];
+    const excludedB = review.issues[2];
+
+    const draft = await generateDraftWithModel(review, [], provider, [selected.id]);
+    const call = vi.mocked(provider.generateText).mock.calls[0]?.[0];
+
+    expect(draft).toBe("선택 이슈 기반 초안");
+    expect(call?.input).toContain(selected.title);
+    expect(call?.input).not.toContain(excludedA.title);
+    expect(call?.input).not.toContain(excludedB.title);
+    // the deterministic fallback must also be scoped to the selected issue
+    expect(call?.fallback).toContain(selected.title);
+    expect(call?.fallback).not.toContain(excludedA.title);
+  });
+
+  it("includes every issue when selectedIssueIds is omitted (backward compatible)", async () => {
+    const provider = modelProvider("전체 이슈 초안");
+    await generateDraftWithModel(review, [], provider);
+    const call = vi.mocked(provider.generateText).mock.calls[0]?.[0];
+
+    for (const issueItem of review.issues) {
+      expect(call?.input).toContain(issueItem.title);
+    }
+  });
+
   it("uses model text for report markdown while keeping report metadata", async () => {
     const provider = modelProvider("# 모델 리포트");
     const report = await generateReportWithModel(

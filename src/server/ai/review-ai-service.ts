@@ -213,21 +213,41 @@ export async function answerReviewQuestionWithModel(
   };
 }
 
+/**
+ * Restrict a review to the reviewer-selected issues for draft generation.
+ * When `selectedIssueIds` is omitted the original review is returned unchanged
+ * (backward compatible: all issues). When provided, only matching issues are
+ * kept so both the deterministic fallback and the model input are scoped to the
+ * reviewer's selection.
+ */
+function scopeReviewToSelectedIssues(review: ReviewCase, selectedIssueIds?: string[]): ReviewCase {
+  if (!selectedIssueIds) {
+    return review;
+  }
+  const selected = new Set(selectedIssueIds);
+  return {
+    ...review,
+    issues: review.issues.filter((issue) => selected.has(issue.id))
+  };
+}
+
 export async function generateDraftWithModel(
   review: ReviewCase,
   chatResponses: ReviewChatResponse[],
-  provider: ModelProvider = defaultModelProvider()
+  provider: ModelProvider = defaultModelProvider(),
+  selectedIssueIds?: string[]
 ): Promise<string> {
-  const fallback = generateDraftWithChatContext(review, chatResponses);
-  const targetLanguage = detectReviewDraftLanguage(review);
+  const scopedReview = scopeReviewToSelectedIssues(review, selectedIssueIds);
+  const fallback = generateDraftWithChatContext(scopedReview, chatResponses);
+  const targetLanguage = detectReviewDraftLanguage(scopedReview);
   const result = await provider.generateText({
     task: "opinion_draft",
-    routeContext: draftRouteContext(review, chatResponses),
+    routeContext: draftRouteContext(scopedReview, chatResponses),
     instructions: OPINION_DRAFT_PROMPT,
     input: JSON.stringify({
-      review: reviewSummary(review),
+      review: reviewSummary(scopedReview),
       targetLanguage,
-      issues: review.issues.map(issueSummary),
+      issues: scopedReview.issues.map(issueSummary),
       chatResponses,
       fallback
     }),

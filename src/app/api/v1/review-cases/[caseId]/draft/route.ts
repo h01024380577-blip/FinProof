@@ -13,6 +13,7 @@ import {
 type DraftRequest = {
   chatResponses?: ReviewChatResponse[];
   markedResponses?: ReviewChatResponse[];
+  selectedIssueIds?: string[];
 };
 
 type SaveDraftRequest = {
@@ -31,7 +32,10 @@ export async function POST(request: Request, context: RouteContext<{ caseId: str
   }
 
   const chatResponses = body?.chatResponses ?? body?.markedResponses ?? [];
-  const draft = await generateDraftWithModel(review, chatResponses);
+  const selectedIssueIds = Array.isArray(body?.selectedIssueIds)
+    ? body.selectedIssueIds.filter((id): id is string => typeof id === "string")
+    : undefined;
+  const draft = await generateDraftWithModel(review, chatResponses, undefined, selectedIssueIds);
   let updatedReview;
 
   try {

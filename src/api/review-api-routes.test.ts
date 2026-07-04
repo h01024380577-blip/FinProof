@@ -1269,6 +1269,22 @@ describe("review API routes", () => {
     expect(legacyRiskBody.error.message).toContain("reviewerRiskLevel is invalid");
   });
 
+  it("generates a draft scoped to the reviewer-selected issues", async () => {
+    const draftResponse = await draftPOST(
+      jsonRequest("/api/v1/review-cases/rc-demo-deposit-001/draft", {
+        chatResponses: [],
+        selectedIssueIds: ["issue-deposit-anyone"]
+      }),
+      params({ caseId: "rc-demo-deposit-001" })
+    );
+    const draftBody = await draftResponse.json();
+
+    expect(draftResponse.status).toBe(200);
+    expect(draftBody.draft).toContain("조건부 혜택의 무조건 표현");
+    expect(draftBody.draft).not.toContain("최고금리 조건 표시 불충분");
+    expect(draftBody.draft).not.toContain("제한 조건 시각적 약화");
+  });
+
   it("updates final review status through the finalize route", async () => {
     await createPOST(
       jsonRequest("/api/v1/review-cases", { samplePackageId: "rc-demo-deposit-001" })
